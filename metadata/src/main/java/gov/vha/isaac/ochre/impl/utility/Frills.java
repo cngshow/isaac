@@ -297,6 +297,29 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 
 	/**
+	 * Find the VUID for a component (if it has one)
+	 *
+	 * @param componentNid
+	 * @param stamp - optional - if not provided uses default from config
+	 * service
+	 * @return the id, if found, or empty (will not return null)
+	 */
+	public static Optional<Long> getVuId(int componentNid, StampCoordinate stamp) {
+		try {
+			Optional<LatestVersion<StringSememeImpl>> sememe = Get.sememeService().getSnapshot(StringSememeImpl.class,
+					stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp)
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
+							MetaData.VUID.getConceptSequence()).findFirst();
+			if (sememe.isPresent()) {
+				return Optional.of(Long.parseLong(sememe.get().value().getString()));
+			}
+		} catch (Exception e) {
+			log.error("Unexpected error trying to find VUID for nid " + componentNid, e);
+		}
+		return Optional.empty();
+	}
+
+	/**
 	 * Determine if a particular description sememe is flagged as preferred IN
 	 * ANY LANGUAGE. Returns false if there is no acceptability sememe.
 	 *
