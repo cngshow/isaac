@@ -28,50 +28,54 @@ import gov.vha.isaac.ochre.api.State;
  * (state, time, author, module, and path).
  * The version STAMP provides a foundation for version control and
  * configuration management of all the components of the informatics architecture.
+ * 
  * @author kec
  */
-public interface StampedVersion {
+public interface StampedVersion
+{
 
 	/**
 	 * A sequence starting at one that uniquely identifies a particular combination of
 	 * state, time, author, module, and path. Stamp sequences are idempotent, and there will be
 	 * only one stamp sequence for any unique combination of values.
+	 * 
 	 * @return the stamp sequence of this version.
-     */
+	 */
 	int getStampSequence();
 
 	/**
 	 *
 	 * @return the state of this version.
-     */
+	 */
 	State getState();
 
 	/**
 	 * Long.MIN_VALUE indicates a canceled transaction. Long.MAX_VALUE indicates an
 	 * uncommitted transaction.
+	 * 
 	 * @return the commit time of this version measured in milliseconds,
 	 * between the current time and midnight, January 1, 1970 UTC.
-     */
+	 */
 	long getTime();
 
 	/**
 	 *
 	 * @return the sequence of the concept that represents the author who committed this version.
-     */
+	 */
 	int getAuthorSequence();
 
 	/**
 	 * Modules are analogous to OSGI modules, where they represent a collection of components
 	 * sufficient to accomplish a task, when taken together with the transitive module dependencies.
+	 * 
 	 * @return the sequence of the concept that represents the module this version is part of.
-     */
+	 */
 	int getModuleSequence();
 
 	/**
 	 *
 	 * @return the sequence of the concept that represents the path on which this version is committed.
-     */
+	 */
 
 	int getPathSequence();
-
 }
