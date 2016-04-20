@@ -58,6 +58,8 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -73,6 +75,7 @@ import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
@@ -82,6 +85,38 @@ public class Frills implements DynamicSememeColumnUtility {
 
 	private static Logger log = LogManager.getLogger();
 
+	/**
+	 * @param version StampedVersion from which to generate StampCoordinate
+	 * @return StampCoordinate corresponding to StampedVersion values
+	 * 
+	 * StampPrecedence set to StampPrecedence.TIME
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version) {
+		StampPosition stampPosition = new StampPositionImpl(version.getTime(), version.getPathSequence());
+		StampCoordinate stampCoordinate = new StampCoordinateImpl(
+				StampPrecedence.TIME,
+				stampPosition,
+				ConceptSequenceSet.of(version.getModuleSequence()),
+				EnumSet.of(version.getState()));
+				
+		log.debug("Created StampCoordinate from StampedVersion: " + toString(version) + ": " + stampCoordinate);
+
+		return stampCoordinate;
+	}
+
+	/**
+	 * @param version toString for StampedVersion
+	 * @return
+	 */
+	public static String toString(StampedVersion version) {
+		return version.getClass().getName().replaceAll(".*\\.", "")
+				+ " [stamp=" + version.getStampSequence() + ", state=" + version.getState()
+				+ ", time=" + version.getTime() + ", author=" + version.getAuthorSequence() + ", module="
+				+ version.getModuleSequence() + ", path=" + version.getPathSequence() + "]";
+	}
+	
 	/**
 	 * 
 	 * {@link IdInfo}
@@ -468,6 +503,21 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		} else {
 			log.warn("Sememe Index not available - can't lookup SCTID");
+		}
+		return Optional.empty();
+	}
+
+	public static Optional<Integer> getNidForVUID(long vuID) {
+		IndexServiceBI si = LookupService.get().getService(IndexServiceBI.class, "sememe indexer");
+		if (si != null) {
+			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+			List<SearchResult> result = si.query(vuID + " ", true,
+					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MIN_VALUE);
+			if (result.size() > 0) {
+				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
+			}
+		} else {
+			log.warn("Sememe Index not available - can't lookup VUID");
 		}
 		return Optional.empty();
 	}
