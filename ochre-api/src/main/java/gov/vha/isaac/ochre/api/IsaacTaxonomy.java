@@ -300,7 +300,7 @@ public class IsaacTaxonomy {
             constantName = constantName.replace("+", "_PLUS");
             constantName = constantName.replace("/", "_AND");
 
-            out.append("\n- " + constantName + ":\n");
+            out.append("\n" + constantName + ":\n");
             out.append("    fsn: " + preferredName + "\n");
             out.append("    uuids:\n");
             for (UUID uuid : concept.getUuidList()) {
