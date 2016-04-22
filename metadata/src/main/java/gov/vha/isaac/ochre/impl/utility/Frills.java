@@ -111,10 +111,10 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @return
 	 */
 	public static String toString(StampedVersion version) {
-		return version.getClass().getName().replaceAll(".*\\.", "")
-				+ " [stamp=" + version.getStampSequence() + ", state=" + version.getState()
+		return version.getClass().getSimpleName()
+				+ " STAMP=" + version.getStampSequence() + "{state=" + version.getState()
 				+ ", time=" + version.getTime() + ", author=" + version.getAuthorSequence() + ", module="
-				+ version.getModuleSequence() + ", path=" + version.getPathSequence() + "]";
+				+ version.getModuleSequence() + ", path=" + version.getPathSequence() + "}";
 	}
 	
 	/**
