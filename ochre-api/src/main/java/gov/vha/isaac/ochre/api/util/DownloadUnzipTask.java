@@ -69,6 +69,7 @@ public class DownloadUnzipTask extends Task<File>
 		this.url_ = url;
 		this.unzip_ = unzip;
 		this.targetFolder_ = targetFolder;
+		this.failOnBadCheksum_ = failOnBadChecksum;
 		if (targetFolder_ == null)
 		{
 			targetFolder_ = File.createTempFile("ISAAC", "");
