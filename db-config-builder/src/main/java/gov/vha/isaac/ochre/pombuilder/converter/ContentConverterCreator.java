@@ -6,6 +6,12 @@ import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 public class ContentConverterCreator
 {
 	
+	public static SupportedConverterTypes[] getSupportedConversions()
+	{
+		return SupportedConverterTypes.values();
+	}
+	
+	
 	/**
 	 * Create a source conversion project which is executable via maven.
 	 * @param sourceContent - The artifact information for the content to be converted.  The artifact information must follow known naming conventions - group id should 
@@ -17,6 +23,8 @@ public class ContentConverterCreator
 	 *   - rf2-src-data-sct
 	 * Any RF2 extension files (rf2-src-data-*-ext) requires:
 	 *   - rf2-src-data-sct
+	 *   
+	 * See {@link #getSupportedConversions()} for accurate dependencies
 	 * @return
 	 * @throws Exception
 	 */
