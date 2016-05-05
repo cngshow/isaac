@@ -166,7 +166,7 @@ public class IsaacTaxonomy {
                         DynamicSememeData[] colData = LookupService.getService(DynamicSememeUtility.class).configureDynamicSememeDefinitionDataForColumn(col);
                         
                         sb = Get.sememeBuilderService()
-                                .getDynamicSememeBuilder(cb.getNid(), DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), colData);
+                                .getDynamicSememeBuilder(cb, DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getNid(), colData);
                         cb.addSememe(sb);
                      }
                  }
@@ -176,7 +176,7 @@ public class IsaacTaxonomy {
                 
                  if (data != null) {
                      sb = Get.sememeBuilderService()
-                             .getDynamicSememeBuilder(cb.getNid(), DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getNid(), data);
+                             .getDynamicSememeBuilder(cb, DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getNid(), data);
                      cb.addSememe(sb);
                  }
                  
@@ -184,9 +184,9 @@ public class IsaacTaxonomy {
                          .configureColumnIndexInfo(dsc.getDynamicSememeColumns());
                  if (indexConfig != null) {
                     sb = Get.sememeBuilderService()
-                             .getDynamicSememeBuilder(cb.getNid(), DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getNid(), 
-                                     new DynamicSememeData[] {indexConfig});
-                     cb.addSememe(sb);
+                            .getDynamicSememeBuilder(cb, DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getNid(), 
+                                new DynamicSememeData[] {indexConfig});
+                    cb.addSememe(sb);
                  }
             }
             
