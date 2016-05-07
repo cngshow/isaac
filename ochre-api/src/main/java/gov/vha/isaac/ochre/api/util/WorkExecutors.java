@@ -19,7 +19,6 @@
 package gov.vha.isaac.ochre.api.util;
 
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
