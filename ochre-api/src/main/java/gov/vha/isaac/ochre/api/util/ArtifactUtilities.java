@@ -53,6 +53,20 @@ public class ArtifactUtilities
 		}
 	}
 	
+	/**
+	 * 
+	 * @param baseMavenURL - optional - but required if you are downloading a SNAPSHOT dependency, as this method will need to download the metadata file
+	 * from the repository server in order to determine the proper version component for the SNAPSHOT.
+	 * @param mavenUsername - optional - only used for a SNAPSHOT dependency
+	 * @param mavenPassword - optional - only used for a SNAPSHOT dependency
+	 * @param groupId
+	 * @param artifactId
+	 * @param version
+	 * @param classifier - optional
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
 	public static String makeMavenRelativePath(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
 			String version, String classifier, String type) throws Exception
 	{
@@ -87,6 +101,25 @@ public class ArtifactUtilities
 		
 		return temp + "/" + artifactId + "/" + version + "/" + artifactId + "-" + versionWithoutSnapshot + snapshotVersion +
 				(StringUtils.isNotBlank(classifier) ? "-" + classifier : "") + "." + type;
+	}
+	
+	/**
+	 * 
+	 * @param baseMavenURL 
+	 * @param mavenUsername - optional - only used for a SNAPSHOT dependency
+	 * @param mavenPassword - optional - only used for a SNAPSHOT dependency
+	 * @param groupId
+	 * @param artifactId
+	 * @param version
+	 * @param classifier - optional
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public static URL makeFullURL(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
+			String version, String classifier, String type) throws Exception
+	{
+		return new URL(baseMavenURL + makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
 	}
 	
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException
