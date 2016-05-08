@@ -23,8 +23,14 @@ public class TestConversionConfiguration
 //			new SDOSourceContent[] {new SDOSourceContent("gov.vha.isaac.terminology.source.loinc", "loinc-src-data", "2.54")}, 
 //			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.1-SNAPSHOT", "Snapshot")});
 		
-		//sct
-		ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-sct", "20150731"), 
-			"3.1-SNAPSHOT", new SDOSourceContent[0], new IBDFFile[0]);
+//		//sct
+//		ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-sct", "20150731"), 
+//			"3.1-SNAPSHOT", new SDOSourceContent[0], new IBDFFile[0]);
+		
+		//sct-us-ext
+		ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "20150301"), 
+			"3.1-SNAPSHOT", 
+			new SDOSourceContent[0], 
+			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.1-SNAPSHOT", "Snapshot")});
 	}
 }

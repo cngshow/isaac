@@ -70,6 +70,8 @@ public class ContentConverterCreator
 	{
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
+		String extensionSuffix = "";
+		
 		SupportedConverterTypes conversionType = null;
 		for (SupportedConverterTypes type : SupportedConverterTypes.values())
 		{
@@ -77,6 +79,16 @@ public class ContentConverterCreator
 			{
 				conversionType = type;
 				break;
+			}
+			if (type.getArtifactId().contains("*"))
+			{
+				String[] temp = type.getArtifactId().split("\\*");
+				if (sourceContent.getArtifactId().startsWith(temp[0]) && sourceContent.getArtifactId().endsWith(temp[1]))
+				{
+					conversionType = type;
+					extensionSuffix = sourceContent.getArtifactId().substring(temp[0].length(), sourceContent.getArtifactId().length());
+					break;
+				}
 			}
 		}
 		if (conversionType == null)
@@ -183,7 +195,7 @@ public class ContentConverterCreator
 			case SCT_EXTENSION:
 				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
 				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/sct.xml"));
-				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-us-extension");  //TODO figure out how to name each extension
+				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-" + extensionSuffix);
 				pomSwaps.put("#LOADER_ARTIFACT#", "rf2-mojo");
 				converter = "rf2-mojo";
 				goal = "convert-RF2-to-ibdf";
