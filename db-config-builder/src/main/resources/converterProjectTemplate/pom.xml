@@ -57,6 +57,7 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 #FETCH_EXECUTION#
+#UNPACK_DEPENDENCIES#
 				</executions>
 			</plugin>
 			<plugin>

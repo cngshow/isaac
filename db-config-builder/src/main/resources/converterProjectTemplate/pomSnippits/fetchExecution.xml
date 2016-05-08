@@ -1,5 +1,5 @@
 					<execution>
-						<id>fetch-rf2-src</id>
+						<id>fetch-src-#ARTIFACTID#</id>
 						<phase>generate-sources</phase>
 						<goals>
 							<goal>unpack</goal>

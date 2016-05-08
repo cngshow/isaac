@@ -109,18 +109,21 @@ public class ContentConverterCreator
 		
 		for (SDOSourceContent ac : additionalSourceDependencies)
 		{
-			temp = readFile("converterProjectTemplate/pomSnippits/fetchExecutions.xml");
+			temp = readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
 			temp = temp.replace("#GROUPID#", ac.getGroupId());
 			temp = temp.replace("#ARTIFACTID#", ac.getArtifactId());
 			temp = temp.replace("#VERSION#", ac.getVersion());
 			fetches.append(temp);
 		}
 		
-		pomSwaps.put("#FETCH_EXECUTION#", temp);
+		pomSwaps.put("#FETCH_EXECUTION#", fetches.toString());
 
 		StringBuilder dependencies = new StringBuilder();
+		StringBuilder unpackArtifacts = new StringBuilder();
+		String unpackDependencies = "";
 		if (additionalIBDFDependencies.length > 0)
 		{
+			unpackDependencies = readFile("converterProjectTemplate/pomSnippits/unpackDependency.xml");
 			for (IBDFFile ibdf : additionalIBDFDependencies)
 			{
 				temp = readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
@@ -129,6 +132,8 @@ public class ContentConverterCreator
 				temp = temp.replace("#CLASSIFIER#", ibdf.getClassifier());
 				temp = temp.replace("#VERSION#", ibdf.getVersion());
 				dependencies.append(temp);
+				unpackArtifacts.append(ibdf.getArtifactId());
+				unpackArtifacts.append(",");
 			}
 			temp = readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
 			temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
@@ -136,8 +141,14 @@ public class ContentConverterCreator
 			temp = temp.replace("#CLASSIFIER#", "all");
 			temp = temp.replace("#VERSION#", "3.02");  //TODO figure out how to get the version from my pom
 			dependencies.append(temp);
+			unpackArtifacts.append("metadata");
+			unpackDependencies = unpackDependencies.replace("#UNPACK_ARTIFACTS#", unpackArtifacts.toString());
 		}
+		
 		pomSwaps.put("#IBDF_DEPENDENCY#", dependencies.toString());
+		
+		pomSwaps.put("#UNPACK_DEPENDENCIES#", unpackDependencies);
+		
 		String goal = null;
 		String converter = null;
 		
@@ -156,8 +167,8 @@ public class ContentConverterCreator
 				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/loinc.xml"));
 				pomSwaps.put("#ARTIFACTID#", "loinc-ibdf");
 				pomSwaps.put("#LOADER_ARTIFACT#", "loinc-mojo");
+				converter = "loinc-mojo";
 				goal = "convert-loinc-to-ibdf";
-				
 				break;
 			case LOINC_TECH_PREVIEW:
 				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/loinc-NOTICE-addition.txt"));
