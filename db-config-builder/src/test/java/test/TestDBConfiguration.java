@@ -3,7 +3,7 @@ package test;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
 
-public class Test
+public class TestDBConfiguration
 {
 
 	public static void main(String[] args) throws Exception

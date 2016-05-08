@@ -25,19 +25,22 @@ package gov.vha.isaac.ochre.pombuilder.converter;
  */
 public enum SupportedConverterTypes
 {
-	LOINC("loinc-src-data"),
-	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", "loinc-src-data", "rf2-src-data-sct"),
-	SCT("rf2-src-data-sct"),
-	SCT_EXTENSION("rf2-src-data-*-extension", "rf2-src-data-sct"),
-	VHAT("vhat");
+	LOINC("loinc-src-data", new String[] {}, new String[] {}),
+	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}),
+	SCT("rf2-src-data-sct", new String[] {}, new String[] {}),
+	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}),
+	VHAT("vhat-src-data", new String[] {}, new String[] {});
 	
 	private String artifactId_;
-	private String[] artifactDependencies_;
+	private String[] artifactSrcDependencies_;
+	private String[] artifactIBDFDependencies_;
 	
-	private SupportedConverterTypes(String artifactId, String ... artifactDependencies)
+	private SupportedConverterTypes(String artifactId, String[] artifactSourceDependencies, String[] artifactIBDFDependencies)
 	{
 		artifactId_ = artifactId;
-		artifactDependencies_ = artifactDependencies;
+		artifactSrcDependencies_ = artifactSourceDependencies;
+		artifactIBDFDependencies_ = artifactIBDFDependencies;
+		
 	}
 
 	public String getArtifactId()
@@ -52,6 +55,16 @@ public enum SupportedConverterTypes
 	 */
 	public String[] getArtifactDependencies()
 	{
-		return artifactDependencies_;
+		return artifactSrcDependencies_;
+	}
+	
+	/**
+	 * In order to execute a conversion of the specified type, you must also provide dependencies for each of the listed
+	 * artifact identifiers.
+	 * @return
+	 */
+	public String[] getIBDFDependencies()
+	{
+		return artifactIBDFDependencies_;
 	}
 }
