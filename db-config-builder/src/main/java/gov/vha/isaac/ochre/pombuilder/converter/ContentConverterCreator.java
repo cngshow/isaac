@@ -29,6 +29,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import gov.vha.isaac.ochre.pombuilder.RepositoryLocation;
+import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
@@ -109,7 +110,7 @@ public class ContentConverterCreator
 		pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
 		pomSwaps.put("#LOADER_VERSION#", converterVersion);
 		
-		pomSwaps.put("#SCM_URL#", "");  //TODO SCM info
+		pomSwaps.put("#SCM_URL#", "");  //TODO determine URL / tag info
 		pomSwaps.put("#SCM_TAG#", "");
 		
 		String temp = readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
@@ -151,7 +152,7 @@ public class ContentConverterCreator
 			temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
 			temp = temp.replace("#ARTIFACTID#", "metadata");
 			temp = temp.replace("#CLASSIFIER#", "all");
-			temp = temp.replace("#VERSION#", "3.02");  //TODO figure out how to get the version from my pom
+			temp = temp.replace("#VERSION#", VersionFinder.findProjectVersion());
 			dependencies.append(temp);
 			unpackArtifacts.append("metadata");
 			unpackDependencies = unpackDependencies.replace("#UNPACK_ARTIFACTS#", unpackArtifacts.toString());

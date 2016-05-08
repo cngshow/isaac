@@ -41,6 +41,7 @@ import org.apache.maven.pom._4_0.PluginExecution.Configuration.IbdfFiles;
 import org.apache.maven.pom._4_0.PluginExecution.Goals;
 import org.apache.maven.pom._4_0.Scm;
 import gov.vha.isaac.ochre.pombuilder.RepositoryLocation;
+import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 
 /**
@@ -53,7 +54,7 @@ public class DBConfigurationCreator
 {
 	private static final String parentGroupId = "gov.vha.isaac.ochre.modules";
 	private static final String parentArtifactId = "db-builder";
-	private static final String parentVersion = "3.02";  //TODO need to figure out how to get this from the pom file containing me
+	private static final String parentVersion = VersionFinder.findProjectVersion();
 	private static final String groupId = "gov.vha.isaac.db";
 	
 	/**
