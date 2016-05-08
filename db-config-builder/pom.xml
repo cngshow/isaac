@@ -13,6 +13,13 @@
 	<packaging>jar</packaging>
 	<name>OCHRE: DB Configuration Builder</name>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+		</dependency>
+	</dependencies>
+	
 	<build>
 		<plugins>
 			<plugin>

@@ -24,19 +24,21 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.maven.pom._4_0.Model;
 import org.apache.maven.pom._4_0.ObjectFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link PomHandler}
+ * 
+ * Utility code to write out a pom file from a in-memory model
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 public class PomHandler
 {
-	private static Logger log = LoggerFactory.getLogger(PomHandler.class);
+	private static final Logger LOG = LogManager.getLogger();
 
 	public static Model read(File projectFolder) throws Exception
 	{
@@ -54,7 +56,7 @@ public class PomHandler
 			}
 			catch (Exception e)
 			{
-				log.error("Error reading existing file", e);
+				LOG.error("Error reading existing file", e);
 				throw new Exception("Error reading existing pom.xml file: " + e.toString());
 			}
 		}
@@ -81,7 +83,7 @@ public class PomHandler
 
 		catch (JAXBException e)
 		{
-			log.error("Error writing", e);
+			LOG.error("Error writing", e);
 			throw new Exception("Error writing pom: " + e);
 		}
 	}

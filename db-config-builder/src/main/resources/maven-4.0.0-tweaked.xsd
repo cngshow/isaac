@@ -1224,6 +1224,13 @@
             <xs:element name="outputDirectory" minOccurs="0" type="xs:string"/>
             <xs:element name="dataStoreLocation" minOccurs="0" type="xs:string"/>
             <xs:element name="quasiMojoName" minOccurs="0" type="xs:string"/>
+            <xs:element name="ibdfFiles" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="ibdfFile" minOccurs="0" maxOccurs="unbounded" type="xs:string"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
             <xs:element name="descriptors" minOccurs="0">
               <xs:complexType>
                 <xs:sequence>

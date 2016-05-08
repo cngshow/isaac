@@ -1,7 +1,29 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.vha.isaac.ochre.pombuilder.dbbuilder;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import org.apache.maven.pom._4_0.Build;
 import org.apache.maven.pom._4_0.Build.Plugins;
 import org.apache.maven.pom._4_0.Dependency;
@@ -15,11 +37,18 @@ import org.apache.maven.pom._4_0.Plugin;
 import org.apache.maven.pom._4_0.Plugin.Executions;
 import org.apache.maven.pom._4_0.PluginExecution;
 import org.apache.maven.pom._4_0.PluginExecution.Configuration;
+import org.apache.maven.pom._4_0.PluginExecution.Configuration.IbdfFiles;
 import org.apache.maven.pom._4_0.PluginExecution.Goals;
+import org.apache.maven.pom._4_0.Scm;
 import gov.vha.isaac.ochre.pombuilder.RepositoryLocation;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
-import org.apache.maven.pom._4_0.Scm;
 
+/**
+ * 
+ * {@link DBConfigurationCreator}
+ * Create a new maven pom project which when executed, will input a set if IBDF files, and build them into a runnable database for ISAAC systems.
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ */
 public class DBConfigurationCreator
 {
 	private static final String parentGroupId = "gov.vha.isaac.ochre.modules";
@@ -41,7 +70,6 @@ public class DBConfigurationCreator
 	public static RepositoryLocation createDBConfiguration(String name, String version, String description,  String resultClassifier, boolean classify, 
 			IBDFFile[] ibdfFiles, String metadataVersion) throws Exception
 	{
-		
 		Model model = new Model();
 		
 		model.setModelVersion("4.0.0");
@@ -106,7 +134,7 @@ public class DBConfigurationCreator
 			dependency.setGroupId(ibdf.getGroupId());
 			dependency.setArtifactId(ibdf.getArtifactId());
 			dependency.setVersion(ibdf.getVersion());
-			if (ibdf.getClassifier() != null && ibdf.getClassifier().length() > 0)
+			if (ibdf.hasClassifier())
 			{
 				dependency.setClassifier(ibdf.getClassifier());
 			}
@@ -142,7 +170,7 @@ public class DBConfigurationCreator
 			sb.append(ibdf.getArtifactId());
 			sb.append(",");
 		}
-		sb.setLength(sb.length() - 1);
+		sb.append("metadata");
 		configuration.setIncludeArtifactIds(sb.toString());
 		configuration.setOutputDirectory("${project.build.directory}/data");
 		
@@ -177,7 +205,13 @@ public class DBConfigurationCreator
 		goals.getGoal().add("load-termstore");
 		pe.setGoals(goals);
 		configuration = new Configuration();
-		//TODO figure out ibdf files
+		IbdfFiles files = new IbdfFiles();
+		for (IBDFFile ibdf : ibdfFiles)
+		{
+			files.getIbdfFile().add("${project.build.directory}/data/" + ibdf.getArtifactId() + (ibdf.hasClassifier() ? "-" + ibdf.getClassifier() : "") + ".ibdf");
+		}
+		files.getIbdfFile().add("${project.build.directory}/data/IsaacMetadataAuxiliary.ibdf");
+		configuration.setIbdfFiles(files);
 		pe.setConfiguration(configuration);
 		executions.getExecution().add(pe);
 		
@@ -220,11 +254,33 @@ public class DBConfigurationCreator
 		build.setPlugins(plugins);
 		model.setBuild(build);
 
-		Path p = Files.createTempDirectory("db-builder");
-		PomHandler.writeFile(model, p.toFile());
-		//TODO copy the other template files from resources
+		File f = Files.createTempDirectory("db-builder").toFile();
+		PomHandler.writeFile(model, f);
+
+		writeFile("dbProjectTemplate", "DOTgitattributes", f);
+		writeFile("dbProjectTemplate", "DOTgitignore", f);
+		writeFile("dbProjectTemplate", "LICENSE.txt", f);
+		writeFile("dbProjectTemplate", "NOTICE.txt", f);
+		writeFile("dbProjectTemplate", "src/assembly/cradle.xml", f);
+		writeFile("dbProjectTemplate", "src/assembly/lucene.xml", f);
+		writeFile("dbProjectTemplate", "src/assembly/MANIFEST.MF", f);
 		
 		//TODO attach to GIT / push
 		return new RepositoryLocation("a", "b");
+	}
+	
+	private static void writeFile(String fromFolder, String relativePath, File toFolder) throws IOException
+	{
+		InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fromFolder + "/" + relativePath);
+		byte[] buffer = new byte[is.available()];
+		is.read(buffer);
+
+		relativePath = relativePath.replaceFirst("^DOT", ".");
+		
+		File targetFile = new File(toFolder, relativePath);
+		targetFile.getParentFile().mkdirs();
+		OutputStream outStream = new FileOutputStream(targetFile);
+		outStream.write(buffer);
+		outStream.close();
 	}
 }
