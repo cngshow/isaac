@@ -204,7 +204,7 @@ public class ContentConverterCreator
 		switch(conversionType)
 		{
 			case SCT: case SCT_EXTENSION:
-				classifiers = new String[] {"Full", "Snapshot", "Delta"};
+				classifiers = new String[] {"Snapshot", "Delta", "Full"};
 				break;
 			default :
 				classifiers = new String[] {""};
