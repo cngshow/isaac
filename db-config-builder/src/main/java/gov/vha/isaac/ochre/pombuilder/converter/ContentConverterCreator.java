@@ -30,9 +30,11 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
+import gov.vha.isaac.ochre.pombuilder.artifacts.Artifact;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
+import javafx.util.Pair;
 
 /**
  * 
@@ -47,9 +49,68 @@ import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
 public class ContentConverterCreator
 {
 	
+	/**
+	 * Return information about all of the supported conversion types, including all of the information types
+	 * that must be supplied with each converter.
+	 * @return
+	 */
 	public static SupportedConverterTypes[] getSupportedConversions()
 	{
 		return SupportedConverterTypes.values();
+	}
+	
+	/**
+	 * Will return an Artifact with only the groupID and artifactID populated - this represents the 
+	 * artifact that is capable of handling the conversion of the specified source content.
+	 * @param artifactId - the artifactid of the source content that the user desires to converter.
+	 * @return - the group and artifact id of the converter tool that is capable of handling that content.
+	 */
+	public static Artifact getConverterForSourceArtifact(String artifactId)
+	{
+		switch(getConverterType(artifactId).getKey())
+		{
+			case SCT:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
+			case LOINC:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
+			case LOINC_TECH_PREVIEW:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
+			case SCT_EXTENSION:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
+			case VHAT:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
+			default :
+				throw new RuntimeException("Oops");
+		}
+	}
+	
+	private static Pair<SupportedConverterTypes, String> getConverterType(String artifactId)
+	{
+		SupportedConverterTypes conversionType = null;
+		String extensionSuffix = "";
+		for (SupportedConverterTypes type : SupportedConverterTypes.values())
+		{
+			if (type.getArtifactId().equals(artifactId))
+			{
+				conversionType = type;
+				break;
+			}
+			if (type.getArtifactId().contains("*"))
+			{
+				String[] temp = type.getArtifactId().split("\\*");
+				if (artifactId.startsWith(temp[0]) && artifactId.endsWith(temp[1]))
+				{
+					conversionType = type;
+					extensionSuffix = artifactId.substring(temp[0].length(), artifactId.length());
+					break;
+				}
+			}
+		}
+		if (conversionType == null)
+		{
+			throw new RuntimeException("Unuspported source content artifact type");
+		}
+		return new Pair<>(conversionType, extensionSuffix);
 	}
 	
 	
@@ -74,31 +135,9 @@ public class ContentConverterCreator
 	{
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
-		String extensionSuffix = "";
-		
-		SupportedConverterTypes conversionType = null;
-		for (SupportedConverterTypes type : SupportedConverterTypes.values())
-		{
-			if (type.getArtifactId().equals(sourceContent.getArtifactId()))
-			{
-				conversionType = type;
-				break;
-			}
-			if (type.getArtifactId().contains("*"))
-			{
-				String[] temp = type.getArtifactId().split("\\*");
-				if (sourceContent.getArtifactId().startsWith(temp[0]) && sourceContent.getArtifactId().endsWith(temp[1]))
-				{
-					conversionType = type;
-					extensionSuffix = sourceContent.getArtifactId().substring(temp[0].length(), sourceContent.getArtifactId().length());
-					break;
-				}
-			}
-		}
-		if (conversionType == null)
-		{
-			throw new RuntimeException("Unuspported source content artifact type");
-		}
+		Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
+		SupportedConverterTypes conversionType = artifactInfo.getKey();
+		String extensionSuffix = artifactInfo.getValue();
 		
 		writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
 		writeFile("converterProjectTemplate", "LICENSE.txt", f, new HashMap<>(), "");
