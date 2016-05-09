@@ -66,10 +66,11 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.util.StringUtils;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 import org.glassfish.hk2.api.PerLookup;
@@ -104,11 +105,14 @@ public class SyncServiceGIT implements SyncFiles
 	
 	private File localFolder = null;
 	private String readMeFileContent_ = DEFAULT_README_CONTENT;
+	private String gitIgnoreText_ = "lastUser.txt\r\n";
 
-	private SyncServiceGIT()
+	/**
+	 * If you are in an HK2 environment, you would be better served getting this from HK2 (by asking for it by interface and name)
+	 * but in other enviornments, when HK2 may not be up, you may construct it directly.
+	 */
+	public SyncServiceGIT()
 	{
-		//Constructor for HK2
-		
 		synchronized (jschConfigured)
 		{
 			if (jschConfigured.getCount() > 0)
@@ -186,7 +190,15 @@ public class SyncServiceGIT implements SyncFiles
 	public void setReadmeFileContent(String readmeFileContent)
 	{
 		readMeFileContent_ = readmeFileContent;
-		
+	}
+
+	/**
+	 * Set the contents of the gitIgnore file
+	 * @param gitIgnoreContent
+	 */
+	public void setGitIgnoreContent(String gitIgnoreContent)
+	{
+		gitIgnoreText_ = gitIgnoreContent;
 	}
 
 	/**
@@ -278,8 +290,8 @@ public class SyncServiceGIT implements SyncFiles
 				{
 					log.debug("Adding and committing {}", newFile);
 					git.add().addFilepattern(newFile).call();
-					git.commit().setMessage("Adding readme file").setAuthor(username, "42").call();
 				}
+				git.commit().setMessage("Adding initial files").setAuthor(username, "42").call();
 
 				log.debug("Pushing repository");
 				for (PushResult pr : git.push().setCredentialsProvider(cp).call())
@@ -909,17 +921,17 @@ public class SyncServiceGIT implements SyncFiles
 		if (!ignore.isFile())
 		{
 			log.debug("Creating {}", ignore.getAbsolutePath());
-			Files.write(ignore.toPath(), new String("lastUser.txt\r\n").getBytes(), StandardOpenOption.CREATE_NEW);
+			Files.write(ignore.toPath(), new String(gitIgnoreText_).getBytes(), StandardOpenOption.CREATE_NEW);
 			result.add(ignore.getName());
 		}
 		else
 		{
 			log.debug(".gitignore already exists");
 			
-			if (!new String(Files.readAllBytes(ignore.toPath())).contains("lastUser.txt"))
+			if (!new String(Files.readAllBytes(ignore.toPath())).contains(gitIgnoreText_))
 			{
 				log.debug("Appending onto existing .gitignore file");
-				Files.write(ignore.toPath(), new String("\r\nlastUser.txt\r\n").getBytes(), StandardOpenOption.APPEND);
+				Files.write(ignore.toPath(), new String("\r\n" + gitIgnoreText_).getBytes(), StandardOpenOption.APPEND);
 				result.add(ignore.getName());
 			}
 		}
@@ -991,5 +1003,76 @@ public class SyncServiceGIT implements SyncFiles
 		}
 	}
 	
+	/**
+	 * Create a new branch, and switch to it locally.  The new branch will contain no files.
+	 * @param branchName
+	 * @throws IOException 
+	 */
+	public void branch(String branchName) throws IOException 
+	{
+		try
+		{
+			Git git = getGit();
+			git.checkout().setCreateBranch(true).setName(branchName).setOrphan(true).call();
+		}
+		catch (GitAPIException e)
+		{
+			log.error("Unexpected", e);
+			throw new IOException("Internal error", e);
+		}
+	}
 	
+	/**
+	 * Create a new tag at the current point
+	 * @param tagName
+	 * @throws IOException 
+	 * @throws IllegalArgumentException 
+	 */
+	public void commitAndTag(String commitMessage, String tagName) throws IllegalArgumentException, IOException
+	{
+		try
+		{
+			Git git = getGit();
+			git.commit().setAll(true).setMessage(commitMessage).call();
+			git.tag().setName(tagName).call();
+		}
+		catch (GitAPIException e)
+		{
+			log.error("Unexpected", e);
+			throw new IOException("Internal error", e);
+		}
+	}
+	
+	public void pushTag(final String tagName, String username, String password) throws IllegalArgumentException, IOException 
+	{
+		try
+		{
+			Git git = getGit();
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+	
+			Iterable<PushResult> pr = git.push().setRefSpecs(new RefSpec("refs/tags/" + tagName)).setCredentialsProvider(cp).call();
+			final StringBuilder failures = new StringBuilder();
+			pr.forEach(new Consumer<PushResult>()
+			{
+				@Override
+				public void accept(PushResult t)
+				{
+					log.debug("Push Result Messages: " + t.getMessages());
+					if (t.getRemoteUpdate("refs/tags/" + tagName).getStatus() != org.eclipse.jgit.transport.RemoteRefUpdate.Status.OK)
+					{
+						failures.append("Push Failed: " + t.getRemoteUpdate("refs/tags/" + tagName).getStatus().name());
+					}
+				}
+			});
+			if (failures.length() > 0)
+			{
+				throw new IOException(failures.toString());
+			}
+		}
+		catch (GitAPIException e)
+		{
+			log.error("Unexpected", e);
+			throw new IOException("Internal error", e);
+		}
+	}
 }
