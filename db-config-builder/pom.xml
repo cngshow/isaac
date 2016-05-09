@@ -18,6 +18,11 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>sync-git</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
 	</dependencies>
 	
 	<build>

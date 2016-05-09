@@ -658,8 +658,10 @@
         <module>stamp-provider</module>
         <module>import-utils</module>
         <module>db-builder</module>
+        <module>db-config-builder</module>
         <module>ochre-mojo-log-config</module>
         <module>ochre-mapping</module>
+        <module>sync-git</module>
     </modules>
     
     <profiles>
