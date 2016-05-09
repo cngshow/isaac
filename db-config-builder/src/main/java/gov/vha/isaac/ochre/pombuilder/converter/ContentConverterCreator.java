@@ -28,7 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import gov.vha.isaac.ochre.pombuilder.RepositoryLocation;
+import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
@@ -63,11 +63,14 @@ public class ContentConverterCreator
 	 * for accurate dependencies for any given conversion type.
 	 * @param additionalIBDFDependencies - Some converters require additional data files to satisfy dependencies. See {@link #getSupportedConversions()} 
 	 * for accurate dependencies for any given conversion type.
-	 * @return
+	 * @param gitRepositoryURL - The URL to publish this built project to
+	 * @param gitUsername - The username to utilize to publish this project
+	 * @param gitPassword - the password to utilize to publish this project
+	 * @return the tag created in the repository that carries the created project
 	 * @throws Exception
 	 */
-	public static RepositoryLocation createContentConverter(SDOSourceContent sourceContent, String converterVersion, SDOSourceContent[] additionalSourceDependencies, 
-		IBDFFile[] additionalIBDFDependencies) throws Exception
+	public static String createContentConverter(SDOSourceContent sourceContent, String converterVersion, SDOSourceContent[] additionalSourceDependencies, 
+		IBDFFile[] additionalIBDFDependencies, String gitRepositoryURL, String gitUsername, String gitPassword) throws Exception
 	{
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
@@ -110,8 +113,7 @@ public class ContentConverterCreator
 		pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
 		pomSwaps.put("#LOADER_VERSION#", converterVersion);
 		
-		pomSwaps.put("#SCM_URL#", "");  //TODO determine URL / tag info
-		pomSwaps.put("#SCM_TAG#", "");
+		pomSwaps.put("#SCM_URL#", gitRepositoryURL);
 		
 		String temp = readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
 		temp = temp.replace("#GROUPID#", sourceContent.getGroupId());
@@ -250,11 +252,14 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#PROFILE#", profiles.toString());
 		
+		String tag = pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+		pomSwaps.put("#SCM_TAG#", tag);
+		
 		writeFile("converterProjectTemplate", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
 		writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
-
-		//TODO attach to GIT / push
-		return new RepositoryLocation("a", "b");
+		
+		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
+		return tag;
 	}
 	
 	private static String readFile(String fileName) throws IOException

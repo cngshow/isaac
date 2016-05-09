@@ -40,7 +40,7 @@ import org.apache.maven.pom._4_0.PluginExecution.Configuration;
 import org.apache.maven.pom._4_0.PluginExecution.Configuration.IbdfFiles;
 import org.apache.maven.pom._4_0.PluginExecution.Goals;
 import org.apache.maven.pom._4_0.Scm;
-import gov.vha.isaac.ochre.pombuilder.RepositoryLocation;
+import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 
@@ -66,10 +66,14 @@ public class DBConfigurationCreator
 	 * @param classify - True to classify the content with the snorocket classifer as part of the database build, false to skip classification.
 	 * @param ibdfFiles - The set of IBDF files to be included in the DB.  Do not include the metadata IBDF file from ISAAC, it is always included.
 	 * @param metadataVersion - The version of the metadata content to include in the DB
+	 * @param gitRepositoryURL - The URL to publish this built project to
+	 * @param gitUsername - The username to utilize to publish this project
+	 * @param getPassword - the password to utilize to publish this project
+	 * @return the tag created in the repository that carries the created project
 	 * @throws Exception 
 	 */
-	public static RepositoryLocation createDBConfiguration(String name, String version, String description,  String resultClassifier, boolean classify, 
-			IBDFFile[] ibdfFiles, String metadataVersion) throws Exception
+	public static String createDBConfiguration(String name, String version, String description,  String resultClassifier, boolean classify, 
+			IBDFFile[] ibdfFiles, String metadataVersion, String gitRepositoryURL, String gitUsername, String gitPassword) throws Exception
 	{
 		Model model = new Model();
 		
@@ -90,8 +94,8 @@ public class DBConfigurationCreator
 		model.setDescription(description);
 
 		Scm scm = new Scm();
-		scm.setUrl("url");//TODO determine URL / Tag
-		scm.setTag("tag");
+		scm.setUrl(gitRepositoryURL);
+		scm.setTag(groupId + "/" + name + "/" + version);
 		model.setScm(scm);
 		
 		Properties properties = new Properties();
@@ -266,8 +270,8 @@ public class DBConfigurationCreator
 		writeFile("dbProjectTemplate", "src/assembly/lucene.xml", f);
 		writeFile("dbProjectTemplate", "src/assembly/MANIFEST.MF", f);
 		
-		//TODO attach to GIT / push
-		return new RepositoryLocation("a", "b");
+		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, scm.getTag());
+		return scm.getTag();
 	}
 	
 	private static void writeFile(String fromFolder, String relativePath, File toFolder) throws IOException

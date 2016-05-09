@@ -31,6 +31,7 @@ public class TestConversionConfiguration
 		ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "20150301"), 
 			"3.1-SNAPSHOT", 
 			new SDOSourceContent[0], 
-			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.1-SNAPSHOT", "Snapshot")});
+			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.1-SNAPSHOT", "Snapshot")},
+				"https://github.com/darmbrust/test.git", "", "");
 	}
 }
