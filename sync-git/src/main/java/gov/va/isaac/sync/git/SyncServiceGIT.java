@@ -488,7 +488,7 @@ public class SyncServiceGIT implements SyncFiles
 		}
 		catch (TransportException te)
 		{
-			if (te.getMessage().contains("Auth fail"))
+			if (te.getMessage().contains("Auth fail") || te.getMessage().contains("not authorized"))
 			{
 				log.info("Auth fail", te);
 				throw new AuthenticationException("Auth fail");
@@ -1043,7 +1043,7 @@ public class SyncServiceGIT implements SyncFiles
 		}
 	}
 	
-	public void pushTag(final String tagName, String username, String password) throws IllegalArgumentException, IOException 
+	public void pushTag(final String tagName, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException 
 	{
 		try
 		{
@@ -1071,8 +1071,16 @@ public class SyncServiceGIT implements SyncFiles
 		}
 		catch (GitAPIException e)
 		{
-			log.error("Unexpected", e);
-			throw new IOException("Internal error", e);
+			if (e.getMessage().contains("Auth fail") || e.getMessage().contains("not authorized"))
+			{
+				log.info("Auth fail", e);
+				throw new AuthenticationException("Auth fail");
+			}
+			else
+			{
+				log.error("Unexpected", e);
+				throw new IOException("Internal error", e);
+			}
 		}
 	}
 }
