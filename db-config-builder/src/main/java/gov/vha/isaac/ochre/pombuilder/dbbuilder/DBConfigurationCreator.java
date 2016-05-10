@@ -141,7 +141,7 @@ public class DBConfigurationCreator
 			dependency.setVersion(ibdf.getVersion());
 			if (ibdf.hasClassifier())
 			{
-				dependency.setClassifier(ibdf.getClassifier());
+				dependency.setClassifier(ibdf.hasClassifier() ? ibdf.getClassifier() : "");
 			}
 			dependency.setType("ibdf.zip");
 			dependency.setOptional(true);

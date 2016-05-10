@@ -183,7 +183,7 @@ public class ContentConverterCreator
 				temp = readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
 				temp = temp.replace("#GROUPID#", ibdf.getGroupId());
 				temp = temp.replace("#ARTIFACTID#", ibdf.getArtifactId());
-				temp = temp.replace("#CLASSIFIER#", ibdf.getClassifier());
+				temp = temp.replace("#CLASSIFIER#", (ibdf.hasClassifier() ? ibdf.getClassifier() : ""));
 				temp = temp.replace("#VERSION#", ibdf.getVersion());
 				dependencies.append(temp);
 				unpackArtifacts.append(ibdf.getArtifactId());
