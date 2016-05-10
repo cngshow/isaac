@@ -13,6 +13,7 @@
 	<properties>
 		<sourceData.version>#SOURCE_DATA_VERSION#</sourceData.version>
 		<loader.version>#LOADER_VERSION#</loader.version>
+		#EXTRA_PROPERTIES#
 	</properties>
 
 	<scm>

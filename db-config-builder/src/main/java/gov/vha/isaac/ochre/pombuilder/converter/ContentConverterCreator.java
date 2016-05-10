@@ -139,6 +139,8 @@ public class ContentConverterCreator
 		SupportedConverterTypes conversionType = artifactInfo.getKey();
 		String extensionSuffix = artifactInfo.getValue();
 		
+		StringBuilder extraProperties = new StringBuilder();
+		
 		writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
 		writeFile("converterProjectTemplate", "LICENSE.txt", f, new HashMap<>(), "");
 		
@@ -168,6 +170,7 @@ public class ContentConverterCreator
 			temp = temp.replace("#ARTIFACTID#", ac.getArtifactId());
 			temp = temp.replace("#VERSION#", ac.getVersion());
 			fetches.append(temp);
+			extraProperties.append("<" + ac.getArtifactId() + ".version>" + ac.getVersion() + "</" + ac.getArtifactId() + ".version>\n");
 		}
 		
 		pomSwaps.put("#FETCH_EXECUTION#", fetches.toString());
@@ -293,6 +296,11 @@ public class ContentConverterCreator
 		
 		String tag = pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
 		pomSwaps.put("#SCM_TAG#", tag);
+		if (extraProperties.length() > 0)
+		{
+			extraProperties.setLength(extraProperties.length() - 1);
+		}
+		pomSwaps.put("#EXTRA_PROPERTIES#", extraProperties.toString());
 		
 		writeFile("converterProjectTemplate", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
 		writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
