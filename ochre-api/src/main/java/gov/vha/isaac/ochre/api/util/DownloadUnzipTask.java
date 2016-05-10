@@ -134,6 +134,12 @@ public class DownloadUnzipTask extends Task<File>
 			}
 		}
 		
+		if (cancel_)
+		{
+			log.debug("Download cancelled");
+			throw new Exception("Cancelled!");
+		}
+		
 		if (unzip_)
 		{
 			updateTitle("Unzipping");
@@ -147,7 +153,8 @@ public class DownloadUnzipTask extends Task<File>
 					if (cancel_)
 					{
 						zipFile.getProgressMonitor().cancelAllTasks();
-						break;
+						log.debug("Download cancelled");
+						throw new Exception("Cancelled!");
 					}
 					updateProgress(zipFile.getProgressMonitor().getPercentDone(), 100);
 					updateMessage("Unzipping " + dataFile.getName() + " at " + zipFile.getProgressMonitor().getPercentDone() + "%");

@@ -173,15 +173,16 @@ public class EConceptUtility
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
 	 * @param outputDirectory - The path to write the output files to
-	 * @param outputFileNameWithoutExtension - The name to use for the final ibdf file
+	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
+	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file
 	 * @param outputGson - true to dump out the data in gson format for debug
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @throws Exception
 	 */
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
-			String outputFileNameWithoutExtension, boolean outputGson, long defaultTime) throws Exception
+			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
-		this(moduleToCreate, preExistingModule, outputDirectory, outputFileNameWithoutExtension, outputGson, defaultTime, null);
+		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null);
 	}
 
 	/**
@@ -189,15 +190,15 @@ public class EConceptUtility
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
 	 * @param outputDirectory - The path to write the output files to
-	 * @param outputFileNameWithoutExtension - The name to use for the final ibdf file
-	 * @param outputGson - true to dump out the data in gson format for debug
+	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
+	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 * @param outputGson - true to dump out the data in gson format for debug
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @param sememeTypesToSkip - if ibdfPreLoadFiles are provided, this list of types can be specified as the types to ignore in the preload files
 	 * @param ibdfPreLoadFiles (optional) load these ibdf files into the isaac DB after starting (required for some conversions like LOINC)
 	 * @throws Exception
 	 */
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
-			String outputFileNameWithoutExtension, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
+			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
 			File ... ibdfPreLoadFiles) throws Exception
 	{
 		UuidIntMapMap.NID_TO_UUID_CACHE_SIZE = 5000000;
@@ -266,9 +267,11 @@ public class EConceptUtility
 		//Just use the module as the namespace
 		ConverterUUID.configureNamespace(moduleUUID);
 		
+		String outputName = outputArtifactId + (StringUtils.isBlank(outputArtifactClassifier) ? "" : "-" + outputArtifactClassifier);
+		
 		writer_ = new MultipleDataWriterService(
-				outputGson ? Optional.of(new File(outputDirectory, outputFileNameWithoutExtension + ".gson")) : Optional.empty(),
-						Optional.of(new File(outputDirectory, outputFileNameWithoutExtension + ".ibdf").toPath()));
+				outputGson ? Optional.of(new File(outputDirectory, outputName + ".gson")) : Optional.empty(),
+						Optional.of(new File(outputDirectory, outputName + ".ibdf").toPath()));
 		
 		if (moduleToCreate.isPresent())
 		{
