@@ -119,7 +119,8 @@ public class ArtifactUtilities
 	public static URL makeFullURL(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
 			String version, String classifier, String type) throws Exception
 	{
-		return new URL(baseMavenURL + makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
+		return new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/")
+			+ makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
 	}
 	
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException
