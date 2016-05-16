@@ -191,7 +191,8 @@ public class EConceptUtility
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
 	 * @param outputDirectory - The path to write the output files to
 	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
-	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 * @param outputGson - true to dump out the data in gson format for debug
+	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 
+	 * @param outputGson - true to dump out the data in gson format for debug
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @param sememeTypesToSkip - if ibdfPreLoadFiles are provided, this list of types can be specified as the types to ignore in the preload files
 	 * @param ibdfPreLoadFiles (optional) load these ibdf files into the isaac DB after starting (required for some conversions like LOINC)
@@ -485,7 +486,7 @@ public class EConceptUtility
 			BPT_Descriptions descPropertyType = (BPT_Descriptions) vpp.getProperty().getPropertyType();
 			
 			result.add(addDescription(concept, vpp.getUUID(), vpp.getValue(), descriptionType, preferred, null, null, null, null, vpp.getProperty().getUUID(), 
-					descPropertyType.getPropertyTypeReferenceSetUUID(), (vpp.isDisabled() ? State.INACTIVE : State.ACTIVE), null));
+					descPropertyType.getPropertyTypeReferenceSetUUID(), (vpp.isDisabled() ? State.INACTIVE : State.ACTIVE), vpp.getTime()));
 		}
 		
 		return result;
@@ -498,6 +499,16 @@ public class EConceptUtility
 			boolean preferred, UUID sourceDescriptionTypeUUID, UUID sourceDescriptionRefsetUUID, State status)
 	{
 		return addDescription(concept, null, descriptionValue, wbDescriptionType, preferred, null, null, null, null, sourceDescriptionTypeUUID, 
+				sourceDescriptionRefsetUUID, status, null);
+	}
+	
+	/**
+	 * Add a description to the concept.
+	 */
+	public SememeChronology<DescriptionSememe<?>> addDescription(ComponentReference concept, UUID descriptionPrimordialUUID, String descriptionValue, 
+		DescriptionType wbDescriptionType, boolean preferred, UUID sourceDescriptionTypeUUID, UUID sourceDescriptionRefsetUUID, State status)
+	{
+		return addDescription(concept, descriptionPrimordialUUID, descriptionValue, wbDescriptionType, preferred, null, null, null, null, sourceDescriptionTypeUUID, 
 				sourceDescriptionRefsetUUID, status, null);
 	}
 	
@@ -535,7 +546,7 @@ public class EConceptUtility
 		}
 		if (languageCode == null)
 		{
-			languageCode =MetaData.ENGLISH_LANGUAGE.getPrimordialUuid();
+			languageCode = MetaData.ENGLISH_LANGUAGE.getPrimordialUuid();
 		}
 		if (descriptionPrimordialUUID == null)
 		{
@@ -647,6 +658,16 @@ public class EConceptUtility
 	public SememeChronology<DynamicSememe<?>> addStringAnnotation(ComponentReference referencedComponent, String annotationValue, UUID refsetUuid, State status)
 	{
 		return addAnnotation(referencedComponent, null, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, refsetUuid, status, null, null);
+	}
+	
+	/**
+	 * uses the concept time.
+	 */
+	public SememeChronology<DynamicSememe<?>> addStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
+		UUID refsetUuid, State status)
+	{
+		return addAnnotation(referencedComponent, uuidForCreatedAnnotation, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, 
+			refsetUuid, status, null, null);
 	}
 	
 	public SememeChronology<DynamicSememe<?>> addRefsetMembership(ComponentReference referencedComponent, UUID refexDynamicTypeUuid, State status, Long time)
@@ -1272,7 +1293,13 @@ public class EConceptUtility
 		}
 		// See {@link DynamicSememeUsageDescription} class for more details on this format.
 		//Add the special synonym to establish this as an assemblage concept
-		SememeChronology<DescriptionSememe<?>> desc = addDescription(concept, refexDescription, DescriptionType.DEFINITION, true, null, null, State.ACTIVE);
+		
+		//Need a custom UUID, otherwise duplicates are likely
+		UUID temp = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), refexDescription, 
+			DescriptionType.DEFINITION.name(),  MetaData.US_ENGLISH_DIALECT.getPrimordialUuid().toString(), MetaData.ENGLISH_LANGUAGE.getPrimordialUuid().toString(), 
+			new Boolean("true").toString(), "DynamicSememeMarker");
+		
+		SememeChronology<DescriptionSememe<?>> desc = addDescription(concept, temp, refexDescription, DescriptionType.DEFINITION, true, null, null, State.ACTIVE);
 		
 		//Annotate the description as the 'special' type that means this concept is suitable for use as an assemblage concept
 		addAnnotation(ComponentReference.fromChronology(desc), null, (DynamicSememeData)null, 
