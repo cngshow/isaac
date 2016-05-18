@@ -42,6 +42,7 @@ import gov.vha.isaac.ochre.api.tree.Tree;
 import gov.vha.isaac.ochre.api.tree.TreeNodeVisitData;
 import gov.vha.isaac.ochre.api.tree.hashtree.HashTreeBuilder;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.model.logic.IsomorphicResultsBottomUp;
 import gov.vha.isaac.ochre.model.logic.node.AndNode;
 import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
@@ -60,6 +61,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -103,6 +105,8 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
+    
+    private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
@@ -175,6 +179,16 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public Tree getTaxonomyTree(TaxonomyCoordinate tc) {
+    	//TODO invalidate this cache when a commit, or some other action happens that would make it invalid.
+    	//TODO determine if the returned tree is thread safe for multiple accesses in parallel, if not, 
+    	//may need a pool of these.
+    	Tree temp = treeCache.get(tc.hashCode());
+    	{
+    		if (temp != null)
+    		{
+    			return temp;
+    		}
+    	}
         long stamp = stampedLock.tryOptimisticRead();
         IntStream conceptSequenceStream = Get.identifierService().getParallelConceptSequenceStream();
         GraphCollector collector = new GraphCollector(originDestinationTaxonomyRecordMap, tc);
@@ -183,7 +197,9 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                 collector,
                 collector);
         if (stampedLock.validate(stamp)) {
-            return graphBuilder.getSimpleDirectedGraphGraph();
+            temp = graphBuilder.getSimpleDirectedGraphGraph();
+            treeCache.put(tc.hashCode(), temp);
+            return temp;
         }
         stamp = stampedLock.readLock();
         try {
@@ -194,7 +210,9 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                     collector,
                     collector);
 
-            return graphBuilder.getSimpleDirectedGraphGraph();
+            temp = graphBuilder.getSimpleDirectedGraphGraph();
+            treeCache.put(tc.hashCode(), temp);
+            return temp;
 
         } finally {
             stampedLock.unlock(stamp);
