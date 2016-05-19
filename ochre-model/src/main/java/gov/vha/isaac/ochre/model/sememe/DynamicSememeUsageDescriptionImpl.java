@@ -24,13 +24,12 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.commons.lang3.StringUtils;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -64,8 +63,8 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
 
     protected static final Logger logger = Logger.getLogger(DynamicSememeUsageDescription.class.getName());
 
-    private static LRUDynamicSememeDescriptorCache<Integer, DynamicSememeUsageDescriptionImpl> cache_
-            = new LRUDynamicSememeDescriptorCache<Integer, DynamicSememeUsageDescriptionImpl>(25);
+    private static LruCache<Integer, DynamicSememeUsageDescriptionImpl> cache_
+            = new LruCache<Integer, DynamicSememeUsageDescriptionImpl>(25);
 
     /**
      *
