@@ -34,12 +34,12 @@ public class SerializedAtomicReferenceArray extends AtomicReferenceArray<byte[]>
     public String toString() {
         int iMax = length() - 1;
         if (iMax == -1) {
-            return "≤≥";
+            return "Serialized<Begin and End>";
         }
 
         StringBuilder b = new StringBuilder();
         for (int i = 0;; i++) {
-            b.append('≤');
+            b.append("<Serialized Begin>");
             int sequence = segment * length() + i;
             b.append(sequence);
             b.append(": ");
@@ -54,9 +54,9 @@ public class SerializedAtomicReferenceArray extends AtomicReferenceArray<byte[]>
                 b.append("null");
             }
             if (i == iMax) {
-                return b.append('≥').toString();
+                return b.append(" <Serialized End>").toString();
             }
-            b.append('≥').append(' ');
+            b.append(" <Serialized End>").append(' ');
         }
     }
 
