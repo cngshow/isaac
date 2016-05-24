@@ -57,6 +57,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
@@ -256,6 +257,57 @@ public class Frills implements DynamicSememeColumnUtility {
 		return rootNode.getChildren()[0].getNodeSemantic() == NodeSemantic.SUFFICIENT_SET;
 	}
 
+	   /**
+    *
+    * @param conceptId either a concept nid or sequence.
+    * @param logicCoordinate LogicCoordinate.
+    * @return the stated definition chronology for the specified concept
+    * according to the default logic coordinate.
+    */
+   public static Optional<SememeChronology<? extends SememeVersion<?>>> getStatedDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
+       conceptId = Get.identifierService().getConceptNid(conceptId);
+       return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getStatedAssemblageSequence()).findAny();
+   }
+
+   /**
+    *
+    * @param conceptId either a concept nid or sequence.
+    * @param logicCoordinate LogicCoordinate.
+    * @return the inferred definition chronology for the specified concept
+    * according to the default logic coordinate.
+    */
+   public static Optional<SememeChronology<? extends SememeVersion<?>>> getInferredDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
+       conceptId = Get.identifierService().getConceptNid(conceptId);
+       return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getInferredAssemblageSequence()).findAny();
+   }
+   
+	/**
+	 * @param id The int sequence or NID of the Concept for which the logic graph is requested
+	 * @param stampCoordinate The StampCoordinate for which the logic graph is requested
+	 * @param languageCoordinate The LanguageCoordinate for which the logic graph is requested
+	 * @param logicCoordinate the LogicCoordinate for which the logic graph is requested
+	 * @param stated boolean indicating stated vs inferred definition chronology should be used
+	 * @return An Optional containing a LogicGraphSememe SememeChronology
+	 */
+	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
+	{
+		log.debug("Getting {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? getStatedDefinitionChronology(id, logicCoordinate) : getInferredDefinitionChronology(id, logicCoordinate);
+		if (defChronologyOptional.isPresent())
+		{
+			log.debug("Got {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+
+			@SuppressWarnings("unchecked")
+			SememeChronology<? extends LogicGraphSememe<?>> sememeChronology = (SememeChronology<? extends LogicGraphSememe<?>>)defChronologyOptional.get();
+
+			return Optional.of(sememeChronology);
+		} else {
+			log.warn("NO {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+
+			return Optional.empty();
+		}
+	}
+	
 	/**
 	 * @param id The int sequence or NID of the Concept for which the logic graph is requested
 	 * @param stated boolean indicating stated vs inferred definition chronology should be used
