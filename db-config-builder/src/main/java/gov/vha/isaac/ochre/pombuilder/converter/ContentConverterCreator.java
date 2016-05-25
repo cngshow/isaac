@@ -26,8 +26,10 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.Artifact;
@@ -294,7 +296,30 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#PROFILE#", profiles.toString());
 		
-		String tag = pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+		String tagWithoutRevNumber = pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+		
+		ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
+		int highestBuildRevision = 0;
+		for (String s : existingTags)
+		{
+			if (s.startsWith("refs/tags/" + tagWithoutRevNumber + "-"))
+			{
+				String revNumber = s.substring(("refs/tags/" + tagWithoutRevNumber + "-").length(), s.length());
+				if (NumericUtils.isInt(revNumber))
+				{
+					int parsed = Integer.parseInt(revNumber);
+					if (parsed > highestBuildRevision)
+					{
+						highestBuildRevision = parsed;
+					}
+				}
+			}
+		}
+		
+		//Fix version number
+		pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+		String tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
+		
 		pomSwaps.put("#SCM_TAG#", tag);
 		if (extraProperties.length() > 0)
 		{

@@ -70,6 +70,7 @@ import org.eclipse.jgit.transport.OpenSshConfig.Host;
 import org.eclipse.jgit.transport.PushResult;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.TagOpt;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.util.StringUtils;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
@@ -1068,6 +1069,37 @@ public class SyncServiceGIT implements SyncFiles
 			{
 				throw new IOException(failures.toString());
 			}
+		}
+		catch (GitAPIException e)
+		{
+			if (e.getMessage().contains("Auth fail") || e.getMessage().contains("not authorized"))
+			{
+				log.info("Auth fail", e);
+				throw new AuthenticationException("Auth fail");
+			}
+			else
+			{
+				log.error("Unexpected", e);
+				throw new IOException("Internal error", e);
+			}
+		}
+	}
+	
+	public ArrayList<String> readTags(String username, String password) throws IllegalArgumentException, IOException, AuthenticationException
+	{
+		try
+		{
+			ArrayList<String> results = new ArrayList<>();
+			Git git = getGit();
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			
+			git.fetch().setTagOpt(TagOpt.FETCH_TAGS).setCredentialsProvider(cp).call();
+			
+			for (Ref x : git.tagList().call())
+			{
+				results.add(x.getName());
+			}
+			return results;
 		}
 		catch (GitAPIException e)
 		{

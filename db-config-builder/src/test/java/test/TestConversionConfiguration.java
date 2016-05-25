@@ -1,5 +1,6 @@
 package test;
 
+import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 import gov.vha.isaac.ochre.pombuilder.converter.ContentConverterCreator;
@@ -12,6 +13,8 @@ public class TestConversionConfiguration
 		String testURL = "https://github.com/darmbrust/test.git";
 		String username = "";
 		String password = "";
+		
+		System.out.println(GitPublish.readTags(testURL, username, password));
 		//vhat
 		System.out.println(ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.vhat", "vhat-src-data", "2016.01.07"), 
 			"4.1-SNAPSHOT", new SDOSourceContent[0], new IBDFFile[0], testURL, username, password));
