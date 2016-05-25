@@ -85,7 +85,7 @@ public abstract class PropertyType
 	{
 		if (propertyTypeUUID == null)
 		{
-			propertyTypeUUID = ConverterUUID.createNamespaceUUIDFromString(propertyTypeDescription_);
+			propertyTypeUUID = ConverterUUID.createNamespaceUUIDFromString(propertyTypeDescription_ + ":" + propertyTypeReferenceSetName_);
 		}
 		return propertyTypeUUID;
 	}
