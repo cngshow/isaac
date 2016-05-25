@@ -32,9 +32,4 @@ public class BPT_Relations extends PropertyType
 	{
 		super("Relation Types", terminologyName + " Relation Type", false, null);
 	}
-	
-	public BPT_Relations(String propertyTypeDescription, String terminologyName)
-	{
-		super(propertyTypeDescription, terminologyName + " Relation Type", false, null);
-	}
 }
