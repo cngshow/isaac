@@ -23,6 +23,7 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAsse
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,8 +32,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.plexus.util.FileUtils;
 import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.codehaus.plexus.util.FileUtils;
 import gov.va.oia.terminology.converters.sharedUtils.gson.MultipleDataWriterService;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Associations;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Descriptions;
@@ -81,6 +82,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.api.util.ChecksumGenerator;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
@@ -371,7 +373,14 @@ public class EConceptUtility
 	
 	/**
 	 * Utility method to build and store a concept.
+	 * @param primordial
+	 * @param fsnName
+	 * @param preferredName - optional
+	 * @param altName - optional
+	 * @param definition - optional
+	 * @param relParentPrimordial
 	 * @param secondParent - optional
+	 * @return
 	 */
 	public ConceptChronology<? extends ConceptVersion<?>> createConcept(UUID primordial, String fsnName, String preferredName, String altName, 
 			String definition, UUID relParentPrimordial, UUID secondParent)
@@ -380,11 +389,15 @@ public class EConceptUtility
 		
 		LogicalExpressionBuilder leb = expressionBuilderService_.getLogicalExpressionBuilder();
 
-		NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb)));
-
-		if (secondParent != null)
+		if (secondParent == null)
 		{
-			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(secondParent), leb)));
+			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb)));
+		}
+		else
+		{
+			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb), 
+				ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(secondParent), leb)));
+			
 		}
 		
 		LogicalExpression logicalExpression = leb.build();
@@ -930,7 +943,7 @@ public class EConceptUtility
 	 */
 	public SememeChronology<LogicGraphSememe<?>> addParent(ComponentReference concept, UUID targetUuid)
 	{
-		return addParent(concept, null, targetUuid, null, null, null);
+		return addParent(concept, null, new UUID[] {targetUuid}, null, null, null);
 	}
 
 	/**
@@ -942,11 +955,11 @@ public class EConceptUtility
 	{
 		if (p.getWBTypeUUID() == null)
 		{
-			return addParent(concept, null, targetUuid, p.getUUID(), null, time);
+			return addParent(concept, null, new UUID[] {targetUuid}, p.getUUID(), null, time);
 		}
 		else
 		{
-			return addParent(concept, null, targetUuid, p.getUUID(), p.getPropertyType().getPropertyTypeReferenceSetUUID(), time);
+			return addParent(concept, null, new UUID[] {targetUuid}, p.getUUID(), p.getPropertyType().getPropertyTypeReferenceSetUUID(), time);
 		}
 	}
 	
@@ -957,20 +970,27 @@ public class EConceptUtility
 	 * @param relPrimordialUuid - optional - if not provided, created from the source, target and type.
 	 * @param time - if null, default is used
 	 */
-	public SememeChronology<LogicGraphSememe<?>> addParent(ComponentReference concept, UUID relPrimordialUuid, UUID targetUuid, UUID sourceRelTypeUUID,
+	public SememeChronology<LogicGraphSememe<?>> addParent(ComponentReference concept, UUID relPrimordialUuid, UUID[] targetUuid, UUID sourceRelTypeUUID,
 			UUID sourceRelRefsetUUID, Long time)
 	{
 		if (conceptHasStatedGraph.contains(concept.getPrimordialUuid()))
 		{
 			throw new RuntimeException("Can only call addParent once!  Must utilize addRelationshipGraph for more complex objects.  " 
-					+ "Parent: " + targetUuid + " Child: " + concept.getPrimordialUuid()); 
+					+ "Parents: " + Arrays.toString(targetUuid) + " Child: " + concept.getPrimordialUuid()); 
 		}
 		
 		conceptHasStatedGraph.add(concept.getPrimordialUuid());
 		LogicalExpressionBuilder leb = expressionBuilderService_.getLogicalExpressionBuilder();
 
 		//We are only building isA here, choose necessary set over sufficient.
-		NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(targetUuid), leb)));
+		
+		ConceptAssertion[] cas = new ConceptAssertion[targetUuid.length];
+		for (int i = 0; i < targetUuid.length; i++)
+		{
+			cas[i] = ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(targetUuid[i]), leb);
+		}
+		
+		NecessarySet(And(cas));
 
 		LogicalExpression logicalExpression = leb.build();
 
@@ -979,7 +999,7 @@ public class EConceptUtility
 				conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence());
 
 		sb.setPrimordialUuid(relPrimordialUuid != null ? relPrimordialUuid
-				: ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), targetUuid.toString(), isARelUuid_.toString()));
+				: ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), Arrays.toString(targetUuid), isARelUuid_.toString()));
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 
@@ -1207,20 +1227,20 @@ public class EConceptUtility
 			String converterVersion)
 	{
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterSourceArtifactVersion, 
-				MetaData.CONTENT_SOURCE_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.SOURCE_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterOutputArtifactVersion, 
-				MetaData.CONTENT_CONVERTED_IBDF_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.CONVERTED_IBDF_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterVersion, 
-				MetaData.CONTENT_CONVERTER_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.CONVERTER_VERSION.getPrimordialUuid(), State.ACTIVE);
 		if (converterOutputArtifactClassifier.isPresent() && StringUtils.isNotBlank(converterOutputArtifactClassifier.get()))
 		{
 			addStaticStringAnnotation(terminologyMetadataRootConcept, converterOutputArtifactClassifier.get(), 
-					MetaData.CONTENT_CONVERTED_IBDF_ARTIFACT_CLASSIFIER.getPrimordialUuid(), State.ACTIVE);
+					MetaData.CONVERTED_IBDF_ARTIFACT_CLASSIFIER.getPrimordialUuid(), State.ACTIVE);
 		}
 		if (converterSourceReleaseDate.isPresent() && StringUtils.isNotBlank(converterSourceReleaseDate.get()))
 		{
 			addStaticStringAnnotation(terminologyMetadataRootConcept, converterSourceReleaseDate.get(), 
-					MetaData.CONTENT_SOURCE_RELEASE_DATE.getPrimordialUuid(), State.ACTIVE);
+					MetaData.SOURCE_RELEASE_DATE.getPrimordialUuid(), State.ACTIVE);
 		}
 	}
 	

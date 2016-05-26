@@ -53,6 +53,11 @@ public class ValuePropertyPair implements Comparable<ValuePropertyPair>
 		return value_;
 	}
 	
+	public void setUUID(UUID uuid)
+	{
+		descriptionUUID_ = uuid;
+	}
+	
 	public UUID getUUID()
 	{
 		return descriptionUUID_;

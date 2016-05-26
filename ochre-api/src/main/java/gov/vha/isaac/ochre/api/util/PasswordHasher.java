@@ -67,7 +67,7 @@ public class PasswordHasher
 		byte[] salt = new byte[saltLen];
 		random.nextBytes(salt);
 		// store the salt with the password
-		String result = Base64.getEncoder().encodeToString(salt) + "$$$" + hash(password, salt);
+		String result = Base64.getUrlEncoder().encodeToString(salt) + "$$$" + hash(password, salt);
 		log_.debug("Compute Salted Hash time {} ms", System.currentTimeMillis() - startTime);
 		return result;
 	}
@@ -86,14 +86,14 @@ public class PasswordHasher
 		{
 			return false;
 		}
-		String hashOfInput = hash(password, Base64.getDecoder().decode(saltAndPass[0]));
+		String hashOfInput = hash(password, Base64.getUrlDecoder().decode(saltAndPass[0]));
 		return hashOfInput.equals(saltAndPass[1]);
 	}
 
 	/**
 	 * Computes a salted PBKDF2 hash of given plaintext password with the provided salt
 	 * Empty passwords are not supported.
-	 * @return a Base64 encoded hash
+	 * @return a URL Safe Base64 encoded hash
 	 */
 	public static String hash(String password, byte[] salt, int iterationCount, int keyLength) throws Exception
 	{
@@ -104,7 +104,7 @@ public class PasswordHasher
 		}
 		SecretKeyFactory f = SecretKeyFactory.getInstance(keyFactoryAlgorithm);
 		SecretKey key = f.generateSecret(new PBEKeySpec(password.toCharArray(), salt, iterationCount, keyLength));
-		String result = Base64.getEncoder().encodeToString(key.getEncoded());
+		String result = Base64.getUrlEncoder().encodeToString(key.getEncoded());
 		log_.debug("Password compute time: {} ms", System.currentTimeMillis() - startTime);
 		return result;
 	}
@@ -130,7 +130,7 @@ public class PasswordHasher
 		byte[] salt = new byte[saltLen];
 		random.nextBytes(salt);
 		// store the salt with the password
-		String result = Base64.getEncoder().encodeToString(salt) + "$$$" + encrypt(password, salt, data);
+		String result = Base64.getUrlEncoder().encodeToString(salt) + "$$$" + encrypt(password, salt, data);
 		log_.debug("Encrypt Time {} ms", System.currentTimeMillis() - startTime);
 		return result;
 	}
@@ -147,7 +147,7 @@ public class PasswordHasher
 		ByteBuffer temp = ByteBuffer.allocate(data.length + dataCheckSum.length);
 		temp.put(data);
 		temp.put(dataCheckSum);
-		return Base64.getEncoder().encodeToString(pbeCipher.doFinal(temp.array()));
+		return Base64.getUrlEncoder().encodeToString(pbeCipher.doFinal(temp.array()));
 	}
 	
 	public static String decryptToString(String password, String encryptedData) throws Exception
@@ -163,7 +163,7 @@ public class PasswordHasher
 		{
 			throw new Exception("Invalid encrypted data, can't find salt");
 		}
-		byte[] result = decrypt(password, Base64.getDecoder().decode(saltAndPass[0]), saltAndPass[1]);
+		byte[] result = decrypt(password, Base64.getUrlDecoder().decode(saltAndPass[0]), saltAndPass[1]);
 		log_.debug("Decrypt Time {} ms", System.currentTimeMillis() - startTime);
 		return result;
 	}
@@ -177,7 +177,7 @@ public class PasswordHasher
 		byte[] decrypted;
 		try
 		{
-			decrypted = pbeCipher.doFinal(Base64.getDecoder().decode(data));
+			decrypted = pbeCipher.doFinal(Base64.getUrlDecoder().decode(data));
 		}
 		catch (Exception e)
 		{

@@ -19,6 +19,8 @@
 package gov.vha.isaac.ochre.pombuilder;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import gov.va.isaac.sync.git.SyncServiceGIT;
 
 /**
@@ -50,5 +52,17 @@ public class GitPublish
 		svc.addUntrackedFiles();
 		svc.commitAndTag("publishing conversion project", tagToCreate);
 		svc.pushTag(tagToCreate, gitUserName, gitPassword);
+	}
+	
+	public static ArrayList<String> readTags(String gitRepository, String gitUserName, String gitPassword) throws Exception
+	{
+		SyncServiceGIT svc = new SyncServiceGIT();
+		
+		File tempFolder = Files.createTempDirectory("tagRead").toFile();
+		
+		svc.setRootLocation(tempFolder);
+		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
+		return svc.readTags(gitUserName, gitPassword);
+		
 	}
 }
