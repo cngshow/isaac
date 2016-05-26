@@ -373,7 +373,14 @@ public class EConceptUtility
 	
 	/**
 	 * Utility method to build and store a concept.
+	 * @param primordial
+	 * @param fsnName
+	 * @param preferredName - optional
+	 * @param altName - optional
+	 * @param definition - optional
+	 * @param relParentPrimordial
 	 * @param secondParent - optional
+	 * @return
 	 */
 	public ConceptChronology<? extends ConceptVersion<?>> createConcept(UUID primordial, String fsnName, String preferredName, String altName, 
 			String definition, UUID relParentPrimordial, UUID secondParent)
@@ -382,11 +389,15 @@ public class EConceptUtility
 		
 		LogicalExpressionBuilder leb = expressionBuilderService_.getLogicalExpressionBuilder();
 
-		NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb)));
-
-		if (secondParent != null)
+		if (secondParent == null)
 		{
-			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(secondParent), leb)));
+			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb)));
+		}
+		else
+		{
+			NecessarySet(And(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(relParentPrimordial), leb), 
+				ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(secondParent), leb)));
+			
 		}
 		
 		LogicalExpression logicalExpression = leb.build();
