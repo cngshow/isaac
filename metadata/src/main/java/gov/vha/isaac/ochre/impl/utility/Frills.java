@@ -256,31 +256,56 @@ public class Frills implements DynamicSememeColumnUtility {
 		LogicNode rootNode = le.getRoot();
 		return rootNode.getChildren()[0].getNodeSemantic() == NodeSemantic.SUFFICIENT_SET;
 	}
+	
+	/**
+	 * Return true for fully defined, false for primitive, or empty for unknown, on the standard logic coordinates / standard development path
+	 * @param conceptNid
+	 * @param stated
+	 * @return
+	 */
+	public static Optional<Boolean> isConceptFullyDefined(int conceptNid, boolean stated)
+	{
+		Optional<SememeChronology<? extends SememeVersion<?>>> sememe = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, 
+				(stated ? 
+						LogicCoordinates.getStandardElProfile().getStatedAssemblageSequence() :
+							LogicCoordinates.getStandardElProfile().getInferredAssemblageSequence())).findAny();
 
-	   /**
-    *
-    * @param conceptId either a concept nid or sequence.
-    * @param logicCoordinate LogicCoordinate.
-    * @return the stated definition chronology for the specified concept
-    * according to the default logic coordinate.
-    */
-   public static Optional<SememeChronology<? extends SememeVersion<?>>> getStatedDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
-       conceptId = Get.identifierService().getConceptNid(conceptId);
-       return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getStatedAssemblageSequence()).findAny();
-   }
+		if (sememe.isPresent())
+		{
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			Optional<LatestVersion<LogicGraphSememe>> sv = ((SememeChronology)sememe.get()).getLatestVersion(LogicGraphSememe.class, StampCoordinates.getDevelopmentLatest());
+			if (sv.isPresent())
+			{
+				return Optional.of(isConceptFullyDefined((LogicGraphSememe<?>)sv.get().value()));
+			}
+		}
+		return Optional.empty();
+	}
 
-   /**
-    *
-    * @param conceptId either a concept nid or sequence.
-    * @param logicCoordinate LogicCoordinate.
-    * @return the inferred definition chronology for the specified concept
-    * according to the default logic coordinate.
-    */
-   public static Optional<SememeChronology<? extends SememeVersion<?>>> getInferredDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
-       conceptId = Get.identifierService().getConceptNid(conceptId);
-       return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getInferredAssemblageSequence()).findAny();
-   }
-   
+	/**
+	*
+	* @param conceptId either a concept nid or sequence.
+	* @param logicCoordinate LogicCoordinate.
+	* @return the stated definition chronology for the specified concept
+	* according to the default logic coordinate.
+	*/
+	public static Optional<SememeChronology<? extends SememeVersion<?>>> getStatedDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
+		conceptId = Get.identifierService().getConceptNid(conceptId);
+		return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getStatedAssemblageSequence()).findAny();
+	}
+
+	/**
+	*
+	* @param conceptId either a concept nid or sequence.
+	* @param logicCoordinate LogicCoordinate.
+	* @return the inferred definition chronology for the specified concept
+	* according to the default logic coordinate.
+	*/
+	public static Optional<SememeChronology<? extends SememeVersion<?>>> getInferredDefinitionChronology(int conceptId, LogicCoordinate logicCoordinate) {
+		conceptId = Get.identifierService().getConceptNid(conceptId);
+		return Get.sememeService().getSememesForComponentFromAssemblage(conceptId, logicCoordinate.getInferredAssemblageSequence()).findAny();
+	}
+	
 	/**
 	 * @param id The int sequence or NID of the Concept for which the logic graph is requested
 	 * @param stampCoordinate The StampCoordinate for which the logic graph is requested
