@@ -1227,20 +1227,20 @@ public class EConceptUtility
 			String converterVersion)
 	{
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterSourceArtifactVersion, 
-				MetaData.CONTENT_SOURCE_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.SOURCE_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterOutputArtifactVersion, 
-				MetaData.CONTENT_CONVERTED_IBDF_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.CONVERTED_IBDF_ARTIFACT_VERSION.getPrimordialUuid(), State.ACTIVE);
 		addStaticStringAnnotation(terminologyMetadataRootConcept, converterVersion, 
-				MetaData.CONTENT_CONVERTER_VERSION.getPrimordialUuid(), State.ACTIVE);
+				MetaData.CONVERTER_VERSION.getPrimordialUuid(), State.ACTIVE);
 		if (converterOutputArtifactClassifier.isPresent() && StringUtils.isNotBlank(converterOutputArtifactClassifier.get()))
 		{
 			addStaticStringAnnotation(terminologyMetadataRootConcept, converterOutputArtifactClassifier.get(), 
-					MetaData.CONTENT_CONVERTED_IBDF_ARTIFACT_CLASSIFIER.getPrimordialUuid(), State.ACTIVE);
+					MetaData.CONVERTED_IBDF_ARTIFACT_CLASSIFIER.getPrimordialUuid(), State.ACTIVE);
 		}
 		if (converterSourceReleaseDate.isPresent() && StringUtils.isNotBlank(converterSourceReleaseDate.get()))
 		{
 			addStaticStringAnnotation(terminologyMetadataRootConcept, converterSourceReleaseDate.get(), 
-					MetaData.CONTENT_SOURCE_RELEASE_DATE.getPrimordialUuid(), State.ACTIVE);
+					MetaData.SOURCE_RELEASE_DATE.getPrimordialUuid(), State.ACTIVE);
 		}
 	}
 	
