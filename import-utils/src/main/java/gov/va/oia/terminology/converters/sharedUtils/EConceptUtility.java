@@ -184,7 +184,7 @@ public class EConceptUtility
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
-		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null);
+		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null, null);
 	}
 
 	/**
@@ -202,7 +202,7 @@ public class EConceptUtility
 	 */
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
-			File ... ibdfPreLoadFiles) throws Exception
+			Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
 	{
 		UuidIntMapMap.NID_TO_UUID_CACHE_SIZE = 5000000;
 		File file = new File(outputDirectory, "isaac-db");
@@ -219,7 +219,7 @@ public class EConceptUtility
 			LoadTermstore lt = new LoadTermstore();
 			lt.setLog(new SystemStreamLog());
 			lt.setibdfFiles(ibdfPreLoadFiles);
-			lt.setActiveOnly(true);
+			lt.setActiveOnly(preloadActiveOnly != null ? preloadActiveOnly : true);
 			//skip descriptions, acceptabilities
 			if (sememeTypesToSkip != null)
 			{
