@@ -29,7 +29,9 @@ public enum SupportedConverterTypes
 	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}),
 	SCT("rf2-src-data-sct", new String[] {}, new String[] {}),
 	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}),
-	VHAT("vhat-src-data", new String[] {}, new String[] {});
+	VHAT("vhat-src-data", new String[] {}, new String[] {}),
+	RXNORM("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}),
+	RXNORM_SOLOR("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}),;
 	
 	private String artifactId_;
 	private String[] artifactSrcDependencies_;
