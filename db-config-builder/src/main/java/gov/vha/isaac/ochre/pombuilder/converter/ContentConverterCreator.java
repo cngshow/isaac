@@ -71,16 +71,14 @@ public class ContentConverterCreator
 	{
 		switch(getConverterType(artifactId).getKey())
 		{
-			case SCT:
+			case SCT: case SCT_EXTENSION:
 				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
-			case LOINC:
+			case LOINC: case LOINC_TECH_PREVIEW:
 				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
-			case LOINC_TECH_PREVIEW:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
-			case SCT_EXTENSION:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
 			case VHAT:
 				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
+			case RXNORM: case RXNORM_SOLOR:
+				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rxnorm-mojo", "");
 			default :
 				throw new RuntimeException("Oops");
 		}
