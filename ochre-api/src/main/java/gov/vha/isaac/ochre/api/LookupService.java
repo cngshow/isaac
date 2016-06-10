@@ -240,4 +240,8 @@ public class LookupService {
     public static boolean isIsaacStarted() {
         return getService(RunLevelController.class).getCurrentRunLevel() == ISAAC_STARTED_RUNLEVEL;
     }
+    
+    public static boolean isInitialized() {
+        return looker != null;
+    }
 }

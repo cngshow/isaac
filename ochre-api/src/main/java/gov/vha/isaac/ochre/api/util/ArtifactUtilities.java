@@ -80,12 +80,14 @@ public class ArtifactUtilities
 			URL metadataUrl = new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/") + temp + "/" + artifactId + "/" + version + "/maven-metadata.xml");
 			//Need to download the maven-metadata.xml file
 			Task<File> task = new DownloadUnzipTask(mavenUsername, mavenPassword, metadataUrl, false, false, null);
-			if (LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
+			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
 			{
 				Get.workExecutors().getExecutor().execute(task);
 			}
 			else
 			{
+				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
+				HeadlessToolkit.installToolkit();
 				ForkJoinPool.commonPool().execute(task);
 			}
 			File metadataFile = task.get();
