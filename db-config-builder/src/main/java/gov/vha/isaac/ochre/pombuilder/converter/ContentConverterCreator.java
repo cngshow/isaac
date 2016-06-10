@@ -28,11 +28,14 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
+import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
-import gov.vha.isaac.ochre.pombuilder.artifacts.Artifact;
+import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
@@ -67,18 +70,18 @@ public class ContentConverterCreator
 	 * @param artifactId - the artifactid of the source content that the user desires to converter.
 	 * @return - the group and artifact id of the converter tool that is capable of handling that content.
 	 */
-	public static Artifact getConverterForSourceArtifact(String artifactId)
+	public static Converter getConverterForSourceArtifact(String artifactId)
 	{
 		switch(getConverterType(artifactId).getKey())
 		{
 			case SCT: case SCT_EXTENSION:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
+				return new Converter("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
 			case LOINC: case LOINC_TECH_PREVIEW:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
+				return new Converter("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
 			case VHAT:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
+				return new Converter("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
 			case RXNORM: case RXNORM_SOLOR:
-				return new SDOSourceContent("gov.vha.isaac.terminology.converters", "rxnorm-mojo", "");
+				return new Converter("gov.vha.isaac.terminology.converters", "rxnorm-mojo", "");
 			default :
 				throw new RuntimeException("Oops");
 		}
@@ -124,6 +127,8 @@ public class ContentConverterCreator
 	 * for accurate dependencies for any given conversion type.
 	 * @param additionalIBDFDependencies - Some converters require additional data files to satisfy dependencies. See {@link #getSupportedConversions()} 
 	 * for accurate dependencies for any given conversion type.
+	 * @param converterOptionValues a map of converter options (fetched via {@link #getConverterOptions(Converter, String, String, String)} to a set of values.
+	 * The values are the items that the user selected / entered.  This may be blank, depending on the converter and/or the user choices.
 	 * @param gitRepositoryURL - The URL to publish this built project to
 	 * @param gitUsername - The username to utilize to publish this project
 	 * @param gitPassword - the password to utilize to publish this project
@@ -131,8 +136,10 @@ public class ContentConverterCreator
 	 * @throws Exception
 	 */
 	public static String createContentConverter(SDOSourceContent sourceContent, String converterVersion, SDOSourceContent[] additionalSourceDependencies, 
-		IBDFFile[] additionalIBDFDependencies, String gitRepositoryURL, String gitUsername, String gitPassword) throws Exception
+		IBDFFile[] additionalIBDFDependencies, Map<ConverterOptionParam, Set<String>> converterOptionValues, String gitRepositoryURL, String gitUsername, String gitPassword) 
+				throws Exception
 	{
+		//TODO handle converterOptions
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
 		Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
@@ -252,8 +259,82 @@ public class ContentConverterCreator
 				converter = "vhat-mojo";
 				goal = "convert-VHAT-to-ibdf";
 				break;
+			case RXNORM:
+				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rxnorm-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/rxnorm.xml"));
+				pomSwaps.put("#ARTIFACTID#", "rxnorm-ibdf");
+				pomSwaps.put("#LOADER_ARTIFACT#", "rxnorm-mojo");
+				converter = "rxnorm-mojo";
+				goal = "convert-rxnorm-to-ibdf";
+				break;
+			//TODO RXNORM_SOLOR support
 			default :
 				throw new RuntimeException("oops");
+		}
+		
+		StringBuilder userOptions = new StringBuilder();
+		if (converterOptionValues != null)
+		{
+			String optionIndent = "									";
+			for (Entry<ConverterOptionParam, Set<String>> option : converterOptionValues.entrySet())
+			{
+				if (option.getValue() != null)
+				{
+					if (!option.getKey().isAllowMultiSelect() && option.getValue().size() > 1)
+					{
+						throw new Exception("The option " + option.getKey().getDisplayName() + " allows at most, one value");
+					}
+					if (!option.getKey().isAllowNoSelection() && option.getValue().size() == 0)
+					{
+						throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
+					}
+					if (option.getValue().size() > 0)
+					{
+						if (option.getKey().isAllowMultiSelect())
+						{
+							userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + "s>\n");
+							for (String value : option.getValue())
+							{
+								userOptions.append(optionIndent + "\t<" + option.getKey().getInternalName() + ">");
+								if (UUIDUtil.isUUID(value))
+								{
+									userOptions.append("\n");
+									userOptions.append(optionIndent + "\t\t<description></description>\n");  //Its ok not to populate this
+									userOptions.append(optionIndent + "\t\t<uuid>" + value + "</uuid>\n");
+									userOptions.append(optionIndent + "\t");
+								}
+								else
+								{
+									userOptions.append(value);
+								}
+								userOptions.append("</" + option.getKey().getInternalName() + ">\n");
+							}
+							userOptions.append(optionIndent + "</" + option.getKey().getInternalName() + "s>");
+						}
+						else
+						{
+							String value = option.getValue().iterator().next();
+							userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + ">");
+							if (UUIDUtil.isUUID(value))
+							{
+								userOptions.append("\n");
+								userOptions.append(optionIndent + "\t<description></description>\n");  //Its ok not to populate this
+								userOptions.append(optionIndent + "\t<uuid>" + value + "</uuid>\n");
+								userOptions.append(optionIndent);
+							}
+							else
+							{
+								userOptions.append(value);
+							}
+							userOptions.append("</" + option.getKey().getInternalName() + ">");
+						}
+					}
+				}
+				else if (!option.getKey().isAllowNoSelection())
+				{
+					throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
+				}
+			}
 		}
 
 		StringBuilder profiles = new StringBuilder();
@@ -275,6 +356,7 @@ public class ContentConverterCreator
 			temp = temp.replaceAll("#CONVERTER#", converter);
 			temp = temp.replaceAll("#CONVERTER_VERSION#", converterVersion);
 			temp = temp.replaceAll("#GOAL#", goal);
+			temp = temp.replaceAll("#USER_CONFIGURATION_OPTIONS#", userOptions.toString());
 			profiles.append(temp);
 			
 			String assemblyInfo = readFile("converterProjectTemplate/src/assembly/assembly.xml");
@@ -364,5 +446,14 @@ public class ContentConverterCreator
 		outStream.write(temp.getBytes());
 		outStream.write(append.getBytes());
 		outStream.close();
+	}
+	
+	/**
+	 * @see {@link ConverterOptionParam#fromArtifact(Converter, String, String, String)};
+	 */
+	public static ConverterOptionParam[] getConverterOptions(Converter converter, String repositoryBaseURL, String repositoryUsername, String repositoryPassword) 
+			throws Exception
+	{
+		return ConverterOptionParam.fromArtifact(converter, repositoryBaseURL, repositoryUsername, repositoryPassword);
 	}
 }
