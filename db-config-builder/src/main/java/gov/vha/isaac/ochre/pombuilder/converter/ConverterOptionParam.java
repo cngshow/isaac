@@ -129,7 +129,7 @@ public class ConverterOptionParam
 			else
 			{
 				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				HeadlessToolkit.installToolkit();
+				LookupService.startupFxPlatform();
 				ForkJoinPool.commonPool().execute(dut);
 			}
 			File jsonFile = dut.get();
