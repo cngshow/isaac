@@ -57,7 +57,7 @@ public class SyncTesting
 		System.out.println("resolve merge failures result: " + ssg.resolveMergeFailures(resolutions));
 		System.out.println("UpdateCommitAndPush result: " + ssg.updateCommitAndPush("mergetest2", username, password, MergeFailOption.FAIL, (String[])null));
 
-		boolean repoCreated = ssg.createRepository("http://localhost:8080/gitblit/","test/test1","gilblit test/test1","admin","admin");
-		System.out.println("Repo created: "+ repoCreated);
+//		boolean repoCreated = ssg.createRepository("http://localhost:8080/gitblit/","test/test1","gilblit test/test1","admin","admin");
+//		System.out.println("Repo created: "+ repoCreated);
 	}
 }

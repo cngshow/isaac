@@ -240,16 +240,4 @@ public interface SyncFiles
 	{
 		return url;
 	}
-	/**
-	 * Create a repository on the Gitblit server.
-	 *
-	 * @param serverUrl
-	 * @param repo name
-	 * @param repo description 
-	 * @param account
-	 * @param password
-	 * @return true if the action succeeded
-	 * @throws IOException
-	 */
-	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException;
 }

@@ -82,8 +82,8 @@ import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.gitblit.models.RepositoryModel;
-import com.gitblit.utils.RpcUtils;
+//import com.gitblit.models.RepositoryModel;
+//import com.gitblit.utils.RpcUtils;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
@@ -1134,20 +1134,20 @@ public class SyncServiceGIT implements SyncFiles
 	 * @return true if the action succeeded
 	 * @throws IOException
 	 */	
-	@Override
-	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
-	{
-		try
-		{
-			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
-			log.info("Repository: "+repoName +", create successfully: " + status);
-			return status;
-		}
-		catch (Exception e)
-		{
-			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
-			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
-		}
-		
-	}
+//	@Override
+//	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
+//	{
+//		try
+//		{
+//			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
+//			log.info("Repository: "+repoName +", create successfully: " + status);
+//			return status;
+//		}
+//		catch (Exception e)
+//		{
+//			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
+//			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
+//		}
+//		
+//	}
 }
