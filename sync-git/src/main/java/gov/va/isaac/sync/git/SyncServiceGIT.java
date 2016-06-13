@@ -25,6 +25,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+
 import javax.naming.AuthenticationException;
+
 import org.eclipse.jgit.api.AddCommand;
 import org.eclipse.jgit.api.CheckoutCommand.Stage;
 import org.eclipse.jgit.api.CommitCommand;
@@ -78,8 +81,12 @@ import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.gitblit.models.RepositoryModel;
+import com.gitblit.utils.RpcUtils;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
 import gov.vha.isaac.ochre.api.sync.MergeFailOption;
 import gov.vha.isaac.ochre.api.sync.MergeFailure;
 import gov.vha.isaac.ochre.api.sync.SyncFiles;
@@ -1114,5 +1121,33 @@ public class SyncServiceGIT implements SyncFiles
 				throw new IOException("Internal error", e);
 			}
 		}
+	}
+
+	/**
+	 * Create a repository on the Gitblit server.
+	 *
+	 * @param serverUrl
+	 * @param repo name
+	 * @param repo description 
+	 * @param account
+	 * @param password
+	 * @return true if the action succeeded
+	 * @throws IOException
+	 */	
+	@Override
+	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
+	{
+		try
+		{
+			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
+			log.info("Repository: "+repoName +", create successfully: " + status);
+			return status;
+		}
+		catch (Exception e)
+		{
+			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
+			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
+		}
+		
 	}
 }

@@ -26,5 +26,10 @@
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>4.3.1.201605051710-r</version>
 		</dependency>
+		<dependency>
+			<groupId>com.gitblit</groupId>
+			<artifactId>gbapi</artifactId>
+			<version>1.7.1</version>
+		</dependency>  
 	</dependencies>
 </project>
