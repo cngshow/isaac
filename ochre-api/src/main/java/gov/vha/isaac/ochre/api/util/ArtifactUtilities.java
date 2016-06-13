@@ -87,7 +87,7 @@ public class ArtifactUtilities
 			else
 			{
 				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				HeadlessToolkit.installToolkit();
+				LookupService.startupFxPlatform();
 				ForkJoinPool.commonPool().execute(task);
 			}
 			File metadataFile = task.get();
