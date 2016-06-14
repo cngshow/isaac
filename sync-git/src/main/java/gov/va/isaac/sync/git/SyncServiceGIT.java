@@ -82,11 +82,16 @@ import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+<<<<<<< Updated upstream
 //import com.gitblit.models.RepositoryModel;
 //import com.gitblit.utils.RpcUtils;
+=======
+>>>>>>> Stashed changes
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
+import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
+import gov.va.isaac.sync.git.gitblit.utils.RpcUtils;
 import gov.vha.isaac.ochre.api.sync.MergeFailOption;
 import gov.vha.isaac.ochre.api.sync.MergeFailure;
 import gov.vha.isaac.ochre.api.sync.SyncFiles;
@@ -1134,20 +1139,19 @@ public class SyncServiceGIT implements SyncFiles
 	 * @return true if the action succeeded
 	 * @throws IOException
 	 */	
-//	@Override
-//	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
-//	{
-//		try
-//		{
-//			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
-//			log.info("Repository: "+repoName +", create successfully: " + status);
-//			return status;
-//		}
-//		catch (Exception e)
-//		{
-//			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
-//			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
-//		}
-//		
-//	}
+	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
+	{
+		try
+		{
+			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
+			log.info("Repository: "+repoName +", create successfully: " + status);
+			return status;
+		}
+		catch (Exception e)
+		{
+			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
+			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
+		}
+		
+	}
 }
