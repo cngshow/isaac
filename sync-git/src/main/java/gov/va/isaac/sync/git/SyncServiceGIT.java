@@ -82,11 +82,6 @@ import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-<<<<<<< Updated upstream
-//import com.gitblit.models.RepositoryModel;
-//import com.gitblit.utils.RpcUtils;
-=======
->>>>>>> Stashed changes
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 

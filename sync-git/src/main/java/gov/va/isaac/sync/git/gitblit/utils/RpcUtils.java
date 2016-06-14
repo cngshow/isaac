@@ -9,8 +9,6 @@ import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
 /**
 * Utility methods for rpc calls.
 *
-* @author James Moger
-*
 */
 public class RpcUtils {
 	public static final String RPC_PATH = "/rpc/";

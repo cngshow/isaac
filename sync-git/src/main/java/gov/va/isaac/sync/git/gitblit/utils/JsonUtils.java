@@ -105,7 +105,7 @@ public class JsonUtils {
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapter(Date.class, new GmtDateTypeAdapter());
 		builder.registerTypeAdapter(AccessPermission.class, new AccessPermissionTypeAdapter());
-		if (!ArrayUtils.isEmpty(strategies)) {
+		if (strategies != null && strategies.length > 0) {
 			builder.setExclusionStrategies(strategies);
 		}
 		return builder.create();
