@@ -12,6 +12,8 @@ public class TestDBConfiguration
 		String username = "";
 		String password = "";
 		
+		System.setProperty("java.awt.headless", "true");
+		
 		//VHAT
 		System.out.println(DBConfigurationCreator.createDBConfiguration("vhat-test", "2.0", "a test database", "all", true, 
 			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "vhat-ibdf", "2016.01.07-loader-4.1-SNAPSHOT")},

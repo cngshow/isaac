@@ -23,6 +23,8 @@ public class TestConversionConfiguration
 		String nexusUrl = "http://vadev.mantech.com:8081/nexus/content/groups/public/";
 		String nexusUsername = "";
 		String nexusPassword = "";
+
+		System.setProperty("java.awt.headless", "true");
 		
 		System.out.println(GitPublish.readTags(gitTestURL, gitUsername, gitPassword));
 		//vhat
