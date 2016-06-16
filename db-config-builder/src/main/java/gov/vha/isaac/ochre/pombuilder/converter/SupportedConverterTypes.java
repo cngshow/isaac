@@ -45,6 +45,10 @@ public enum SupportedConverterTypes
 		
 	}
 
+	/**
+	 * Note that the artifactID may include a wildcard ('*') for some, such as SCT_EXTENSION
+	 * @return
+	 */
 	public String getArtifactId()
 	{
 		return artifactId_;
