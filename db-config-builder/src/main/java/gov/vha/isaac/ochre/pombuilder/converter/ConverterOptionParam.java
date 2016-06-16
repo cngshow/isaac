@@ -30,7 +30,6 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
-import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 
 /**
