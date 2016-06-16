@@ -22,6 +22,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.converter.SupportedConverterTypes;
@@ -35,22 +36,69 @@ import gov.vha.isaac.ochre.pombuilder.converter.SupportedConverterTypes;
 public class SrcUploadCreator
 {
 	/**
+	 * @param uploadType - What type of content is being uploaded.
+	 * @param version - What version number does the passed in content represent
+	 * @param extensionName - optional - If the upload type is a type such as {@link SupportedConverterTypes#SCT_EXTENSION} which contains a 
+	 * wildcard '*' in its {@link SupportedConverterTypes#getArtifactId()} value, this parameter must be provided, and is the string to use to 
+	 * replace the wildcard.  This would typically be a value such as "en" or "fr", when used for snomed extension content.
+	 * @param folderContainingContent - The folder that contains the required data files - these files will be zipped into an artifact and uploaded
+	 * to the artifactRepositoryURL.
 	 * @param gitRepositoryURL - The URL to publish this built project to
 	 * @param gitUsername - The username to utilize to publish this project
-	 * @param getPassword - the password to utilize to publish this project
+	 * @param getPassword - The password to utilize to publish this project
 	 * @return the tag created in the repository that carries the created project
-	 * @throws Exception 
+	 * @param artifactRepositoryURL - The artifact server (nexus) path where the created artifact should be transferred.  This path should go all the way down to 
+	 * a specific repository, such as http://vadev.mantech.com:8081/nexus/content/repositories/releases/ or http://vadev.mantech.com:8081/nexus/content/repositories/termdata/
+	 * This should not point to a URL that represents a 'group' repository view.
+	 * @param repositoryUsername - The username to utilize to upload the artifact to the artifact server
+	 * @param repositoryPassword - The passwordto utilize to upload the artifact to the artifact server
+	 * @return
+	 * @throws Exception
 	 */
-	public static String createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, 
+	public static String createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, File folderContainingContent, 
 			String gitRepositoryURL, String gitUsername, String gitPassword,
-			String artifactRepository, String repositoryUsername, String repositoryPassword) throws Exception
+			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Exception
 	{
-		File f = Files.createTempDirectory("srcUpload").toFile();
+		if (folderContainingContent == null || !folderContainingContent.isDirectory())
+		{
+			throw new Exception("The provided path does not exist as a folder!");
+		}
+		if (folderContainingContent.listFiles().length == 0)
+		{
+			throw new Exception("No content was found to upload!");
+		}
+		
+		//Otherwise, move forward.  Create our native-source folder, and move everything into it.
+		File nativeSource = new File(folderContainingContent, "native-source");
+		if (nativeSource.exists())
+		{
+			throw new RuntimeException("Unexpected file found in upload content!");
+		}
+		File[] filesToUpload = folderContainingContent.listFiles();
+		nativeSource.mkdir();  //make this after listing the pre-existing files
+		for (File f : filesToUpload)
+		{
+			//validate it is a file, move it into native-source
+			if (f.isFile())
+			{
+				Files.move(f.toPath(), nativeSource.toPath().resolve(f.toPath().getFileName()));
+			}
+			else
+			{
+				throw new Exception("Unexpected directory found in upload content!");
+			}
+		}
+		
+		
 		StringBuffer noticeAppend = new StringBuffer();
 		HashMap<String, String> pomSwaps = new HashMap<>();
 		
 		pomSwaps.put("#VERSION#", version);
 		pomSwaps.put("#SCM_URL#", gitRepositoryURL);
+		if (uploadType.getArtifactId().contains("*") && StringUtils.isBlank(extensionName))
+		{
+			throw new Exception("ExtensionName is required when the upload type artifact id contains a wildcard");
+		}
 		
 		switch(uploadType)
 		{
@@ -65,7 +113,7 @@ public class SrcUploadCreator
 				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
 				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
 				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
-				pomSwaps.put("#ARTIFACTID#", "rf2-src-data-" +extensionName + "-extension");
+				pomSwaps.put("#ARTIFACTID#", "rf2-src-data-" + extensionName + "-extension");
 				pomSwaps.put("#NAME#", "SnomedCT Extension Source Upload");
 				break;
 			case LOINC:
@@ -122,13 +170,13 @@ public class SrcUploadCreator
 
 		pomSwaps.put("#SCM_TAG#", tag);
 
-		FileUtil.writeFile("shared", "LICENSE.txt", f);
-		FileUtil.writeFile("shared", "NOTICE.txt", f, null, noticeAppend.toString());
-		FileUtil.writeFile("srcUploadProjectTemplate", "native-source/DOTgitignore", f);
-		FileUtil.writeFile("srcUploadProjectTemplate", "assembly.xml", f);
-		FileUtil.writeFile("srcUploadProjectTemplate", "pom.xml", f, pomSwaps, "");
+		FileUtil.writeFile("shared", "LICENSE.txt", folderContainingContent);
+		FileUtil.writeFile("shared", "NOTICE.txt", folderContainingContent, null, noticeAppend.toString());
+		FileUtil.writeFile("srcUploadProjectTemplate", "native-source/DOTgitignore", folderContainingContent);
+		FileUtil.writeFile("srcUploadProjectTemplate", "assembly.xml", folderContainingContent);
+		FileUtil.writeFile("srcUploadProjectTemplate", "pom.xml", folderContainingContent, pomSwaps, "");
 		
-		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
+		GitPublish.publish(folderContainingContent, gitRepositoryURL, gitUsername, gitPassword, tag);
 		return tag;
 	}
 }
