@@ -19,11 +19,6 @@
 package gov.vha.isaac.ochre.pombuilder.converter;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
@@ -31,14 +26,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
+import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
-import gov.vha.isaac.ochre.pombuilder.dbbuilder.DBConfigurationCreator;
 import javafx.util.Pair;
 
 /**
@@ -139,7 +133,6 @@ public class ContentConverterCreator
 		IBDFFile[] additionalIBDFDependencies, Map<ConverterOptionParam, Set<String>> converterOptionValues, String gitRepositoryURL, String gitUsername, String gitPassword) 
 				throws Exception
 	{
-		//TODO handle converterOptions
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
 		Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
@@ -148,8 +141,8 @@ public class ContentConverterCreator
 		
 		StringBuilder extraProperties = new StringBuilder();
 		
-		writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
-		writeFile("converterProjectTemplate", "LICENSE.txt", f, new HashMap<>(), "");
+		FileUtil.writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
+		FileUtil.writeFile("shared", "LICENSE.txt", f, new HashMap<>(), "");
 		
 		StringBuffer noticeAppend = new StringBuffer();
 		HashMap<String, String> pomSwaps = new HashMap<>();
@@ -163,7 +156,7 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#SCM_URL#", gitRepositoryURL);
 		
-		String temp = readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
+		String temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
 		temp = temp.replace("#GROUPID#", sourceContent.getGroupId());
 		temp = temp.replace("#ARTIFACTID#", sourceContent.getArtifactId());
 		temp = temp.replace("#VERSION#", sourceContent.getVersion());
@@ -172,7 +165,7 @@ public class ContentConverterCreator
 		
 		for (SDOSourceContent ac : additionalSourceDependencies)
 		{
-			temp = readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
+			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
 			temp = temp.replace("#GROUPID#", ac.getGroupId());
 			temp = temp.replace("#ARTIFACTID#", ac.getArtifactId());
 			temp = temp.replace("#VERSION#", ac.getVersion());
@@ -187,10 +180,10 @@ public class ContentConverterCreator
 		String unpackDependencies = "";
 		if (additionalIBDFDependencies.length > 0)
 		{
-			unpackDependencies = readFile("converterProjectTemplate/pomSnippits/unpackDependency.xml");
+			unpackDependencies = FileUtil.readFile("converterProjectTemplate/pomSnippits/unpackDependency.xml");
 			for (IBDFFile ibdf : additionalIBDFDependencies)
 			{
-				temp = readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
+				temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
 				temp = temp.replace("#GROUPID#", ibdf.getGroupId());
 				temp = temp.replace("#ARTIFACTID#", ibdf.getArtifactId());
 				temp = temp.replace("#CLASSIFIER#", (ibdf.hasClassifier() ? ibdf.getClassifier() : ""));
@@ -199,7 +192,7 @@ public class ContentConverterCreator
 				unpackArtifacts.append(ibdf.getArtifactId());
 				unpackArtifacts.append(",");
 			}
-			temp = readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
+			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
 			temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
 			temp = temp.replace("#ARTIFACTID#", "metadata");
 			temp = temp.replace("#CLASSIFIER#", "all");
@@ -219,34 +212,34 @@ public class ContentConverterCreator
 		switch(conversionType)
 		{
 			case SCT:
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/sct.xml"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
 				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-sct");
 				pomSwaps.put("#LOADER_ARTIFACT#", "rf2-mojo");
 				converter = "rf2-mojo";
 				goal = "convert-RF2-to-ibdf";
 				break;
 			case LOINC:
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/loinc-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/loinc.xml"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
 				pomSwaps.put("#ARTIFACTID#", "loinc-ibdf");
 				pomSwaps.put("#LOADER_ARTIFACT#", "loinc-mojo");
 				converter = "loinc-mojo";
 				goal = "convert-loinc-to-ibdf";
 				break;
 			case LOINC_TECH_PREVIEW:
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/loinc-NOTICE-addition.txt"));
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/loinc.xml"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
 				pomSwaps.put("#ARTIFACTID#", "loinc-ibdf-tech-preview");
 				pomSwaps.put("#LOADER_ARTIFACT#", "loinc-mojo");
 				converter = "loinc-mojo";
 				goal = "convert-loinc-tech-preview-to-ibdf";
 				break;
 			case SCT_EXTENSION:
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/sct.xml"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
 				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-" + extensionSuffix);
 				pomSwaps.put("#LOADER_ARTIFACT#", "rf2-mojo");
 				converter = "rf2-mojo";
@@ -260,8 +253,8 @@ public class ContentConverterCreator
 				goal = "convert-VHAT-to-ibdf";
 				break;
 			case RXNORM:
-				noticeAppend.append(readFile("converterProjectTemplate/noticeAdditions/rxnorm-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", readFile("converterProjectTemplate/pomSnippits/licenses/rxnorm.xml"));
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rxnorm-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/rxnorm.xml"));
 				pomSwaps.put("#ARTIFACTID#", "rxnorm-ibdf");
 				pomSwaps.put("#LOADER_ARTIFACT#", "rxnorm-mojo");
 				converter = "rxnorm-mojo";
@@ -351,7 +344,7 @@ public class ContentConverterCreator
 		}
 		for (String classifier : classifiers)
 		{
-			temp = readFile("converterProjectTemplate/pomSnippits/profile.xml");
+			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/profile.xml");
 			temp = temp.replaceAll("#CLASSIFIER#", classifier);
 			temp = temp.replaceAll("#CONVERTER#", converter);
 			temp = temp.replaceAll("#CONVERTER_VERSION#", converterVersion);
@@ -359,11 +352,11 @@ public class ContentConverterCreator
 			temp = temp.replaceAll("#USER_CONFIGURATION_OPTIONS#", userOptions.toString());
 			profiles.append(temp);
 			
-			String assemblyInfo = readFile("converterProjectTemplate/src/assembly/assembly.xml");
+			String assemblyInfo = FileUtil.readFile("converterProjectTemplate/src/assembly/assembly.xml");
 			StringBuilder assemblySnippits = new StringBuilder();
 			for (String classifier2 : classifiers)
 			{
-				String assemblyRef = readFile("converterProjectTemplate/src/assembly/assemblySnippits/assemblyRef.xml");
+				String assemblyRef = FileUtil.readFile("converterProjectTemplate/src/assembly/assemblySnippits/assemblyRef.xml");
 				assemblyRef = assemblyRef.replace("#ASSEMBLY#", "assembly-" + classifier2 + ".xml");
 				assemblySnippits.append(assemblyRef);
 			}
@@ -376,29 +369,24 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#PROFILE#", profiles.toString());
 		
-		String tagWithoutRevNumber = pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+		String tagWithoutRevNumber = "gov.vha.isaac.terminology.converted" + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
 		
 		ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
-		int highestBuildRevision = 0;
-		for (String s : existingTags)
-		{
-			if (s.startsWith("refs/tags/" + tagWithoutRevNumber + "-"))
-			{
-				String revNumber = s.substring(("refs/tags/" + tagWithoutRevNumber + "-").length(), s.length());
-				if (NumericUtils.isInt(revNumber))
-				{
-					int parsed = Integer.parseInt(revNumber);
-					if (parsed > highestBuildRevision)
-					{
-						highestBuildRevision = parsed;
-					}
-				}
-			}
-		}
+		int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
 		
+		String tag;
 		//Fix version number
-		pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
-		String tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
+		if (highestBuildRevision == -1)
+		{
+			//No tag at all - create without rev number
+			pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#"));
+			tag = tagWithoutRevNumber;
+		}
+		else
+		{
+			pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+			tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
+		}
 		
 		pomSwaps.put("#SCM_TAG#", tag);
 		if (extraProperties.length() > 0)
@@ -407,47 +395,13 @@ public class ContentConverterCreator
 		}
 		pomSwaps.put("#EXTRA_PROPERTIES#", extraProperties.toString());
 		
-		writeFile("converterProjectTemplate", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
-		writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
+		FileUtil.writeFile("shared", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
+		FileUtil.writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
 		return tag;
 	}
-	
-	private static String readFile(String fileName) throws IOException
-	{
-		InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fileName);
-		byte[] buffer = new byte[is.available()];
-		is.read(buffer);
 
-		return new String(buffer, Charset.forName("UTF-8"));
-	}
-	
-	private static void writeFile(String fromFolder, String relativePath, File toFolder, HashMap<String, String> replacementValues, String append) throws IOException
-	{
-		InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fromFolder + "/" + relativePath);
-		byte[] buffer = new byte[is.available()];
-		is.read(buffer);
-
-		String temp = new String(buffer, Charset.forName("UTF-8"));
-		for (Entry<String, String> item : replacementValues.entrySet())
-		{
-			while (temp.contains(item.getKey()))
-			{
-				temp = temp.replace(item.getKey(), item.getValue());
-			}
-		}
-		
-		relativePath = relativePath.replaceFirst("^DOT", ".");
-		
-		File targetFile = new File(toFolder, relativePath);
-		targetFile.getParentFile().mkdirs();
-		OutputStream outStream = new FileOutputStream(targetFile);
-		outStream.write(temp.getBytes());
-		outStream.write(append.getBytes());
-		outStream.close();
-	}
-	
 	/**
 	 * @see {@link ConverterOptionParam#fromArtifact(Converter, String, String, String)};
 	 */

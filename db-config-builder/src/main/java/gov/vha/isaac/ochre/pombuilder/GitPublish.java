@@ -22,6 +22,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import gov.va.isaac.sync.git.SyncServiceGIT;
+import gov.vha.isaac.ochre.api.util.NumericUtils;
 
 /**
  * {@link GitPublish}
@@ -30,6 +31,11 @@ import gov.va.isaac.sync.git.SyncServiceGIT;
  */
 public class GitPublish
 {
+	/**
+	 * This routine will check out the project from the repository (which should have an empty master branch) - then locally 
+	 * commit the changes to master, then tag it - then push the tag (but not the changes to master) so the upstream repo only 
+	 * receives the tag. 
+	 */
 	public static void publish(File folderWithProject, String gitRepository, String gitUserName, String gitPassword, String tagToCreate) throws Exception
 	{
 		SyncServiceGIT svc = new SyncServiceGIT();
@@ -52,6 +58,7 @@ public class GitPublish
 		svc.addUntrackedFiles();
 		svc.commitAndTag("publishing conversion project", tagToCreate);
 		svc.pushTag(tagToCreate, gitUserName, gitPassword);
+		//Notice, I do NOT push the updates to the branch
 	}
 	
 	public static ArrayList<String> readTags(String gitRepository, String gitUserName, String gitPassword) throws Exception
@@ -64,5 +71,38 @@ public class GitPublish
 		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
 		return svc.readTags(gitUserName, gitPassword);
 		
+	}
+	
+	/**
+	 * This will return -1 if no tag was found matching the tagWithoutRevNumber.
+	 * This will return 0 if a tag was found matching the tagWithoutRefNumber (but no tag was found with a revision number)
+	 * This will return X > 0 if one or more tags were found with a revision number - returning the highest value.
+	 */
+	public static int readHighestRevisionNumber(ArrayList<String> existingTags, String tagWithoutRevNumber)
+	{
+		int highestBuildRevision = -1;
+		for (String s : existingTags)
+		{
+			if (s.equals("refs/tags/" + tagWithoutRevNumber))
+			{
+				if (0 > highestBuildRevision)
+				{
+					highestBuildRevision = 0;
+				}
+			}
+			else if (s.startsWith("refs/tags/" + tagWithoutRevNumber + "-"))
+			{
+				String revNumber = s.substring(("refs/tags/" + tagWithoutRevNumber + "-").length(), s.length());
+				if (NumericUtils.isInt(revNumber))
+				{
+					int parsed = Integer.parseInt(revNumber);
+					if (parsed > highestBuildRevision)
+					{
+						highestBuildRevision = parsed;
+					}
+				}
+			}
+		}
+		return highestBuildRevision;
 	}
 }
