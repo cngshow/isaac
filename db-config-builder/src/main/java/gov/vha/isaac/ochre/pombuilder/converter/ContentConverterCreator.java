@@ -378,13 +378,16 @@ public class ContentConverterCreator
 		//Fix version number
 		if (highestBuildRevision == -1)
 		{
-			//No tag at all - create without rev number
-			pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#"));
+			//No tag at all - create without rev number, don't need to change our pomSwaps
 			tag = tagWithoutRevNumber;
 		}
 		else
 		{
-			pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+			//If we are a SNAPSHOT, don't embed a build number, because nexus won't allow the upload, otherwise, embed a rev number
+			if (!pomSwaps.get("#VERSION#").endsWith("SNAPSHOT"))
+			{
+				pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+			}
 			tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
 		}
 		
