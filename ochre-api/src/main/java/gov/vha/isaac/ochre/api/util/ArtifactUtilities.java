@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
@@ -80,16 +79,8 @@ public class ArtifactUtilities
 			URL metadataUrl = new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/") + temp + "/" + artifactId + "/" + version + "/maven-metadata.xml");
 			//Need to download the maven-metadata.xml file
 			Task<File> task = new DownloadUnzipTask(mavenUsername, mavenPassword, metadataUrl, false, false, null);
-			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
-			{
-				Get.workExecutors().getExecutor().execute(task);
-			}
-			else
-			{
-				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				LookupService.startupFxPlatform();
-				ForkJoinPool.commonPool().execute(task);
-			}
+			WorkExecutors.safeExecute(task);
+
 			File metadataFile = task.get();
 
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();

@@ -30,6 +30,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 
 /**
@@ -94,16 +95,8 @@ public class ConverterOptionParam
 				artifact.getClassifier(), "pom");
 
 		DownloadUnzipTask dut = new DownloadUnzipTask(mavenUsername, mavenPassword, pomURL, false, true, tempFolder);
-		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
-		{
-			Get.workExecutors().getExecutor().execute(dut);
-		}
-		else
-		{
-			//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-			LookupService.startupFxPlatform();
-			ForkJoinPool.commonPool().execute(dut);
-		}
+		WorkExecutors.safeExecute(dut);
+
 		File pomFile = dut.get();
 		if (!pomFile.exists())
 		{
@@ -121,16 +114,8 @@ public class ConverterOptionParam
 					artifact.getClassifier(), MAVEN_FILE_TYPE);
 
 			dut = new DownloadUnzipTask(mavenUsername, mavenPassword, config, false, true, tempFolder);
-			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
-			{
-				Get.workExecutors().getExecutor().execute(dut);
-			}
-			else
-			{
-				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				LookupService.startupFxPlatform();
-				ForkJoinPool.commonPool().execute(dut);
-			}
+			WorkExecutors.safeExecute(dut);
+
 			File jsonFile = dut.get();
 			return fromFile(jsonFile);
 		}

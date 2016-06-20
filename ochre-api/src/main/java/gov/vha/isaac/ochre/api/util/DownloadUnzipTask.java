@@ -26,12 +26,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Base64;
-import java.util.concurrent.ForkJoinPool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -116,16 +113,7 @@ public class DownloadUnzipTask extends Task<File>
 					updateProgress(calculateTask.getProgress(), calculateTask.getTotalWork());
 				}
 			});
-			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
-			{
-				Get.workExecutors().getExecutor().execute(calculateTask);
-			}
-			else
-			{
-				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				LookupService.startupFxPlatform();
-				ForkJoinPool.commonPool().execute(calculateTask);
-			}
+			WorkExecutors.safeExecute(calculateTask);
 			calculatedSha1Value = calculateTask.get();
 			sha1File.delete();
 		}

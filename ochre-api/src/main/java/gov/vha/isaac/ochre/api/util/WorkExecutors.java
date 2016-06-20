@@ -34,6 +34,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 
 /**
  * {@link WorkExecutors}
@@ -164,6 +166,24 @@ public class WorkExecutors
 	public ThreadPoolExecutor getExecutor()
 	{
 		return threadPoolExecutor_;
+	}
+	
+	/**
+	 * A convenience method that executes tasks on the the {@link #getExecutor()} pool, if HK2 / this class is initialized.  Otherwise
+	 * it executes it on the Java8 ForkJoinPool
+	 */
+	public static void safeExecute(Runnable r)
+	{
+		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
+		{
+			Get.workExecutors().getExecutor().execute(r);
+		}
+		else
+		{
+			//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
+			LookupService.startupFxPlatform();
+			ForkJoinPool.commonPool().execute(r);
+		}
 	}
 	
 	public static void main(String[] args) throws InterruptedException
