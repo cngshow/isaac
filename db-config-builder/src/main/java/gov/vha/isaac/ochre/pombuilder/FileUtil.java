@@ -24,6 +24,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import javax.xml.bind.JAXBContext;
@@ -114,5 +119,26 @@ public class FileUtil
 		is.read(buffer);
 
 		return new String(buffer, Charset.forName("UTF-8"));
+	}
+	
+	public static void recursiveDelete(File file) throws IOException
+	{
+		Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>()
+		{
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
+			{
+				Files.delete(file);
+				return FileVisitResult.CONTINUE;
+			}
+	
+			@Override
+			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException
+			{
+				Files.delete(dir);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		file.delete();
 	}
 }
