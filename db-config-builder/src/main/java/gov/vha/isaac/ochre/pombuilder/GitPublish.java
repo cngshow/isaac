@@ -69,8 +69,9 @@ public class GitPublish
 		
 		svc.setRootLocation(tempFolder);
 		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
-		return svc.readTags(gitUserName, gitPassword);
-		
+		ArrayList<String> temp = svc.readTags(gitUserName, gitPassword);
+		FileUtil.recursiveDelete(tempFolder);
+		return temp;
 	}
 	
 	/**

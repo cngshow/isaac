@@ -268,6 +268,8 @@ public class DBConfigurationCreator
 		FileUtil.writeFile("dbProjectTemplate", "src/assembly/MANIFEST.MF", f);
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, scm.getTag());
-		return scm.getTag();
+		String tag = scm.getTag();
+		FileUtil.recursiveDelete(f);
+		return tag;
 	}
 }

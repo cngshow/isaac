@@ -402,6 +402,7 @@ public class ContentConverterCreator
 		FileUtil.writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
+		FileUtil.recursiveDelete(f);
 		return tag;
 	}
 
