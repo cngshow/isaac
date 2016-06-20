@@ -22,10 +22,18 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
+import gov.vha.isaac.ochre.api.util.MavenPublish;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.api.util.Zip;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.converter.SupportedConverterTypes;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Task;
 
 /**
  * 
@@ -52,134 +60,232 @@ public class SrcUploadCreator
 	 * This should not point to a URL that represents a 'group' repository view.
 	 * @param repositoryUsername - The username to utilize to upload the artifact to the artifact server
 	 * @param repositoryPassword - The passwordto utilize to upload the artifact to the artifact server
-	 * @return
-	 * @throws Exception
+	 * @return - the task handle - which will return the tag that was created in the git repository upon completion.
+	 * @throws Throwable 
 	 */
-	public static String createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, File folderContainingContent, 
+	public static Task<String> createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, List<File> filesToUpload, 
 			String gitRepositoryURL, String gitUsername, String gitPassword,
-			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Exception
+			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
-		if (folderContainingContent == null || !folderContainingContent.isDirectory())
-		{
-			throw new Exception("The provided path does not exist as a folder!");
-		}
-		if (folderContainingContent.listFiles().length == 0)
+		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
 			throw new Exception("No content was found to upload!");
 		}
 		
-		//Otherwise, move forward.  Create our native-source folder, and move everything into it.
-		File nativeSource = new File(folderContainingContent, "native-source");
-		if (nativeSource.exists())
+		Task<String> uploader = new Task<String>()
 		{
-			throw new RuntimeException("Unexpected file found in upload content!");
-		}
-		File[] filesToUpload = folderContainingContent.listFiles();
-		nativeSource.mkdir();  //make this after listing the pre-existing files
-		for (File f : filesToUpload)
-		{
-			//validate it is a file, move it into native-source
-			if (f.isFile())
+			@Override
+			protected String call() throws Exception
 			{
-				Files.move(f.toPath(), nativeSource.toPath().resolve(f.toPath().getFileName()));
-			}
-			else
-			{
-				throw new Exception("Unexpected directory found in upload content!");
-			}
-		}
-		
-		
-		StringBuffer noticeAppend = new StringBuffer();
-		HashMap<String, String> pomSwaps = new HashMap<>();
-		
-		pomSwaps.put("#VERSION#", version);
-		pomSwaps.put("#SCM_URL#", gitRepositoryURL);
-		if (uploadType.getArtifactId().contains("*") && StringUtils.isBlank(extensionName))
-		{
-			throw new Exception("ExtensionName is required when the upload type artifact id contains a wildcard");
-		}
-		
-		switch(uploadType)
-		{
-			case SCT:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
-				pomSwaps.put("#ARTIFACTID#", "rf2-src-data-sct");
-				pomSwaps.put("#NAME#", "SnomedCT Source Upload");
-				break;
-			case SCT_EXTENSION:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
-				pomSwaps.put("#ARTIFACTID#", "rf2-src-data-" + extensionName + "-extension");
-				pomSwaps.put("#NAME#", "SnomedCT Extension Source Upload");
-				break;
-			case LOINC:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
-				pomSwaps.put("#ARTIFACTID#", "loinc-src-data");
-				pomSwaps.put("#NAME#", "LOINC Source Upload");
-				break;
-			case LOINC_TECH_PREVIEW:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
-				pomSwaps.put("#ARTIFACTID#", "loinc-src-data-tech-preview");
-				pomSwaps.put("#NAME#", "LOINC Tech Preview Source Upload");
-				break;
-			case VHAT:
-				pomSwaps.put("#LICENSE#", "");
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.vhat");
-				pomSwaps.put("#ARTIFACTID#", "vhat-src-data");
-				pomSwaps.put("#NAME#", "VHAT Source Upload");
-				break;
-			case RXNORM:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rxnorm-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/rxnorm.xml"));
-				pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rxnorm");
-				pomSwaps.put("#ARTIFACTID#", "rxnorm-src-data");
-				pomSwaps.put("#NAME#", "RxNorm Source Upload");
-				break;
-			//TODO RXNORM_SOLOR support
-			default :
-				throw new RuntimeException("oops");
-		}
-		
-		String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
-		
-		ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
-		int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
-		
-		String tag;
-		//Fix version number
-		if (highestBuildRevision == -1)
-		{
-			//No tag at all - create without rev number, don't need to change our pomSwaps
-			tag = tagWithoutRevNumber;
-		}
-		else
-		{
-			//If we are a SNAPSHOT, don't embed a build number, because nexus won't allow the upload, otherwise, embed a rev number
-			if (!pomSwaps.get("#VERSION#").endsWith("SNAPSHOT"))
-			{
-				pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
-			}
-			tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
-		}
+				updateMessage("Preparing");
+				try
+				{
+					File baseFolder = Files.createTempDirectory("src-upload").toFile();
+					
+					
+					//Otherwise, move forward.  Create our native-source folder, and move everything into it.
+					File nativeSource = new File(baseFolder, "native-source");
+					if (nativeSource.exists())
+					{
+						throw new RuntimeException("Unexpected file found in upload content!");
+					}
+					nativeSource.mkdir();
+					
+					for (File f : filesToUpload)
+					{
+						//validate it is a file, move it into native-source
+						if (f.isFile())
+						{
+							Files.move(f.toPath(), nativeSource.toPath().resolve(f.toPath().getFileName()));
+						}
+						else
+						{
+							throw new Exception("Unexpected directory found in upload content!  " + f.getAbsolutePath());
+						}
+					}
+					
+					StringBuffer noticeAppend = new StringBuffer();
+					HashMap<String, String> pomSwaps = new HashMap<>();
+					
+					pomSwaps.put("#VERSION#", version);
+					pomSwaps.put("#SCM_URL#", gitRepositoryURL);
+					if (uploadType.getArtifactId().contains("*") && StringUtils.isBlank(extensionName))
+					{
+						throw new Exception("ExtensionName is required when the upload type artifact id contains a wildcard");
+					}
+					
+					switch(uploadType)
+					{
+						case SCT:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
+							pomSwaps.put("#ARTIFACTID#", "rf2-src-data-sct");
+							pomSwaps.put("#NAME#", "SnomedCT Source Upload");
+							break;
+						case SCT_EXTENSION:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
+							pomSwaps.put("#ARTIFACTID#", "rf2-src-data-" + extensionName + "-extension");
+							pomSwaps.put("#NAME#", "SnomedCT Extension Source Upload");
+							break;
+						case LOINC:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
+							pomSwaps.put("#ARTIFACTID#", "loinc-src-data");
+							pomSwaps.put("#NAME#", "LOINC Source Upload");
+							break;
+						case LOINC_TECH_PREVIEW:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
+							pomSwaps.put("#ARTIFACTID#", "loinc-src-data-tech-preview");
+							pomSwaps.put("#NAME#", "LOINC Tech Preview Source Upload");
+							break;
+						case VHAT:
+							pomSwaps.put("#LICENSE#", "");
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.vhat");
+							pomSwaps.put("#ARTIFACTID#", "vhat-src-data");
+							pomSwaps.put("#NAME#", "VHAT Source Upload");
+							break;
+						case RXNORM:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rxnorm-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/rxnorm.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rxnorm");
+							pomSwaps.put("#ARTIFACTID#", "rxnorm-src-data");
+							pomSwaps.put("#NAME#", "RxNorm Source Upload");
+							break;
+						//TODO RXNORM_SOLOR support
+						default :
+							throw new RuntimeException("oops");
+					}
+					
+					String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+					
+					ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
+					int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
+					
+					String tag;
+					//Fix version number
+					if (highestBuildRevision == -1)
+					{
+						//No tag at all - create without rev number, don't need to change our pomSwaps
+						tag = tagWithoutRevNumber;
+					}
+					else
+					{
+						//If we are a SNAPSHOT, don't embed a build number, because nexus won't allow the upload, otherwise, embed a rev number
+						if (!pomSwaps.get("#VERSION#").endsWith("SNAPSHOT"))
+						{
+							pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+						}
+						tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
+					}
 
-		pomSwaps.put("#SCM_TAG#", tag);
+					pomSwaps.put("#SCM_TAG#", tag);
 
-		FileUtil.writeFile("shared", "LICENSE.txt", folderContainingContent);
-		FileUtil.writeFile("shared", "NOTICE.txt", folderContainingContent, null, noticeAppend.toString());
-		FileUtil.writeFile("srcUploadProjectTemplate", "native-source/DOTgitignore", folderContainingContent);
-		FileUtil.writeFile("srcUploadProjectTemplate", "assembly.xml", folderContainingContent);
-		FileUtil.writeFile("srcUploadProjectTemplate", "pom.xml", folderContainingContent, pomSwaps, "");
+					FileUtil.writeFile("shared", "LICENSE.txt", baseFolder);
+					FileUtil.writeFile("shared", "NOTICE.txt", baseFolder, null, noticeAppend.toString());
+					FileUtil.writeFile("srcUploadProjectTemplate", "native-source/DOTgitignore", baseFolder);
+					FileUtil.writeFile("srcUploadProjectTemplate", "assembly.xml", baseFolder);
+					FileUtil.writeFile("srcUploadProjectTemplate", "pom.xml", baseFolder, pomSwaps, "");
+					
+					updateTitle("Publishing configuration to Git");
+					GitPublish.publish(baseFolder, gitRepositoryURL, gitUsername, gitPassword, tag);
+					
+					updateTitle("Zipping content");
+					
+					Zip z = new Zip(pomSwaps.get("#ARTIFACTID#"), pomSwaps.get("#VERSION#"), null, null, new File(baseFolder, "target"), nativeSource, false);
+					
+					ArrayList<File> toZip = new ArrayList<>();
+					for (File f : nativeSource.listFiles())
+					{
+						if (f.getName().equals(".gitignore"))
+						{
+							//noop
+						}
+						else
+						{
+							toZip.add(f);
+						}
+					}
+					
+					z.getStatus().addListener(new ChangeListener<String>()
+					{
+						@Override
+						public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+						{
+							updateMessage(newValue);
+						}
+					});
+					z.getTotalWork().add(z.getWorkComplete()).addListener(new ChangeListener<Number>()
+					{
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+						{
+							updateProgress(z.getWorkComplete().get(), z.getTotalWork().get());
+						}
+					});
+					
+					//This blocks till complete
+					File zipFile = z.addFiles(toZip);
+					
+					updateTitle("Publishing files to the Artifact Repository");
+					
+					MavenPublish pm = new MavenPublish(pomSwaps.get("#GROUPID#"), pomSwaps.get("#ARTIFACTID#"), pomSwaps.get("#VERSION#"), 
+							new File(baseFolder, "pom.xml"), new File[] {zipFile}, artifactRepositoryURL, repositoryUsername, repositoryPassword);
+					
+					pm.progressProperty().addListener(new ChangeListener<Number>()
+					{
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+						{
+							updateProgress(pm.getWorkDone(), pm.getTotalWork());
+						}
+					});
+					pm.messageProperty().addListener(new ChangeListener<String>()
+					{
+						@Override
+						public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+						{
+							updateMessage(newValue);
+						}
+					});
+					
+					WorkExecutors.safeExecute(pm);
+					
+					//block till upload complete
+					pm.get();
+					
+					updateTitle("Cleaning Up");
+					FileUtil.recursiveDelete(baseFolder);
+					
+					updateTitle("Complete");
+					return tag;
+				}
+				catch (Throwable e)
+				{
+					throw new RuntimeException(e);
+				}
+				
+			}
+		};
 		
-		GitPublish.publish(folderContainingContent, gitRepositoryURL, gitUsername, gitPassword, tag);
-		return tag;
-		//TODO implement nexus upload
+		return uploader;
+	}
+	
+	/**
+	 * A utility method to execute a task and wait for it to complete.
+	 * @param task
+	 * @return the string returned by the task
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
+	{
+		WorkExecutors.safeExecute(task);
+		return task.get();
 	}
 }
