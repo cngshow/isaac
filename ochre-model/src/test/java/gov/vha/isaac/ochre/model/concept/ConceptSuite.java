@@ -23,7 +23,7 @@ import org.testng.annotations.BeforeGroups;
 
 import java.nio.file.Paths;
 
-import static gov.vha.isaac.ochre.api.constants.Constants.CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY;
+import static gov.vha.isaac.ochre.api.constants.Constants.DATA_STORE_ROOT_LOCATION_PROPERTY;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 import java.util.ArrayList;
@@ -43,9 +43,9 @@ public class ConceptSuite {
     public void setUpSuite() throws Exception {
         LOG.info("ModelSuiteManagement setup");
 
-        System.setProperty(CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY, "target/object-chronicles");
+        System.setProperty(DATA_STORE_ROOT_LOCATION_PROPERTY, "target/testdb");
 
-        java.nio.file.Path dbFolderPath = Paths.get(System.getProperty(CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY));
+        java.nio.file.Path dbFolderPath = Paths.get(System.getProperty(DATA_STORE_ROOT_LOCATION_PROPERTY));
         LOG.info("termstore folder path exists: " + dbFolderPath.toFile().exists());
 
         LookupService.startupIsaac();

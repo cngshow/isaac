@@ -42,23 +42,11 @@ public class Constants
 	 * Appended to the path specified by the {@link #DATA_STORE_ROOT_LOCATION_PROPERTY} 
 	 */
 	public static final String DEFAULT_CHRONICLE_FOLDER = "object-chronicles";
-
+	
 	/**
 	 * Appended to the path specified by the {@link #DATA_STORE_ROOT_LOCATION_PROPERTY}
 	 */
 	public static final String DEFAULT_SEARCH_FOLDER = "search";
-
-	/**
-	 * May be optionally used to specify an absolute path for the 'object-chronicles' folder.  If this is specified, the 
-	 * {@link #DATA_STORE_ROOT_LOCATION_PROPERTY} {@link #DEFAULT_CHRONICLE_FOLDER} values are ignored.
-	 */
-	public static final String CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY = "gov.vha.isaac.ochre.api.constants.chronicle-collection-root-location";
-	
-	/**
-	 * May be optionally used to specify an absolute path for the 'search' folder.  If this is specified, the 
-	 * {@link #DATA_STORE_ROOT_LOCATION_PROPERTY} {@link #DEFAULT_SEARCH_FOLDER} values are ignored.
-	 */
-	public static final String SEARCH_ROOT_LOCATION_PROPERTY = "gov.vha.isaac.ochre.api.constants.search-root-location";
 	
 	/**
 	 * May be optionally used to enable console-level, extremely verbose debug output.  

@@ -18,19 +18,18 @@
  */
 package gov.vha.isaac.ochre.api;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.constants.Constants;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableEditCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableLanguageCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableLogicCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
-import org.jvnet.hk2.annotations.Contract;
 
 /**
  * An interface used for system configuration. Services started by the
@@ -43,20 +42,19 @@ import org.jvnet.hk2.annotations.Contract;
 public interface ConfigurationService {
 
     /**
-     * @return The root folder of the database - this method returns a value the
-     * returned path should contain subfolders of
+     * @return The root folder of the database - the returned path should contain 
+     * subfolders of
      * {@link Constants#DEFAULT_CHRONICLE_FOLDER} and
      * {@link Constants#DEFAULT_SEARCH_FOLDER}.
      *
-     * Note that if this returns no value, {@link #getChronicleFolderPath()} and
-     * {@link #getSearchFolderPath()} must return valid values.
      *
      * This method will return (in the following order):
      *
      * - The value specified by a call to {@link #setDataStoreFolderPath(Path)}
      * - a path constructed from the value of
      * {@link Constants#DATA_STORE_ROOT_LOCATION_PROPERTY} if
-     * {@link #setDataStoreFolderPath(Path)} was never called - Nothing if
+     * {@link #setDataStoreFolderPath(Path)} was never called 
+     * - Nothing if
      * {@link Constants#DATA_STORE_ROOT_LOCATION_PROPERTY} has not been set.
      *
      * If a value is returned, the returned path will exist on disk at the time
@@ -83,28 +81,19 @@ public interface ConfigurationService {
     /**
      * @return The root folder of the database - one would expect to find a
      * data-store specific folder such as "cradle" inside this folder. The
-     * default implementation returns either:
-     *
-     * A path as specified exactly via
-     * {@link Constants#CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY} (if the
-     * property is set) or the result of
+     * default implementation returns the result of
      * {@link #getDataStoreFolderPath()} + {@link Constants#DEFAULT_CHRONICLE_FOLDER}
      *
      * The returned path exists on disk at the time that this method returns.
      */
     public default Path getChronicleFolderPath() {
         Path result;
-        String path = System.getProperty(Constants.CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY);
-        if (StringUtils.isNotBlank(path)) {
-            result = Paths.get(path);
+        Optional<Path> rootPath = getDataStoreFolderPath();
+        if (!rootPath.isPresent()) {
+            throw new IllegalStateException("The ConfigurationService implementation has not been configured by a call to setDataStoreFolderPath(),"
+                    + " and the system property " + Constants.DATA_STORE_ROOT_LOCATION_PROPERTY + " has not been set.  Cannot construct the chronicle folder path.");
         } else {
-            Optional<Path> rootPath = getDataStoreFolderPath();
-            if (!rootPath.isPresent()) {
-                throw new IllegalStateException("The ConfigurationService implementation has not been configured by a call to setDataStoreFolderPath(),"
-                        + " and the system property " + Constants.DATA_STORE_ROOT_LOCATION_PROPERTY + " has not been set.  Cannot construct the chronicle folder path.");
-            } else {
-                result = rootPath.get().resolve(Constants.DEFAULT_CHRONICLE_FOLDER);
-            }
+            result = rootPath.get().resolve(Constants.DEFAULT_CHRONICLE_FOLDER);
         }
         try {
             Files.createDirectories(result);
@@ -128,17 +117,12 @@ public interface ConfigurationService {
      */
     public default Path getSearchFolderPath() {
         Path result;
-        String path = System.getProperty(Constants.SEARCH_ROOT_LOCATION_PROPERTY);
-        if (StringUtils.isNotBlank(path)) {
-            result = Paths.get(path);
+        Optional<Path> rootPath = getDataStoreFolderPath();
+        if (!rootPath.isPresent()) {
+            throw new IllegalStateException("The ConfigurationService implementation has not been configured by a call to setDataStoreFolderPath(),"
+                    + " and the system property " + Constants.DATA_STORE_ROOT_LOCATION_PROPERTY + " has not been set.  Cannot construct the search folder path.");
         } else {
-            Optional<Path> rootPath = getDataStoreFolderPath();
-            if (!rootPath.isPresent()) {
-                throw new IllegalStateException("The ConfigurationService implementation has not been configured by a call to setDataStoreFolderPath(),"
-                        + " and the system property " + Constants.DATA_STORE_ROOT_LOCATION_PROPERTY + " has not been set.  Cannot construct the search folder path.");
-            } else {
-                result = rootPath.get().resolve(Constants.DEFAULT_SEARCH_FOLDER);
-            }
+            result = rootPath.get().resolve(Constants.DEFAULT_SEARCH_FOLDER);
         }
         try {
             Files.createDirectories(result);
