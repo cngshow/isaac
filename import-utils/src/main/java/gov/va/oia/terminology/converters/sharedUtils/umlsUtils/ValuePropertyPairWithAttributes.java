@@ -2,10 +2,16 @@ package gov.va.oia.terminology.converters.sharedUtils.umlsUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.UUID;
-
+import gov.va.oia.terminology.converters.sharedUtils.ComponentReference;
+import gov.va.oia.terminology.converters.sharedUtils.EConceptUtility;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.Property;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.ValuePropertyPair;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 
 public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 {
@@ -50,30 +56,31 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 		refsetMembership.add(refsetConcept);
 	}
 	
-//	public static void processAttributes(EConceptUtility eConceptUtility, List<? extends ValuePropertyPairWithAttributes> descriptionSource, List<TtkDescriptionChronicle> descriptions)
-//	{
-//		for (int i = 0; i < descriptionSource.size(); i++)
-//		{
-//			for (Entry<UUID, ArrayList<String>> attributes : descriptionSource.get(i).stringAttributes.entrySet())
-//			{
-//				for (String value : attributes.getValue())
-//				{
-//					eConceptUtility.addStringAnnotation(descriptions.get(i), value, attributes.getKey(), Status.ACTIVE);
-//				}
-//			}
-//			
-//			for (Entry<UUID, ArrayList<UUID>> attributes : descriptionSource.get(i).uuidAttributes.entrySet())
-//			{
-//				for (UUID value : attributes.getValue())
-//				{
-//					eConceptUtility.addUuidAnnotation(descriptions.get(i), value, attributes.getKey());
-//				}
-//			}
-//			
-//			for (TtkConceptChronicle refsetConcept : descriptionSource.get(i).refsetMembership)
-//			{
-//				eConceptUtility.addDynamicRefsetMember(refsetConcept, descriptions.get(i).getPrimordialComponentUuid(), null, Status.ACTIVE, null);
-//			}
-//		}
-//	}
+	public static void processAttributes(EConceptUtility eConceptUtility, List<? extends ValuePropertyPairWithAttributes> descriptionSource, 
+		List<SememeChronology<DescriptionSememe<?>>> descriptions)
+	{
+		for (int i = 0; i < descriptionSource.size(); i++)
+		{
+			for (Entry<UUID, ArrayList<String>> attributes : descriptionSource.get(i).stringAttributes.entrySet())
+			{
+				for (String value : attributes.getValue())
+				{
+					eConceptUtility.addStringAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey(), State.ACTIVE);
+				}
+			}
+			
+			for (Entry<UUID, ArrayList<UUID>> attributes : descriptionSource.get(i).uuidAttributes.entrySet())
+			{
+				for (UUID value : attributes.getValue())
+				{
+					eConceptUtility.addUUIDAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey());
+				}
+			}
+			
+			for (UUID refsetConcept : descriptionSource.get(i).refsetMembership)
+			{
+				eConceptUtility.addRefsetMembership(ComponentReference.fromChronology(descriptions.get(i)), refsetConcept, State.ACTIVE, null);
+			}
+		}
+	}
 }

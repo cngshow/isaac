@@ -29,7 +29,6 @@ import java.util.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.vha.isaac.ochre.api.LookupService;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -69,6 +68,7 @@ public class DownloadUnzipTask extends Task<File>
 		this.url_ = url;
 		this.unzip_ = unzip;
 		this.targetFolder_ = targetFolder;
+		this.failOnBadCheksum_ = failOnBadChecksum;
 		if (targetFolder_ == null)
 		{
 			targetFolder_ = File.createTempFile("ISAAC", "");
@@ -113,7 +113,7 @@ public class DownloadUnzipTask extends Task<File>
 					updateProgress(calculateTask.getProgress(), calculateTask.getTotalWork());
 				}
 			});
-			LookupService.get().getService(WorkExecutors.class).getExecutor().submit(calculateTask);
+			WorkExecutors.safeExecute(calculateTask);
 			calculatedSha1Value = calculateTask.get();
 			sha1File.delete();
 		}
@@ -133,6 +133,12 @@ public class DownloadUnzipTask extends Task<File>
 			}
 		}
 		
+		if (cancel_)
+		{
+			log.debug("Download cancelled");
+			throw new Exception("Cancelled!");
+		}
+		
 		if (unzip_)
 		{
 			updateTitle("Unzipping");
@@ -146,7 +152,8 @@ public class DownloadUnzipTask extends Task<File>
 					if (cancel_)
 					{
 						zipFile.getProgressMonitor().cancelAllTasks();
-						break;
+						log.debug("Download cancelled");
+						throw new Exception("Cancelled!");
 					}
 					updateProgress(zipFile.getProgressMonitor().getPercentDone(), 100);
 					updateMessage("Unzipping " + dataFile.getName() + " at " + zipFile.getProgressMonitor().getPercentDone() + "%");

@@ -47,6 +47,13 @@ public abstract class ConverterBaseMojo extends AbstractMojo
 	 */
 	@Parameter (required = true)
 	protected File inputFileLocation;
+	
+
+	/**
+	 * Output artifactId
+	 */
+	@Parameter (required = true, defaultValue = "${project.artifactId}")
+	protected String converterOutputArtifactId;
 
 	/**
 	 * Loader version number
@@ -61,13 +68,13 @@ public abstract class ConverterBaseMojo extends AbstractMojo
 	protected String converterOutputArtifactVersion;
 	
 	/**
-	 * Converter result version number
+	 * Converter result classifier
 	 */
 	@Parameter (required = false, defaultValue = "${resultArtifactClassifier}")
 	protected String converterOutputArtifactClassifier;
 	
 	/**
-	 * Converter input version number
+	 * Converter source artifact version
 	 */
 	@Parameter (required = true, defaultValue = "${sourceData.version}")
 	protected String converterSourceArtifactVersion;

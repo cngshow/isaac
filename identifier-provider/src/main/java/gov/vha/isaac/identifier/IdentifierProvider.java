@@ -343,6 +343,14 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         if (uuids == null) {
             throw new IllegalArgumentException("A UUID must be specified.");
         }
+        final LinkedHashMap<UUID, Integer> cacheMap = THREAD_LOCAL_CACHE.get();
+
+        //Check the cache to (hopefully) avoid a potential disk read
+        boolean cacheHit = uuids.stream().anyMatch((uuid) -> (cacheMap.get(uuid) != null)); 
+        if (cacheHit) {
+            return true;
+        }
+        
         return uuids.stream().anyMatch((uuid) -> (uuidIntMapMap.containsKey(uuid)));
     }
 

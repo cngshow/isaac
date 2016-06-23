@@ -16,28 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.model.sememe;
+package gov.vha.isaac.ochre.pombuilder.artifacts;
 
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-
-class LRUDynamicSememeDescriptorCache<K, V> extends LinkedHashMap<K, V>
+/**
+ * 
+ * {@link SDOSourceContent}
+ * An artifact that points to a zip file containing native SDO terminology content, such as a set of RF2 files, or the VETs xml file.
+ * 
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ */
+public class SDOSourceContent extends Artifact
 {
-	private static final long serialVersionUID = 1L;
-	private final int maxSize_;
-	
-	public LRUDynamicSememeDescriptorCache(int maxSize)
+	public SDOSourceContent(String groupId, String artifactId, String version)
 	{
-		super(16, .75f, true);
-		maxSize_ = maxSize;
+		this(groupId, artifactId, version, null);
 	}
-
-	/**
-	 * @see java.util.LinkedHashMap#removeEldestEntry(java.util.Map.Entry)
-	 */
-	@Override
-	protected boolean removeEldestEntry(Entry<K, V> eldest)
+	
+	public SDOSourceContent(String groupId, String artifactId, String version, String classifier)
 	{
-		return super.size() > maxSize_;
+		super(groupId, artifactId, version, classifier);
 	}
 }

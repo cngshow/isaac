@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.02-SNAPSHOT</version>
+    <version>3.07-SNAPSHOT</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -350,11 +350,6 @@
                     <version>2.6</version>
                 </plugin>
                 <plugin>
-                    <groupId>ch.syabru.maven.plugins</groupId>
-                    <artifactId>maven-timemachine-plugin</artifactId>
-                    <version>1.0.0</version>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>2.6</version>
@@ -524,10 +519,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>ch.syabru.maven.plugins</groupId>
-                <artifactId>maven-timemachine-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
@@ -658,8 +649,10 @@
         <module>stamp-provider</module>
         <module>import-utils</module>
         <module>db-builder</module>
+        <module>db-config-builder</module>
         <module>ochre-mojo-log-config</module>
         <module>ochre-mapping</module>
+        <module>sync-git</module>
 		<module>ibdf-differ</module>
     </modules>
     

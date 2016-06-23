@@ -26,6 +26,7 @@ public class ValuePropertyPair implements Comparable<ValuePropertyPair>
 	private String value_;
 	private Boolean valueDisabled_ = null;  //used for overriding the property default with instance data
 	private UUID descriptionUUID_;
+	protected Long time_ = null;
 	
 	
 	public ValuePropertyPair(String value, UUID descriptionUUID, Property property)
@@ -52,6 +53,11 @@ public class ValuePropertyPair implements Comparable<ValuePropertyPair>
 		return value_;
 	}
 	
+	public void setUUID(UUID uuid)
+	{
+		descriptionUUID_ = uuid;
+	}
+	
 	public UUID getUUID()
 	{
 		return descriptionUUID_;
@@ -76,6 +82,16 @@ public class ValuePropertyPair implements Comparable<ValuePropertyPair>
 		{
 			return property_.isDisabled();
 		}
+	}
+	
+	public void setTime(long time)
+	{
+		time_ = time;
+	}
+	
+	public Long getTime()
+	{
+		return time_;
 	}
 
 	@Override

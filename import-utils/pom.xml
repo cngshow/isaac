@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>3.02-SNAPSHOT</version>
+		<version>3.07-SNAPSHOT</version>
 	</parent>
 
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
@@ -95,6 +95,11 @@
 		<dependency>
 			<groupId>gov.vha.isaac.ochre.modules</groupId>
 			<artifactId>progress-provider</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>db-config-builder</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

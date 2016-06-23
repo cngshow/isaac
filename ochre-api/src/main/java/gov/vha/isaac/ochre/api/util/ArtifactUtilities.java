@@ -53,6 +53,20 @@ public class ArtifactUtilities
 		}
 	}
 	
+	/**
+	 * 
+	 * @param baseMavenURL - optional - but required if you are downloading a SNAPSHOT dependency, as this method will need to download the metadata file
+	 * from the repository server in order to determine the proper version component for the SNAPSHOT.
+	 * @param mavenUsername - optional - only used for a SNAPSHOT dependency
+	 * @param mavenPassword - optional - only used for a SNAPSHOT dependency
+	 * @param groupId
+	 * @param artifactId
+	 * @param version
+	 * @param classifier - optional
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
 	public static String makeMavenRelativePath(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
 			String version, String classifier, String type) throws Exception
 	{
@@ -65,7 +79,8 @@ public class ArtifactUtilities
 			URL metadataUrl = new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/") + temp + "/" + artifactId + "/" + version + "/maven-metadata.xml");
 			//Need to download the maven-metadata.xml file
 			Task<File> task = new DownloadUnzipTask(mavenUsername, mavenPassword, metadataUrl, false, false, null);
-			Get.workExecutors().getExecutor().execute(task);
+			WorkExecutors.safeExecute(task);
+
 			File metadataFile = task.get();
 
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
@@ -87,6 +102,26 @@ public class ArtifactUtilities
 		
 		return temp + "/" + artifactId + "/" + version + "/" + artifactId + "-" + versionWithoutSnapshot + snapshotVersion +
 				(StringUtils.isNotBlank(classifier) ? "-" + classifier : "") + "." + type;
+	}
+	
+	/**
+	 * 
+	 * @param baseMavenURL 
+	 * @param mavenUsername - optional - only used for a SNAPSHOT dependency
+	 * @param mavenPassword - optional - only used for a SNAPSHOT dependency
+	 * @param groupId
+	 * @param artifactId
+	 * @param version
+	 * @param classifier - optional
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public static URL makeFullURL(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
+			String version, String classifier, String type) throws Exception
+	{
+		return new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/")
+			+ makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
 	}
 	
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException
