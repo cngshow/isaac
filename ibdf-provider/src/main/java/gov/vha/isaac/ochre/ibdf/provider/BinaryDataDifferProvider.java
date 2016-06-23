@@ -57,7 +57,6 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
-import gov.vha.isaac.ochre.model.externalizable.IbdfDiffUtility;
 
 /**
  * {@link BinaryDataDifferService}
@@ -68,7 +67,7 @@ import gov.vha.isaac.ochre.model.externalizable.IbdfDiffUtility;
 @RunLevel(value = 2)
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private final Logger log = LogManager.getLogger();
-	private IbdfDiffUtility diffUtil;
+	private BinaryDataDifferProviderUtility diffUtil;
 
 	// Stream hack
 	private int conceptCount, sememeCount, itemCount;
@@ -319,7 +318,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	public void initialize(String analysisFilesOutputDir, String ibdfFileOutputDir, String changesetFileName,
 			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
 			boolean diffOnModule, boolean diffOnPath, String importDate) {
-		diffUtil = new IbdfDiffUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
+		diffUtil = new BinaryDataDifferProviderUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
 		diffUtil.setNewImportDate(importDate);
 
 		this.analysisFilesOutputDir = analysisFilesOutputDir;

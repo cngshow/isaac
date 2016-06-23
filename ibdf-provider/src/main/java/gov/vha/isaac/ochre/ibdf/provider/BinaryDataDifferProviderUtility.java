@@ -1,4 +1,4 @@
-package gov.vha.isaac.ochre.model.externalizable;
+package gov.vha.isaac.ochre.ibdf.provider;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -47,7 +47,7 @@ import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.SememeVersionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
-public class IbdfDiffUtility {
+public class BinaryDataDifferProviderUtility {
 	static long newImportDate;
 	static boolean componentChangeFound = false;
 	boolean diffOnStatus;
@@ -57,7 +57,7 @@ public class IbdfDiffUtility {
 	boolean diffOnPath;
 	private SememeBuilderService<?> sememeBuilderService_;
 
-	public IbdfDiffUtility(Boolean diffOnStatus, Boolean diffOnTimestamp, Boolean diffOnAuthor, Boolean diffOnModule,
+	public BinaryDataDifferProviderUtility(Boolean diffOnStatus, Boolean diffOnTimestamp, Boolean diffOnAuthor, Boolean diffOnModule,
 			Boolean diffOnPath) {
 		this.diffOnStatus = diffOnStatus;
 		this.diffOnTimestamp = diffOnTimestamp;
