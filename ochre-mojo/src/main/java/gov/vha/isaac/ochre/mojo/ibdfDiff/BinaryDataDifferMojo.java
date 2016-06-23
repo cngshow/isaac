@@ -49,7 +49,7 @@ import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
  */
 
 @Service(name = "diff-ibdfs")
-public class IbdfDiffMojo extends QuasiMojo {
+public class BinaryDataDifferMojo extends QuasiMojo {
 	/**
 	 * {@code ibdf format} files to import.
 	 */

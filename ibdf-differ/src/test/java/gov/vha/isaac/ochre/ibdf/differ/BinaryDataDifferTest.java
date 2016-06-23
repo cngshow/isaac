@@ -25,7 +25,7 @@ import gov.vha.isaac.ochre.ibdf.provider.BinaryDataDifferProvider;
 /**
  * Unit test for IbdfDiff.
  */
-public class IbdfDiffTest {
+public class BinaryDataDifferTest {
 	private static final Logger log = LogManager.getLogger();
 	private File dataStoreLocation = new File("target/db");
 
