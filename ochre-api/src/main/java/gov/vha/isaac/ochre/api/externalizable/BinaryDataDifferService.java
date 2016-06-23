@@ -23,6 +23,9 @@ import java.util.Set;
 import org.jvnet.hk2.annotations.Contract;
 
 /**
+ * HK2 Service Contract for BinaryDataDifferProvider
+ * 
+ * {@link BinaryDataDifferProvider}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -32,33 +35,13 @@ public interface BinaryDataDifferService {
 		NEW_COMPONENTS, RETIRED_COMPONENTS, MODIFIED_COMPONENTS;
 	}
 
-	/**
-	 * Return a queue view of the data reader service - the queue being
-	 * populated by a multi-threaded operation. Order is not maintained.
-	 * @param importDate 
-	 * 
-	 * @return
-	 */
 	public void initialize(String analysisFilesOutputDir, String ibdfFileOutputDir, String changesetFileName,
 			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
 			boolean diffOnModule, boolean diffOnPath, String importDate);
 
-	/**
-	 * Call to determine if no futher elements will populate the queue
-	 * 
-	 * @param newVersionFile
-	 * @param oldVersionFile
-	 * @throws Exception
-	 */
 	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processVersion(File versionFile)
 			throws Exception;
 
-	/**
-	 * Cancel any inprogress processing
-	 * 
-	 * @param newContentMap
-	 * @param oldContentMap
-	 */
 	public Map<ChangeType, List<OchreExternalizable>> identifyVersionChanges(
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap);
