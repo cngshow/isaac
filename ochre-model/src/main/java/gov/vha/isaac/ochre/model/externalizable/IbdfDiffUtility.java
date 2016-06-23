@@ -183,31 +183,31 @@ public class IbdfDiffUtility {
 	}
 
 
-	private SememeVersion populateData(SememeVersion newVer, SememeVersion originalVersion, int inactiveStampSeq) {
+	private SememeVersion<?> populateData(SememeVersion<?> newVer, SememeVersion<?> originalVersion, int inactiveStampSeq) {
 		switch (newVer.getChronology().getSememeType()) {
 		case MEMBER:
 			return newVer;
 		case COMPONENT_NID:
-			((MutableComponentNidSememe) newVer)
-					.setComponentNid(((ComponentNidSememe) originalVersion).getComponentNid());
+			((MutableComponentNidSememe<?>) newVer)
+					.setComponentNid(((ComponentNidSememe<?>) originalVersion).getComponentNid());
 			return newVer;
 		case DESCRIPTION:
-			((MutableDescriptionSememe) newVer).setText(((DescriptionSememe) originalVersion).getText());
-			((MutableDescriptionSememe) newVer).setDescriptionTypeConceptSequence(
-					((DescriptionSememe) originalVersion).getDescriptionTypeConceptSequence());
-			((MutableDescriptionSememe) newVer).setCaseSignificanceConceptSequence(
-					((DescriptionSememe) originalVersion).getCaseSignificanceConceptSequence());
-			((MutableDescriptionSememe) newVer)
-					.setLanguageConceptSequence(((DescriptionSememe) originalVersion).getLanguageConceptSequence());
+			((MutableDescriptionSememe<?>) newVer).setText(((DescriptionSememe<?>) originalVersion).getText());
+			((MutableDescriptionSememe<?>) newVer).setDescriptionTypeConceptSequence(
+					((DescriptionSememe<?>) originalVersion).getDescriptionTypeConceptSequence());
+			((MutableDescriptionSememe<?>) newVer).setCaseSignificanceConceptSequence(
+					((DescriptionSememe<?>) originalVersion).getCaseSignificanceConceptSequence());
+			((MutableDescriptionSememe<?>) newVer)
+					.setLanguageConceptSequence(((DescriptionSememe<?>) originalVersion).getLanguageConceptSequence());
 			return newVer;
 		case DYNAMIC:
-			((MutableDynamicSememe) newVer).setData(((DynamicSememe) originalVersion).getData());
+			((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
 			return newVer;
 		case LONG:
-			((MutableLongSememe) newVer).setLongValue(((LongSememe) originalVersion).getLongValue());
+			((MutableLongSememe<?>) newVer).setLongValue(((LongSememe<?>) originalVersion).getLongValue());
 			return newVer;
 		case STRING:
-			((MutableStringSememe) newVer).setString(((StringSememe) originalVersion).getString());
+			((MutableStringSememe<?>) newVer).setString(((StringSememe<?>) originalVersion).getString());
 			return newVer;
 		case RELATIONSHIP_ADAPTOR:
 			RelationshipVersionAdaptorImpl origRelVer = (RelationshipVersionAdaptorImpl) originalVersion;
@@ -217,7 +217,7 @@ public class IbdfDiffUtility {
 
 			return new RelationshipVersionAdaptorImpl(key, inactiveStampSeq);
 		case LOGIC_GRAPH:
-			((MutableLogicGraphSememe) newVer).setGraphData(((LogicGraphSememe) originalVersion).getGraphData());
+			((MutableLogicGraphSememe<?>) newVer).setGraphData(((LogicGraphSememe<?>) originalVersion).getGraphData());
 			return newVer;
 		case UNKNOWN:
 			throw new UnsupportedOperationException();
@@ -226,7 +226,7 @@ public class IbdfDiffUtility {
 		return null;
 	}
 
-	private Class getSememeClass(SememeVersion<?> sememe) {
+	private Class<?> getSememeClass(SememeVersion<?> sememe) {
 		{
 			switch (sememe.getChronology().getSememeType()) {
 			case COMPONENT_NID:
@@ -262,10 +262,10 @@ public class IbdfDiffUtility {
 				return newChron;
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
 				ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
-				SememeChronology sememe = null;
+				SememeChronology<?> sememe = null;
 				for (StampedVersion version : newChron.getVersionList()) {
-					SememeBuilder builder = getBuilder((SememeVersion)version);
-					 sememe = (SememeChronology)builder.build(stampSeq, builtObjects);
+					SememeBuilder<?> builder = getBuilder((SememeVersion<?>)version);
+					 sememe = (SememeChronology<?>)builder.build(stampSeq, builtObjects);
 				}
 				
 				return sememe;
@@ -279,22 +279,18 @@ public class IbdfDiffUtility {
 		return null;
 	}
 
-	private SememeBuilder<?> getBuilder(SememeVersion version) {
-		
-
-//		SememeBuilderProvider provider = new SememeBuilderProvider();
-//		
-		SememeBuilder builder = null;
+	private SememeBuilder<?> getBuilder(SememeVersion<?> version) {
+		SememeBuilder<?> builder = null;
 		
 		switch (version.getChronology().getSememeType()) {
 		case COMPONENT_NID:
-			ComponentNidSememe compNidSememe = (ComponentNidSememe)version;
+			ComponentNidSememe<?> compNidSememe = (ComponentNidSememe<?>)version;
 			builder = sememeBuilderService_.getComponentSememeBuilder(compNidSememe.getComponentNid(),
 																	  compNidSememe.getReferencedComponentNid(),
 																	  compNidSememe.getAssemblageSequence());
 			break;
 		case DESCRIPTION:
-			DescriptionSememe descSememe = (DescriptionSememe)version;
+			DescriptionSememe<?> descSememe = (DescriptionSememe<?>)version;
 			builder = sememeBuilderService_.getDescriptionSememeBuilder(descSememe.getCaseSignificanceConceptSequence(), 
 																	    descSememe.getLanguageConceptSequence(),
 																	    descSememe.getDescriptionTypeConceptSequence(),
@@ -302,13 +298,13 @@ public class IbdfDiffUtility {
 																	    descSememe.getReferencedComponentNid());
 			break;
 		case DYNAMIC:
-			DynamicSememe dynSememe = (DynamicSememe)version;
+			DynamicSememe<?> dynSememe = (DynamicSememe<?>)version;
 			builder = sememeBuilderService_.getDynamicSememeBuilder(dynSememe.getReferencedComponentNid(),
 																	dynSememe.getAssemblageSequence(),
 																	dynSememe.getData());
 			break;
 		case LONG:
-			LongSememe longSememe = (LongSememe)version;
+			LongSememe<?> longSememe = (LongSememe<?>)version;
 			builder = sememeBuilderService_.getLongSememeBuilder(longSememe.getLongValue(), 
 																 longSememe.getReferencedComponentNid(),
 																 longSememe.getAssemblageSequence());
@@ -318,7 +314,7 @@ public class IbdfDiffUtility {
 																	   version.getAssemblageSequence());
 			break;
 		case STRING:
-			StringSememe stringSememe = (StringSememe)version;
+			StringSememe<?> stringSememe = (StringSememe<?>)version;
 			builder = sememeBuilderService_.getStringSememeBuilder(stringSememe.getString(),
 																   stringSememe.getReferencedComponentNid(),
 																   stringSememe.getAssemblageSequence());
@@ -333,7 +329,7 @@ public class IbdfDiffUtility {
 			return new RelationshipVersionAdaptorImpl(key, inactiveStampSeq);
 */			break;
 		case LOGIC_GRAPH:
-			LogicGraphSememe logicGraphSememe = (LogicGraphSememe)version;
+			LogicGraphSememe<?> logicGraphSememe = (LogicGraphSememe<?>)version;
 			builder = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicGraphSememe.getLogicalExpression(),
 																		      logicGraphSememe.getReferencedComponentNid(),
 																		      logicGraphSememe.getAssemblageSequence());
@@ -355,8 +351,7 @@ public class IbdfDiffUtility {
 
 		if (type == OchreExternalizableObjectType.CONCEPT) {
 
-			ConceptVersion newVer = ((ConceptVersion) latestVersion.value()).getChronology()
-					.createMutableVersion(inactiveStampSeq);
+			((ConceptVersion<?>) latestVersion.value()).getChronology().createMutableVersion(inactiveStampSeq);
 		} else if (type == OchreExternalizableObjectType.SEMEME) {
 			SememeVersion originalVersion = (SememeVersion) latestVersion.value();
 
@@ -377,9 +372,9 @@ public class IbdfDiffUtility {
 						.createMutableVersion(((ConceptVersion<?>) newVersion).getStampSequence());
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
 				SememeVersion createdVersion = ((SememeChronology) oldChron).createMutableVersion(
-						((SememeChronology) oldChron).getClass(), ((SememeVersion<?>) newVersion).getStampSequence());
+						((SememeChronology<?>) oldChron).getClass(), ((SememeVersion<?>) newVersion).getStampSequence());
 
-				createdVersion = populateData(createdVersion, (SememeVersion) newVersion, activeStampSeq);
+				createdVersion = populateData(createdVersion, (SememeVersion<?>) newVersion, activeStampSeq);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
