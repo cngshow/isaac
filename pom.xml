@@ -660,6 +660,7 @@
         <module>db-builder</module>
         <module>ochre-mojo-log-config</module>
         <module>ochre-mapping</module>
+		<module>ibdf-differ</module>
     </modules>
     
     <profiles>

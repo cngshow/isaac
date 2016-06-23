@@ -77,6 +77,7 @@ public class Get implements OchreCache {
     private static LanguageCoordinateService languageCoordinateService;
     private static LogicalExpressionBuilderService logicalExpressionBuilderService;
     private static LogicService logicService;
+    private static BinaryDataDifferService binaryDataDifferService;
     private static PathService pathService;
     private static SememeBuilderService<?> sememeBuilderService;
     private static SememeService sememeService;
@@ -228,6 +229,13 @@ public class Get implements OchreCache {
             logicService = getService(LogicService.class);
         }
         return logicService;
+    }
+
+    public static BinaryDataDifferService binaryDataDifferService() {
+        if (binaryDataDifferService == null) {
+        	binaryDataDifferService = getService(BinaryDataDifferService.class);
+        }
+        return binaryDataDifferService;
     }
 
     public static PathService pathService() {

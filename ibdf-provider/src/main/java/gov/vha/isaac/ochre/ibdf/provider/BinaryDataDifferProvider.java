@@ -1,0 +1,556 @@
+/*
+ * Copyright 2015 U.S. Department of Veterans Affairs.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package gov.vha.isaac.ochre.ibdf.provider;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.glassfish.hk2.runlevel.RunLevel;
+import org.jvnet.hk2.annotations.Service;
+
+import com.cedarsoftware.util.io.JsonWriter;
+
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.commit.StampService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
+import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderQueueService;
+import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
+import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
+import gov.vha.isaac.ochre.model.externalizable.IbdfDiffUtility;
+
+/**
+ * {@link BinaryDataDifferService}
+ *
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
+ */
+@Service(name = "binary data differ")
+@RunLevel(value = 2)
+public class BinaryDataDifferProvider implements BinaryDataDifferService {
+	private final Logger log = LogManager.getLogger();
+	private IbdfDiffUtility diffUtil;
+
+	// Stream hack
+	private int conceptCount, sememeCount, itemCount;
+
+	// Analysis File Readers/Writers
+	private String analysisFilesOutputDir;
+
+	private final String jsonInputFILENAME = "bothVersionsGson.gson";
+	private final String textInputFILENAME = "bothVersionsText.txt";
+	private final String jsonOutputFILENAME = "allChangedComponentsGson.gson";
+	private final String textOutputFILENAME = "allChangedComponentsText.txt";
+
+	// Changeset File Writer
+	private BinaryDataWriterService componentCSWriter = null;
+	private String ibdfFileOutputDir;
+	private String changesetFileName;
+
+	HashSet<Integer> skippedItems = new HashSet<>();
+
+	private BinaryDataDifferProvider() {
+		// For HK2
+		log.info("binary data differ constructed");
+	}
+
+	@PostConstruct
+	private void startMe() {
+		log.info("Starting BinaryDataDifferProvider.");
+	}
+
+	@PreDestroy
+	private void stopMe() {
+		log.info("Stopping BinaryDataDifferProvider.");
+	}
+
+	@Override
+	public Map<ChangeType, List<OchreExternalizable>> identifyVersionChanges(
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap) {
+		List<OchreExternalizable> addedComponents = new ArrayList<>();
+		List<OchreExternalizable> retiredComponents = new ArrayList<>();
+		List<OchreExternalizable> changedComponents = new ArrayList<>();
+
+		Date date = new Date();
+		final int activeStampSeq = createStamp(State.ACTIVE, date.getTime());
+		final int inactiveStampSeq = createStamp(State.INACTIVE, date.getTime());
+
+		// Find existing
+		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
+			Set<UUID> matchedSet = new HashSet<UUID>();
+
+			// Search for modified components
+			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+				for (OchreExternalizable newComp : newContentMap.get(type)) {
+					ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
+					ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
+
+					if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
+						matchedSet.add(oldCompChron.getPrimordialUuid());
+
+						if (newCompChron.getPrimordialUuid().equals(UUID.fromString("8f269d45-75d3-5f8f-b6f8-fd58f3849723"))) {
+							if (((SememeChronology<?>) oldCompChron).getReferencedComponentNid() == -2144861462) {
+								// Breakpoint if needed
+							}
+						}
+
+						try {
+							OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
+									activeStampSeq, type);
+							if (modifiedComponents != null) {
+								if (type == OchreExternalizableObjectType.CONCEPT) {
+									throw new Exception("Cannot modify Concept in current Object Model");
+								}
+
+								changedComponents.add(modifiedComponents);
+							}
+						} catch (Exception e) {
+							log.error("Failed ON type: " + type + " on component: " + oldCompChron.getPrimordialUuid());
+							e.printStackTrace();
+						}
+
+						continue;
+					}
+				}
+			}
+
+			// Add newCons not in newList
+			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+				if (!matchedSet.contains(((ObjectChronology<?>) oldComp).getPrimordialUuid())) {
+					OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(oldComp,
+							oldComp.getOchreObjectType(), inactiveStampSeq);
+
+					if (retiredComp != null) {
+						retiredComponents.add(retiredComp);
+					}
+				}
+			}
+
+			Set<OchreExternalizable> contentToProcess = newContentMap.get(type);
+			Set<OchreExternalizable> notAdded = new HashSet<>();
+			CommitService commitService = Get.commitService();
+
+			// Add newCons not in newList
+			while (!contentToProcess.isEmpty()) {
+				notAdded.clear();
+				for (OchreExternalizable newComp : contentToProcess) {
+					if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+						OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp,
+								activeStampSeq, type);
+
+						if (addedComp != null) {
+							addedComponents.add(addedComp);
+							commitService.importNoChecks(addedComp);
+						}
+					}
+				}
+
+				contentToProcess.clear();
+				contentToProcess.addAll(notAdded);
+			}
+
+		} // Close Type Loop
+
+		Map<ChangeType, List<OchreExternalizable>> retMap = new HashMap<>();
+		retMap.put(ChangeType.NEW_COMPONENTS, addedComponents);
+		retMap.put(ChangeType.RETIRED_COMPONENTS, retiredComponents);
+		retMap.put(ChangeType.MODIFIED_COMPONENTS, changedComponents);
+
+		return retMap;
+	}
+
+	@Override
+	public void generateDiffedIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
+			throws FileNotFoundException {
+		componentCSWriter = Get.binaryDataWriter(new File(ibdfFileOutputDir + changesetFileName + ".ibdf").toPath());
+
+		for (ChangeType key : changedComponents.keySet()) {
+			for (OchreExternalizable c : changedComponents.get(key)) {
+				componentCSWriter.put(c);
+			}
+		}
+		
+		componentCSWriter.close();
+	}
+
+	@Override
+	public void writeFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+			Map<ChangeType, List<OchreExternalizable>> changedComponents, String ibdfFileOutputDir,
+			String analysisFilesOutputDir) {
+		try {
+			if (oldContentMap != null) {
+				writeContentToTextFile(oldContentMap, "OLD");
+			} else {
+				log.info("oldContentMap empty so not writing json/text Input files for old content");
+			}
+
+			if (newContentMap != null) {
+				writeContentToTextFile(newContentMap, "New");
+			} else {
+				log.info("oldContentMap empty so not writing json/text Input files for new content");
+			}
+
+			if (changedComponents != null) {
+				writeChangeSetForAnalysis(changedComponents);
+			} else {
+				log.info("changedComponents empty so not writing json/text Output files");
+			}
+
+			verifyChangesetFile();
+		} catch (IOException e) {
+			log.error(
+					"Failed in creating analysis files (not in processing the content written to the analysis files)");
+		}
+	}
+
+	private void writeChangeSetForAnalysis(Map<ChangeType, List<OchreExternalizable>> changedComponents)
+			throws IOException {
+		int i = 1;
+		FileWriter textOutputWriter = new FileWriter(analysisFilesOutputDir + textOutputFILENAME);
+		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(analysisFilesOutputDir + jsonOutputFILENAME);
+
+		for (ChangeType key : changedComponents.keySet()) {
+			FileWriter changeWriter = new FileWriter(analysisFilesOutputDir + key + "TextFile.txt");
+
+			try {
+				List<OchreExternalizable> components = changedComponents.get(key);
+
+				String modificationToWrite = "\n\n\n\t\t\t**** Modification: " + key.toString() + " ****";
+
+				jsonOutputWriter.write(modificationToWrite);
+				textOutputWriter.write(modificationToWrite);
+
+				for (OchreExternalizable c : components) {
+					String componentType;
+					if (c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
+						componentType = "Concept";
+					} else {
+						componentType = "Sememe";
+					}
+
+					String componentToWrite = "\n\n\t\t\t---- " + key.toString() + " " + componentType + " #" + i++
+							+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----";
+
+					jsonOutputWriter.write(componentToWrite);
+
+					textOutputWriter.write(componentToWrite);
+					jsonOutputWriter.put(c);
+					changeWriter.write(c.toString());
+					changeWriter.write("\n\n\n");
+					try {
+						String s = c.toString();
+						textOutputWriter.write(s);
+					} catch (Exception e) {
+
+					}
+				}
+			} catch (IOException e) {
+				log.error("Failure processing changes of type " + key.toString());
+			} finally {
+				changeWriter.close();
+				jsonOutputWriter.close();
+				textOutputWriter.close();
+			}
+		}
+	}
+
+	/**
+	 * Set up all the boilerplate stuff.
+	 * 
+	 * Create a stamp in current database... create seq... then when
+	 * serializing, point it
+	 * 
+	 * @param state
+	 *            - state or null (for current)
+	 * @param time
+	 *            - time or null (for default)
+	 */
+	private int createStamp(State state, Long time) {
+		return LookupService.getService(StampService.class).getStampSequence(state,
+				time == null ? diffUtil.getNewImportDate() : time.longValue(),
+				LookupService.getService(IdentifierService.class)
+						.getConceptSequenceForUuids(UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c")), // USER
+				LookupService.getService(IdentifierService.class)
+						.getConceptSequenceForUuids(UUID.fromString("8aa5fda8-33e9-5eaf-88e8-dd8a024d2489")), // VHA
+																											  // MODULE
+				LookupService.getService(IdentifierService.class)
+						.getConceptSequenceForUuids(UUID.fromString("1f200ca6-960e-11e5-8994-feff819cdc9f"))); // DEV
+																											   // PATH
+	}
+
+	@Override
+	public void initialize(String analysisFilesOutputDir, String ibdfFileOutputDir, String changesetFileName,
+			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
+			boolean diffOnModule, boolean diffOnPath, String importDate) {
+		diffUtil = new IbdfDiffUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
+		diffUtil.setNewImportDate(importDate);
+
+		this.analysisFilesOutputDir = analysisFilesOutputDir;
+		this.ibdfFileOutputDir = ibdfFileOutputDir;
+		this.changesetFileName = changesetFileName;
+
+		if (createAnalysisFiles) {
+			File f = new File(analysisFilesOutputDir);
+			f.mkdirs();
+		}
+
+		File f = new File(ibdfFileOutputDir);
+		f.mkdirs();
+	}
+
+	@Override
+	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processVersion(File versionFile)
+			throws Exception {
+		BinaryDataReaderService reader = Get.binaryDataReader(versionFile.toPath());
+
+		itemCount = 0;
+		conceptCount = 0;
+		sememeCount = 0;
+		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new HashMap<>();
+		retMap.put(OchreExternalizableObjectType.CONCEPT, new HashSet<OchreExternalizable>());
+		retMap.put(OchreExternalizableObjectType.SEMEME, new HashSet<OchreExternalizable>());
+
+		try {
+
+			reader.getStream().forEach((object) -> {
+				if (object != null) {
+					itemCount++;
+
+					try {
+						if (object.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
+							conceptCount++;
+							retMap.get(object.getOchreObjectType()).add(object);
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
+							// if (((ObjectChronology<?>)
+							// object).getPrimordialUuid().toString().equals("a7c7a441-5a5e-519b-b1ec-fa3805fcfe8d")
+							// ||
+							// ((ObjectChronology<?>)
+							// object).getPrimordialUuid().toString().equals("e98e10fc-c44a-5875-9cc4-a1b39eb02280")
+							// ||
+							// ((ObjectChronology<?>)
+							// object).getPrimordialUuid().toString().equals("f9c45572-a4ea-55f7-a3af-786602eb6d95")
+							// ||
+							// ((ObjectChronology<?>)
+							// object).getPrimordialUuid().toString().equals("6894a204-41ef-5f87-8c00-aa501e2da207"))
+							// {
+							// int a = 2;
+							// commitService.importNoChecks(object);
+							// }
+							sememeCount++;
+							retMap.get(object.getOchreObjectType()).add(object);
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+							throw new RuntimeException("Not setup to handle STAMP ALIASES yet");
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
+							throw new RuntimeException("Not setup to handle STAMP COMMENTS yet");
+						} else {
+							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
+						}
+					} catch (Exception e) {
+						log.error("Failure at " + conceptCount + " concepts, " + sememeCount + " sememes, ", e);
+						Map<String, Object> args = new HashMap<>();
+						args.put(JsonWriter.PRETTY_PRINT, true);
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						JsonWriter json = new JsonWriter(baos, args);
+
+						UUID primordial = null;
+						if (object instanceof ObjectChronology) {
+							primordial = ((ObjectChronology<?>) object).getPrimordialUuid();
+						}
+
+						json.write(object);
+						log.error("Failed on "
+								+ (primordial == null ? ": "
+										: "object with primoridial UUID " + primordial.toString() + ": ")
+								+ baos.toString());
+						json.close();
+
+					}
+
+					if (itemCount % 100 == 0) {
+						log.info("Read " + itemCount + " entries, " + "Loaded " + conceptCount + " concepts, "
+								+ sememeCount + " sememes, ");
+					}
+				}
+			});
+		} catch (Exception ex) {
+			log.info("Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, "
+					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
+			throw new Exception(ex.getLocalizedMessage(), ex);
+		}
+
+		log.info("imported components: " + itemCount);
+
+		return retMap;
+	}
+
+	private void verifyChangesetFile() throws FileNotFoundException {
+		int ic = 0;
+		int cc = 0;
+		int sc = 0;
+
+		BinaryDataReaderQueueService reader = Get
+				.binaryDataQueueReader(new File(ibdfFileOutputDir + changesetFileName + ".ibdf").toPath());
+		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
+
+		Map<String, Object> args = new HashMap<>();
+		args.put(JsonWriter.PRETTY_PRINT, true);
+		JsonWriter verificationWriter = new JsonWriter(
+				new FileOutputStream(new File(analysisFilesOutputDir + "verificationChanges.gson")), args);
+
+		try {
+
+			while (!queue.isEmpty() || !reader.isFinished()) {
+				OchreExternalizable object = queue.poll(500, TimeUnit.MILLISECONDS);
+				if (object != null) {
+					ic++;
+					try {
+						if (object.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
+							cc++;
+							verificationWriter.write(object);
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
+							sc++;
+							verificationWriter.write(object);
+						} else {
+							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
+						}
+					} catch (Exception e) {
+						log.error("Failure at " + ic + " items " + cc + " concepts, " + sc + " sememes, ", e);
+						args = new HashMap<>();
+						args.put(JsonWriter.PRETTY_PRINT, true);
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						JsonWriter json = new JsonWriter(baos, args);
+
+						UUID primordial = null;
+						if (object instanceof ObjectChronology) {
+							primordial = ((ObjectChronology<?>) object).getPrimordialUuid();
+						}
+
+						json.write(object);
+						log.error("Failed on "
+								+ (primordial == null ? ": "
+										: "object with primoridial UUID " + primordial.toString() + ": ")
+								+ baos.toString());
+						json.close();
+
+					}
+
+					if (ic % 100 == 0) {
+						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, ");
+					}
+				}
+			}
+
+		} catch (Exception ex) {
+			log.info("Loaded " + ic + " items, " + cc + " concepts, " + sc + " sememes, "
+					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
+		} finally {
+			verificationWriter.close();
+		}
+
+		log.info("Finished with " + ic + " items, " + cc + " concepts, " + sc + " sememes, "
+				+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
+
+	}
+
+	private void writeContentToTextFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
+			String version) throws IOException {
+		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + textInputFILENAME);
+		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(analysisFilesOutputDir + jsonInputFILENAME);
+
+		try {
+			textInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+			jsonInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+			int i = 1;
+			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
+				ConceptChronology<?> cc = (ConceptChronology<?>) component;
+				jsonInputWriter.write(
+						"\n\n\t\t\t---- " + version + " Concept #" + i++ + "   " + cc.getPrimordialUuid() + " ----");
+				jsonInputWriter.put(cc);
+				textInputWriter.write(
+						"\n\n\t\t\t---- " + version + " Concept #" + i++ + "   " + cc.getPrimordialUuid() + " ----");
+				textInputWriter.write(cc.toString());
+			}
+
+			i = 1;
+			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
+				SememeChronology<?> se = (SememeChronology<?>) component;
+				jsonInputWriter.put(se);
+				jsonInputWriter.write(
+						"\n\n\t\t\t---- " + version + " Sememe #" + i++ + "   " + se.getPrimordialUuid() + " ----");
+				textInputWriter.write(
+						"\n\n\t\t\t---- " + version + " Sememe #" + i++ + "   " + se.getPrimordialUuid() + " ----");
+				textInputWriter.write(se.toString());
+			}
+		} catch (Exception e) {
+			log.error("Failure in writing *" + version + "* content to text file for analysis.");
+		} finally {
+			textInputWriter.close();
+			jsonInputWriter.close();
+		}
+	}
+
+	private class JsonDataWriterService implements BinaryDataWriterService {
+		private JsonWriter json_;
+
+		public JsonDataWriterService(String filePath) throws IOException {
+			Map<String, Object> args = new HashMap<>();
+			args.put(JsonWriter.PRETTY_PRINT, true);
+			json_ = new JsonWriter(new FileOutputStream(new File(filePath)), args);
+		}
+
+		@Override
+		public void put(OchreExternalizable ochreObject) {
+			json_.write(ochreObject);
+		}
+
+		@Override
+		public void close() {
+			json_.close();
+		}
+
+		public void write(String s) {
+			json_.write(s);
+		}
+	}
+}
