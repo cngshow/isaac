@@ -28,17 +28,13 @@
 			<optional>true</optional> <!-- Not needed at runtime / transitively -->
 			<scope>compile</scope>
 		</dependency>
+		<!-- VETS DB -->
 		<dependency>
 			<groupId>gov.vha.isaac.db</groupId>
 			<artifactId>vets</artifactId>
 			<version>1.2-SNAPSHOT</version>
 			<classifier>all</classifier>
 			<type>cradle.zip</type>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.hk2</groupId>
-			<artifactId>hk2-testng</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testng</groupId>
@@ -108,6 +104,11 @@
 		<dependency>
 			<groupId>gov.vha.isaac.ochre.modules</groupId>
 			<artifactId>query-provider</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>ochre-mojo</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
@@ -185,11 +186,6 @@
 							<artifactId>query-provider</artifactId>
 							<version>${project.version}</version>
 						</dependency>
-						<dependency>
-							<groupId>gov.vha.isaac.ochre.modules</groupId>
-							<artifactId>ochre-mojo-log-config</artifactId>
-							<version>${project.version}</version>
-						</dependency>
 					</dependencies>
 				</plugin>
 			</plugins>
@@ -263,7 +259,7 @@
 					<plugin>
 						<groupId>gov.vha.isaac.ochre.modules</groupId>
 						<artifactId>ochre-mojo</artifactId>
-						<version>${project.parent.version}</version>
+						<version>${project.version}</version>
 						<executions>
 							<execution>
 								<id>setup</id>
