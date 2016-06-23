@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.ibdf.provider;
+package org.ibdf.differ;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -87,7 +87,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	HashSet<Integer> skippedItems = new HashSet<>();
 
-	private BinaryDataDifferProvider() {
+	public BinaryDataDifferProvider() {
 		// For HK2
 		log.info("binary data differ constructed");
 	}
@@ -223,13 +223,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			String analysisFilesOutputDir) {
 		try {
 			if (oldContentMap != null) {
-				writeContentToTextFile(oldContentMap, "OLD", "oldVersion.gson");
+				writeInputFilesForAnalysis(oldContentMap, "OLD", "oldVersion.gson");
 			} else {
 				log.info("oldContentMap empty so not writing json/text Input files for old content");
 			}
 
 			if (newContentMap != null) {
-				writeContentToTextFile(newContentMap, "New", "newVersion.gson");
+				writeInputFilesForAnalysis(newContentMap, "New", "newVersion.gson");
 			} else {
 				log.info("oldContentMap empty so not writing json/text Input files for new content");
 			}
@@ -240,7 +240,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				log.info("changedComponents empty so not writing json/text Output files");
 			}
 
-			verifyChangesetFile();
+			writeChangeSetForVerification();
 		} catch (IOException e) {
 			log.error(
 					"Failed in creating analysis files (not in processing the content written to the analysis files)");
@@ -353,12 +353,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		itemCount = 0;
 		conceptCount = 0;
 		sememeCount = 0;
+
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new HashMap<>();
 		retMap.put(OchreExternalizableObjectType.CONCEPT, new HashSet<OchreExternalizable>());
 		retMap.put(OchreExternalizableObjectType.SEMEME, new HashSet<OchreExternalizable>());
-
 		try {
-
 			reader.getStream().forEach((object) -> {
 				if (object != null) {
 					itemCount++;
@@ -368,21 +367,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 							conceptCount++;
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
-							// if (((ObjectChronology<?>)
-							// object).getPrimordialUuid().toString().equals("a7c7a441-5a5e-519b-b1ec-fa3805fcfe8d")
-							// ||
-							// ((ObjectChronology<?>)
-							// object).getPrimordialUuid().toString().equals("e98e10fc-c44a-5875-9cc4-a1b39eb02280")
-							// ||
-							// ((ObjectChronology<?>)
-							// object).getPrimordialUuid().toString().equals("f9c45572-a4ea-55f7-a3af-786602eb6d95")
-							// ||
-							// ((ObjectChronology<?>)
-							// object).getPrimordialUuid().toString().equals("6894a204-41ef-5f87-8c00-aa501e2da207"))
-							// {
-							// int a = 2;
-							// commitService.importNoChecks(object);
-							// }
 							sememeCount++;
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
@@ -430,7 +414,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		return retMap;
 	}
 
-	private void verifyChangesetFile() throws FileNotFoundException {
+	private void writeChangeSetForVerification() throws FileNotFoundException {
 		int ic = 0;
 		int cc = 0;
 		int sc = 0;
@@ -499,7 +483,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	}
 
-	private void writeContentToTextFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
+	private void writeInputFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
 			String version, String jsonInputFileName) throws IOException {
 		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + "input/" + textInputFileName, true);
 		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(analysisFilesOutputDir + "input/" + jsonInputFileName);
