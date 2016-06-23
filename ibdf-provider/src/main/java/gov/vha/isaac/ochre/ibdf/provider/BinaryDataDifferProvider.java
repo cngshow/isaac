@@ -76,10 +76,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	// Analysis File Readers/Writers
 	private String analysisFilesOutputDir;
 
-	private final String jsonInputFILENAME = "bothVersionsGson.gson";
-	private final String textInputFILENAME = "bothVersionsText.txt";
-	private final String jsonOutputFILENAME = "allChangedComponentsGson.gson";
-	private final String textOutputFILENAME = "allChangedComponentsText.txt";
+	private final String textInputFileName = "bothVersions.txt";
+	private final String jsonOutputFileName = "allChangedComponents.gson";
+	private final String textOutputFileName = "allChangedComponents.txt";
 
 	// Changeset File Writer
 	private BinaryDataWriterService componentCSWriter = null;
@@ -118,7 +117,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		// Find existing
 		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
 			Set<UUID> matchedSet = new HashSet<UUID>();
-
+			if (type != OchreExternalizableObjectType.CONCEPT && type != OchreExternalizableObjectType.SEMEME) {
+				// Given using the OchreExternalizableObjectType.values() collection, ensure only handling the supported types
+				continue;
+			}
+			
 			// Search for modified components
 			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
 				for (OchreExternalizable newComp : newContentMap.get(type)) {
@@ -220,13 +223,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			String analysisFilesOutputDir) {
 		try {
 			if (oldContentMap != null) {
-				writeContentToTextFile(oldContentMap, "OLD");
+				writeContentToTextFile(oldContentMap, "OLD", "oldVersion.gson");
 			} else {
 				log.info("oldContentMap empty so not writing json/text Input files for old content");
 			}
 
 			if (newContentMap != null) {
-				writeContentToTextFile(newContentMap, "New");
+				writeContentToTextFile(newContentMap, "New", "newVersion.gson");
 			} else {
 				log.info("oldContentMap empty so not writing json/text Input files for new content");
 			}
@@ -247,11 +250,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private void writeChangeSetForAnalysis(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
 		int i = 1;
-		FileWriter textOutputWriter = new FileWriter(analysisFilesOutputDir + textOutputFILENAME);
-		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(analysisFilesOutputDir + jsonOutputFILENAME);
+		FileWriter textOutputWriter = new FileWriter(analysisFilesOutputDir + "output/" + textOutputFileName);
+		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(analysisFilesOutputDir + "output/" + jsonOutputFileName);
 
 		for (ChangeType key : changedComponents.keySet()) {
-			FileWriter changeWriter = new FileWriter(analysisFilesOutputDir + key + "TextFile.txt");
+			FileWriter changeWriter = new FileWriter(analysisFilesOutputDir + "output/" + key + "File.txt");
 
 			try {
 				List<OchreExternalizable> components = changedComponents.get(key);
@@ -289,10 +292,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				log.error("Failure processing changes of type " + key.toString());
 			} finally {
 				changeWriter.close();
-				jsonOutputWriter.close();
-				textOutputWriter.close();
 			}
 		}
+
+		jsonOutputWriter.close();
+		textOutputWriter.close();
 	}
 
 	/**
@@ -331,7 +335,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		this.changesetFileName = changesetFileName;
 
 		if (createAnalysisFiles) {
-			File f = new File(analysisFilesOutputDir);
+			File f = new File(analysisFilesOutputDir + "/output");
+			f.mkdirs();
+			f = new File(analysisFilesOutputDir + "/input");
 			f.mkdirs();
 		}
 
@@ -494,9 +500,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	private void writeContentToTextFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
-			String version) throws IOException {
-		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + textInputFILENAME);
-		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(analysisFilesOutputDir + jsonInputFILENAME);
+			String version, String jsonInputFileName) throws IOException {
+		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + "input/" + textInputFileName, true);
+		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(analysisFilesOutputDir + "input/" + jsonInputFileName);
 
 		try {
 			textInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
@@ -505,11 +511,12 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
 				ConceptChronology<?> cc = (ConceptChronology<?>) component;
 				jsonInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Concept #" + i++ + "   " + cc.getPrimordialUuid() + " ----");
+						"\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
 				jsonInputWriter.put(cc);
 				textInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Concept #" + i++ + "   " + cc.getPrimordialUuid() + " ----");
+						"\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
 				textInputWriter.write(cc.toString());
+				i++;
 			}
 
 			i = 1;
@@ -517,10 +524,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				SememeChronology<?> se = (SememeChronology<?>) component;
 				jsonInputWriter.put(se);
 				jsonInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Sememe #" + i++ + "   " + se.getPrimordialUuid() + " ----");
+						"\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
 				textInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Sememe #" + i++ + "   " + se.getPrimordialUuid() + " ----");
+						"\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
 				textInputWriter.write(se.toString());
+				i++;
 			}
 		} catch (Exception e) {
 			log.error("Failure in writing *" + version + "* content to text file for analysis.");

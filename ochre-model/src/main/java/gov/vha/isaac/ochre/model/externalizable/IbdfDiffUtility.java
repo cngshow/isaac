@@ -4,10 +4,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -35,7 +33,6 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
-import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.relationship.RelationshipAdaptorChronicleKeyImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
@@ -135,12 +132,10 @@ public class IbdfDiffUtility {
 			for (int i = 0; i < oldData.length; i++) {
 				boolean matchFound = false;
 
-				for (int j = 0; j < newData.length; j++) {
-					if ((oldData[i] == null && newData[j] == null) || 
-						Arrays.equals(oldData[i].getData(), newData[j].getData())) {
-						matchFound = true;
-						break;
-					}
+				if ((oldData[i] == null && newData[i] == null) || 
+					Arrays.equals(oldData[i].getData(), newData[i].getData())) {
+					matchFound = true;
+					continue;
 				}
 
 				if (!matchFound) {
