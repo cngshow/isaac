@@ -46,6 +46,7 @@ import gov.vha.isaac.ochre.api.index.GenerateIndexes;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.logic.LogicService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.progress.ActiveTasks;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import javafx.concurrent.Task;
@@ -71,6 +72,7 @@ public class Get implements OchreCache {
     private static CommitService commitService;
     private static ConceptActiveService conceptActiveService;
     private static ConceptService conceptService;
+    private static MetaContentService metaContentService;
     private static ConceptSnapshotService conceptSnapshot;
     private static IdentifiedObjectService identifiedObjectService;
     private static IdentifierService identifierService;
@@ -124,6 +126,13 @@ public class Get implements OchreCache {
             conceptService = getService(ConceptService.class);
         }
         return conceptService;
+    }
+    
+    public static MetaContentService metaContentService() {
+        if (metaContentService == null) {
+            metaContentService = getService(MetaContentService.class);
+        }
+        return metaContentService;
     }
 
     public static ConceptActiveService conceptActiveService() {
@@ -371,6 +380,7 @@ public class Get implements OchreCache {
         conceptBuilderService = null;
         conceptActiveService = null;
         conceptService = null;
+        metaContentService = null;
         conceptSnapshot = null;
         coordinateFactory = null;
         identifiedObjectService = null;
