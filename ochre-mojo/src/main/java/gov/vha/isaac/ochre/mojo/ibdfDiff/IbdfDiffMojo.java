@@ -99,8 +99,6 @@ public class IbdfDiffMojo extends QuasiMojo {
 	String changesetFileName;
 
 	public void execute() throws MojoExecutionException {
-		Map<ChangeType, List<OchreExternalizable>> changedComponents = null;
-
 		BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
 		differService.initialize(analysisFilesOutputDir, ibdfFileOutputDir, changesetFileName, createAnalysisFiles,
 				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate);
@@ -112,7 +110,7 @@ public class IbdfDiffMojo extends QuasiMojo {
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = differService
 					.processVersion(newVersionFile);
 
-			changedComponents = differService.identifyVersionChanges(oldContentMap, newContentMap);
+			Map<ChangeType, List<OchreExternalizable>> changedComponents = differService.identifyVersionChanges(oldContentMap, newContentMap);
 
 			differService.generateDiffedIbdfFile(changedComponents);
 

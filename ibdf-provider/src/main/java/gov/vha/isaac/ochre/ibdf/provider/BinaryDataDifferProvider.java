@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.ibdf.differ;
+package gov.vha.isaac.ochre.ibdf.provider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -109,6 +109,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		List<OchreExternalizable> addedComponents = new ArrayList<>();
 		List<OchreExternalizable> retiredComponents = new ArrayList<>();
 		List<OchreExternalizable> changedComponents = new ArrayList<>();
+		CommitService commitService = Get.commitService();
 
 		Date date = new Date();
 		final int activeStampSeq = createStamp(State.ACTIVE, date.getTime());
@@ -169,27 +170,18 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				}
 			}
 
-			Set<OchreExternalizable> contentToProcess = newContentMap.get(type);
-			Set<OchreExternalizable> notAdded = new HashSet<>();
-			CommitService commitService = Get.commitService();
 
 			// Add newCons not in newList
-			while (!contentToProcess.isEmpty()) {
-				notAdded.clear();
-				for (OchreExternalizable newComp : contentToProcess) {
-					if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
-						OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp,
-								activeStampSeq, type);
+			for (OchreExternalizable newComp : newContentMap.get(type)) {
+				if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+					OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp, activeStampSeq,
+							type);
 
-						if (addedComp != null) {
-							addedComponents.add(addedComp);
-							commitService.importNoChecks(addedComp);
-						}
+					if (addedComp != null) {
+						addedComponents.add(addedComp);
+						commitService.importNoChecks(addedComp);
 					}
 				}
-
-				contentToProcess.clear();
-				contentToProcess.addAll(notAdded);
 			}
 
 		} // Close Type Loop
@@ -217,8 +209,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public void writeFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+	public void writeFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
 			Map<ChangeType, List<OchreExternalizable>> changedComponents, String ibdfFileOutputDir,
 			String analysisFilesOutputDir) {
 		try {
@@ -231,7 +223,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			if (newContentMap != null) {
 				writeInputFilesForAnalysis(newContentMap, "New", "newVersion.gson");
 			} else {
-				log.info("oldContentMap empty so not writing json/text Input files for new content");
+				log.info("newContentMap empty so not writing json/text Input files for new content");
 			}
 
 			if (changedComponents != null) {
@@ -409,7 +401,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
 
-		log.info("imported components: " + itemCount);
+		log.info("Processed " + itemCount + " components for Diff Analysis");
 
 		return retMap;
 	}
