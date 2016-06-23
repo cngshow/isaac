@@ -1,4 +1,19 @@
-package gov.vha.isaac.ochre.ibdf.provider;
+/*
+ * Copyright 2015 U.S. Department of Veterans Affairs.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package gov.vha.isaac.ochre.ibdf.provider.diff;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -47,6 +62,14 @@ import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.SememeVersionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
+/**
+ * Utility methods in support of BinaryDataDifferProvider used to see if two
+ * components are the same and to create new versions when necessary.
+ * 
+ * {@link BinaryDataDifferProvider}
+ *
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
+ */
 public class BinaryDataDifferProviderUtility {
 	static long newImportDate;
 	static boolean componentChangeFound = false;
@@ -57,8 +80,8 @@ public class BinaryDataDifferProviderUtility {
 	boolean diffOnPath;
 	private SememeBuilderService<?> sememeBuilderService_;
 
-	public BinaryDataDifferProviderUtility(Boolean diffOnStatus, Boolean diffOnTimestamp, Boolean diffOnAuthor, Boolean diffOnModule,
-			Boolean diffOnPath) {
+	public BinaryDataDifferProviderUtility(Boolean diffOnStatus, Boolean diffOnTimestamp, Boolean diffOnAuthor,
+			Boolean diffOnModule, Boolean diffOnPath) {
 		this.diffOnStatus = diffOnStatus;
 		this.diffOnTimestamp = diffOnTimestamp;
 		this.diffOnAuthor = diffOnAuthor;
@@ -75,7 +98,6 @@ public class BinaryDataDifferProviderUtility {
 		if (oldChron == null) {
 			return createNewChronology(newChron, type, stampSeq);
 		}
-		
 
 		boolean newVersionAdded = false;
 		oldVersions = (List<StampedVersion>) oldChron.getVersionList();
@@ -98,7 +120,6 @@ public class BinaryDataDifferProviderUtility {
 		}
 
 		if (!newVersionAdded) {
-			// TODO: Remove if can simply ignore components already there
 			return null;
 		}
 
@@ -125,15 +146,15 @@ public class BinaryDataDifferProviderUtility {
 	}
 
 	private boolean isSememeDataEquivalent(DynamicSememeData[] oldData, DynamicSememeData[] newData) {
-		// Verify Size Same
+		// Verify same values
 		if (oldData.length != newData.length) {
 			return false;
 		} else {
 			for (int i = 0; i < oldData.length; i++) {
 				boolean matchFound = false;
 
-				if ((oldData[i] == null && newData[i] == null) || 
-					Arrays.equals(oldData[i].getData(), newData[i].getData())) {
+				if ((oldData[i] == null && newData[i] == null)
+						|| Arrays.equals(oldData[i].getData(), newData[i].getData())) {
 					matchFound = true;
 					continue;
 				}
@@ -178,12 +199,8 @@ public class BinaryDataDifferProviderUtility {
 		}
 	}
 
-	public long getNewImportDate() {
-		return newImportDate;
-	}
-
-
-	private SememeVersion<?> populateData(SememeVersion<?> newVer, SememeVersion<?> originalVersion, int inactiveStampSeq) {
+	private SememeVersion<?> populateData(SememeVersion<?> newVer, SememeVersion<?> originalVersion,
+			int inactiveStampSeq) {
 		switch (newVer.getChronology().getSememeType()) {
 		case MEMBER:
 			return newVer;
@@ -253,21 +270,19 @@ public class BinaryDataDifferProviderUtility {
 		}
 	}
 
-	private OchreExternalizable createNewChronology(ObjectChronology<?> newChron, OchreExternalizableObjectType type, int stampSeq) {
+	private OchreExternalizable createNewChronology(ObjectChronology<?> newChron, OchreExternalizableObjectType type,
+			int stampSeq) {
 		try {
 			if (type == OchreExternalizableObjectType.CONCEPT) {
-//				ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(newChron.getPrimordialUuid());
-////				conceptChronology.createMutableVersion(stampSeq);
-//				return conceptChronology;
 				return newChron;
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
 				ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 				SememeChronology<?> sememe = null;
 				for (StampedVersion version : newChron.getVersionList()) {
-					SememeBuilder<?> builder = getBuilder((SememeVersion<?>)version);
-					 sememe = (SememeChronology<?>)builder.build(stampSeq, builtObjects);
+					SememeBuilder<?> builder = getBuilder((SememeVersion<?>) version);
+					sememe = (SememeChronology<?>) builder.build(stampSeq, builtObjects);
 				}
-				
+
 				return sememe;
 			} else {
 				throw new Exception("Unsupported OchreExternalizableObjectType: " + type);
@@ -275,64 +290,51 @@ public class BinaryDataDifferProviderUtility {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return null;
 	}
 
 	private SememeBuilder<?> getBuilder(SememeVersion<?> version) {
 		SememeBuilder<?> builder = null;
-		
+
 		switch (version.getChronology().getSememeType()) {
 		case COMPONENT_NID:
-			ComponentNidSememe<?> compNidSememe = (ComponentNidSememe<?>)version;
+			ComponentNidSememe<?> compNidSememe = (ComponentNidSememe<?>) version;
 			builder = sememeBuilderService_.getComponentSememeBuilder(compNidSememe.getComponentNid(),
-																	  compNidSememe.getReferencedComponentNid(),
-																	  compNidSememe.getAssemblageSequence());
+					compNidSememe.getReferencedComponentNid(), compNidSememe.getAssemblageSequence());
 			break;
 		case DESCRIPTION:
-			DescriptionSememe<?> descSememe = (DescriptionSememe<?>)version;
-			builder = sememeBuilderService_.getDescriptionSememeBuilder(descSememe.getCaseSignificanceConceptSequence(), 
-																	    descSememe.getLanguageConceptSequence(),
-																	    descSememe.getDescriptionTypeConceptSequence(),
-																	    descSememe.getText(),
-																	    descSememe.getReferencedComponentNid());
+			DescriptionSememe<?> descSememe = (DescriptionSememe<?>) version;
+			builder = sememeBuilderService_.getDescriptionSememeBuilder(descSememe.getCaseSignificanceConceptSequence(),
+					descSememe.getLanguageConceptSequence(), descSememe.getDescriptionTypeConceptSequence(),
+					descSememe.getText(), descSememe.getReferencedComponentNid());
 			break;
 		case DYNAMIC:
-			DynamicSememe<?> dynSememe = (DynamicSememe<?>)version;
+			DynamicSememe<?> dynSememe = (DynamicSememe<?>) version;
 			builder = sememeBuilderService_.getDynamicSememeBuilder(dynSememe.getReferencedComponentNid(),
-																	dynSememe.getAssemblageSequence(),
-																	dynSememe.getData());
+					dynSememe.getAssemblageSequence(), dynSememe.getData());
 			break;
 		case LONG:
-			LongSememe<?> longSememe = (LongSememe<?>)version;
-			builder = sememeBuilderService_.getLongSememeBuilder(longSememe.getLongValue(), 
-																 longSememe.getReferencedComponentNid(),
-																 longSememe.getAssemblageSequence());
+			LongSememe<?> longSememe = (LongSememe<?>) version;
+			builder = sememeBuilderService_.getLongSememeBuilder(longSememe.getLongValue(),
+					longSememe.getReferencedComponentNid(), longSememe.getAssemblageSequence());
 			break;
 		case MEMBER:
 			builder = sememeBuilderService_.getMembershipSememeBuilder(version.getReferencedComponentNid(),
-																	   version.getAssemblageSequence());
+					version.getAssemblageSequence());
 			break;
 		case STRING:
-			StringSememe<?> stringSememe = (StringSememe<?>)version;
+			StringSememe<?> stringSememe = (StringSememe<?>) version;
 			builder = sememeBuilderService_.getStringSememeBuilder(stringSememe.getString(),
-																   stringSememe.getReferencedComponentNid(),
-																   stringSememe.getAssemblageSequence());
+					stringSememe.getReferencedComponentNid(), stringSememe.getAssemblageSequence());
 			break;
 		case RELATIONSHIP_ADAPTOR:
 			// TODO: Handle This Case
-/*			RelationshipVersionAdaptor relSememe = (RelationshipVersionAdaptor)version;
-			RelationshipAdaptorChronicleKeyImpl key = new RelationshipAdaptorChronicleKeyImpl(
-					origRelVer.getOriginSequence(), origRelVer.getDestinationSequence(), origRelVer.getTypeSequence(),
-					origRelVer.getGroup(), origRelVer.getPremiseType(), origRelVer.getNodeSequence());
-
-			return new RelationshipVersionAdaptorImpl(key, inactiveStampSeq);
-*/			break;
+			break;
 		case LOGIC_GRAPH:
-			LogicGraphSememe<?> logicGraphSememe = (LogicGraphSememe<?>)version;
+			LogicGraphSememe<?> logicGraphSememe = (LogicGraphSememe<?>) version;
 			builder = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicGraphSememe.getLogicalExpression(),
-																		      logicGraphSememe.getReferencedComponentNid(),
-																		      logicGraphSememe.getAssemblageSequence());
+					logicGraphSememe.getReferencedComponentNid(), logicGraphSememe.getAssemblageSequence());
 			break;
 		case UNKNOWN:
 		default:
@@ -340,7 +342,7 @@ public class BinaryDataDifferProviderUtility {
 		}
 
 		builder.setPrimordialUuid(version.getPrimordialUuid());
-				
+
 		return builder;
 	}
 
@@ -372,7 +374,8 @@ public class BinaryDataDifferProviderUtility {
 						.createMutableVersion(((ConceptVersion<?>) newVersion).getStampSequence());
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
 				SememeVersion createdVersion = ((SememeChronology) oldChron).createMutableVersion(
-						((SememeChronology<?>) oldChron).getClass(), ((SememeVersion<?>) newVersion).getStampSequence());
+						((SememeChronology<?>) oldChron).getClass(),
+						((SememeVersion<?>) newVersion).getStampSequence());
 
 				createdVersion = populateData(createdVersion, (SememeVersion<?>) newVersion, activeStampSeq);
 			}
@@ -389,7 +392,10 @@ public class BinaryDataDifferProviderUtility {
 		} catch (ParseException e) {
 			Date d = new Date();
 			newImportDate = d.getTime();
-		}	
+		}
 	}
 
+	public long getNewImportDate() {
+		return newImportDate;
+	}
 }

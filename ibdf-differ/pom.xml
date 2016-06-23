@@ -6,14 +6,13 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>3.02-SNAPSHOT</version>
+		<version>3.07-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>ibdf-differ</artifactId>
 	<name>IBDF Diff Generator</name>
 
 	<properties>
-		<!-- <snomed.version>2014.01.31-build-8</snomed.version> -->
 		<vhat.version.old>2016.01.07-loader-4.2-SNAPSHOT</vhat.version.old>
 		<vhat.version.new>2016.01.07-loader-4.2-SNAPSHOT</vhat.version.new>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -111,12 +110,6 @@
 			<artifactId>query-provider</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>gov.vha.isaac.ochre.modules</groupId>
-			<artifactId>ochre-mojo-log-config</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-
 	</dependencies>
 
 	<build>

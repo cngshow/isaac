@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.mojo.ibdfDiff;
+package gov.vha.isaac.ochre.mojo.ibdf.diff;
 
 import java.io.File;
 import java.util.List;
@@ -39,15 +39,11 @@ import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
  * Once identified, a new changeset file is generated containing these changes.
  * This file can then be imported into an existing database contining the old
  * version of the terminology. This will upgrade it to the new terminology.
- */
-
-/**
  * 
  * {@link QuasiMojo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-
 @Service(name = "diff-ibdfs")
 public class BinaryDataDifferMojo extends QuasiMojo {
 	/**
@@ -110,7 +106,8 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = differService
 					.processVersion(newVersionFile);
 
-			Map<ChangeType, List<OchreExternalizable>> changedComponents = differService.identifyVersionChanges(oldContentMap, newContentMap);
+			Map<ChangeType, List<OchreExternalizable>> changedComponents = differService
+					.identifyVersionChanges(oldContentMap, newContentMap);
 
 			differService.generateDiffedIbdfFile(changedComponents);
 

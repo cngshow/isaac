@@ -1,4 +1,19 @@
-package gov.vha.isaac.ochre.ibdf.differ;
+/*
+ * Copyright 2015 U.S. Department of Veterans Affairs.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package gov.vha.isaac.ochre.ibdf.diff;
 
 import static org.junit.Assert.assertTrue;
 
@@ -20,11 +35,16 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService.ChangeType
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.util.DBLocator;
-import gov.vha.isaac.ochre.ibdf.provider.BinaryDataDifferProvider;
+import gov.vha.isaac.ochre.ibdf.provider.diff.BinaryDataDifferProvider;
 
 /**
- * Unit test for IbdfDiff.
+ * Unit test for BinaryDataDifferProvider.
+ * 
+ * {@link BinaryDataDifferProvider}
+ *
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
+
 public class BinaryDataDifferTest {
 	private static final Logger log = LogManager.getLogger();
 	private File dataStoreLocation = new File("target/db");
@@ -33,10 +53,6 @@ public class BinaryDataDifferTest {
 
 	@Before
 	public void setupDB() throws Exception {
-
-		// Make sure the service Locator comes up ok
-		LookupService.get();
-
 		dataStoreLocation = DBLocator.findDBFolder(dataStoreLocation);
 
 		if (!dataStoreLocation.exists()) {
@@ -55,14 +71,13 @@ public class BinaryDataDifferTest {
 
 		log.info("Done setting up ISAAC");
 	}
-	
+
 	@After
 	public void shutdownDB() throws Exception {
 		LookupService.shutdownIsaac();
 
-		log.info("Done shutting down ISAAC");
+		log.info("ISAAC shut down");
 	}
-
 
 	/**
 	 * Mimick the IbdfDiffMojo
@@ -73,7 +88,7 @@ public class BinaryDataDifferTest {
 		// Input Files
 		final File oldVersionFile = new File("src/test/resources/data/VHAT-V1.ibdf");
 		final File newVersionFile = new File("src/test/resources/data/VHAT-V2.ibdf");
-		
+
 		// Output Files
 		final String ibdfFileOutputDir = "target/unitTestOutput/ibdfFileOutputDir/";
 		final String analysisFilesOutputDir = "target/unitTestOutput/analysisFilesOutputDir/";
@@ -88,7 +103,6 @@ public class BinaryDataDifferTest {
 		final boolean diffOnTimestamp = true;
 		final boolean createAnalysisFiles = true;
 
-		// Use ibdf & db stored in src/test/resources
 		differProvider.initialize(analysisFilesOutputDir, ibdfFileOutputDir, changesetFileName, createAnalysisFiles,
 				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate);
 
@@ -111,10 +125,6 @@ public class BinaryDataDifferTest {
 		} catch (Exception e) {
 			assertTrue(false);
 		}
-		/*
-		 * LookupService.get(); LookupService.startupIsaac(); StampService
-		 * service = LookupService.getService(StampService.class);
-		 */
 
 		assertTrue(true);
 	}

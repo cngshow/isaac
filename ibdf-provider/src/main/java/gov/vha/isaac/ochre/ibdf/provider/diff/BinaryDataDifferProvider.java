@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.ibdf.provider;
+package gov.vha.isaac.ochre.ibdf.provider.diff;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -22,7 +22,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +58,15 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 
 /**
+ * Routines enabling the examination of two ibdf files containing two distinct
+ * versions of the same terminology and identifies the new/inactivated/modified
+ * content between the two versions.
+ * 
+ * Once identified, a new changeset file may be generated containing these
+ * changes. This file can then be imported into an existing database containing
+ * the old version of the terminology. This will upgrade it to the new
+ * terminology.
+ * 
  * {@link BinaryDataDifferService}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -110,18 +118,18 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		List<OchreExternalizable> changedComponents = new ArrayList<>();
 		CommitService commitService = Get.commitService();
 
-		Date date = new Date();
-		final int activeStampSeq = createStamp(State.ACTIVE, date.getTime());
-		final int inactiveStampSeq = createStamp(State.INACTIVE, date.getTime());
+		final int activeStampSeq = createStamp(State.ACTIVE);
+		final int inactiveStampSeq = createStamp(State.INACTIVE);
 
 		// Find existing
 		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
 			Set<UUID> matchedSet = new HashSet<UUID>();
 			if (type != OchreExternalizableObjectType.CONCEPT && type != OchreExternalizableObjectType.SEMEME) {
-				// Given using the OchreExternalizableObjectType.values() collection, ensure only handling the supported types
+				// Given using the OchreExternalizableObjectType.values()
+				// collection, ensure only handling the supported types
 				continue;
 			}
-			
+
 			// Search for modified components
 			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
 				for (OchreExternalizable newComp : newContentMap.get(type)) {
@@ -130,12 +138,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
 						matchedSet.add(oldCompChron.getPrimordialUuid());
-
-						if (newCompChron.getPrimordialUuid().equals(UUID.fromString("8f269d45-75d3-5f8f-b6f8-fd58f3849723"))) {
-							if (((SememeChronology<?>) oldCompChron).getReferencedComponentNid() == -2144861462) {
-								// Breakpoint if needed
-							}
-						}
 
 						try {
 							OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
@@ -168,7 +170,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					}
 				}
 			}
-
 
 			// Add newCons not in newList
 			for (OchreExternalizable newComp : newContentMap.get(type)) {
@@ -203,7 +204,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				componentCSWriter.put(c);
 			}
 		}
-		
+
 		componentCSWriter.close();
 	}
 
@@ -240,9 +241,10 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	private void writeChangeSetForAnalysis(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
-		int i = 1;
+		int counter = 1;
 		FileWriter textOutputWriter = new FileWriter(analysisFilesOutputDir + "output/" + textOutputFileName);
-		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(analysisFilesOutputDir + "output/" + jsonOutputFileName);
+		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(
+				analysisFilesOutputDir + "output/" + jsonOutputFileName);
 
 		for (ChangeType key : changedComponents.keySet()) {
 			FileWriter changeWriter = new FileWriter(analysisFilesOutputDir + "output/" + key + "File.txt");
@@ -263,8 +265,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						componentType = "Sememe";
 					}
 
-					String componentToWrite = "\n\n\t\t\t---- " + key.toString() + " " + componentType + " #" + i++
-							+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----";
+					String componentToWrite = "\n\n\t\t\t---- " + key.toString() + " " + componentType + " #"
+							+ counter++ + "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----";
 
 					jsonOutputWriter.write(componentToWrite);
 
@@ -301,9 +303,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 * @param time
 	 *            - time or null (for default)
 	 */
-	private int createStamp(State state, Long time) {
-		return LookupService.getService(StampService.class).getStampSequence(state,
-				time == null ? diffUtil.getNewImportDate() : time.longValue(),
+	private int createStamp(State state) {
+
+		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
 				LookupService.getService(IdentifierService.class)
 						.getConceptSequenceForUuids(UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c")), // USER
 				LookupService.getService(IdentifierService.class)
@@ -318,7 +320,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	public void initialize(String analysisFilesOutputDir, String ibdfFileOutputDir, String changesetFileName,
 			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
 			boolean diffOnModule, boolean diffOnPath, String importDate) {
-		diffUtil = new BinaryDataDifferProviderUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
+		diffUtil = new BinaryDataDifferProviderUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule,
+				diffOnPath);
 		diffUtil.setNewImportDate(importDate);
 
 		this.analysisFilesOutputDir = analysisFilesOutputDir;
@@ -477,7 +480,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private void writeInputFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
 			String version, String jsonInputFileName) throws IOException {
 		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + "input/" + textInputFileName, true);
-		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(analysisFilesOutputDir + "input/" + jsonInputFileName);
+		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(
+				analysisFilesOutputDir + "input/" + jsonInputFileName);
 
 		try {
 			textInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
