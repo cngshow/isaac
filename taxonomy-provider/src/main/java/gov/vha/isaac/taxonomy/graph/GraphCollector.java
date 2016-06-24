@@ -5,21 +5,20 @@
  */
 package gov.vha.isaac.taxonomy.graph;
 
-import gov.vha.isaac.taxonomy.TaxonomyFlags;
-import gov.vha.isaac.taxonomy.TaxonomyRecordPrimitive;
-import gov.vha.isaac.taxonomy.TaxonomyRecordUnpacked;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.tree.hashtree.HashTreeBuilder;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
-
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.IntStream;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.tree.hashtree.HashTreeBuilder;
+import gov.vha.isaac.ochre.model.waitfree.MVCasSequenceObjectMap;
+import gov.vha.isaac.taxonomy.TaxonomyFlags;
+import gov.vha.isaac.taxonomy.TaxonomyRecordPrimitive;
+import gov.vha.isaac.taxonomy.TaxonomyRecordUnpacked;
 
 
 /**
@@ -34,13 +33,13 @@ public class GraphCollector implements
 
 
 
-    final CasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap;
+    final MVCasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap;
     final TaxonomyCoordinate taxonomyCoordinate;
     final int taxonomyFlags;
     int originSequenceBeingProcessed = -1;
     ConceptSequenceSet watchList = new ConceptSequenceSet();
 
-    public GraphCollector(CasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, TaxonomyCoordinate viewCoordinate) {
+    public GraphCollector(MVCasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, TaxonomyCoordinate viewCoordinate) {
         this.taxonomyMap = taxonomyMap;
         this.taxonomyCoordinate = viewCoordinate;
         taxonomyFlags = TaxonomyFlags.getFlagsFromTaxonomyCoordinate(viewCoordinate);

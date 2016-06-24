@@ -59,7 +59,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
-import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
+import gov.vha.isaac.ochre.model.waitfree.MVCasSequenceObjectMap;
 
 /**
  *
@@ -72,7 +72,7 @@ public class SememeProvider implements SememeService {
 
     private static final Logger LOG = LogManager.getLogger();
 
-    final CasSequenceObjectMap<SememeChronologyImpl<? extends SememeVersion<?>>> sememeMap;
+    final MVCasSequenceObjectMap<SememeChronologyImpl<? extends SememeVersion<?>>> sememeMap;
     final ConcurrentSkipListSet<AssemblageSememeKey> assemblageSequenceSememeSequenceMap = new ConcurrentSkipListSet<>();
     final ConcurrentSkipListSet<ReferencedNidAssemblageSequenceSememeSequenceKey> referencedNidAssemblageSequenceSememeSequenceMap = new ConcurrentSkipListSet<>();
     final Path sememePath;
@@ -88,7 +88,7 @@ public class SememeProvider implements SememeService {
             Files.createDirectories(sememePath);
             LOG.info("Setting up sememe provider at " + sememePath.toAbsolutePath().toString());
 
-            sememeMap = new CasSequenceObjectMap<>(new SememeSerializer(), sememePath, "seg.", ".sememe.map");
+            sememeMap = new MVCasSequenceObjectMap<>(new SememeSerializer(), sememePath, "seg.", ".sememe.map");
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Manager", e);
             throw e;

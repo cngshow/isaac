@@ -15,40 +15,6 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.api.ConceptActiveService;
-import gov.vha.isaac.ochre.api.logic.LogicNode;
-import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
-import gov.vha.isaac.ochre.api.*;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
-import gov.vha.isaac.ochre.api.identity.StampedVersion;
-import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
-import gov.vha.isaac.ochre.api.commit.CommitRecord;
-import gov.vha.isaac.ochre.api.commit.CommitStates;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.PremiseType;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.dag.Node;
-import gov.vha.isaac.ochre.api.dag.Graph;
-import gov.vha.isaac.ochre.api.logic.LogicalExpression;
-import gov.vha.isaac.ochre.api.snapshot.calculator.RelativePositionCalculator;
-import gov.vha.isaac.ochre.api.tree.Tree;
-import gov.vha.isaac.ochre.api.tree.TreeNodeVisitData;
-import gov.vha.isaac.ochre.api.tree.hashtree.HashTreeBuilder;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.api.collections.LruCache;
-import gov.vha.isaac.ochre.model.logic.IsomorphicResultsBottomUp;
-import gov.vha.isaac.ochre.model.logic.node.AndNode;
-import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
-import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
-import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
-import gov.vha.isaac.taxonomy.graph.GraphCollector;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -61,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -76,6 +41,46 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.ConceptActiveService;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifierService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.TaxonomyService;
+import gov.vha.isaac.ochre.api.TaxonomySnapshotService;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.LruCache;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.commit.CommitStates;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.dag.Graph;
+import gov.vha.isaac.ochre.api.dag.Node;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.api.logic.LogicNode;
+import gov.vha.isaac.ochre.api.logic.LogicalExpression;
+import gov.vha.isaac.ochre.api.snapshot.calculator.RelativePositionCalculator;
+import gov.vha.isaac.ochre.api.tree.Tree;
+import gov.vha.isaac.ochre.api.tree.TreeNodeVisitData;
+import gov.vha.isaac.ochre.api.tree.hashtree.HashTreeBuilder;
+import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
+import gov.vha.isaac.ochre.model.logic.IsomorphicResultsBottomUp;
+import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
+import gov.vha.isaac.ochre.model.logic.node.internal.RoleNodeSomeWithSequences;
+import gov.vha.isaac.ochre.model.waitfree.MVCasSequenceObjectMap;
+import gov.vha.isaac.taxonomy.graph.GraphCollector;
 
 /**
  *
@@ -92,7 +97,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
      * taxonomy record, which represents the destination, stamp, and taxonomy
      * flags for parent and child concepts.
      */
-    private final CasSequenceObjectMap<TaxonomyRecordPrimitive> originDestinationTaxonomyRecordMap;
+    private final MVCasSequenceObjectMap<TaxonomyRecordPrimitive> originDestinationTaxonomyRecordMap;
     private static final String TAXONOMY = "taxonomy";
     private final ConcurrentSkipListSet<DestinationOriginRecord> destinationOriginRecordSet = new ConcurrentSkipListSet<>();
     private final Path folderPath;
@@ -114,7 +119,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
         originDestinationTaxonomyRecordMap
-                = new CasSequenceObjectMap<>(new TaxonomyRecordSerializer(),
+                = new MVCasSequenceObjectMap<>(new TaxonomyRecordSerializer(),
                         taxonomyProviderFolder, "seg.", ".taxonomy.map");
         LOG.info("CradleTaxonomyProvider constructed");
     }
@@ -173,7 +178,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         return destinationOriginRecordSet;
     }
 
-    public CasSequenceObjectMap<TaxonomyRecordPrimitive> getOriginDestinationTaxonomyRecords() {
+    public MVCasSequenceObjectMap<TaxonomyRecordPrimitive> getOriginDestinationTaxonomyRecords() {
         return originDestinationTaxonomyRecordMap;
     }
 

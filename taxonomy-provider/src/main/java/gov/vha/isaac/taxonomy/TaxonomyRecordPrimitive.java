@@ -5,13 +5,13 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.model.WaitFreeComparable;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.model.WaitFreeComparable;
+import gov.vha.isaac.ochre.model.waitfree.MVCasSequenceObjectMap;
 
 /**
  *
@@ -26,7 +26,7 @@ public class TaxonomyRecordPrimitive implements WaitFreeComparable {
         
     public static Optional<TaxonomyRecordPrimitive> getIfActiveViaType(int conceptSequence, 
             int typeSequence,
-            CasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
+            MVCasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
             TaxonomyCoordinate vp, int flags) {
         Optional<TaxonomyRecordPrimitive> optionalRecord = taxonomyMap.get(conceptSequence);
         if (optionalRecord.isPresent()) {
@@ -40,7 +40,7 @@ public class TaxonomyRecordPrimitive implements WaitFreeComparable {
     }
 
     public static Optional<TaxonomyRecordPrimitive> getIfConceptActive(int conceptSequence, 
-             CasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
+    		MVCasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
             TaxonomyCoordinate vp) {
         Optional<TaxonomyRecordPrimitive> optionalRecord = taxonomyMap.get(conceptSequence);
         if (optionalRecord.isPresent()) {
@@ -54,7 +54,7 @@ public class TaxonomyRecordPrimitive implements WaitFreeComparable {
     }
     
     public static boolean isConceptActive(int conceptSequence, 
-             CasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
+    		MVCasSequenceObjectMap<TaxonomyRecordPrimitive> taxonomyMap, 
             StampCoordinate sc) {
         Optional<TaxonomyRecordPrimitive> optionalRecord = taxonomyMap.get(conceptSequence);
         if (optionalRecord.isPresent()) {

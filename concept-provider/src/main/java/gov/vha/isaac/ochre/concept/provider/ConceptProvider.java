@@ -16,26 +16,6 @@
 package gov.vha.isaac.ochre.concept.provider;
 
 
-import gov.vha.isaac.ochre.concept.provider.ConceptSerializer;
-import gov.vha.isaac.ochre.api.ConceptActiveService;
-import gov.vha.isaac.ochre.api.ConfigurationService;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
-import gov.vha.isaac.ochre.model.concept.ConceptSnapshotImpl;
-import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,6 +36,26 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.ConceptActiveService;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshotService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
+import gov.vha.isaac.ochre.model.concept.ConceptSnapshotImpl;
+import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
+import gov.vha.isaac.ochre.model.waitfree.MVCasSequenceObjectMap;
 
 /**
  *
@@ -72,7 +72,7 @@ public class ConceptProvider implements ConceptService {
 
     ConceptActiveService conceptActiveService;
 
-    final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
+    final MVCasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
 
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
@@ -99,7 +99,7 @@ public class ConceptProvider implements ConceptService {
 
             Path ochreConceptPath = folderPath.resolve("ochre");
 
-            conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
+            conceptMap = new MVCasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
         } catch (IOException | IllegalStateException e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("ChRonicled Assertion Database of Logical Expressions (OCHRE)", e);
