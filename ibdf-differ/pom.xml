@@ -13,29 +13,55 @@
 	<name>IBDF Diff Generator</name>
 
 	<properties>
-		<vhat.version.old>2016.01.07-loader-4.2-SNAPSHOT</vhat.version.old>
-		<vhat.version.new>2016.01.07-loader-4.2-SNAPSHOT</vhat.version.new>
+		<!-- VHAT Terminology -->
+		<terminology.groupId>gov.vha.isaac.terminology.converted</terminology.groupId>
+		<terminology.artifactId>vhat-ibdf</terminology.artifactId>
+		<terminology.version.old>2016.01.07-loader</terminology.version.old>
+		<terminology.version.new>2016.01.07-loader</terminology.version.new>
+		<terminology.loader.version.old>4.3-SNAPSHOT</terminology.loader.version.old>
+		<terminology.loader.version.new>4.31-SNAPSHOT</terminology.loader.version.new>
+		<terminology.old>${terminology.version.old}-${terminology.loader.version.old}</terminology.old>
+		<terminology.new>${terminology.version.new}-${terminology.loader.version.new}</terminology.new>
+
+		<!-- Database required. Note, Database modified at end of process -->
+		<database.groupId>gov.vha.isaac.db</database.groupId>
+		<database.artifactId>vets</database.artifactId>
+		<database.version>1.2-SNAPSHOT</database.version>
+		<database.classifier>all</database.classifier>
+		<database.type>cradle.zip</database.type>
+
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
 	</properties>
 
 	<dependencies>
-		<!-- VHAT -->
+		<!-- Old Terminology Version -->
 		<dependency>
-			<groupId>gov.vha.isaac.terminology.converted</groupId>
-			<artifactId>vhat-ibdf</artifactId>
-			<version>2016.01.07-loader-4.2-SNAPSHOT</version>
+			<groupId>${terminology.groupId}</groupId>
+			<artifactId>${terminology.artifactId}</artifactId>
+			<version>${terminology.version.old}-${terminology.loader.version.old}</version>
 			<type>ibdf.zip</type>
 			<optional>true</optional> <!-- Not needed at runtime / transitively -->
 			<scope>compile</scope>
 		</dependency>
-		<!-- VETS DB -->
+		<!-- New Terminology Version -->
 		<dependency>
-			<groupId>gov.vha.isaac.db</groupId>
-			<artifactId>vets</artifactId>
-			<version>1.2-SNAPSHOT</version>
-			<classifier>all</classifier>
-			<type>cradle.zip</type>
+			<groupId>${terminology.groupId}</groupId>
+			<artifactId>${terminology.artifactId}</artifactId>
+			<version>${terminology.version.new}-${terminology.loader.version.new}</version>
+			<type>ibdf.zip</type>
+			<optional>true</optional> <!-- Not needed at runtime / transitively -->
+			<scope>compile</scope>
 		</dependency>
+		<!-- Database -->
+		<dependency>
+			<groupId>${database.groupId}</groupId>
+			<artifactId>${database.artifactId}</artifactId>
+			<version>${database.version}</version>
+			<classifier>${database.classifier}</classifier>
+			<type>${database.type}</type>
+		</dependency>
+		<!-- Project Dependencies -->
 		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
@@ -203,15 +229,15 @@
 						</goals>
 						<configuration>
 							<skip>${skipTests}</skip>
-							<includeArtifactIds>vets</includeArtifactIds>
+							<includeArtifactIds>${database.artifactId}</includeArtifactIds>
 							<outputDirectory>${project.build.directory}/db/</outputDirectory>
 							<artifactItems>
 								<artifact>
-									<groupId>gov.vha.isaac.db</groupId>
-									<artifactId>vets</artifactId>
-									<version>1.2-SNAPSHOT</version>
-									<classifier>all</classifier>
-									<type>cradle.zip</type>
+									<groupId>${database.groupId}</groupId>
+									<artifactId>${database.artifactId}</artifactId>
+									<version>${database.version}</version>
+									<classifier>${database.classifier}</classifier>
+									<type>${database.type}</type>
 								</artifact>
 							</artifactItems>
 						</configuration>
@@ -231,18 +257,41 @@
 						<artifactId>maven-dependency-plugin</artifactId>
 						<executions>
 							<execution>
-								<id>extract-ibdf</id>
+								<id>extract-ibdf-old</id>
 								<phase>generate-resources</phase>
 								<goals>
-									<goal>unpack-dependencies</goal>
+									<goal>unpack</goal>
 								</goals>
 								<configuration>
-									<!-- <includeArtifactIds>vhat-ibdf,metadata</includeArtifactIds> -->
-									<includeArtifactIds>vhat-ibdf</includeArtifactIds>
-									<outputDirectory>${project.build.directory}/data</outputDirectory>
+									<artifactItems>
+										<artifactItem>
+											<groupId>${terminology.groupId}</groupId>
+											<artifactId>${terminology.artifactId}</artifactId>
+											<version>${terminology.version.old}-${terminology.loader.version.old}</version>
+											<type>ibdf.zip</type>
+										</artifactItem>
+									</artifactItems>
+									<outputDirectory>${project.build.directory}/data/terminology/old</outputDirectory>
 								</configuration>
 							</execution>
-							<!-- IF TESTING MOJO, Comment out this execution -->
+							<execution>
+								<id>extract-ibdf-new</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>unpack</goal>
+								</goals>
+								<configuration>
+									<artifactItems>
+										<artifactItem>
+											<groupId>${terminology.groupId}</groupId>
+											<artifactId>${terminology.artifactId}</artifactId>
+											<version>${terminology.version.new}-${terminology.loader.version.new}</version>
+											<type>ibdf.zip</type>
+										</artifactItem>
+									</artifactItems>
+									<outputDirectory>${project.build.directory}/data/terminology/new</outputDirectory>
+								</configuration>
+							</execution>
 							<execution>
 								<id>extract-db</id>
 								<phase>generate-resources</phase>
@@ -250,7 +299,8 @@
 									<goal>unpack-dependencies</goal>
 								</goals>
 								<configuration>
-									<includeArtifactIds>vets</includeArtifactIds>
+									<includeArtifactIds>${database.artifactId}</includeArtifactIds>
+									<!-- <includeArtifactIds>${terminology.artifactId}, metadata</includeArtifactIds> -->
 									<outputDirectory>${project.build.directory}/db</outputDirectory>
 								</configuration>
 							</execution>
@@ -269,13 +319,13 @@
 								</goals>
 								<configuration>
 									<!-- IF TESTING MOJO, Use this data store -->
-									<dataStoreLocation>${project.build.directory}/db/vets-1.1-SNAPSHOT-all.data/</dataStoreLocation>
+									<dataStoreLocation>${project.build.directory}/db/${database.artifactId}-${database.version}-${database.classifier}.data/</dataStoreLocation>
 									<!-- IF Production Mojo, Use this data store -->
 									<!-- <dataStoreLocation>${basedir}/</dataStoreLocation> -->
 								</configuration>
 							</execution>
 							<execution>
-								<id>diff-ibdf-vhat</id>
+								<id>diff-ibdfs</id>
 								<phase>process-resources</phase>
 								<goals>
 									<goal>quasi-mojo-executor</goal>
@@ -285,15 +335,15 @@
 									<parameters>
 										<ibdfFileOutputDir>${project.build.directory}/</ibdfFileOutputDir>
 										<analysisFilesOutputDir>${project.build.directory}/filesForAnalysis/</analysisFilesOutputDir>
-										<oldVersionFile>${project.build.directory}/data/VHAT-V1.ibdf</oldVersionFile>
-										<newVersionFile>${project.build.directory}/data/VHAT-V2.ibdf</newVersionFile>
+										<oldVersionFile>${project.build.directory}/data/terminology/old/${terminology.artifactId}.ibdf</oldVersionFile>
+										<newVersionFile>${project.build.directory}/data/terminology/new/${terminology.artifactId}.ibdf</newVersionFile>
 										<diffOnStatus>true</diffOnStatus>
 										<diffOnAuthor>true</diffOnAuthor>
 										<diffOnModule>true</diffOnModule>
 										<diffOnPath>true</diffOnPath>
 										<createAnalysisFiles>true</createAnalysisFiles>
 										<importDate>2016-09-30</importDate>
-										<changesetFileName>vhatChangeset-2016-09-30</changesetFileName>
+										<changesetFileName>${terminology.artifactId}-Diff-${terminology.version.old}-to-${terminology.version.new}.ibdf</changesetFileName>
 									</parameters>
 								</configuration>
 							</execution>

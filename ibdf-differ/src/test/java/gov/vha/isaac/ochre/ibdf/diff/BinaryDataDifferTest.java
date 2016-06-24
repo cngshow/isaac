@@ -38,7 +38,7 @@ import gov.vha.isaac.ochre.api.util.DBLocator;
 import gov.vha.isaac.ochre.ibdf.provider.diff.BinaryDataDifferProvider;
 
 /**
- * Unit test for BinaryDataDifferProvider.
+ * Unit test for BinaryDataDifferProvider. Uses database defined in pom
  * 
  * {@link BinaryDataDifferProvider}
  *
@@ -47,13 +47,17 @@ import gov.vha.isaac.ochre.ibdf.provider.diff.BinaryDataDifferProvider;
 
 public class BinaryDataDifferTest {
 	private static final Logger log = LogManager.getLogger();
-	private File dataStoreLocation = new File("target/db");
 
-	BinaryDataDifferProvider differProvider = new BinaryDataDifferProvider();
+	private final String TERMINOLOGY_INPUT_FILE_NAME = "vhat-ibdf";
+	private final String OLD_VERSION = "4.3-SNAPSHOT";
+	private final String NEW_VERSION = "4.31-SNAPSHOT";
+	private final File DATASTORE_PATH = new File("target/db");
+
+	private BinaryDataDifferProvider differProvider = new BinaryDataDifferProvider();
 
 	@Before
 	public void setupDB() throws Exception {
-		dataStoreLocation = DBLocator.findDBFolder(dataStoreLocation);
+		File dataStoreLocation = DBLocator.findDBFolder(DATASTORE_PATH);
 
 		if (!dataStoreLocation.exists()) {
 			throw new IOException("Couldn't find a data store from the input of '"
@@ -86,13 +90,14 @@ public class BinaryDataDifferTest {
 	public void testDiff() {
 		// Parameters used by Mojo
 		// Input Files
-		final File oldVersionFile = new File("src/test/resources/data/VHAT-V1.ibdf");
-		final File newVersionFile = new File("src/test/resources/data/VHAT-V2.ibdf");
+		final File oldVersionFile = new File("src/test/resources/data/old/" + TERMINOLOGY_INPUT_FILE_NAME + ".ibdf");
+		final File newVersionFile = new File("src/test/resources/data/new/" + TERMINOLOGY_INPUT_FILE_NAME + ".ibdf");
 
 		// Output Files
 		final String ibdfFileOutputDir = "target/unitTestOutput/ibdfFileOutputDir/";
 		final String analysisFilesOutputDir = "target/unitTestOutput/analysisFilesOutputDir/";
-		final String changesetFileName = "vhatChangeset-2016-09-30";
+		final String ouptutIbdfFileName = TERMINOLOGY_INPUT_FILE_NAME + "-Diff-" + OLD_VERSION + "-to-" + NEW_VERSION
+				+ ".ibdf";
 
 		// Others
 		final String importDate = "2016-09-30";
@@ -103,7 +108,7 @@ public class BinaryDataDifferTest {
 		final boolean diffOnTimestamp = true;
 		final boolean createAnalysisFiles = true;
 
-		differProvider.initialize(analysisFilesOutputDir, ibdfFileOutputDir, changesetFileName, createAnalysisFiles,
+		differProvider.initialize(analysisFilesOutputDir, ibdfFileOutputDir, ouptutIbdfFileName, createAnalysisFiles,
 				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate);
 
 		try {
