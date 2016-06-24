@@ -197,7 +197,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	@Override
 	public void generateDiffedIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws FileNotFoundException {
-		componentCSWriter = Get.binaryDataWriter(new File(ibdfFileOutputDir + changesetFileName + ".ibdf").toPath());
+		componentCSWriter = Get.binaryDataWriter(new File(ibdfFileOutputDir + changesetFileName).toPath());
 
 		for (ChangeType key : changedComponents.keySet()) {
 			for (OchreExternalizable c : changedComponents.get(key)) {
@@ -414,7 +414,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		int sc = 0;
 
 		BinaryDataReaderQueueService reader = Get
-				.binaryDataQueueReader(new File(ibdfFileOutputDir + changesetFileName + ".ibdf").toPath());
+				.binaryDataQueueReader(new File(ibdfFileOutputDir + changesetFileName).toPath());
 		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
 
 		Map<String, Object> args = new HashMap<>();
