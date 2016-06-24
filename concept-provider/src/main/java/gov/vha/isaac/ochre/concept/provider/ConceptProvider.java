@@ -142,7 +142,7 @@ public class ConceptProvider implements ConceptService {
         if (conceptId < 0) {
             conceptId = Get.identifierService().getConceptSequence(conceptId);
         }
-        return conceptMap.getOptional(conceptId);
+        return conceptMap.get(conceptId);
     }
     
     @Override

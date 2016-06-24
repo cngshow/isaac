@@ -16,7 +16,7 @@
 package gov.vha.isaac.ochre.integration.tests;
 
 import gov.vha.isaac.ochre.api.LookupService;
-import static gov.vha.isaac.ochre.api.constants.Constants.CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY;
+import static gov.vha.isaac.ochre.api.constants.Constants.DATA_STORE_ROOT_LOCATION_PROPERTY;
 import gov.vha.isaac.ochre.api.memory.HeapUseTicker;
 import gov.vha.isaac.ochre.api.progress.ActiveTasksTicker;
 import java.nio.file.Paths;
@@ -40,9 +40,9 @@ public class IntegrationSuiteManagement {
     public void setUpSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement setup");
 
-        System.setProperty(CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY, "target/object-chronicles");
+        System.setProperty(DATA_STORE_ROOT_LOCATION_PROPERTY, "target/testdb/");
 
-        java.nio.file.Path dbFolderPath = Paths.get(System.getProperty(CHRONICLE_COLLECTIONS_ROOT_LOCATION_PROPERTY));
+        java.nio.file.Path dbFolderPath = Paths.get(System.getProperty(DATA_STORE_ROOT_LOCATION_PROPERTY));
         LOG.info("termstore folder path exists: " + dbFolderPath.toFile().exists());
 
         LookupService.startupIsaac();
