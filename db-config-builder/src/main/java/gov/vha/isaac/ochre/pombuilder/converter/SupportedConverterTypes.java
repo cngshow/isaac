@@ -29,31 +29,33 @@ import java.util.List;
 public enum SupportedConverterTypes
 {
 	LOINC("loinc-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			
+		//(?i) and (?-i) constructs are not supported in JavaScript (they are in Ruby)
 			new UploadFileInfo("", "https://loinc.org/downloads/loinc", 
 					"LOINC_2.54_Text.zip",
 					"The primary LOINC file is the 'LOINC Table File' in the csv format'.  This should be a zip file that contains a file named 'loinc.csv'."
 					+ "  Additionally, the zip file may (optionally) contain 'map_to.csv' and 'source_organization.csv'."
-					+ "  The zip file must contain 'text' within its name.", "(?i).*text.*\\.zip", true),
+					+ "  The zip file must contain 'text' within its name.", ".*text.*\\.zip$", true),
 			new UploadFileInfo("", "https://loinc.org/downloads/files/loinc-multiaxial-hierarchy", 
 					"LOINC_2.54_MULTI-AXIAL_HIERARCHY.zip",
 					"The Multiaxial Hierarchy file is a zip file that contains a file named *multi-axial_hierarchy.csv.  The zip file containing the multiaxial hierarchy"
-					+ " must contain 'multi-axial_hierarchy' within its name", "(?i).*multi\\-axial_hierarchy.*\\.zip", true),
+					+ " must contain 'multi-axial_hierarchy' within its name", ".*multi\\-axial_hierarchy.*\\.zip$", true),
 			new UploadFileInfo("", "https://loinc.org/downloads/loinc",
 					"LOINC_ReleaseNotes.txt",
 					"The LOINC Release Notes file must be included for recent versions of LOINC.", "(?i).*releasenotes\\.txt", true)
 	}),
 	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
-			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html."
-					+ "  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release)",
+			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_LOINC_AlphaPhase3_INT_20160401.zip",
-					"The file must be a zip file, which ends with .zip", "(?i).*\\.zip", true)
+					"  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release) "
+					+ "The file must be a zip file, which ends with .zip", ".*\\.zip$", true)
 	}),
 	SCT("rf2-src-data-sct", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_RF2Release_INT_20160131.zip",
 					"The expected file is the RF2 release zip file.  The filename must end with .zip, and must contain the release date in the Snomed standard"
 					+ " naming convention (4 digit year, 2 digit month, 2 digit day).",
-					"(?i).*_\\d{8}.*\\.zip", true)
+					".*_\\d{8}.*\\.zip$", true)
 	}),
 	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("Snomed Extensions come from a variety of sources.  Note that the NLM has choosen to stop advertising the download links to the "
@@ -63,7 +65,7 @@ public enum SupportedConverterTypes
 					"SnomedCT_Release_US1000124_20160301_Extension.zip",
 					"The expected file is the RF2 release zip file.  The filename must end with .zip, and must contain the release date in the Snomed standard"
 					+ " naming convention (4 digit year, 2 digit month, 2 digit day).",
-					"(?i).*_\\d{8}.*\\.zip", true)
+					".*_\\d{8}.*\\.zip$", true)
 	}),
 	VHAT("vhat-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("VHAT content is typically exported from a VETs system.  ", "",
@@ -74,12 +76,12 @@ public enum SupportedConverterTypes
 	RXNORM("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
 					"RxNorm_full_06062016.zip",
-					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "(?i)rxnorm_full.*\\.zip", true)
+					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
 	}),
 	RXNORM_SOLOR("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
 					"RxNorm_full_06062016.zip",
-					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "(?i)rxnorm_full.*\\.zip", true)
+					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
 	});
 	
 	private String artifactId_;

@@ -44,6 +44,7 @@ public class UploadFileInfo
 		this.fileIsRequired = fileIsRequired;
 	}
 
+
 	/**
 	 * This is not always populated - it will typically only be populated if {@link #getSuggestedSourceURL()} is NOT populated.
 	 */

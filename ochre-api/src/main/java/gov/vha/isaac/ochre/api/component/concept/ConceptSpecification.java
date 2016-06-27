@@ -24,7 +24,7 @@ import gov.vha.isaac.ochre.api.identity.IdentifiedObject;
  */
 public interface ConceptSpecification extends IdentifiedObject {
 
-    public static final String FIELD_SEPARATOR = "⦙";
+    public static final String FIELD_SEPARATOR = " | ";
 
     /**
      *

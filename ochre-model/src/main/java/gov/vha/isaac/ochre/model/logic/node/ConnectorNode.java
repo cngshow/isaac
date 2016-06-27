@@ -107,7 +107,7 @@ public abstract class ConnectorNode extends AbstractLogicNode {
     public String toString(String nodeIdSuffix) {
         if (childIndices != null && !childIndices.isEmpty()) {
             StringBuilder builder = new StringBuilder();
-            builder.append("➞[");
+            builder.append("?[");
             childIndices.forEach((index) -> {
                 builder.append(index);
                 builder.append(nodeIdSuffix);

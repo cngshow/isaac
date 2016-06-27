@@ -16,5 +16,9 @@
             <artifactId>ochre-model</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.cedarsoftware</groupId>
+            <artifactId>json-io</artifactId>
+        </dependency>
     </dependencies>
 </project>
