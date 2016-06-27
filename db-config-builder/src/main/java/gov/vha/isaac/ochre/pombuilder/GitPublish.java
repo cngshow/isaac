@@ -70,8 +70,7 @@ public class GitPublish
 		svc.setRootLocation(tempFolder);
 		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
 		ArrayList<String> temp = svc.readTags(gitUserName, gitPassword);
-		//FileUtil.recursiveDelete(tempFolder);
-		//TODO fix recursive delete (stuck file handle)
+		FileUtil.recursiveDelete(tempFolder);
 		return temp;
 	}
 	

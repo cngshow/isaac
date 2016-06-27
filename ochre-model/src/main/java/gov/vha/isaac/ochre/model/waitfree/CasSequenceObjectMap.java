@@ -192,25 +192,6 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
         return elementSerializer.deserialize(buff);
     }
     
-    public Optional<T> getOptional(int sequence) {
-        int segmentIndex = sequence / SEGMENT_SIZE;
-        int indexInSegment = sequence % SEGMENT_SIZE;
-        if (segmentIndex >= objectByteList.size()) {
-            log.warn("Tried to access segment that does not exist. Sequence: " +
-                    sequence + " segment: " + segmentIndex +
-                    " index: " + indexInSegment);
-            return Optional.empty();
-        }
-        byte[] data = getSegment(segmentIndex).get(indexInSegment);
-        if (data == null) {
-            return Optional.empty();
-        }
-
-        ByteArrayDataBuffer buff = new ByteArrayDataBuffer(data);
-        return Optional.of(elementSerializer.deserialize(buff));
-    }
-    
-    
 
     public int getSize() {
         // TODO determine if this is the best way / if this method is necessary.  
@@ -230,10 +211,13 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
     public Optional<T> get(int sequence) {
 
         int segmentIndex = sequence / SEGMENT_SIZE;
+        int indexInSegment = sequence % SEGMENT_SIZE;
         if (segmentIndex >= objectByteList.size()) {
+            log.warn("Tried to access segment that does not exist. Sequence: " +
+                    sequence + " segment: " + segmentIndex +
+                    " index: " + indexInSegment);
             return Optional.empty();
         }
-        int indexInSegment = sequence % SEGMENT_SIZE;
 
         byte[] objectBytes = getSegment(segmentIndex).get(indexInSegment);
         if (objectBytes != null) {

@@ -653,6 +653,8 @@
         <module>ochre-mojo-log-config</module>
         <module>ochre-mapping</module>
         <module>sync-git</module>
+        <module>metacontent-store</module>
+		<module>ibdf-differ</module>
     </modules>
     
     <profiles>
