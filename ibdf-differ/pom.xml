@@ -19,14 +19,14 @@
 		<terminology.version.old>2016.01.07-loader</terminology.version.old>
 		<terminology.version.new>2016.01.07-loader</terminology.version.new>
 		<terminology.loader.version.old>4.3-SNAPSHOT</terminology.loader.version.old>
-		<terminology.loader.version.new>4.31-SNAPSHOT</terminology.loader.version.new>
+		<terminology.loader.version.new>4.3-SNAPSHOT</terminology.loader.version.new>
 		<terminology.old>${terminology.version.old}-${terminology.loader.version.old}</terminology.old>
 		<terminology.new>${terminology.version.new}-${terminology.loader.version.new}</terminology.new>
 
 		<!-- Database required. Note, Database modified at end of process -->
 		<database.groupId>gov.vha.isaac.db</database.groupId>
 		<database.artifactId>vets</database.artifactId>
-		<database.version>1.2-SNAPSHOT</database.version>
+		<database.version>1.1</database.version>
 		<database.classifier>all</database.classifier>
 		<database.type>cradle.zip</database.type>
 
