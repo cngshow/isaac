@@ -47,7 +47,7 @@ public enum SupportedConverterTypes
 	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_LOINC_AlphaPhase3_INT_20160401.zip",
-					"  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release) "
+					"  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release). "
 					+ "The file must be a zip file, which ends with .zip", ".*\\.zip$", true)
 	}),
 	SCT("rf2-src-data-sct", new String[] {}, new String[] {}, new UploadFileInfo[] {
