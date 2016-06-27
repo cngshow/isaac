@@ -32,9 +32,11 @@ public class UploadFileInfo
 	private String expectedNamingPatternDescription;
 	private String expectedNamingPatternRegExpPattern;
 	private boolean fileIsRequired;
+	private boolean ignoreCaseInRegex;
+
 	
 	protected UploadFileInfo(String suggestedSourceLocation, String suggestedSourceURL, String sampleName, String expectedNamingPatternDescription, 
-			String expectedNamingPatternRegExpPattern, boolean fileIsRequired)
+			String expectedNamingPatternRegExpPattern, boolean ignoreCaseInRegex, boolean fileIsRequired)
 	{
 		this.suggestedSourceLocation = suggestedSourceLocation;
 		this.suggestedSourceURL = suggestedSourceURL;
@@ -42,6 +44,13 @@ public class UploadFileInfo
 		this.expectedNamingPatternDescription = expectedNamingPatternDescription;
 		this.expectedNamingPatternRegExpPattern = expectedNamingPatternRegExpPattern;
 		this.fileIsRequired = fileIsRequired;
+		this.ignoreCaseInRegex = ignoreCaseInRegex;
+	}
+	
+	protected UploadFileInfo(String suggestedSourceLocation, String suggestedSourceURL, String sampleName, String expectedNamingPatternDescription, 
+			String expectedNamingPatternRegExpPattern, boolean fileIsRequired)
+	{
+		this(suggestedSourceLocation, suggestedSourceURL, sampleName,expectedNamingPatternDescription, expectedNamingPatternRegExpPattern, true, fileIsRequired);
 	}
 
 	/**
@@ -73,6 +82,14 @@ public class UploadFileInfo
 	public String getExpectedNamingPatternRegExpPattern()
 	{
 		return expectedNamingPatternRegExpPattern;
+	}
+	/**
+	 * If this is set to true, dynamic languages (such as JavaScript) should end the expression in 'i'
+	 * For example, /kitty/i will match "hello kitty cat" and "hello KitTy cat"
+	 * @return
+	 */
+	public boolean isIgnoreCaseInRegularExpression() {
+		return ignoreCaseInRegex;
 	}
 
 	public boolean fileIsRequired()
