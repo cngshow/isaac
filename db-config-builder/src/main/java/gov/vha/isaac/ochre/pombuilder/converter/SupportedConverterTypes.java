@@ -45,10 +45,10 @@ public enum SupportedConverterTypes
 					"The LOINC Release Notes file must be included for recent versions of LOINC.", "(?i).*releasenotes\\.txt", true)
 	}),
 	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
-			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html."
-					+ "  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release)",
+			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_LOINC_AlphaPhase3_INT_20160401.zip",
-					"The file must be a zip file, which ends with .zip", ".*\\.zip$", true)
+					"  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release) "
+					+ "The file must be a zip file, which ends with .zip", ".*\\.zip$", true)
 	}),
 	SCT("rf2-src-data-sct", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
