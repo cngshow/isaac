@@ -20,6 +20,8 @@ package gov.vha.isaac.ochre.pombuilder.dbbuilder;
 
 import java.io.File;
 import java.nio.file.Files;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.maven.pom._4_0.Build;
 import org.apache.maven.pom._4_0.Build.Plugins;
 import org.apache.maven.pom._4_0.Dependency;
@@ -49,6 +51,8 @@ import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
  */
 public class DBConfigurationCreator
 {
+	private static final Logger LOG = LogManager.getLogger();
+	
 	private static final String parentGroupId = "gov.vha.isaac.ochre.modules";
 	private static final String parentArtifactId = "db-builder";
 	private static final String parentVersion = VersionFinder.findProjectVersion();
@@ -269,7 +273,14 @@ public class DBConfigurationCreator
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, scm.getTag());
 		String tag = scm.getTag();
-		FileUtil.recursiveDelete(f);
+		try
+		{
+			FileUtil.recursiveDelete(f);
+		}
+		catch (Exception e)
+		{
+			LOG.error("Problem cleaning up temp folder " + f, e);
+		}
 		return tag;
 	}
 }

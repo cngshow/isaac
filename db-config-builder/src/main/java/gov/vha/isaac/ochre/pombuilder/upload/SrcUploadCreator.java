@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -43,6 +45,8 @@ import javafx.concurrent.Task;
  */
 public class SrcUploadCreator
 {
+	private static final Logger LOG = LogManager.getLogger();
+	
 	/**
 	 * @param uploadType - What type of content is being uploaded.
 	 * @param version - What version number does the passed in content represent
@@ -260,7 +264,14 @@ public class SrcUploadCreator
 					pm.get();
 					
 					updateTitle("Cleaning Up");
-					FileUtil.recursiveDelete(baseFolder);
+					try
+					{
+						FileUtil.recursiveDelete(baseFolder);
+					}
+					catch (Exception e)
+					{
+						LOG.error("Problem cleaning up temp folder " + baseFolder, e);
+					}
 					
 					updateTitle("Complete");
 					return tag;

@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.Set;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
@@ -47,6 +49,7 @@ import javafx.util.Pair;
  */
 public class ContentConverterCreator
 {
+	private static final Logger LOG = LogManager.getLogger();
 	
 	/**
 	 * Return information about all of the supported conversion types, including all of the information types
@@ -402,7 +405,14 @@ public class ContentConverterCreator
 		FileUtil.writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
-		FileUtil.recursiveDelete(f);
+		try
+		{
+			FileUtil.recursiveDelete(f);
+		}
+		catch (Exception e)
+		{
+			LOG.error("Problem cleaning up temp folder " + f, e);
+		}
 		return tag;
 	}
 

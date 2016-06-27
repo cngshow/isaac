@@ -21,6 +21,8 @@ package gov.vha.isaac.ochre.pombuilder;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import gov.va.isaac.sync.git.SyncServiceGIT;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 
@@ -31,6 +33,8 @@ import gov.vha.isaac.ochre.api.util.NumericUtils;
  */
 public class GitPublish
 {
+	private static final Logger LOG = LogManager.getLogger();
+	
 	/**
 	 * This routine will check out the project from the repository (which should have an empty master branch) - then locally 
 	 * commit the changes to master, then tag it - then push the tag (but not the changes to master) so the upstream repo only 
@@ -70,7 +74,14 @@ public class GitPublish
 		svc.setRootLocation(tempFolder);
 		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
 		ArrayList<String> temp = svc.readTags(gitUserName, gitPassword);
-		FileUtil.recursiveDelete(tempFolder);
+		try
+		{
+			FileUtil.recursiveDelete(tempFolder);
+		}
+		catch (Exception e)
+		{
+			LOG.error("Problem cleaning up temp folder " + tempFolder, e);
+		}
 		return temp;
 	}
 	
