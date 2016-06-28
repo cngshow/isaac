@@ -278,6 +278,7 @@ public class SrcUploadCreator
 				}
 				catch (Throwable e)
 				{
+					LOG.error("Unexpected error", e);
 					throw new RuntimeException(e);
 				}
 				
