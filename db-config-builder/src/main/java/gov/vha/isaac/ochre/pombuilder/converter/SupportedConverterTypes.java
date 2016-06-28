@@ -42,7 +42,7 @@ public enum SupportedConverterTypes
 					+ " must contain 'multi-axial_hierarchy' within its name", ".*multi\\-axial_hierarchy.*\\.zip$", true),
 			new UploadFileInfo("", "https://loinc.org/downloads/loinc",
 					"LOINC_ReleaseNotes.txt",
-					"The LOINC Release Notes file must be included for recent versions of LOINC.", "(?i).*releasenotes\\.txt", true)
+					"The LOINC Release Notes file must be included for recent versions of LOINC.", ".*releasenotes\\.txt$", true)
 	}),
 	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
