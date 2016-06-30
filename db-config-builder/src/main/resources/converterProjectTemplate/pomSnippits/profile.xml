@@ -18,6 +18,7 @@
 								<configuration>
 									<converterOutputArtifactClassifier>#CLASSIFIER#</converterOutputArtifactClassifier>
 									<inputFileLocation>${project.build.directory}/generated-resources/src/</inputFileLocation>
+#USER_CONFIGURATION_OPTIONS#
 								</configuration>
 							</execution>
 						</executions>

@@ -145,10 +145,10 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("DynamicSememeData≤");
+        sb.append("{DynamicSememeData≤");
         sb.append(Arrays.toString(getData()));
         toString(sb);//stamp info
-        sb.append('≥');
+        sb.append("≥DSD}");
         return sb.toString();
     }
 

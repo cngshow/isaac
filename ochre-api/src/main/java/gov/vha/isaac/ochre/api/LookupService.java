@@ -42,6 +42,7 @@ import org.glassfish.hk2.api.ServiceLocatorFactory;
 public class LookupService {
     private static final Logger LOG = LogManager.getLogger();
     private static volatile ServiceLocator looker = null;
+    private static volatile boolean fxPlatformUp = false;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
     public static final int WORKERS_STARTED_RUNLEVEL = -1;
     public static final int ISAAC_STOPPED_RUNLEVEL = -2;
@@ -54,16 +55,7 @@ public class LookupService {
         if (looker == null) {
             synchronized (STARTUP_LOCK) {
                 if (looker == null) {
-                    System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
-                    if (GraphicsEnvironment.isHeadless()) {
-                        LOG.info("Installing headless toolkit");
-                        HeadlessToolkit.installToolkit();
-                    }
-
-                    PlatformImpl.startup(() -> {
-                        // No need to do anything here
-                    });
-                    
+                    startupFxPlatform();
                     ArrayList<String> packagesToSearch = new ArrayList<>(Arrays.asList("gov.va", "gov.vha", "org.ihtsdo", "org.glassfish", "com.informatics"));
 
                     boolean readInhabitantFiles = Boolean.getBoolean(System.getProperty(Constants.READ_INHABITANT_FILES, "false"));
@@ -239,5 +231,32 @@ public class LookupService {
     
     public static boolean isIsaacStarted() {
         return getService(RunLevelController.class).getCurrentRunLevel() == ISAAC_STARTED_RUNLEVEL;
+    }
+    
+    public static boolean isInitialized() {
+        return looker != null;
+    }
+    
+    /**
+     * This is automatically done when a typical ISAAC pattern is utilized.  This method is only exposed as public for obscure use cases where 
+     * we want to utilize the javaFX task API, but are not looking to start up HK2 and other various ISAAC services.
+     */
+    public static void startupFxPlatform() {
+        if (!fxPlatformUp) {
+            synchronized (STARTUP_LOCK) {
+                if (!fxPlatformUp) {
+                    System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
+                    if (GraphicsEnvironment.isHeadless()) {
+                        LOG.info("Installing headless toolkit");
+                        HeadlessToolkit.installToolkit();
+                    }
+
+                    PlatformImpl.startup(() -> {
+                        // No need to do anything here
+                    });
+                    fxPlatformUp = true;
+                }
+            }
+        }
     }
 }

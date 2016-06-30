@@ -25,6 +25,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +35,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+
 import javax.naming.AuthenticationException;
+
 import org.eclipse.jgit.api.AddCommand;
 import org.eclipse.jgit.api.CheckoutCommand.Stage;
 import org.eclipse.jgit.api.CommitCommand;
@@ -78,8 +81,12 @@ import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
+import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
+import gov.va.isaac.sync.git.gitblit.utils.RpcUtils;
 import gov.vha.isaac.ochre.api.sync.MergeFailOption;
 import gov.vha.isaac.ochre.api.sync.MergeFailure;
 import gov.vha.isaac.ochre.api.sync.SyncFiles;
@@ -219,10 +226,12 @@ public class SyncServiceGIT implements SyncFiles
 	public void linkAndFetchFromRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException
 	{
 		log.info("linkAndFetchFromRemote called - folder: {}, remoteAddress: {}, username: {}", localFolder, remoteAddress, username);
+		Repository r = null;
+		Git git = null;
 		try
 		{
 			File gitFolder = new File(localFolder, ".git");
-			Repository r = new FileRepository(gitFolder);
+			r = new FileRepository(gitFolder);
 
 			if (!gitFolder.isDirectory())
 			{
@@ -232,7 +241,7 @@ public class SyncServiceGIT implements SyncFiles
 
 			relinkRemote(remoteAddress, username, password);
 
-			Git git = new Git(r);
+			git = new Git(r);
 
 			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
 
@@ -301,7 +310,6 @@ public class SyncServiceGIT implements SyncFiles
 				}
 			}
 
-			git.close();
 			log.info("linkAndFetchFromRemote Complete.  Current status: " + statusToString(git.status().call()));
 		}
 		catch (TransportException te)
@@ -322,6 +330,18 @@ public class SyncServiceGIT implements SyncFiles
 			log.error("Unexpected", e);
 			throw new IOException("Internal error", e);
 		}
+		finally
+		{
+			if (git != null)
+			{
+				git.close();
+			}
+			if (r != null)
+			{
+				r.close();
+			}
+		}
+		
 	}
 	
 	/**
@@ -330,11 +350,14 @@ public class SyncServiceGIT implements SyncFiles
 	@Override
 	public void relinkRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException
 	{
-		log.debug("Configuring remote URL and fetch defaults to {}", remoteAddress);
-		StoredConfig sc = getGit().getRepository().getConfig();
-		sc.setString("remote", "origin", "url", remoteAddress);
-		sc.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
-		sc.save();
+		try (Git git = getGit())
+		{
+			log.debug("Configuring remote URL and fetch defaults to {}", remoteAddress);
+			StoredConfig sc = git.getRepository().getConfig();
+			sc.setString("remote", "origin", "url", remoteAddress);
+			sc.setString("remote", "origin", "fetch", "+refs/heads/*:refs/remotes/origin/*");
+			sc.save();
+		}
 	}
 
 	/**
@@ -343,10 +366,10 @@ public class SyncServiceGIT implements SyncFiles
 	@Override
 	public void addFiles(String... files) throws IllegalArgumentException, IOException
 	{
-		try
+		log.info("Add Files called {}", Arrays.toString(files));
+		try (Git git = getGit())
 		{
-			log.info("Add Files called {}", Arrays.toString(files));
-			Git git = getGit();
+			
 			if (files.length == 0)
 			{
 				log.debug("No files to add");
@@ -375,10 +398,9 @@ public class SyncServiceGIT implements SyncFiles
 	@Override
 	public void removeFiles(String... files) throws IllegalArgumentException, IOException
 	{
-		try
+		log.info("Remove Files called {}", Arrays.toString(files));
+		try (Git git = getGit())
 		{
-			log.info("Remove Files called {}", Arrays.toString(files));
-			Git git = getGit();
 			if (files.length == 0)
 			{
 				log.debug("No files to remove");
@@ -408,9 +430,8 @@ public class SyncServiceGIT implements SyncFiles
 	public void addUntrackedFiles() throws IllegalArgumentException, IOException
 	{
 		log.info("Add Untracked files called");
-		try
+		try (Git git = getGit())
 		{
-			Git git = getGit();
 			Status s = git.status().call();
 
 			addFiles(s.getUntracked().toArray(new String[s.getUntracked().size()]));
@@ -432,11 +453,9 @@ public class SyncServiceGIT implements SyncFiles
 	public Set<String> updateCommitAndPush(String commitMessage, String username, String password, MergeFailOption mergeFailOption, String... files)
 			throws IllegalArgumentException, IOException, MergeFailure, AuthenticationException
 	{
-		try
+		log.info("Commit Files called {}", (files == null ? "-null-" : Arrays.toString(files)));
+		try (Git git = getGit())
 		{
-			log.info("Commit Files called {}", (files == null ? "-null-" : Arrays.toString(files)));
-			Git git = getGit();
-			
 			if (git.status().call().getConflicting().size() > 0)
 			{
 				log.info("Previous merge failure not yet resolved");
@@ -517,13 +536,10 @@ public class SyncServiceGIT implements SyncFiles
 	public Set<String> updateFromRemote(String username, String password, MergeFailOption mergeFailOption) throws IllegalArgumentException, IOException,
 			MergeFailure, AuthenticationException
 	{
+		log.info("update from remote called ");
 		Set<String> filesChangedDuringPull;
-		try
+		try (Git git = getGit()) 
 		{
-			log.info("update from remote called ");
-
-			Git git = getGit();
-			
 			log.debug("Fetching from remote");
 			
 			if (git.status().call().getConflicting().size() > 0)
@@ -672,10 +688,8 @@ public class SyncServiceGIT implements SyncFiles
 	public Set<String> resolveMergeFailures(Map<String, MergeFailOption> resolutions) throws IllegalArgumentException, IOException, NoWorkTreeException, MergeFailure
 	{
 		log.info("resolve merge failures called - resolutions: {}", resolutions);
-		try
+		try (Git git = getGit())
 		{
-			Git git = getGit();
-			
 			List<Note> notes = git.notesList().call();
 			
 			Set<String> conflicting = git.status().call().getConflicting();
@@ -735,10 +749,8 @@ public class SyncServiceGIT implements SyncFiles
 			throws IllegalArgumentException, IOException, MergeFailure
 	{
 		log.debug("resolve merge failures called - mergeFailType: {} stashIDToApply: {} resolutions: {}", mergeFailType, stashIDToApply, resolutions);
-		try
+		try (Git git = getGit();)
 		{
-			Git git = getGit();
-			
 			//We unfortunately, must know the mergeFailType option, because the resolution mechanism here uses OURS and THEIRS - but the 
 			//meaning of OURS and THEIRS reverse, depending on if you are recovering from a merge failure, or a stash apply failure.
 			
@@ -879,7 +891,7 @@ public class SyncServiceGIT implements SyncFiles
 			log.error("The passed in local folder '{}' does not appear to be a git repository", localFolder);
 			throw new IllegalArgumentException("The localFolder does not appear to be a git repository");
 		}
-		return new Git(new FileRepository(gitFolder));
+		return Git.open(gitFolder);
 	}
 
 	private String statusToString(Status status)
@@ -975,9 +987,9 @@ public class SyncServiceGIT implements SyncFiles
 	@Override
 	public int getLocallyModifiedFileCount() throws IOException
 	{
-		try
+		try (Git git = getGit())
 		{
-			return getGit().status().call().getUncommittedChanges().size();
+			return git.status().call().getUncommittedChanges().size();
 		}
 		catch (Exception e)
 		{
@@ -993,9 +1005,9 @@ public class SyncServiceGIT implements SyncFiles
 	@Override
 	public Set<String> getFilesInMergeConflict() throws IOException
 	{
-		try
+		try (Git git = getGit())
 		{
-			return getGit().status().call().getConflicting();
+			return git.status().call().getConflicting();
 		}
 		catch (Exception e)
 		{
@@ -1011,9 +1023,8 @@ public class SyncServiceGIT implements SyncFiles
 	 */
 	public void branch(String branchName) throws IOException 
 	{
-		try
+		try (Git git = getGit())
 		{
-			Git git = getGit();
 			git.checkout().setCreateBranch(true).setName(branchName).setOrphan(true).call();
 		}
 		catch (GitAPIException e)
@@ -1031,9 +1042,8 @@ public class SyncServiceGIT implements SyncFiles
 	 */
 	public void commitAndTag(String commitMessage, String tagName) throws IllegalArgumentException, IOException
 	{
-		try
+		try (Git git = getGit())
 		{
-			Git git = getGit();
 			git.commit().setAll(true).setMessage(commitMessage).call();
 			git.tag().setName(tagName).call();
 		}
@@ -1046,9 +1056,8 @@ public class SyncServiceGIT implements SyncFiles
 	
 	public void pushTag(final String tagName, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException 
 	{
-		try
+		try (Git git = getGit())
 		{
-			Git git = getGit();
 			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
 	
 			Iterable<PushResult> pr = git.push().setRefSpecs(new RefSpec("refs/tags/" + tagName)).setCredentialsProvider(cp).call();
@@ -1087,10 +1096,9 @@ public class SyncServiceGIT implements SyncFiles
 	
 	public ArrayList<String> readTags(String username, String password) throws IllegalArgumentException, IOException, AuthenticationException
 	{
-		try
+		try (Git git = getGit())
 		{
 			ArrayList<String> results = new ArrayList<>();
-			Git git = getGit();
 			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
 			
 			git.fetch().setTagOpt(TagOpt.FETCH_TAGS).setCredentialsProvider(cp).call();
@@ -1099,6 +1107,7 @@ public class SyncServiceGIT implements SyncFiles
 			{
 				results.add(x.getName());
 			}
+			git.close();
 			return results;
 		}
 		catch (GitAPIException e)
@@ -1113,6 +1122,32 @@ public class SyncServiceGIT implements SyncFiles
 				log.error("Unexpected", e);
 				throw new IOException("Internal error", e);
 			}
+		}
+	}
+
+	/**
+	 * Create a repository on the Gitblit server.
+	 *
+	 * @param serverUrl
+	 * @param repo name
+	 * @param repo description 
+	 * @param account
+	 * @param password
+	 * @return true if the action succeeded
+	 * @throws IOException
+	 */	
+	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
+	{
+		try
+		{
+			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
+			log.info("Repository: "+repoName +", create successfully: " + status);
+			return status;
+		}
+		catch (Exception e)
+		{
+			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
+			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
 		}
 	}
 }

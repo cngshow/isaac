@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.06</version>
+    <version>3.07</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -653,6 +653,8 @@
         <module>ochre-mojo-log-config</module>
         <module>ochre-mapping</module>
         <module>sync-git</module>
+        <module>metacontent-store</module>
+        <!-- <module>ibdf-differ</module>-->
     </modules>
     
     <profiles>

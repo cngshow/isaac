@@ -79,7 +79,8 @@ public class ArtifactUtilities
 			URL metadataUrl = new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/") + temp + "/" + artifactId + "/" + version + "/maven-metadata.xml");
 			//Need to download the maven-metadata.xml file
 			Task<File> task = new DownloadUnzipTask(mavenUsername, mavenPassword, metadataUrl, false, false, null);
-			Get.workExecutors().getExecutor().execute(task);
+			WorkExecutors.safeExecute(task);
+
 			File metadataFile = task.get();
 
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();

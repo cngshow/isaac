@@ -33,9 +33,9 @@ public class SyncTesting
 {
 	public static void main(String[] args) throws Exception
 	{
+		
 		//Configure Java logging into log4j2
 		System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
-
 		SyncFiles ssg = LookupService.getService(SyncServiceGIT.class);
 		File localFolder = new File("/mnt/SSD/scratch/gitTesting");
 		ssg.setRootLocation(localFolder);
@@ -56,5 +56,9 @@ public class SyncTesting
 		resolutions.put("b", MergeFailOption.KEEP_REMOTE);
 		System.out.println("resolve merge failures result: " + ssg.resolveMergeFailures(resolutions));
 		System.out.println("UpdateCommitAndPush result: " + ssg.updateCommitAndPush("mergetest2", username, password, MergeFailOption.FAIL, (String[])null));
+
+		SyncServiceGIT gss = new SyncServiceGIT();
+		boolean repoCreated = gss.createRepository("http://localhost:8080/gitblit/","test/test2","gilblit test/test2","admin","admin");
+		System.out.println("Repo created: "+ repoCreated);
 	}
 }

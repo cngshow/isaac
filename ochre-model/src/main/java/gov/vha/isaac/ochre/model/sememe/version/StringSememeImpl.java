@@ -68,10 +68,10 @@ public class StringSememeImpl extends SememeVersionImpl<StringSememeImpl> implem
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("String≤");
+        sb.append("{String≤");
         sb.append(string);
          toString(sb);
-        sb.append('≥');
+        sb.append("≥S}");
         return sb.toString();
     }
 

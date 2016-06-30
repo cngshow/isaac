@@ -47,6 +47,7 @@ import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.ValueProperty
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
 import gov.va.oia.terminology.converters.sharedUtils.stats.LoadStats;
 import gov.vha.isaac.MetaData;
+import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -184,7 +185,7 @@ public class EConceptUtility
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
-		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null);
+		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null, null);
 	}
 
 	/**
@@ -202,7 +203,7 @@ public class EConceptUtility
 	 */
 	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
-			File ... ibdfPreLoadFiles) throws Exception
+			Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
 	{
 		UuidIntMapMap.NID_TO_UUID_CACHE_SIZE = 5000000;
 		File file = new File(outputDirectory, "isaac-db");
@@ -219,7 +220,7 @@ public class EConceptUtility
 			LoadTermstore lt = new LoadTermstore();
 			lt.setLog(new SystemStreamLog());
 			lt.setibdfFiles(ibdfPreLoadFiles);
-			lt.setActiveOnly(true);
+			lt.setActiveOnly(preloadActiveOnly != null ? preloadActiveOnly : true);
 			//skip descriptions, acceptabilities
 			if (sememeTypesToSkip != null)
 			{
@@ -590,9 +591,15 @@ public class EConceptUtility
 		}
 		else
 		{
-			sememeBuilderService_.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(), newDescription.getNid(), 
-						Get.identifierService().getConceptSequenceForUuids(dialect))
-					.build(createStamp(state, selectTime(time, concept), module), builtObjects);
+			SememeBuilder<?> acceptabilityTypeBuilder = sememeBuilderService_.getComponentSememeBuilder(
+					preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(), newDescription.getNid(),
+					Get.identifierService().getConceptSequenceForUuids(dialect));
+
+			UUID acceptabilityTypePrimordialUUID = ConverterUUID
+					.createNamespaceUUIDFromStrings(descriptionPrimordialUUID.toString(), dialect.toString());
+			acceptabilityTypeBuilder.setPrimordialUuid(acceptabilityTypePrimordialUUID);
+			acceptabilityTypeBuilder.build(createStamp(state, selectTime(time, concept), module), builtObjects);
+
 			ls_.addAnnotation("Description", getOriginStringForUuid(dialect));
 		}
 		
@@ -1033,14 +1040,22 @@ public class EConceptUtility
 		}
 		temp.add(concept.getPrimordialUuid());
 		
-		@SuppressWarnings("rawtypes")
+		@SuppressWarnings("rawtypes") 
 		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				stated ? conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence() : 
 					conceptBuilderService_.getDefaultLogicCoordinate().getInferredAssemblageSequence());
 
-		//TODO come up with a way to correctly generate a UUID from a logicalExpression
-		sb.setPrimordialUuid(graphPrimordialUuid != null ? graphPrimordialUuid
-				: null);
+		// Build a LogicGraph UUID seed based on concept & logicExpression.getData(EXTERNAL)
+		StringBuilder byteString = new StringBuilder();
+		byte[][] byteArray = logicalExpression.getData(DataTarget.EXTERNAL);
+		for (int i = 0; i < byteArray.length; i++) {
+			byteString.append(Arrays.toString(byteArray[i]));
+		}
+
+		// Create UUID from seed and assign SesemeBuilder the value
+		UUID generatedGraphPrimordialUuid = ConverterUUID
+				.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), byteString.toString());
+		sb.setPrimordialUuid(graphPrimordialUuid != null ? graphPrimordialUuid : generatedGraphPrimordialUuid);
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 
@@ -1352,8 +1367,8 @@ public class EConceptUtility
 			addAnnotation(concept, null, data, DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getUUID(), State.ACTIVE, null, null);
 		}
 	}
-	
-	public void shutdown()
+
+	public void shutdown()	
 	{
 		writer_.close();
 		LookupService.shutdownIsaac();

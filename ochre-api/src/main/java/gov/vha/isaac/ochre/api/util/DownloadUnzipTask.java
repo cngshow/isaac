@@ -29,7 +29,6 @@ import java.util.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import gov.vha.isaac.ochre.api.LookupService;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -114,7 +113,7 @@ public class DownloadUnzipTask extends Task<File>
 					updateProgress(calculateTask.getProgress(), calculateTask.getTotalWork());
 				}
 			});
-			LookupService.get().getService(WorkExecutors.class).getExecutor().submit(calculateTask);
+			WorkExecutors.safeExecute(calculateTask);
 			calculatedSha1Value = calculateTask.get();
 			sha1File.delete();
 		}
