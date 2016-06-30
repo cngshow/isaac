@@ -67,10 +67,10 @@ public class LongSememeImpl extends SememeVersionImpl<LongSememeImpl>
         @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Long<Begin>");
+        sb.append("{Long≤");
         sb.append(longValue);
          toString(sb);
-        sb.append(" <Long End>");
+        sb.append("≥L}");
         return sb.toString();
     }
 
