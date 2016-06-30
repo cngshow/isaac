@@ -46,6 +46,10 @@ public class TreeNodeVisitData {
         this.predecessorSequenceList.fillFromToWith(0, graphSize - 1, -1);
     }
 
+    public int getGraphSize() {
+        return graphSize;
+    }
+
     public int getTime() {
         return time;
     }

@@ -121,7 +121,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     ConceptBuilder developmentPath = createConcept("development path");
                     developmentPath.setPrimordialUuid("1f200ca6-960e-11e5-8994-feff819cdc9f");
                     ConceptBuilder masterPath = createConcept("master path");
-                    masterPath.setPrimordialUuid("1f20134a-960e-11e5-8994-feff819cdc9f"); //TODO Keith - why do master and dev have the same UUIDs?
+                    masterPath.setPrimordialUuid("c92a233a-3bbb-4dfd-8632-4023bd7a19be"); 
                     masterPath.addUuids(UUID.fromString("2faa9260-8fb2-11db-b606-0800200c9a66")); // UUID from WB_AUX_PATH
                 popParent();
                 createConcept("set operator");

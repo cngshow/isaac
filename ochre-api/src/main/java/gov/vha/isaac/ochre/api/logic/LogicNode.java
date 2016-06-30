@@ -14,6 +14,8 @@ public interface LogicNode extends Comparable<LogicNode> {
 
     LogicNode[] getChildren();
     
+    LogicNode[] getDescendents();
+    
     default Stream<LogicNode> getChildStream() {
         return Arrays.stream(getChildren());
     };
