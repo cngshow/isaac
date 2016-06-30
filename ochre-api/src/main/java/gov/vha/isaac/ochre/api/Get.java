@@ -242,7 +242,7 @@ public class Get implements OchreCache {
 
     public static BinaryDataDifferService binaryDataDifferService() {
         if (binaryDataDifferService == null) {
-        	binaryDataDifferService = getService(BinaryDataDifferService.class);
+            binaryDataDifferService = getService(BinaryDataDifferService.class);
         }
         return binaryDataDifferService;
     }
@@ -402,6 +402,7 @@ public class Get implements OchreCache {
         taxonomyService = null;
         workExecutors = null;
         stampService = null;
+        binaryDataDifferService = null;
     }
 
 }

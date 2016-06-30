@@ -75,7 +75,7 @@ public class ComponentNidSememeImpl extends SememeVersionImpl<ComponentNidSememe
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Component nid<Begin> ");
+        sb.append("{Component Nid≤");
         switch (Get.identifierService().getChronologyTypeForNid(componentNid)) {
             case CONCEPT:
                  sb.append(Get.conceptDescriptionText(componentNid));
@@ -93,7 +93,7 @@ public class ComponentNidSememeImpl extends SememeVersionImpl<ComponentNidSememe
                          .append(" ").append(componentNid).append(" ");
         }
         toString(sb);
-        sb.append(" <CompNid End>");
+        sb.append("≥CN}");
         return sb.toString();
     }
 
