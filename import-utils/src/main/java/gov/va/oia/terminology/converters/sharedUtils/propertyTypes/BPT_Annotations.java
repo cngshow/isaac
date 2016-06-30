@@ -29,6 +29,11 @@ public class BPT_Annotations extends PropertyType
 {
 	public BPT_Annotations(String terminologyName)
 	{
-		super("Attribute Types", terminologyName + " Association Type", true, DynamicSememeDataType.STRING);
+		super("Attribute Types", terminologyName + " Attribute Types", true, DynamicSememeDataType.STRING);
+	}
+	
+	public BPT_Annotations(String fsnPrefix, String terminologyName)
+	{
+		super(fsnPrefix + " Attribute Types", terminologyName + fsnPrefix + " Attribute Types", true, DynamicSememeDataType.STRING);
 	}
 }

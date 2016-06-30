@@ -104,7 +104,7 @@ public class DescriptionSememeImpl
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Description≤")
+        sb.append("Description<Begin>")
                 .append(text)
                 .append(", rc: ")
                 .append(getReferencedComponentNid())
@@ -124,7 +124,7 @@ public class DescriptionSememeImpl
                 .append(descriptionTypeConceptSequence)
                 .append(">");
         toString(sb);
-        sb.append('≥');
+        sb.append(" <Desc End>");
         return sb.toString();
     }
     

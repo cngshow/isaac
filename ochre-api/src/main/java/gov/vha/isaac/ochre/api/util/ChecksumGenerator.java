@@ -41,7 +41,6 @@ public class ChecksumGenerator
 			{
 				long fileLength = data.length();
 				updateProgress(0, fileLength);
-				updateMessage("Calculating Checksum for " + data.getName() + " - 0 / " + fileLength);
 				MessageDigest md = MessageDigest.getInstance(type);
 				try (InputStream is = Files.newInputStream(data.toPath()))
 				{
@@ -53,15 +52,16 @@ public class ChecksumGenerator
 					while (read != -1)
 					{
 						//update every 10 MB
-						if (loopCount++ % 1280 == 0)
+						if (loopCount % 1280 == 0)
 						{
 							updateProgress((loopCount * 8192l), fileLength);
-							updateTitle("Calculating Checksum for " + data.getName() + " - " + (loopCount * 8192l) + " / " + fileLength);
+							updateMessage("Calculating " + type + " checksum for " + data.getName() + " - " + (loopCount * 8192l) + " / " + fileLength);
 						}
 						read = dis.read(buffer);
+						loopCount++;
 					}
 					updateProgress(fileLength, fileLength);
-					updateMessage("Done calculating Checksum for " + data.getName());
+					updateMessage("Done calculating " + type + " checksum for " + data.getName());
 					return getStringValue(md);
 				}
 			}

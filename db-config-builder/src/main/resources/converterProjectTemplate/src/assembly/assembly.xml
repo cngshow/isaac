@@ -13,6 +13,13 @@
 			</includes>
 			<outputDirectory>/</outputDirectory>
 		</fileSet>
+		<fileSet>
+			<directory>${project.build.directory}</directory>
+			<includes>
+				<include>ConsoleOutput.txt</include>
+			</includes>
+			<outputDirectory>/Stats_and_Debug/</outputDirectory>
+		</fileSet>
 	</fileSets>
 	<files>
 		<!-- Files to reproduce the build -->

@@ -79,7 +79,8 @@ public class ArtifactUtilities
 			URL metadataUrl = new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/") + temp + "/" + artifactId + "/" + version + "/maven-metadata.xml");
 			//Need to download the maven-metadata.xml file
 			Task<File> task = new DownloadUnzipTask(mavenUsername, mavenPassword, metadataUrl, false, false, null);
-			Get.workExecutors().getExecutor().execute(task);
+			WorkExecutors.safeExecute(task);
+
 			File metadataFile = task.get();
 
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
@@ -119,7 +120,8 @@ public class ArtifactUtilities
 	public static URL makeFullURL(String baseMavenURL, String mavenUsername, String mavenPassword, String groupId, String artifactId, 
 			String version, String classifier, String type) throws Exception
 	{
-		return new URL(baseMavenURL + makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
+		return new URL(baseMavenURL + (baseMavenURL.endsWith("/") ? "" : "/")
+			+ makeMavenRelativePath(baseMavenURL, mavenUsername, mavenPassword, groupId, artifactId, version, classifier, type));
 	}
 	
 	public static void main(String[] args) throws InterruptedException, ExecutionException, IOException

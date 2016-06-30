@@ -19,11 +19,9 @@
 package gov.vha.isaac.ochre.pombuilder.dbbuilder;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.maven.pom._4_0.Build;
 import org.apache.maven.pom._4_0.Build.Plugins;
 import org.apache.maven.pom._4_0.Dependency;
@@ -40,6 +38,7 @@ import org.apache.maven.pom._4_0.PluginExecution.Configuration;
 import org.apache.maven.pom._4_0.PluginExecution.Configuration.IbdfFiles;
 import org.apache.maven.pom._4_0.PluginExecution.Goals;
 import org.apache.maven.pom._4_0.Scm;
+import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
@@ -52,6 +51,8 @@ import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
  */
 public class DBConfigurationCreator
 {
+	private static final Logger LOG = LogManager.getLogger();
+	
 	private static final String parentGroupId = "gov.vha.isaac.ochre.modules";
 	private static final String parentArtifactId = "db-builder";
 	private static final String parentVersion = VersionFinder.findProjectVersion();
@@ -260,32 +261,26 @@ public class DBConfigurationCreator
 		model.setBuild(build);
 
 		File f = Files.createTempDirectory("db-builder").toFile();
-		PomHandler.writeFile(model, f);
+		FileUtil.writePomFile(model, f);
 
-		writeFile("dbProjectTemplate", "DOTgitattributes", f);
-		writeFile("dbProjectTemplate", "DOTgitignore", f);
-		writeFile("dbProjectTemplate", "LICENSE.txt", f);
-		writeFile("dbProjectTemplate", "NOTICE.txt", f);
-		writeFile("dbProjectTemplate", "src/assembly/cradle.xml", f);
-		writeFile("dbProjectTemplate", "src/assembly/lucene.xml", f);
-		writeFile("dbProjectTemplate", "src/assembly/MANIFEST.MF", f);
+		FileUtil.writeFile("dbProjectTemplate", "DOTgitattributes", f);
+		FileUtil.writeFile("dbProjectTemplate", "DOTgitignore", f);
+		FileUtil.writeFile("shared", "LICENSE.txt", f);
+		FileUtil.writeFile("shared", "NOTICE.txt", f);
+		FileUtil.writeFile("dbProjectTemplate", "src/assembly/cradle.xml", f);
+		FileUtil.writeFile("dbProjectTemplate", "src/assembly/lucene.xml", f);
+		FileUtil.writeFile("dbProjectTemplate", "src/assembly/MANIFEST.MF", f);
 		
 		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, scm.getTag());
-		return scm.getTag();
-	}
-	
-	private static void writeFile(String fromFolder, String relativePath, File toFolder) throws IOException
-	{
-		InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fromFolder + "/" + relativePath);
-		byte[] buffer = new byte[is.available()];
-		is.read(buffer);
-
-		relativePath = relativePath.replaceFirst("^DOT", ".");
-		
-		File targetFile = new File(toFolder, relativePath);
-		targetFile.getParentFile().mkdirs();
-		OutputStream outStream = new FileOutputStream(targetFile);
-		outStream.write(buffer);
-		outStream.close();
+		String tag = scm.getTag();
+		try
+		{
+			FileUtil.recursiveDelete(f);
+		}
+		catch (Exception e)
+		{
+			LOG.error("Problem cleaning up temp folder " + f, e);
+		}
+		return tag;
 	}
 }

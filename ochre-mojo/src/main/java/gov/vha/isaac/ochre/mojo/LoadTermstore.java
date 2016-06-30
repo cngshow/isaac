@@ -2,13 +2,16 @@ package gov.vha.isaac.ochre.mojo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -98,6 +101,34 @@ public class LoadTermstore extends AbstractMojo
 		final int statedSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("1f201994-960e-11e5-8994-feff819cdc9f"));
 		int statedDups = 0;
                                         long loadTime = System.currentTimeMillis();
+		//Load IsaacMetadataAuxiliary first, otherwise, we have issues....
+		final AtomicBoolean hasMetadata = new AtomicBoolean(false);
+		Arrays.sort(ibdfFiles, new Comparator<File>()
+		{
+			@Override
+			public int compare(File o1, File o2)
+			{
+				if (o1.getName().equals("IsaacMetadataAuxiliary.ibdf"))
+				{
+					hasMetadata.set(true);
+					return -1;
+				}
+				else if (o2.getName().equals("IsaacMetadataAuxiliary.ibdf"))
+				{
+					hasMetadata.set(true);
+					return 1;
+				}
+				else
+				{
+					return ((o1.length() - o2.length()) > 0 ? 1 :((o1.length() - o2.length()) < 0 ? -1 : 0)); 
+				}
+			}
+		});
+		
+		if (!hasMetadata.get())
+		{
+			getLog().warn("No Metadata IBDF file found!  This probably isn't good....");
+		}
 		try
 		{
 			for (File f : ibdfFiles)
