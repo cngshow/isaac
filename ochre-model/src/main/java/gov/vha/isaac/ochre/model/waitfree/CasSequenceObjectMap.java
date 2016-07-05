@@ -175,7 +175,11 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
         return referenceArray;
     }
 
-
+    public boolean hasData(int sequence) {
+          int segmentIndex = sequence / SEGMENT_SIZE;
+          int indexInSegment = sequence % SEGMENT_SIZE;
+          return getSegment(segmentIndex).get(indexInSegment) != null;
+    }
 
     /**
      * Provides no range or null checking. For use with a stream that already

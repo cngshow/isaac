@@ -45,6 +45,12 @@ public interface IsomorphicResults {
      */
     LogicalExpression getIsomorphicExpression();
     
+  /**
+     * 
+     * @return an expression containing a merger of all the nodes in the reference and comparison expression. 
+     */
+    LogicalExpression getMergedExpression();
+    
     /**
      * 
      * @return roots for connected nodes that are in the reference expression, but not in the 
