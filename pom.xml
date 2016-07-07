@@ -29,7 +29,7 @@
     <scm>
         <url>https://vadev.mantech.com:4848/git/summary/ISAAC.git</url>
     </scm>
-    
+
     <properties>
         <branch>woolsthorpe</branch>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
