@@ -27,7 +27,7 @@
     <packaging>pom</packaging>
     
     <scm>
-        <url>https://github.com/VA-CTT/ISAAC</url>
+        <url>https://vadev.mantech.com:4848/git/summary/ISAAC.git</url>
     </scm>
     
     <properties>
