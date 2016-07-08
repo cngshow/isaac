@@ -71,6 +71,9 @@ public class SrcUploadCreator
 			String gitRepositoryURL, String gitUsername, String gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
+		LOG.debug("Hi Cris!");
+		LOG.info("What a nice day it is!!");
+
 		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
 			throw new Exception("No content was found to upload!");
