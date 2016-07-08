@@ -267,16 +267,13 @@
       <bpmn2:incoming>SequenceFlow_10</bpmn2:incoming>
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="SequenceFlow_10" name="Cancel WF Process" sourceRef="ExclusiveGateway_3" targetRef="EndEvent_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_4" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_4" language="http://www.mvel.org/2.0">'Cancel'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_11" name="Reject Edit" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_5" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_5" language="http://www.mvel.org/2.0">'Reject'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_12" name="Approve Edit" sourceRef="ExclusiveGateway_3" targetRef="UserTask_4">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_6" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_6" language="http://www.mvel.org/2.0">'Approve'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_13" sourceRef="UserTask_4" targetRef="ExclusiveGateway_4"/>
     <bpmn2:endEvent id="EndEvent_3" name="End">
@@ -288,8 +285,7 @@ name == 'John Doe';</bpmn2:conditionExpression>
       <bpmn2:incoming>SequenceFlow_14</bpmn2:incoming>
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="SequenceFlow_14" name="Cancel WF Process" sourceRef="ExclusiveGateway_4" targetRef="EndEvent_3">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_7" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_7" language="http://www.mvel.org/2.0">'Cancel'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:endEvent id="EndEvent_4" name="End">
       <bpmn2:extensionElements>
@@ -302,16 +298,13 @@ name == 'John Doe';</bpmn2:conditionExpression>
     <bpmn2:sequenceFlow id="SequenceFlow_15" sourceRef="UserTask_3" targetRef="EndEvent_4"/>
     <bpmn2:sequenceFlow id="SequenceFlow_16" sourceRef="UserTask_2" targetRef="UserTask_3"/>
     <bpmn2:sequenceFlow id="SequenceFlow_17" name="Publish" sourceRef="ExclusiveGateway_4" targetRef="UserTask_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_8" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_8" language="http://www.mvel.org/2.0">'Publish'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_18" name="Reject Edit" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_9" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_9" language="http://www.mvel.org/2.0">'Reject Edit'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_19" name="Reject Review" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_5">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_10" language="http://www.mvel.org/2.0">name = 'John Doe';
-name == 'John Doe';</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_10" language="http://www.mvel.org/2.0">'Reject Review'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1" name="Default Process Diagram">

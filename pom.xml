@@ -274,6 +274,11 @@
                 <artifactId>jbpm-flow-builder</artifactId>
                 <version>${jbpm.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.drools</groupId>
+                <artifactId>drools-compiler</artifactId>
+                <version>${jbpm.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
