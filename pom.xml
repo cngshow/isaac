@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.07-SNAPSHOT</version>
+    <version>3.08-SNAPSHOT</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -42,7 +42,8 @@
         <sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
         <jersey.version>2.22.1</jersey.version>
         <maven-project-info-reports-plugin.version>2.9</maven-project-info-reports-plugin.version>  
-    </properties>
+        <jbpm.version>6.4.0.Final</jbpm.version>
+	</properties>
     
     <organization>
         <name>U.S. Department of Veterans Affairs</name>
@@ -237,6 +238,21 @@
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
                 <version>4.3.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jbpm</groupId>
+                <artifactId>jbpm-flow</artifactId>
+                <version>${jbpm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jbpm</groupId>
+                <artifactId>jbpm-bpmn2</artifactId>
+                <version>${jbpm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kie</groupId>
+                <artifactId>kie-api</artifactId>
+                <version>${jbpm.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

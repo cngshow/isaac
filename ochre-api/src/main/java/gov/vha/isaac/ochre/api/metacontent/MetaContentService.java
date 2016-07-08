@@ -19,8 +19,11 @@
 package gov.vha.isaac.ochre.api.metacontent;
 
 import java.util.concurrent.ConcurrentMap;
+
 import org.jvnet.hk2.annotations.Contract;
+
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
 
 /**
  * {@link MetaContentService}
@@ -33,6 +36,9 @@ import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
 @Contract
 public interface MetaContentService
 {
+	static enum UserWorkflowContentTypes {};
+	static enum StaticWorkflowContentTypes {AUTHOR_ROLE, STATE_ACTION_OUTCOME};
+
 	/**
 	 * Call prior to JVM exit for safe shutdown
 	 */
@@ -57,6 +63,61 @@ public interface MetaContentService
 	 */
 	public void removeUserPrefs(int userId);
 	
+	/**
+	 * @param userId - the nid or sequence of the concept that identifies the user
+	 * @param type - type of user workflow content to read
+	 * @return the byte[] that stores the user workflow content, which was obtained by calling {@link StorableWorkflowContent#serialize()}
+	 * This value should be able to be passed into the concrete implementation constructor of a class that implements {@link StorableWorkflowContent}
+	 */
+	byte[] putUserWorkflowContent(int userId, UserWorkflowContentTypes type, StorableWorkflowContent workflowContent);
+
+	/**
+	 * @param userId - the nid or sequence of the concept that identifies the user
+	 * @param type - type of user workflow content to read
+	 * @return the byte[] that stores the workflow content, which was obtained by calling {@link StorableWorkflowContent#serialize()}
+	 * This value should be able to be passed into the concrete implementation constructor of a class that implements {@link StorableWorkflowContent}
+	 */
+	byte[] getUserWorkflowContent(int userId, UserWorkflowContentTypes type);
+	
+	/**
+	 * @param userId - the nid or sequence of the concept that identifies the user
+	 * @param type - type of user workflow content
+	 * Erase stored user workflow content of given type
+	 */
+	void removeUserWorkflowContent(int userId, UserWorkflowContentTypes type);
+
+	/**
+	 * @param userId - the nid or sequence of the concept that identifies the user
+	 * Erase all stored user workflow content
+	 */
+	void removeUserWorkflowContent(int userId);
+
+	/**
+	 * @param type - type of static workflow content to add
+	 * @param workflowContent - static workflow content to store
+	 * @return the old value, or null, if no old value
+	 */
+	public byte[] putStaticWorkflowContent(StaticWorkflowContentTypes type, StorableWorkflowContent workflowContent);
+
+	/**
+	 * @param type - type of workflow content to read
+	 * @return the byte[] that stores the static workflow content, which was obtained by calling {@link StorableWorkflowContent#serialize()}
+	 * This value should be able to be passed into the concrete implementation constructor of a class that implements {@link StorableWorkflowContent}
+	 */
+	public byte[] getStaticWorkflowContent(StaticWorkflowContentTypes type);
+	
+	/**
+	 * @param type - type of static workflow content
+	 * Erase stored static workflow content of given type
+	 */
+	void removeStaticWorkflowContent(StaticWorkflowContentTypes type);
+
+	/**
+	 * Erase all stored static workflow content
+	 */
+	public void removeStaticWorkflowContent();
+
+
 	/**
 	 * Open or create a new data store.  The type of the key and value must be specified.
 	 * Not being consistent with the Key/Value types for a particular store name will result in 

@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- origin at X=0.0 Y=0.0 -->
+<bpmn2:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmn20="http://www.omg.org/bpmn20" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:bpsim="http://www.bpsim.org/schemas/1.0" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:drools="http://www.jboss.org/drools" xmlns="http://www.jboss.org/drools" xmlns:java="http://www.java.com/javaTypes" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL BPMN20.xsd http://www.jboss.org/drools drools.xsd http://www.bpsim.org/schemas/1.0 bpsim.xsd" id="_qIlD4Fh6EeSXn7xFCiYXWg" exporter="org.eclipse.bpmn2.modeler.core" exporterVersion="1.3.0.Final-v20160602-2145-B47" expressionLanguage="http://www.mvel.org/2.0" targetNamespace="http://www.omg.org/bpmn20" typeLanguage="http://www.java.com/javaTypes">
+  <bpmn2:itemDefinition id="ItemDefinition_1" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_2" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_3" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_4" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_5" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_6" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_7" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_8" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_9" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_10" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_11" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_12" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_13" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_14" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_15" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_16" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_17" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_18" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_19" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_20" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_21" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_22" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_23" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_24" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_25" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_26" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_27" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_28" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_29" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_30" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_31" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_32" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_33" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_34" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_35" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_36" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_37" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_38" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_39" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_40" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_41" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_42" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_43" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_44" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_45" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_46" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_47" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_48" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_49" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_50" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_51" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_52" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_53" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_54" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_55" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_56" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_57" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_58" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_59" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_60" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_61" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_62" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_63" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_64" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_65" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_66" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_67" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_68" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_69" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_70" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_71" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_72" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_73" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_74" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_75" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_76" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_77" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_78" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_79" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_80" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_81" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_82" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_83" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_84" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_85" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_86" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_87" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_88" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_89" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_90" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_91" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_92" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_93" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_94" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_95" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_96" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_97" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_98" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_99" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_100" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_101" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_102" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_103" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_104" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_105" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_106" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_107" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_108" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_109" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_110" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_111" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_112" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_113" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_114" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_115" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_116" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_117" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_118" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_119" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_120" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_121" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_122" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_123" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_124" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_125" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_126" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_127" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_128" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_129" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_130" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_131" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_132" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_133" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_134" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_135" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_136" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_137" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_138" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_139" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_140" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_141" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_142" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_143" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_144" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_145" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_146" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_147" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_148" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_149" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_150" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_151" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_152" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_153" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_154" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_155" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_156" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_157" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_158" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_159" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_160" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_161" isCollection="false"/>
+  <bpmn2:itemDefinition id="ItemDefinition_162" isCollection="false"/>
+  <bpmn2:process id="VetzWorkflow" drools:packageName="org.jbpm" drools:version="1.2" name="VetzWorkflow" isExecutable="false">
+    <bpmn2:startEvent id="StartEvent_1" name="Start">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Start]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:outgoing>SequenceFlow_2</bpmn2:outgoing>
+    </bpmn2:startEvent>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_1" name="Start Splitter" gatewayDirection="Diverging">
+      <bpmn2:incoming>SequenceFlow_2</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_3</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_4</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_2" name="Edit Task Joiner" gatewayDirection="Converging">
+      <bpmn2:incoming>SequenceFlow_3</bpmn2:incoming>
+      <bpmn2:incoming>SequenceFlow_11</bpmn2:incoming>
+      <bpmn2:incoming>SequenceFlow_18</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_6</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_3" name="Review Task Splitter" gatewayDirection="Diverging">
+      <bpmn2:incoming>SequenceFlow_7</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_10</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_11</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_12</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_4" name="Approve Splitter" gatewayDirection="Diverging">
+      <bpmn2:incoming>SequenceFlow_13</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_14</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_17</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_18</bpmn2:outgoing>
+      <bpmn2:outgoing>SequenceFlow_19</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_5" name="Review Task Joiner" gatewayDirection="Converging">
+      <bpmn2:incoming>SequenceFlow_4</bpmn2:incoming>
+      <bpmn2:incoming>SequenceFlow_8</bpmn2:incoming>
+      <bpmn2:incoming>SequenceFlow_19</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_5</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+    <bpmn2:userTask id="UserTask_1" name="Edit Task">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Edit Task]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_6</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_8</bpmn2:outgoing>
+    </bpmn2:userTask>
+    <bpmn2:userTask id="UserTask_2" name="Promote Task">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Promote Task]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_17</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_16</bpmn2:outgoing>
+    </bpmn2:userTask>
+    <bpmn2:userTask id="UserTask_3" name="Submit Task">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Submit Task]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_16</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_15</bpmn2:outgoing>
+    </bpmn2:userTask>
+    <bpmn2:userTask id="UserTask_4" name="Approve Task">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Approve Task]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_12</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_13</bpmn2:outgoing>
+    </bpmn2:userTask>
+    <bpmn2:userTask id="UserTask_5" name="Review Task">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[Review Task]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_5</bpmn2:incoming>
+      <bpmn2:outgoing>SequenceFlow_7</bpmn2:outgoing>
+    </bpmn2:userTask>
+    <bpmn2:sequenceFlow id="SequenceFlow_2" sourceRef="StartEvent_1" targetRef="ExclusiveGateway_1"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_3" name="Edit Content" sourceRef="ExclusiveGateway_1" targetRef="ExclusiveGateway_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_1" language="http://www.mvel.org/2.0">'Edit'</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_4" name="Review Content" sourceRef="ExclusiveGateway_1" targetRef="ExclusiveGateway_5">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_2" language="http://www.mvel.org/2.0">'Review'</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_5" sourceRef="ExclusiveGateway_5" targetRef="UserTask_5"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_6" sourceRef="ExclusiveGateway_2" targetRef="UserTask_1"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_7" sourceRef="UserTask_5" targetRef="ExclusiveGateway_3"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_8" sourceRef="UserTask_1" targetRef="ExclusiveGateway_5"/>
+    <bpmn2:endEvent id="EndEvent_2" name="End">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[End]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_10</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="SequenceFlow_10" name="Cancel WF Process" sourceRef="ExclusiveGateway_3" targetRef="EndEvent_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_4" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_11" name="Reject Edit" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_5" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_12" name="Approve Edit" sourceRef="ExclusiveGateway_3" targetRef="UserTask_4">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_6" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_13" sourceRef="UserTask_4" targetRef="ExclusiveGateway_4"/>
+    <bpmn2:endEvent id="EndEvent_3" name="End">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[End]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_14</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="SequenceFlow_14" name="Cancel WF Process" sourceRef="ExclusiveGateway_4" targetRef="EndEvent_3">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_7" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:endEvent id="EndEvent_4" name="End">
+      <bpmn2:extensionElements>
+        <drools:metaData name="elementname">
+          <drools:metaValue><![CDATA[End]]></drools:metaValue>
+        </drools:metaData>
+      </bpmn2:extensionElements>
+      <bpmn2:incoming>SequenceFlow_15</bpmn2:incoming>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="SequenceFlow_15" sourceRef="UserTask_3" targetRef="EndEvent_4"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_16" sourceRef="UserTask_2" targetRef="UserTask_3"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_17" name="Publish" sourceRef="ExclusiveGateway_4" targetRef="UserTask_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_8" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_18" name="Reject Edit" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_9" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+    <bpmn2:sequenceFlow id="SequenceFlow_19" name="Reject Review" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_5">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_10" language="http://www.mvel.org/2.0">name = 'John Doe';
+name == 'John Doe';</bpmn2:conditionExpression>
+    </bpmn2:sequenceFlow>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1" name="Default Process Diagram">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="VetzWorkflow">
+      <bpmndi:BPMNShape id="BPMNShape_1" bpmnElement="StartEvent_1">
+        <dc:Bounds height="36.0" width="36.0" x="20.0" y="374.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_1" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="31.0" x="22.0" y="410.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_1" bpmnElement="ExclusiveGateway_1" isMarkerVisible="true">
+        <dc:Bounds height="50.0" width="50.0" x="93.0" y="367.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_2" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="80.0" x="78.0" y="417.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_2" bpmnElement="ExclusiveGateway_2" isMarkerVisible="true">
+        <dc:Bounds height="50.0" width="50.0" x="221.0" y="263.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_3" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="34.0" width="73.0" x="210.0" y="313.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_3" bpmnElement="ExclusiveGateway_3" isMarkerVisible="true">
+        <dc:Bounds height="50.0" width="50.0" x="530.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_4" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="51.0" width="56.0" x="527.0" y="510.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_4" bpmnElement="ExclusiveGateway_4" isMarkerVisible="true">
+        <dc:Bounds height="50.0" width="50.0" x="918.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_5" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="34.0" width="61.0" x="913.0" y="510.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_5" bpmnElement="ExclusiveGateway_5" isMarkerVisible="true">
+        <dc:Bounds height="50.0" width="50.0" x="220.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_6" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="34.0" width="79.0" x="206.0" y="510.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_1" bpmnElement="UserTask_1">
+        <dc:Bounds height="50.0" width="110.0" x="340.0" y="263.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_7" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="61.0" x="364.0" y="279.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_2" bpmnElement="UserTask_2">
+        <dc:Bounds height="50.0" width="110.0" x="1040.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_8" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="92.0" x="1049.0" y="476.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_3" bpmnElement="UserTask_3">
+        <dc:Bounds height="50.0" width="110.0" x="1200.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_9" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="82.0" x="1214.0" y="476.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_4" bpmnElement="UserTask_4">
+        <dc:Bounds height="50.0" width="110.0" x="700.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_10" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="89.0" x="710.0" y="476.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_UserTask_5" bpmnElement="UserTask_5">
+        <dc:Bounds height="50.0" width="110.0" x="340.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_11" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="84.0" x="353.0" y="476.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_EndEvent_1" bpmnElement="EndEvent_2">
+        <dc:Bounds height="36.0" width="36.0" x="537.0" y="710.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_19" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="26.0" x="542.0" y="746.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_EndEvent_2" bpmnElement="EndEvent_3">
+        <dc:Bounds height="36.0" width="36.0" x="1077.0" y="700.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_24" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="26.0" x="1082.0" y="736.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_EndEvent_3" bpmnElement="EndEvent_4">
+        <dc:Bounds height="36.0" width="36.0" x="1237.0" y="680.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_26" labelStyle="BPMNLabelStyle_1">
+          <dc:Bounds height="17.0" width="26.0" x="1242.0" y="716.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_2" bpmnElement="SequenceFlow_2" sourceElement="BPMNShape_1" targetElement="BPMNShape_ExclusiveGateway_1">
+        <di:waypoint xsi:type="dc:Point" x="56.0" y="392.0"/>
+        <di:waypoint xsi:type="dc:Point" x="74.0" y="392.0"/>
+        <di:waypoint xsi:type="dc:Point" x="93.0" y="392.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_12"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_3" bpmnElement="SequenceFlow_3" sourceElement="BPMNShape_ExclusiveGateway_1" targetElement="BPMNShape_ExclusiveGateway_2">
+        <di:waypoint xsi:type="dc:Point" x="118.0" y="367.0"/>
+        <di:waypoint xsi:type="dc:Point" x="118.0" y="288.0"/>
+        <di:waypoint xsi:type="dc:Point" x="221.0" y="288.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_13">
+          <dc:Bounds height="17.0" width="80.0" x="91.0" y="289.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_4" bpmnElement="SequenceFlow_4" sourceElement="BPMNShape_ExclusiveGateway_1" targetElement="BPMNShape_ExclusiveGateway_5">
+        <di:waypoint xsi:type="dc:Point" x="118.0" y="417.0"/>
+        <di:waypoint xsi:type="dc:Point" x="118.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="220.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_14">
+          <dc:Bounds height="34.0" width="56.0" x="108.0" y="486.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_5" bpmnElement="SequenceFlow_5" sourceElement="BPMNShape_ExclusiveGateway_5" targetElement="BPMNShape_UserTask_5">
+        <di:waypoint xsi:type="dc:Point" x="270.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="305.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="340.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_15"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_6" bpmnElement="SequenceFlow_6" sourceElement="BPMNShape_ExclusiveGateway_2" targetElement="BPMNShape_UserTask_1">
+        <di:waypoint xsi:type="dc:Point" x="271.0" y="288.0"/>
+        <di:waypoint xsi:type="dc:Point" x="305.0" y="288.0"/>
+        <di:waypoint xsi:type="dc:Point" x="340.0" y="288.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_16"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_7" bpmnElement="SequenceFlow_7" sourceElement="BPMNShape_UserTask_5" targetElement="BPMNShape_ExclusiveGateway_3">
+        <di:waypoint xsi:type="dc:Point" x="450.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="490.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="530.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_17"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_8" bpmnElement="SequenceFlow_8" sourceElement="BPMNShape_UserTask_1" targetElement="BPMNShape_ExclusiveGateway_5">
+        <di:waypoint xsi:type="dc:Point" x="395.0" y="313.0"/>
+        <di:waypoint xsi:type="dc:Point" x="395.0" y="386.0"/>
+        <di:waypoint xsi:type="dc:Point" x="322.0" y="386.0"/>
+        <di:waypoint xsi:type="dc:Point" x="245.0" y="386.0"/>
+        <di:waypoint xsi:type="dc:Point" x="245.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_18"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_10" bpmnElement="SequenceFlow_10" sourceElement="BPMNShape_ExclusiveGateway_3" targetElement="BPMNShape_EndEvent_1">
+        <di:waypoint xsi:type="dc:Point" x="555.0" y="510.0"/>
+        <di:waypoint xsi:type="dc:Point" x="555.0" y="551.0"/>
+        <di:waypoint xsi:type="dc:Point" x="555.0" y="710.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_20">
+          <dc:Bounds height="34.0" width="72.0" x="520.0" y="611.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_11" bpmnElement="SequenceFlow_11" sourceElement="BPMNShape_ExclusiveGateway_3" targetElement="BPMNShape_ExclusiveGateway_2">
+        <di:waypoint xsi:type="dc:Point" x="555.0" y="460.0"/>
+        <di:waypoint xsi:type="dc:Point" x="555.0" y="223.0"/>
+        <di:waypoint xsi:type="dc:Point" x="246.0" y="223.0"/>
+        <di:waypoint xsi:type="dc:Point" x="246.0" y="263.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_21">
+          <dc:Bounds height="17.0" width="71.0" x="464.0" y="224.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_12" bpmnElement="SequenceFlow_12" sourceElement="BPMNShape_ExclusiveGateway_3" targetElement="BPMNShape_UserTask_4">
+        <di:waypoint xsi:type="dc:Point" x="580.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="610.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="700.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_22">
+          <dc:Bounds height="34.0" width="61.0" x="610.0" y="486.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_13" bpmnElement="SequenceFlow_13" sourceElement="BPMNShape_UserTask_4" targetElement="BPMNShape_ExclusiveGateway_4">
+        <di:waypoint xsi:type="dc:Point" x="810.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="820.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="918.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_23"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_14" bpmnElement="SequenceFlow_14" sourceElement="BPMNShape_ExclusiveGateway_4" targetElement="BPMNShape_EndEvent_2">
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="510.0"/>
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="718.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1077.0" y="718.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_25">
+          <dc:Bounds height="34.0" width="72.0" x="908.0" y="682.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_15" bpmnElement="SequenceFlow_15" sourceElement="BPMNShape_UserTask_3" targetElement="BPMNShape_EndEvent_3">
+        <di:waypoint xsi:type="dc:Point" x="1255.0" y="510.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1255.0" y="551.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1255.0" y="551.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1255.0" y="680.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_27"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_16" bpmnElement="SequenceFlow_16" sourceElement="BPMNShape_UserTask_2" targetElement="BPMNShape_UserTask_3">
+        <di:waypoint xsi:type="dc:Point" x="1150.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1175.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1200.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_28"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_17" bpmnElement="SequenceFlow_17" sourceElement="BPMNShape_ExclusiveGateway_4" targetElement="BPMNShape_UserTask_2">
+        <di:waypoint xsi:type="dc:Point" x="968.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="978.0" y="485.0"/>
+        <di:waypoint xsi:type="dc:Point" x="1040.0" y="485.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_29">
+          <dc:Bounds height="17.0" width="48.0" x="981.0" y="486.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_18" bpmnElement="SequenceFlow_18" sourceElement="BPMNShape_ExclusiveGateway_4" targetElement="BPMNShape_ExclusiveGateway_2">
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="460.0"/>
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="167.0"/>
+        <di:waypoint xsi:type="dc:Point" x="246.0" y="167.0"/>
+        <di:waypoint xsi:type="dc:Point" x="246.0" y="263.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_30">
+          <dc:Bounds height="17.0" width="71.0" x="658.0" y="168.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_19" bpmnElement="SequenceFlow_19" sourceElement="BPMNShape_ExclusiveGateway_4" targetElement="BPMNShape_ExclusiveGateway_5">
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="460.0"/>
+        <di:waypoint xsi:type="dc:Point" x="943.0" y="394.0"/>
+        <di:waypoint xsi:type="dc:Point" x="595.0" y="394.0"/>
+        <di:waypoint xsi:type="dc:Point" x="245.0" y="394.0"/>
+        <di:waypoint xsi:type="dc:Point" x="245.0" y="460.0"/>
+        <bpmndi:BPMNLabel id="BPMNLabel_31">
+          <dc:Bounds height="34.0" width="50.0" x="570.0" y="395.0"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+    <bpmndi:BPMNLabelStyle id="BPMNLabelStyle_1">
+      <dc:Font name="arial" size="9.0"/>
+    </bpmndi:BPMNLabelStyle>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>

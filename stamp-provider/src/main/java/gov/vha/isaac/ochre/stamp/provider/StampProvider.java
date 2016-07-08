@@ -296,7 +296,7 @@ public class StampProvider implements StampService {
     @Override
     public String describeStampSequence(int stampSequence) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Stamp<Begin>");
+        sb.append("{Stamp≤");
         sb.append(stampSequence);
         sb.append("::");
         State status = getStatusForStamp(stampSequence);
@@ -328,7 +328,7 @@ public class StampProvider implements StampService {
         sb.append(Get.conceptDescriptionText(getPathSequenceForStamp(stampSequence)));
         sb.append(" <");
         sb.append(getPathSequenceForStamp(stampSequence));
-        sb.append("> <Stamp End>");
+        sb.append(">≥S}");
         return sb.toString();
     }
 

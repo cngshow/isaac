@@ -49,57 +49,131 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
 
     private static final NodeSemantic[] NODE_SEMANTICS = NodeSemantic.values();
 
-    private static final EnumSet<NodeSemantic> meaningfulNodeSemantics
-            = EnumSet.of(NodeSemantic.CONCEPT, NodeSemantic.SUBSTITUTION_CONCEPT);
+    private static final EnumSet<NodeSemantic> MEANINGFUL_NODE_SEMANTICS
+        = EnumSet.of(NodeSemantic.CONCEPT, NodeSemantic.SUBSTITUTION_CONCEPT);
 
     protected static int isaNid = 0;
 
     transient int conceptSequence = -1;
 
     ArrayList<LogicNode> logicNodes = new ArrayList<>();
-    int rootNode = 0;
+    int rootNodeIndex = -1;
 
     public LogicalExpressionOchreImpl() {
     }
 
+    /**
+     * Called to generate an isomorphicExpression and a mergedExpression
+     *
+     * @param another the logical expression to add nodes from.
+     * @param solution an array mapping from the nodeId in another to the nodeId
+     * in this expression. If the value of the solution element == -1, that node
+     * is not added to this logical expression, otherwise the value of the
+     * solution element is used for the nodeId in this logical expression.
+     */
     public LogicalExpressionOchreImpl(LogicalExpressionOchreImpl another, int[] solution) {
-         addNodes(another, solution, another.rootNode);
+        addNodesWithMap(another, solution, new int[another.getNodeCount()], another.rootNodeIndex);
         logicNodes.trimToSize();
     }
 
-    private LogicNode[] addNodes(LogicalExpressionOchreImpl another, int[] solution, int... oldIds) {
+    /**
+     * Called to generate an isomorphicExpression and a mergedExpression
+     *
+     * @param another the logical expression to add nodes from.
+     * @param solution an array mapping from the nodeId in another to the nodeId
+     * in this expression. If the value of the solution element == -1, that node
+     * is not added to this logical expression, otherwise the value of the
+     * solution element is used for the nodeId in this logical expression.
+    * @param anotherToThisNodeIdMap contains a mapping from nodeId in another to nodeId in this constructed expression. 
+     */
+    public LogicalExpressionOchreImpl(LogicalExpressionOchreImpl another, int[] solution, int[] anotherToThisNodeIdMap) {
+        addNodesWithMap(another, solution, anotherToThisNodeIdMap, another.rootNodeIndex);
+        logicNodes.trimToSize();
+    }
+    /**
+     *
+     * @param another the logical expression to add nodes from.
+     * @param solution an array mapping from the nodeId in another to the nodeId
+     * in this expression. If the value of the solution element == -1, that node
+     * is not added to this logical expression, otherwise the value of the
+     * solution element is used for the nodeId in this logical expression.
+     * @param oldIds the list of nodeIds in the provided logical expression
+     * (another) to add to this logical expression on this invocation. Note that
+     * children of the nodes indicated by oldIds may be added by recursive calls
+     * to this method, if the oldId index in the solution array is >= 0.
+     * @return the LogicNode elements added as a result of this instance of the
+     * call, not including any children LogicNode elements added by recursive
+     * calls. Those children LogicNode elements can be retrieved by recursively
+     * traversing the children of these returned LogicNode elements.
+     */
+    public final LogicNode[] addNodes(LogicalExpressionOchreImpl another, int[] solution, int... oldIds) {
+        return this.addNodesWithMap(another, solution, null, oldIds);
+    }
+
+    
+    /**
+     *
+     * @param another the logical expression to add nodes from.
+     * @param solution an array mapping from the nodeId in another to the nodeId
+     * in this expression. If the value of the solution element == -1, that node
+     * is not added to this logical expression, otherwise the value of the
+     * solution element is used for the nodeId in this logical expression.
+      * @param anotherToThisNodeIdMap contains a mapping from nodeId in another to nodeId in this constructed expression. 
+     * @param oldIds the list of nodeIds in the provided logical expression
+     * (another) to add to this logical expression on this invocation. Note that
+     * children of the nodes indicated by oldIds may be added by recursive calls
+     * to this method, if the oldId index in the solution array is >= 0.
+     * @return the LogicNode elements added as a result of this instance of the
+     * call, not including any children LogicNode elements added by recursive
+     * calls. Those children LogicNode elements can be retrieved by recursively
+     * traversing the children of these returned LogicNode elements.
+     */
+    private LogicNode[] addNodesWithMap(LogicalExpressionOchreImpl another, int[] solution, int[] anotherToThisNodeIdMap, int... oldIds) {
 
         AbstractLogicNode[] results = new AbstractLogicNode[oldIds.length];
         for (int i = 0; i < oldIds.length; i++) {
             LogicNode oldLogicNode = another.getNode(oldIds[i]);
             switch (oldLogicNode.getNodeSemantic()) {
                 case DEFINITION_ROOT:
-                    results[i] = Root(Arrays.stream(addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())).map((LogicNode t) -> (ConnectorNode) t).toArray(ConnectorNode[]::new));
-                    rootNode =  results[i].getNodeIndex();
+                    results[i] = Root(Arrays.stream(  
+                        addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter( // the int[] of oldIds to add to the expression
+                                    (oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0 // if the solution element == -1, filter out
+                                ).mapToInt(
+                                    (oldChildNode) -> oldChildNode.getNodeIndex() // the nodeId in the original expression 
+                                ).toArray() //create the oldIds passed into the addNodes recursive call
+                        ) // end of addNodes parameters; returns LogicNode[]
+                    ).map(
+                        (LogicNode t) -> (ConnectorNode) t).toArray(ConnectorNode[]::new) // convert LogicNode[] to ConnectorNode[] to pass into the Root method call.
+                    );
+                    rootNodeIndex = results[i].getNodeIndex();
                     break;
                 case NECESSARY_SET:
-                    results[i] = NecessarySet((AbstractLogicNode[]) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
+                    results[i] = NecessarySet((AbstractLogicNode[]) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
                     break;
                 case SUFFICIENT_SET:
-                    results[i] = SufficientSet((AbstractLogicNode[]) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
+                    results[i] = SufficientSet((AbstractLogicNode[]) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
                     break;
                 case AND:
-                    results[i] = And((AbstractLogicNode[]) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
+                    results[i] = And((AbstractLogicNode[]) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
                     break;
                 case OR:
-                    results[i] = Or((AbstractLogicNode[]) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
+                    results[i] = Or((AbstractLogicNode[]) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
                     break;
                 case DISJOINT_WITH:
-                    results[i] = DisjointWith((AbstractLogicNode[]) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
+                    results[i] = DisjointWith((AbstractLogicNode[]) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray()));
                     break;
                 case ROLE_ALL:
-                    results[i] = AllRole(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), (AbstractLogicNode) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
+                    results[i] = AllRole(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), (AbstractLogicNode) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
                     break;
                 case ROLE_SOME:
-                    results[i] = SomeRole(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), (AbstractLogicNode) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
+                    results[i] = SomeRole(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), 
+                        (AbstractLogicNode) addNodesWithMap(another, solution, anotherToThisNodeIdMap, 
+                            oldLogicNode.getChildStream().filter(
+                                (oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0
+                            ).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
                     break;
                 case FEATURE:
-                    results[i] = Feature(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), (AbstractLogicNode) addNodes(another, solution, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
+                    results[i] = Feature(((TypedNodeWithSequences) oldLogicNode).getTypeConceptSequence(), (AbstractLogicNode) addNodesWithMap(another, solution, anotherToThisNodeIdMap, oldLogicNode.getChildStream().filter((oldChildNode) -> solution[oldChildNode.getNodeIndex()] >= 0).mapToInt((oldChildNode) -> oldChildNode.getNodeIndex()).toArray())[0]);
                     break;
                 case LITERAL_BOOLEAN:
                     results[i] = BooleanLiteral(((LiteralNodeBoolean) oldLogicNode).getLiteralValue());
@@ -121,7 +195,7 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
                     break;
                 case TEMPLATE:
                     results[i] = Template(((TemplateNodeWithSequences) oldLogicNode).getTemplateConceptSequence(),
-                            ((TemplateNodeWithSequences) oldLogicNode).getAssemblageConceptSequence());
+                        ((TemplateNodeWithSequences) oldLogicNode).getAssemblageConceptSequence());
                     break;
                 case SUBSTITUTION_BOOLEAN:
                     results[i] = BooleanSubstitution(((SubstitutionNode) oldLogicNode).getSubstitutionFieldSpecification());
@@ -144,6 +218,10 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
                 default:
                     throw new UnsupportedOperationException("Can't handle: " + oldLogicNode.getNodeSemantic());
             }
+            if (anotherToThisNodeIdMap != null) {
+                anotherToThisNodeIdMap[oldLogicNode.getNodeIndex()] = results[i].getNodeIndex();
+            }
+            
         }
         return results;
     }
@@ -308,7 +386,7 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
 
     @Override
     public boolean isMeaningful() {
-        return logicNodes.stream().anyMatch((node) -> (meaningfulNodeSemantics.contains(node.getNodeSemantic())));
+        return logicNodes.stream().anyMatch((node) -> (MEANINGFUL_NODE_SEMANTICS.contains(node.getNodeSemantic())));
     }
 
     @Override
@@ -326,7 +404,7 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
         if (logicNodes.isEmpty()) {
             return Root();
         }
-        return (RootNode) logicNodes.get(rootNode);
+        return (RootNode) logicNodes.get(rootNodeIndex);
     }
 
     @Override
@@ -372,7 +450,7 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
     }
 
     protected void depthFirstVisit(BiConsumer<LogicNode, TreeNodeVisitData> consumer, LogicNode logicNode,
-                                   TreeNodeVisitData graphVisitData, int depth) {
+        TreeNodeVisitData graphVisitData, int depth) {
 
         if (depth > 100) {
             // toString depends on this method, so we can't include this.toString() in the exception...
@@ -405,14 +483,14 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
                     siblingGroupSequence = logicNode.getNodeIndex();
                     break;
                 default:
-                    siblingGroupSequence =
-                            graphVisitData.getSiblingGroupForSequence(logicNode.getNodeIndex());
+                    siblingGroupSequence
+                        = graphVisitData.getSiblingGroupForSequence(logicNode.getNodeIndex());
             }
 
             for (LogicNode child : logicNode.getChildren()) {
                 graphVisitData.setSiblingGroupForSequence(child.getNodeIndex(), siblingGroupSequence);
                 graphVisitData.setPredecessorSequence(child.getNodeIndex(), logicNode.getNodeIndex());
-                     depthFirstVisit(consumer, child, graphVisitData, depth + 1);
+                depthFirstVisit(consumer, child, graphVisitData, depth + 1);
             }
         }
         graphVisitData.endNodeVisit(logicNode.getNodeIndex());
@@ -451,11 +529,15 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
     }
 
     public RootNode Root(ConnectorNode... children) {
-        return new RootNode(this, children);
-    }
+        RootNode rootNode = new RootNode(this, children);
+        this.rootNodeIndex = rootNode.getNodeIndex();
+        return rootNode;
+   }
 
     public final RootNode Root(DataInputStream dataInputStream) throws IOException {
-        return new RootNode(this, dataInputStream);
+        RootNode rootNode = new RootNode(this, dataInputStream);
+        this.rootNodeIndex = rootNode.getNodeIndex();
+        return rootNode;
     }
 
     public DisjointWithNode DisjointWith(AbstractLogicNode... children) {
@@ -496,8 +578,8 @@ public class LogicalExpressionOchreImpl implements LogicalExpression {
             return new FeatureNodeWithSequences(this, typeNid, literal);
         }
         throw new IllegalStateException(
-                "LogicNode must be of type LiteralNode or SubstitutionNodeLiteral. Found: "
-                + literal);
+            "LogicNode must be of type LiteralNode or SubstitutionNodeLiteral. Found: "
+            + literal);
     }
 
     public final FeatureNodeWithSequences Feature(DataInputStream dataInputStream) throws IOException {
