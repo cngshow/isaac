@@ -74,8 +74,6 @@ public class SrcUploadCreator
 		LOG.debug("Hi Cris!");
 		LOG.info("What a nice day it is!!");
 		LOG.warn("What a scary day it is!!");
-		This build is broken.
-
 		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
 			throw new Exception("No content was found to upload!");
