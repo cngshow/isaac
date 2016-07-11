@@ -13,31 +13,31 @@
       </bpmn2:extensionElements>
       <bpmn2:outgoing>SequenceFlow_2</bpmn2:outgoing>
     </bpmn2:startEvent>
-    <bpmn2:exclusiveGateway id="ExclusiveGateway_1" name="Start Splitter" gatewayDirection="Diverging">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_1" name="Request" gatewayDirection="Diverging">
       <bpmn2:incoming>SequenceFlow_2</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_3</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_4</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
-    <bpmn2:exclusiveGateway id="ExclusiveGateway_2" name="Edit Task Joiner" gatewayDirection="Converging">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_2" gatewayDirection="Converging">
       <bpmn2:incoming>SequenceFlow_3</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_11</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_18</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_6</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
-    <bpmn2:exclusiveGateway id="ExclusiveGateway_3" name="Review Task Splitter" gatewayDirection="Diverging">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_3" name="Ready for Review" gatewayDirection="Diverging">
       <bpmn2:incoming>SequenceFlow_7</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_10</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_11</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_12</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
-    <bpmn2:exclusiveGateway id="ExclusiveGateway_4" name="Approve Splitter" gatewayDirection="Diverging">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_4" name="Ready for Approve" gatewayDirection="Diverging">
       <bpmn2:incoming>SequenceFlow_13</bpmn2:incoming>
       <bpmn2:outgoing>SequenceFlow_14</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_17</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_18</bpmn2:outgoing>
       <bpmn2:outgoing>SequenceFlow_19</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
-    <bpmn2:exclusiveGateway id="ExclusiveGateway_5" name="Review Task Joiner" gatewayDirection="Converging">
+    <bpmn2:exclusiveGateway id="ExclusiveGateway_5" gatewayDirection="Converging">
       <bpmn2:incoming>SequenceFlow_4</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_8</bpmn2:incoming>
       <bpmn2:incoming>SequenceFlow_19</bpmn2:incoming>
@@ -45,10 +45,10 @@
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="SequenceFlow_2" sourceRef="StartEvent_1" targetRef="ExclusiveGateway_1"/>
     <bpmn2:sequenceFlow id="SequenceFlow_3" name="Edit Content" sourceRef="ExclusiveGateway_1" targetRef="ExclusiveGateway_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_91" language="http://www.mvel.org/2.0">'edit-option'</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_91" language="http://www.mvel.org/2.0">'Ready for Edit'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_4" name="Review Content" sourceRef="ExclusiveGateway_1" targetRef="ExclusiveGateway_5">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_92" language="http://www.mvel.org/2.0">'review-option'</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_92" language="http://www.mvel.org/2.0">'Ready for Review'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_5" sourceRef="ExclusiveGateway_5" targetRef="UserTask_10"/>
     <bpmn2:sequenceFlow id="SequenceFlow_6" sourceRef="ExclusiveGateway_2" targetRef="UserTask_6"/>
@@ -62,14 +62,14 @@
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_10</bpmn2:incoming>
     </bpmn2:endEvent>
-    <bpmn2:sequenceFlow id="SequenceFlow_10" name="Cancel WF Process" sourceRef="ExclusiveGateway_3" targetRef="EndEvent_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_93" language="http://www.mvel.org/2.0">'cancel-option'</bpmn2:conditionExpression>
+    <bpmn2:sequenceFlow id="SequenceFlow_10" name="Cancel Workflow" sourceRef="ExclusiveGateway_3" targetRef="EndEvent_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_93" language="http://www.mvel.org/2.0">'Canceled'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
-    <bpmn2:sequenceFlow id="SequenceFlow_11" name="Reject Edit" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_94" language="http://www.mvel.org/2.0">'reject-option'</bpmn2:conditionExpression>
+    <bpmn2:sequenceFlow id="SequenceFlow_11" name="QA Fails" sourceRef="ExclusiveGateway_3" targetRef="ExclusiveGateway_2">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_94" language="http://www.mvel.org/2.0">'Ready for Edit'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
-    <bpmn2:sequenceFlow id="SequenceFlow_12" name="Approve Edit" sourceRef="ExclusiveGateway_3" targetRef="UserTask_8">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_95" language="http://www.mvel.org/2.0">'approve-option'</bpmn2:conditionExpression>
+    <bpmn2:sequenceFlow id="SequenceFlow_12" name="QA Passes" sourceRef="ExclusiveGateway_3" targetRef="UserTask_8">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_95" language="http://www.mvel.org/2.0">'Ready for Approve'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_13" sourceRef="UserTask_8" targetRef="ExclusiveGateway_4"/>
     <bpmn2:endEvent id="EndEvent_3" name="End">
@@ -80,8 +80,8 @@
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_14</bpmn2:incoming>
     </bpmn2:endEvent>
-    <bpmn2:sequenceFlow id="SequenceFlow_14" name="Cancel WF Process" sourceRef="ExclusiveGateway_4" targetRef="EndEvent_3">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_96" language="http://www.mvel.org/2.0">'cancel-option'</bpmn2:conditionExpression>
+    <bpmn2:sequenceFlow id="SequenceFlow_14" name="Cancel Workflow" sourceRef="ExclusiveGateway_4" targetRef="EndEvent_3">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_96" language="http://www.mvel.org/2.0">'Canceled'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:endEvent id="EndEvent_4" name="End">
       <bpmn2:extensionElements>
@@ -93,14 +93,14 @@
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="SequenceFlow_15" sourceRef="UserTask_9" targetRef="EndEvent_4"/>
     <bpmn2:sequenceFlow id="SequenceFlow_16" sourceRef="UserTask_7" targetRef="UserTask_9"/>
-    <bpmn2:sequenceFlow id="SequenceFlow_17" name="Publish" sourceRef="ExclusiveGateway_4" targetRef="UserTask_7">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_97" language="http://www.mvel.org/2.0">'publish-option'</bpmn2:conditionExpression>
+    <bpmn2:sequenceFlow id="SequenceFlow_17" name="Approve" sourceRef="ExclusiveGateway_4" targetRef="UserTask_7">
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_97" language="http://www.mvel.org/2.0">'Ready for Publish'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_18" name="Reject Edit" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_2">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_98" language="http://www.mvel.org/2.0">'reject-edit-option'</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_98" language="http://www.mvel.org/2.0">'Ready for Edit'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:sequenceFlow id="SequenceFlow_19" name="Reject Review" sourceRef="ExclusiveGateway_4" targetRef="ExclusiveGateway_5">
-      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_99" language="http://www.mvel.org/2.0">'reject-review-option'</bpmn2:conditionExpression>
+      <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_99" language="http://www.mvel.org/2.0">'Ready for Review'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
     <bpmn2:userTask id="UserTask_6" name="Edit Task">
       <bpmn2:extensionElements>
@@ -180,7 +180,7 @@
     <bpmn2:userTask id="UserTask_7" name="Promote Task">
       <bpmn2:extensionElements>
         <drools:metaData name="elementname">
-          <drools:metaValue><![CDATA[Edit Task]]></drools:metaValue>
+          <drools:metaValue><![CDATA[Promote Task]]></drools:metaValue>
         </drools:metaData>
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_17</bpmn2:incoming>
@@ -255,7 +255,7 @@
     <bpmn2:userTask id="UserTask_8" name="Approve Task">
       <bpmn2:extensionElements>
         <drools:metaData name="elementname">
-          <drools:metaValue><![CDATA[Edit Task]]></drools:metaValue>
+          <drools:metaValue><![CDATA[Approve Task]]></drools:metaValue>
         </drools:metaData>
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_12</bpmn2:incoming>
@@ -330,7 +330,7 @@
     <bpmn2:userTask id="UserTask_9" name="Submit Task">
       <bpmn2:extensionElements>
         <drools:metaData name="elementname">
-          <drools:metaValue><![CDATA[Edit Task]]></drools:metaValue>
+          <drools:metaValue><![CDATA[Submit Task]]></drools:metaValue>
         </drools:metaData>
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_16</bpmn2:incoming>
@@ -405,7 +405,7 @@
     <bpmn2:userTask id="UserTask_10" name="Review Task">
       <bpmn2:extensionElements>
         <drools:metaData name="elementname">
-          <drools:metaValue><![CDATA[Edit Task]]></drools:metaValue>
+          <drools:metaValue><![CDATA[Review Task]]></drools:metaValue>
         </drools:metaData>
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_5</bpmn2:incoming>
@@ -489,32 +489,28 @@
       <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_1" bpmnElement="ExclusiveGateway_1" isMarkerVisible="true">
         <dc:Bounds height="50.0" width="50.0" x="93.0" y="367.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_2" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="15.0" width="66.0" x="85.0" y="417.0"/>
+          <dc:Bounds height="15.0" width="47.0" x="94.0" y="417.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_2" bpmnElement="ExclusiveGateway_2" isMarkerVisible="true">
         <dc:Bounds height="50.0" width="50.0" x="221.0" y="263.0"/>
-        <bpmndi:BPMNLabel id="BPMNLabel_3" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="30.0" width="60.0" x="216.0" y="313.0"/>
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_3" labelStyle="BPMNLabelStyle_1"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_3" bpmnElement="ExclusiveGateway_3" isMarkerVisible="true">
         <dc:Bounds height="50.0" width="50.0" x="530.0" y="460.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_4" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="30.0" width="79.0" x="516.0" y="510.0"/>
+          <dc:Bounds height="30.0" width="62.0" x="524.0" y="510.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_4" bpmnElement="ExclusiveGateway_4" isMarkerVisible="true">
         <dc:Bounds height="50.0" width="50.0" x="918.0" y="460.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_5" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="30.0" width="50.0" x="918.0" y="510.0"/>
+          <dc:Bounds height="30.0" width="62.0" x="912.0" y="510.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_ExclusiveGateway_5" bpmnElement="ExclusiveGateway_5" isMarkerVisible="true">
         <dc:Bounds height="50.0" width="50.0" x="220.0" y="460.0"/>
-        <bpmndi:BPMNLabel id="BPMNLabel_6" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="30.0" width="79.0" x="206.0" y="510.0"/>
-        </bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_6" labelStyle="BPMNLabelStyle_1"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_EndEvent_1" bpmnElement="EndEvent_2">
         <dc:Bounds height="36.0" width="36.0" x="537.0" y="710.0"/>
@@ -536,31 +532,31 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_6" bpmnElement="UserTask_6">
         <dc:Bounds height="50.0" width="110.0" x="340.0" y="263.0"/>
-        <bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_7">
           <dc:Bounds height="15.0" width="51.0" x="369.0" y="280.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_7" bpmnElement="UserTask_7">
         <dc:Bounds height="50.0" width="110.0" x="1040.0" y="460.0"/>
-        <bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_8">
           <dc:Bounds height="15.0" width="77.0" x="1056.0" y="477.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_8" bpmnElement="UserTask_8">
         <dc:Bounds height="50.0" width="110.0" x="700.0" y="460.0"/>
-        <bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_9">
           <dc:Bounds height="15.0" width="74.0" x="718.0" y="477.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_9" bpmnElement="UserTask_9">
         <dc:Bounds height="50.0" width="110.0" x="1200.0" y="460.0"/>
-        <bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_10">
           <dc:Bounds height="15.0" width="69.0" x="1220.0" y="477.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_10" bpmnElement="UserTask_10">
         <dc:Bounds height="50.0" width="110.0" x="340.0" y="460.0"/>
-        <bpmndi:BPMNLabel>
+        <bpmndi:BPMNLabel id="BPMNLabel_11">
           <dc:Bounds height="15.0" width="70.0" x="360.0" y="477.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
@@ -616,7 +612,7 @@
         <di:waypoint xsi:type="dc:Point" x="555.0" y="551.0"/>
         <di:waypoint xsi:type="dc:Point" x="555.0" y="710.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_20">
-          <dc:Bounds height="30.0" width="69.0" x="521.0" y="552.0"/>
+          <dc:Bounds height="30.0" width="50.0" x="531.0" y="611.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_11" bpmnElement="SequenceFlow_11" sourceElement="BPMNShape_ExclusiveGateway_3" targetElement="BPMNShape_ExclusiveGateway_2">
@@ -625,7 +621,7 @@
         <di:waypoint xsi:type="dc:Point" x="246.0" y="223.0"/>
         <di:waypoint xsi:type="dc:Point" x="246.0" y="263.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_21">
-          <dc:Bounds height="15.0" width="59.0" x="470.0" y="224.0"/>
+          <dc:Bounds height="15.0" width="46.0" x="477.0" y="224.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_12" bpmnElement="SequenceFlow_12" sourceElement="BPMNShape_ExclusiveGateway_3" targetElement="BPMNShape_UserTask_8">
@@ -633,7 +629,7 @@
         <di:waypoint xsi:type="dc:Point" x="610.0" y="485.0"/>
         <di:waypoint xsi:type="dc:Point" x="700.0" y="485.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_22">
-          <dc:Bounds height="15.0" width="68.0" x="577.0" y="486.0"/>
+          <dc:Bounds height="15.0" width="62.0" x="610.0" y="486.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_13" bpmnElement="SequenceFlow_13" sourceElement="BPMNShape_UserTask_8" targetElement="BPMNShape_ExclusiveGateway_4">
@@ -647,7 +643,7 @@
         <di:waypoint xsi:type="dc:Point" x="943.0" y="718.0"/>
         <di:waypoint xsi:type="dc:Point" x="1077.0" y="718.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_25">
-          <dc:Bounds height="30.0" width="69.0" x="909.0" y="682.0"/>
+          <dc:Bounds height="30.0" width="50.0" x="919.0" y="682.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_15" bpmnElement="SequenceFlow_15" sourceElement="BPMNShape_UserTask_9" targetElement="BPMNShape_EndEvent_3">
@@ -667,7 +663,7 @@
         <di:waypoint xsi:type="dc:Point" x="1004.0" y="485.0"/>
         <di:waypoint xsi:type="dc:Point" x="1040.0" y="485.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_29">
-          <dc:Bounds height="15.0" width="42.0" x="984.0" y="486.0"/>
+          <dc:Bounds height="15.0" width="44.0" x="983.0" y="486.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_18" bpmnElement="SequenceFlow_18" sourceElement="BPMNShape_ExclusiveGateway_4" targetElement="BPMNShape_ExclusiveGateway_2">
