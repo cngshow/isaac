@@ -30,6 +30,7 @@ import gov.vha.isaac.metacontent.workflow.PossibleAction;
 import gov.vha.isaac.metacontent.workflow.StaticAuthorRoleContentStore;
 import gov.vha.isaac.metacontent.workflow.StaticStateActionContentStore;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService.StaticWorkflowContentTypes;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowDefinitionUtility;
 
 /**
  * Test both static and user based workflow content as defined in the
@@ -40,6 +41,8 @@ import gov.vha.isaac.ochre.api.metacontent.MetaContentService.StaticWorkflowCont
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowContentStoreTest {
+	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
+
 	@Test
 	public void testStaticWorkflowStartupStores() throws Exception {
 		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
@@ -119,6 +122,24 @@ public class WorkflowContentStoreTest {
 		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
 		store.close();
 
+	}
+
+	@Test
+	public void testActualStaticWorkflowStartupStores() throws Exception {
+		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
+		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+
+		util.setNodes(BPMN_FILE_PATH);
+
+		StaticStateActionContentStore pulledStateActionContent = new StaticStateActionContentStore(
+				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+
+		Assert.assertSame("Expected number of actionOutome records not what expected",
+				pulledStateActionContent.getPossibleActions().size(), 9);
+
+		for (PossibleAction actionOutcome : pulledStateActionContent.getPossibleActions()) {
+			System.out.println(actionOutcome);
+		}
 	}
 
 }
