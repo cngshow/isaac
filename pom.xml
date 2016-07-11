@@ -239,21 +239,6 @@
                 <artifactId>json-io</artifactId>
                 <version>4.3.0</version>
             </dependency>
-            <dependency>
-                <groupId>org.jbpm</groupId>
-                <artifactId>jbpm-flow</artifactId>
-                <version>${jbpm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jbpm</groupId>
-                <artifactId>jbpm-bpmn2</artifactId>
-                <version>${jbpm.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kie</groupId>
-                <artifactId>kie-api</artifactId>
-                <version>${jbpm.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

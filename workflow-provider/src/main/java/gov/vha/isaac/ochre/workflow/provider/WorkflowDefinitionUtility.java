@@ -142,6 +142,7 @@ public class WorkflowDefinitionUtility {
 		try {
 			InputStream in = new FileInputStream(new File(bpmn2FilePath));
 			List<Process> processes = processReader.read(in);
+			in.close();
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
 			System.out.println("Couldn't Find Fine: " + bpmn2FilePath);

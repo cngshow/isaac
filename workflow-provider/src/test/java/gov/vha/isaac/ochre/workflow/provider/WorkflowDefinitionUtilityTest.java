@@ -45,10 +45,10 @@ public class WorkflowDefinitionUtilityTest {
 	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 	private Map<Long, List<Long>> nodeToOutgoingMap;
 	private List<SequenceFlow> connections;
- 
+	private WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
+
 	@Test
 	public void testProcessDefinition() throws Exception {
-		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
 		util.setDefinition(BPMN_FILE_PATH);
 		
 		ProcessAssetDesc definition = util.getProcessDefinition();
@@ -61,7 +61,6 @@ public class WorkflowDefinitionUtilityTest {
 
 	@Test
 	public void testProcessNodes() throws Exception {
-		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
 		util.setNodes(BPMN_FILE_PATH);
 
 		List<Node> nodes = util.getProcessNodes();
