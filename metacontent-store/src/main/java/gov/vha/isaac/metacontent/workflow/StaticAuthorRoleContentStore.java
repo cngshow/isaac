@@ -108,4 +108,12 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 		return this.author.equals(other.author) && this.roles.equals(other.roles);
 
 	}
+	
+	public Integer getAuthor() {
+		return author;
+	}
+	
+	public Set<String> getAuthorRoles() {
+		return roles;
+	}
 }
