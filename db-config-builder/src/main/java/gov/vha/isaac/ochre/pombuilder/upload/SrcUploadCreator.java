@@ -74,6 +74,13 @@ public class SrcUploadCreator
 		LOG.debug("Hi Cris!");
 		LOG.info("What a nice day it is!!");
 		LOG.warn("What a scary day it is!!");
+		Throwable one = new Exception("I am a bad little exception!");
+		Throwable two = new IllegalArgumentException(one);
+		Throwable three = new IllegalStateException(two);
+		Throwable four = new Exception(three);
+		Throwable five = new Throwable(four);
+		LOG.error("What a tragedy!!", five);
+
 		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
 			throw new Exception("No content was found to upload!");
