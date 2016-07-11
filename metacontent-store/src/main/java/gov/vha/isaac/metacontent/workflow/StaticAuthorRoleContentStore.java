@@ -60,10 +60,10 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 			this.author = (Integer) in.readObject();
 			this.roles = (HashSet<String>) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into WorkflowAuthorRoleContentStore", e);
+			logger.error("Failure to deserialize data into StaticAuthorRoleContentStore", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast WorkflowAuthorRoleContentStore's fields into String", e);
+			logger.error("Failure to cast StaticAuthorRoleContentStore's fields into String", e);
 			e.printStackTrace();
 		}
 	}
@@ -83,7 +83,7 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 
 			return bos.toByteArray();
 		} catch (IOException e) {
-			logger.error("Failure to serialize data from WorkflowAuthorRoleContentStore", e);
+			logger.error("Failure to serialize data from StaticAuthorRoleContentStore", e);
 			e.printStackTrace();
 		}
 
@@ -98,7 +98,7 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 			buf.append(r + ",");
 		}
 
-		return "WorkflowAuthorRoleContentStore:" + "\nAuthor: " + author + "\nRoles: " + buf.toString();
+		return "StaticAuthorRoleContentStore:" + "\nAuthor: " + author + "\nRoles: " + buf.toString();
 	}
 
 	@Override
