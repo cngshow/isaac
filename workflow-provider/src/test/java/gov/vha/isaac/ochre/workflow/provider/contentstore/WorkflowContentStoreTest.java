@@ -127,10 +127,10 @@ public class WorkflowContentStoreTest {
 	@Test
 	public void testActualStaticWorkflowStartupStores() throws Exception {
 		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
-		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
 
 		util.setNodes(BPMN_FILE_PATH);
 
+		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		StaticStateActionContentStore pulledStateActionContent = new StaticStateActionContentStore(
 				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
 
@@ -140,6 +140,8 @@ public class WorkflowContentStoreTest {
 		for (PossibleAction actionOutcome : pulledStateActionContent.getPossibleActions()) {
 			System.out.println(actionOutcome);
 		}
+
+		store.close();
 	}
 
 }

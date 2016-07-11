@@ -109,6 +109,8 @@ public class WorkflowDefinitionUtility {
 		processNodes(bpmn2FilePath);
 
 		populateActionOutcomesRecords(bpmn2FilePath);
+
+		store.close();
 	}
 
 	private void populateActionOutcomesRecords(String bpmn2FilePath) {
