@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +32,14 @@ import org.jbpm.workflow.core.node.HumanTaskNode;
 import org.jbpm.workflow.core.node.Join;
 import org.jbpm.workflow.core.node.Split;
 import org.jbpm.workflow.core.node.StartNode;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.kie.api.definition.process.Connection;
 import org.kie.api.definition.process.Node;
+
+import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 
 /**
  * {@link WorkflowDefinitionUtilityTest}
@@ -45,12 +50,23 @@ public class WorkflowDefinitionUtilityTest {
 	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 	private Map<Long, List<Long>> nodeToOutgoingMap;
 	private List<SequenceFlow> connections;
-	private WorkflowDefinitionUtility util = WorkflowDefinitionUtility.getInstance();
+
+	private static MVStoreMetaContentProvider store;
+	private WorkflowDefinitionUtility util;
+
+	@Before
+	public void setUp() {
+		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+		util = new WorkflowDefinitionUtility(store, BPMN_FILE_PATH);
+	}
+
+	@After
+	public void tearDown() {
+		store.close();
+	}
 
 	@Test
 	public void testProcessDefinition() throws Exception {
-		util.setDefinition(BPMN_FILE_PATH, true);
-		
 		ProcessAssetDesc definition = util.getProcessDefinition();
 		Assert.assertEquals(definition.getName(), "VetzWorkflow");
 
@@ -61,8 +77,6 @@ public class WorkflowDefinitionUtilityTest {
 
 	@Test
 	public void testProcessNodes() throws Exception {
-		util.setNodes(BPMN_FILE_PATH);
-
 		List<Node> nodes = util.getProcessNodes();
 		nodeToOutgoingMap = util.getNodesToOutgoingMap();
 		connections = (List<SequenceFlow>) util.getProcess().getMetaData(ProcessHandler.CONNECTIONS);
@@ -127,7 +141,7 @@ public class WorkflowDefinitionUtilityTest {
 		}
 	}
 
-	private void analyzeNodes(Node node) {
+	private void analyzeNodes(Node node) throws Exception {
 		if (node.getName() == null || node.getName().isEmpty()) {
 			System.out.println("\n\n\n**** Printing out unnamed node");
 		} else {
@@ -162,7 +176,7 @@ public class WorkflowDefinitionUtilityTest {
 		}
 	}
 
-	private String identifySplitOptions(Split split, long outgoingId) {
+	private String identifySplitOptions(Split split, long outgoingId) throws Exception {
 
 		for (Connection connection : split.getDefaultOutgoingConnections()) {
 			if (connection.getTo().getId() == outgoingId) {
@@ -176,9 +190,7 @@ public class WorkflowDefinitionUtilityTest {
 			}
 		}
 
-		System.out.println("Couldn't find the expected Constraint for Split: " + split.getId() + " named "
+		throw new Exception("Couldn't find the expected Constraint for Split: " + split.getId() + " named "
 				+ split.getName() + " for outgoingId: " + outgoingId);
-
-		return "";
 	}
 }

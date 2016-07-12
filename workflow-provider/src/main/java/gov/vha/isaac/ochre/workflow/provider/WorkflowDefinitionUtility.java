@@ -72,8 +72,6 @@ import gov.vha.isaac.ochre.api.metacontent.MetaContentService.WorkflowContentTyp
  */
 public class WorkflowDefinitionUtility {
 	private static final Logger logger = LogManager.getLogger();
-	 private static final WorkflowDefinitionUtility INSTANCE = new WorkflowDefinitionUtility();
-	 
 	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
 
 	private ProcessDescriptor processDescriptor = null;
@@ -85,27 +83,33 @@ public class WorkflowDefinitionUtility {
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
 	private RuleFlowProcess process;
-	MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+	MVStoreMetaContentProvider store = null;
 
 	public WorkflowDefinitionUtility() {
-
+		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
 	}
 
 	public WorkflowDefinitionUtility(String bpmn2FilePath) {
-		setDefinition(bpmn2FilePath, false);
+		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+		setDefinition(bpmn2FilePath);
 		setNodes(bpmn2FilePath);
-		store.close();
 	}
 
-	public static WorkflowDefinitionUtility getInstance() {
-        return INSTANCE;
+	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store) {
+		this.store = store;
     }
 	
-	public void setDefinition(String bpmn2FilePath, boolean closeStore) {
+	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store, String bpmn2FilePath) {
+		this.store = store;
+		setDefinition(bpmn2FilePath);
+		setNodes(bpmn2FilePath);
+	}
+
+	public void setDefinition(String bpmn2FilePath) {
 		String xmlContents;
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
-			processDefinition("test", xmlContents, null, true);
+			processWorkflowDefinition("test", xmlContents);
 		} catch (IOException e) {
 			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
@@ -120,8 +124,6 @@ public class WorkflowDefinitionUtility {
 		processNodes(bpmn2FilePath);
 
 		populateActionOutcomesRecords(bpmn2FilePath);
-
-		store.close();
 	}
 
 	private void populateActionOutcomesRecords(String bpmn2FilePath) {
@@ -196,7 +198,7 @@ public class WorkflowDefinitionUtility {
 		}
 	}
 
-	private void processDefinition(String string, String xmlContents, Object object, boolean b) {
+	private void processWorkflowDefinition(String string, String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
 		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
@@ -228,13 +230,13 @@ public class WorkflowDefinitionUtility {
 			in.close();
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
-			System.out.println("Couldn't Find Fine: " + bpmn2FilePath);
+			logger.error("Couldn't Find Fine: " + bpmn2FilePath, e);
 			e.printStackTrace();
 		} catch (IOException ioe) {
-			System.out.println("Error in readFile method: " + bpmn2FilePath);
+			logger.error("Error in readFile method: " + bpmn2FilePath, ioe);
 			ioe.printStackTrace();
 		} catch (SAXException se) {
-			System.out.println("Error in parsing XML file: " + bpmn2FilePath);
+			logger.error("Error in parsing XML file: " + bpmn2FilePath, se);
 			se.printStackTrace();
 		}
 

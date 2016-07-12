@@ -22,7 +22,9 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
@@ -42,11 +44,22 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowDefinitionUtility;
  */
 public class StaticWorkflowContentStoreTest {
 	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
+	private MVStoreMetaContentProvider store;
+
+	@Before
+	public void setUp() {
+		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility(store);
+		util.setNodes(BPMN_FILE_PATH);
+	}
+
+	@After
+	public void tearDown() {
+		store.close();
+	}
 
 	@Test
 	public void testWorkflowStartupStores() throws Exception {
-		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-
 		// Create Initial Content
 		Set<String> roles = new HashSet<>();
 		roles.add("Reviewer");
@@ -74,12 +87,13 @@ public class StaticWorkflowContentStoreTest {
 		store.close();
 
 		// Reopen database and confirm content is still same as created
+		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
+
 		pulledAuthorRoleContent = new StaticAuthorRoleContentStore(
 				store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
 		pulledStateActionContent = new StaticStateActionContentStore(
 				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 
-		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		Assert.assertTrue(pulledAuthorRoleContent.equals(createdAuthorRoleContent));
 		Assert.assertTrue(pulledStateActionContent.equals(createdStateActionContent));
 		store.close();
@@ -120,17 +134,10 @@ public class StaticWorkflowContentStoreTest {
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
 		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
-		store.close();
-
 	}
 
 	@Test
 	public void testActualWorkflowStartupStores() throws Exception {
-		WorkflowDefinitionUtility util = WorkflowDefinitionUtility.getInstance();
-
-		util.setNodes(BPMN_FILE_PATH);
-
-		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		StaticStateActionContentStore pulledStateActionContent = new StaticStateActionContentStore(
 				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 
@@ -140,8 +147,6 @@ public class StaticWorkflowContentStoreTest {
 		for (PossibleAction actionOutcome : pulledStateActionContent.getPossibleActions()) {
 			System.out.println(actionOutcome);
 		}
-
-		store.close();
 	}
 
 }

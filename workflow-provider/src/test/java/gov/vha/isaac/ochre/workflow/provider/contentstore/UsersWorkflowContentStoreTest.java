@@ -24,7 +24,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
@@ -38,16 +40,26 @@ import gov.vha.isaac.ochre.api.metacontent.MetaContentService.WorkflowContentTyp
  * Test both static and user based workflow content as defined in the
  * metacontent-store
  *
- * {@link UsersContentStoreTest}
+ * {@link UsersWorkflowContentStoreTest}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class UsersContentStoreTest {
+public class UsersWorkflowContentStoreTest {
+
+	private MVStoreMetaContentProvider store;
+
+	@Before
+	public void setUp() {
+		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+	}
+
+	@After
+	public void tearDown() {
+		store.close();
+	}
 
 	@Test
 	public void testUsersProcessCreationStore() throws Exception {
-		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-
 		// Create Initial Content
 		Set<UUID> components = new HashSet<>();
 		components.add(UUID.randomUUID());
@@ -108,8 +120,6 @@ public class UsersContentStoreTest {
 
 	@Test
 	public void testUsersProcessAdvancementStore() throws Exception {
-		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-
 		// Create Initial Content
 		WorkflowAdvancement adv = new WorkflowAdvancement(1, 3, new Date().getTime(), "REQUEST", "Edit Content",
 				"Ready for Review", "Do not need description");
@@ -126,6 +136,14 @@ public class UsersContentStoreTest {
 		UsersProcessAdvancementContentStore pulledAdvancements = new UsersProcessAdvancementContentStore(
 				store.getWorkflowContent(WorkflowContentTypes.ADVANCEMENT));
 
+		System.out.println(
+				" \n\n\n\n\n **** PULLED ADVANCEMENT ***** \n" + pulledAdvancements + "********* END ********");
+		System.out.println(" \n\n\n\n\n **** Created Process Advancement Store ***** \n"
+				+ createdProcessAdvancementStore + "********* END ********");
+		boolean b = pulledAdvancements.equals(createdProcessAdvancementStore);
+		System.out.println("Boolean: " + b);
+		System.out.println("HERE#####0");
+		Assert.assertTrue(b);
 		Assert.assertTrue(pulledAdvancements.equals(createdProcessAdvancementStore));
 		store.close();
 
