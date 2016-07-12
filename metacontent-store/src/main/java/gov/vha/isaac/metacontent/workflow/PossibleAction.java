@@ -69,6 +69,48 @@ public class PossibleAction implements Serializable {
 		}
 	}
 
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		// default serialization
+		out.defaultWriteObject();
+		// write the object
+		out.writeObject(currentState);
+		out.writeObject(action);
+		out.writeObject(outcome);
+		out.writeObject(role);
+	}
+
+	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+		// default deserialization
+		ois.defaultReadObject();
+
+		currentState = (String) ois.readObject();
+		action = (String) ois.readObject();
+		outcome = (String) ois.readObject();
+		role = (String) ois.readObject();
+	}
+
+	@Override
+	public String toString() {
+		return "\n\t\tCurrent State: " + currentState + 
+			   "\n\t\tAction: " + action + 
+			   "\n\t\tOutcome: " + outcome + 
+			   "\n\t\tRole State: " + role;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		PossibleAction other = (PossibleAction) obj;
+
+		return this.currentState.equals(other.currentState) && this.action.equals(other.action)
+				&& this.outcome.equals(other.outcome) && this.role.equals(other.role);
+
+	}
+
+	@Override
+	public int hashCode() {
+		return currentState.hashCode() + action.hashCode() + outcome.hashCode() + role.hashCode();
+	}
+
 	public String getCurrentState() {
 		return currentState;
 	}
@@ -100,45 +142,4 @@ public class PossibleAction implements Serializable {
 	public void setRole(String role) {
 		this.role = role;
 	}
-
-	private void writeObject(ObjectOutputStream out) throws IOException {
-		// default serialization
-		out.defaultWriteObject();
-		// write the object
-		out.writeObject(currentState);
-		out.writeObject(action);
-		out.writeObject(outcome);
-		out.writeObject(role);
-	}
-
-	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
-		// default deserialization
-		ois.defaultReadObject();
-
-		currentState = (String) ois.readObject();
-		action = (String) ois.readObject();
-		outcome = (String) ois.readObject();
-		role = (String) ois.readObject();
-	}
-
-	@Override
-	public String toString() {
-		return "Current State: " + currentState + ",Action: " + action + ",Outcome: " + outcome + ",Role State: "
-				+ role;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		PossibleAction other = (PossibleAction) obj;
-
-		return this.currentState.equals(other.currentState) && this.action.equals(other.action)
-				&& this.outcome.equals(other.outcome) && this.role.equals(other.role);
-
-	}
-
-	@Override
-	public int hashCode() {
-		return currentState.hashCode() + action.hashCode() + outcome.hashCode() + role.hashCode();
-	}
-
 }

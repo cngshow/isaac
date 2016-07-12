@@ -61,7 +61,7 @@ import org.xml.sax.SAXException;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.PossibleAction;
 import gov.vha.isaac.metacontent.workflow.StaticStateActionContentStore;
-import gov.vha.isaac.ochre.api.metacontent.MetaContentService.StaticWorkflowContentTypes;
+import gov.vha.isaac.ochre.api.metacontent.MetaContentService.WorkflowContentTypes;
 
 /**
  * Routines enabling access of workflow definition.
@@ -71,14 +71,16 @@ import gov.vha.isaac.ochre.api.metacontent.MetaContentService.StaticWorkflowCont
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowDefinitionUtility {
-	private static final Logger LOG = LogManager.getLogger();
-
+	private static final Logger logger = LogManager.getLogger();
+	 private static final WorkflowDefinitionUtility INSTANCE = new WorkflowDefinitionUtility();
+	 
 	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
 
 	private ProcessDescriptor processDescriptor = null;
 	private ProcessAssetDesc processDefinition = null;
-	private List<Node> processNodes = new ArrayList<Node>();
 
+	// Handling of Nodes
+	private List<Node> processNodes = new ArrayList<Node>();
 	private List<Long> visitedNodes = new ArrayList<>();
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
@@ -90,22 +92,31 @@ public class WorkflowDefinitionUtility {
 	}
 
 	public WorkflowDefinitionUtility(String bpmn2FilePath) {
-		setDefinition(bpmn2FilePath);
+		setDefinition(bpmn2FilePath, false);
 		setNodes(bpmn2FilePath);
+		store.close();
 	}
 
-	public void setDefinition(String bpmn2FilePath) {
+	public static WorkflowDefinitionUtility getInstance() {
+        return INSTANCE;
+    }
+	
+	public void setDefinition(String bpmn2FilePath, boolean closeStore) {
 		String xmlContents;
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
 			processDefinition("test", xmlContents, null, true);
 		} catch (IOException e) {
-			LOG.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
+			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
 	}
 
 	public void setNodes(String bpmn2FilePath) {
+		processNodes.clear();
+		visitedNodes.clear();
+		nodeToOutgoingMap.clear();
+		
 		processNodes(bpmn2FilePath);
 
 		populateActionOutcomesRecords(bpmn2FilePath);
@@ -126,9 +137,9 @@ public class WorkflowDefinitionUtility {
 			StaticStateActionContentStore createdStateActionContent = new StaticStateActionContentStore(actions);
 
 			// Write content into database
-			store.putStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
+			store.putWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
 		} catch (Exception e) {
-			LOG.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);
+			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
 	}

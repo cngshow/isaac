@@ -62,7 +62,7 @@ public class StaticStateActionContentStore implements StorableWorkflowContent {
 			logger.error("Failure to deserialize data into StaticStateActionContentStore", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast StaticStateActionContentStore's fields into String", e);
+			logger.error("Failure to cast StaticStateActionContentStore's fields into Set", e);
 			e.printStackTrace();
 		}
 	}
@@ -91,11 +91,12 @@ public class StaticStateActionContentStore implements StorableWorkflowContent {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
+		int i = 1;
 		for (PossibleAction a : actions) {
-			buf.append(a + "\n");
+			buf.append("\n\tPossible Action #" + i++ + ": " + a + "\n");
 		}
 
-		return "StaticStateActionContentStore:" + buf.toString();
+		return "StaticStateActionContentStore: " + buf.toString();
 	}
 
 	@Override

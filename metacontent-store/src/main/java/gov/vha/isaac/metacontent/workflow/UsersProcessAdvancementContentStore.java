@@ -34,36 +34,35 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
 
 /**
- * Static workflow permissions initialized during reading of WF Definition only
+ * User created workflow advancements initialized at runtime only
  *
- * {@link StaticAuthorRoleContentStore}
+ * {@link UsersProcessAdvancementContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
-	private Integer author;
-	private Set<String> roles = new HashSet<>();
+
+public class UsersProcessAdvancementContentStore implements StorableWorkflowContent {
 
 	private static final Logger logger = LogManager.getLogger();
 
-	public StaticAuthorRoleContentStore(Integer author, Set<String> roles) {
-		this.author = author;
-		this.roles = roles;
+	Set<WorkflowAdvancement> advancements = new HashSet<>();
+
+	public UsersProcessAdvancementContentStore(Set<WorkflowAdvancement> advancements) {
+		this.advancements = advancements;
 	}
 
 	@SuppressWarnings("unchecked")
-	public StaticAuthorRoleContentStore(byte[] data) {
+	public UsersProcessAdvancementContentStore(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
-			this.author = (Integer) in.readObject();
-			this.roles = (HashSet<String>) in.readObject();
+			this.advancements = (Set<WorkflowAdvancement>) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into StaticAuthorRoleContentStore", e);
+			logger.error("Failure to deserialize data into UsersProcessAdvancementContentStore", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast StaticAuthorRoleContentStore's fields into String", e);
+			logger.error("Failure to cast UsersProcessAdvancementContentStore's fields into Set", e);
 			e.printStackTrace();
 		}
 	}
@@ -75,15 +74,13 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 	public byte[] serialize() {
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		ObjectOutput out;
-
 		try {
 			out = new ObjectOutputStream(bos);
-			out.writeObject(author);
-			out.writeObject(roles);
+			out.writeObject(advancements);
 
 			return bos.toByteArray();
 		} catch (IOException e) {
-			logger.error("Failure to serialize data from StaticAuthorRoleContentStore", e);
+			logger.error("Failure to serialize data from UsersProcessAdvancementContentStore", e);
 			e.printStackTrace();
 		}
 
@@ -94,26 +91,22 @@ public class StaticAuthorRoleContentStore implements StorableWorkflowContent {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (String r : roles) {
-			buf.append(r + ",");
+		int i = 1;
+		for (WorkflowAdvancement a : advancements) {
+			buf.append("\n\tWorkflow Advancement #" + i++ + ": " + a + "\n");
 		}
 
-		return "StaticAuthorRoleContentStore:" + "\nAuthor: " + author + "\nRoles: " + buf.toString();
+		return "UsersProcessAdvancementContentStore: " + buf.toString();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		StaticAuthorRoleContentStore other = (StaticAuthorRoleContentStore) obj;
+		UsersProcessAdvancementContentStore other = (UsersProcessAdvancementContentStore) obj;
 
-		return this.author.equals(other.author) && this.roles.equals(other.roles);
-
+		return this.advancements.equals(other.advancements);
 	}
 
-	public Integer getAuthor() {
-		return author;
-	}
-
-	public Set<String> getAuthorRoles() {
-		return roles;
+	public Set<WorkflowAdvancement> getAdvancements() {
+		return advancements;
 	}
 }

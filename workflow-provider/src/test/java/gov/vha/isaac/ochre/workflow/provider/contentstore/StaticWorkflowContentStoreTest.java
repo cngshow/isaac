@@ -29,22 +29,22 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.PossibleAction;
 import gov.vha.isaac.metacontent.workflow.StaticAuthorRoleContentStore;
 import gov.vha.isaac.metacontent.workflow.StaticStateActionContentStore;
-import gov.vha.isaac.ochre.api.metacontent.MetaContentService.StaticWorkflowContentTypes;
+import gov.vha.isaac.ochre.api.metacontent.MetaContentService.WorkflowContentTypes;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowDefinitionUtility;
 
 /**
  * Test both static and user based workflow content as defined in the
  * metacontent-store
  *
- * {@link WorkflowContentStoreTest}
+ * {@link StaticWorkflowContentStoreTest}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowContentStoreTest {
+public class StaticWorkflowContentStoreTest {
 	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 
 	@Test
-	public void testStaticWorkflowStartupStores() throws Exception {
+	public void testWorkflowStartupStores() throws Exception {
 		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", true);
 
 		// Create Initial Content
@@ -59,14 +59,14 @@ public class WorkflowContentStoreTest {
 		StaticStateActionContentStore createdStateActionContent = new StaticStateActionContentStore(actions);
 
 		// Write content into database
-		store.putStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE, createdAuthorRoleContent);
-		store.putStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
+		store.putWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE, createdAuthorRoleContent);
+		store.putWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
 
 		// Read from DB and confirm content is same as created
 		StaticAuthorRoleContentStore pulledAuthorRoleContent = new StaticAuthorRoleContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
+				store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
 		StaticStateActionContentStore pulledStateActionContent = new StaticStateActionContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 
 		Assert.assertTrue(pulledAuthorRoleContent.equals(createdAuthorRoleContent));
 		Assert.assertTrue(pulledStateActionContent.equals(createdStateActionContent));
@@ -75,9 +75,9 @@ public class WorkflowContentStoreTest {
 
 		// Reopen database and confirm content is still same as created
 		pulledAuthorRoleContent = new StaticAuthorRoleContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
+				store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
 		pulledStateActionContent = new StaticStateActionContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		Assert.assertTrue(pulledAuthorRoleContent.equals(createdAuthorRoleContent));
@@ -86,53 +86,53 @@ public class WorkflowContentStoreTest {
 
 		// Remove single type in database
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
-		store.removeStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE);
+		store.removeWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE);
 		store.close();
 
 		// Read from DB and confirm results empty and confirm graceful handling
 		// of already empty workflow content
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
-		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
-		Assert.assertNotNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
+		Assert.assertNotNull(store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 		store.close();
 
 		// Add content to DB once again
 		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		store.putStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE, createdAuthorRoleContent);
-		store.putStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
+		store.putWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE, createdAuthorRoleContent);
+		store.putWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
 		store.close();
 
 		// Reopen database and confirm content is still same as created
 		pulledAuthorRoleContent = new StaticAuthorRoleContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
+				store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
 		pulledStateActionContent = new StaticStateActionContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 		store.close();
 
 		// Open DB with clean-wipe and confirm is empty
 		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
-		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
+		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 		store.close();
 
 		// Read from DB and confirm graceful handling of already empty workflow
 		// content
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);
-		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.AUTHOR_ROLE));
-		Assert.assertNull(store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.AUTHOR_ROLE));
+		Assert.assertNull(store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 		store.close();
 
 	}
 
 	@Test
-	public void testActualStaticWorkflowStartupStores() throws Exception {
-		WorkflowDefinitionUtility util = new WorkflowDefinitionUtility();
+	public void testActualWorkflowStartupStores() throws Exception {
+		WorkflowDefinitionUtility util = WorkflowDefinitionUtility.getInstance();
 
 		util.setNodes(BPMN_FILE_PATH);
 
 		MVStoreMetaContentProvider store = new MVStoreMetaContentProvider(new File("target"), "test", false);
 		StaticStateActionContentStore pulledStateActionContent = new StaticStateActionContentStore(
-				store.getStaticWorkflowContent(StaticWorkflowContentTypes.STATE_ACTION_OUTCOME));
+				store.getWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME));
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				pulledStateActionContent.getPossibleActions().size(), 9);
