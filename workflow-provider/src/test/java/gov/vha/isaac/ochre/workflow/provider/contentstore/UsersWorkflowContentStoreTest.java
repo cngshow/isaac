@@ -19,8 +19,10 @@
 package gov.vha.isaac.ochre.workflow.provider.contentstore;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -61,10 +63,10 @@ public class UsersWorkflowContentStoreTest {
 	@Test
 	public void testUsersProcessCreationStore() throws Exception {
 		// Create Initial Content
-		Set<UUID> components = new HashSet<>();
-		components.add(UUID.randomUUID());
-		components.add(UUID.randomUUID());
-		WorkflowProcess p = new WorkflowProcess(1, 2, components, 3, new Date().getTime());
+		List<Integer> stampSeqs = new ArrayList<>();
+		stampSeqs.add(44);
+		stampSeqs.add(55);
+		WorkflowProcess p = new WorkflowProcess(1, stampSeqs, UUID.randomUUID(), 3, new Date().getTime());
 		Set<WorkflowProcess> processes = new HashSet<>();
 		processes.add(p);
 
@@ -91,10 +93,10 @@ public class UsersWorkflowContentStoreTest {
 
 		// Add another process without committing it to verify not added to
 		// database
-		components.clear();
-		components.add(UUID.randomUUID());
-		components.add(UUID.randomUUID());
-		WorkflowProcess p2 = new WorkflowProcess(2, 4, components, 3, new Date().getTime());
+		stampSeqs.clear();
+		stampSeqs.add(66);
+		stampSeqs.add(77);
+		WorkflowProcess p2 = new WorkflowProcess(2, stampSeqs, UUID.randomUUID(), 3, new Date().getTime());
 		processes.add(p2);
 
 		store = new MVStoreMetaContentProvider(new File("target"), "test", false);

@@ -105,7 +105,7 @@ public class StaticStateActionContentStore implements StorableWorkflowContent {
 
 		return this.actions.equals(other.actions);
 	}
-	
+
 	public Set<PossibleAction> getPossibleActions() {
 		return actions;
 	}

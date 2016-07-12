@@ -34,8 +34,7 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
 
 /**
- * User created workflow processes initialized at runtime
- * only
+ * User created workflow processes initialized at runtime only
  *
  * {@link UsersProcessCreationContentStore}
  *
@@ -46,7 +45,6 @@ public class UsersProcessCreationContentStore implements StorableWorkflowContent
 
 	private static final Logger logger = LogManager.getLogger();
 	Set<WorkflowProcess> processes = new HashSet<>();
-	
 
 	public UsersProcessCreationContentStore(Set<WorkflowProcess> processes) {
 		this.processes = processes;
@@ -97,7 +95,7 @@ public class UsersProcessCreationContentStore implements StorableWorkflowContent
 			buf.append("\n\tWorkflow Process #" + i++ + ": " + p + "\n");
 		}
 
-		return "UsersProcessCreationContentStore: " + buf.toString();				
+		return "UsersProcessCreationContentStore: " + buf.toString();
 	}
 
 	@Override

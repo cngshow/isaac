@@ -24,8 +24,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,15 +42,16 @@ public class WorkflowProcess implements Serializable {
 	private static final Logger logger = LogManager.getLogger();
 
 	private Integer taskId = null;
-	private Integer stampSequence = null;
-	private Set<UUID> components = new HashSet<UUID>();
+	private List<Integer> stampSequences = null;
+	private UUID concept = null;
 	private Integer creator = null;
 	private Long timeCreated = null;
 
-	public WorkflowProcess(Integer taskId, Integer stampSequence, Set<UUID> components, Integer creator, Long timeCreated) {
+	public WorkflowProcess(Integer taskId, List<Integer> stampSequences, UUID concept, Integer creator,
+			Long timeCreated) {
 		this.taskId = taskId;
-		this.stampSequence = stampSequence;
-		this.components = components;
+		this.stampSequences = stampSequences;
+		this.concept = concept;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 	}
@@ -62,8 +62,8 @@ public class WorkflowProcess implements Serializable {
 		try {
 			in = new ObjectInputStream(bis);
 			this.taskId = ((WorkflowProcess) in.readObject()).taskId;
-			this.stampSequence = ((WorkflowProcess) in.readObject()).stampSequence;
-			this.components = ((WorkflowProcess) in.readObject()).components;
+			this.stampSequences = ((WorkflowProcess) in.readObject()).stampSequences;
+			this.concept = ((WorkflowProcess) in.readObject()).concept;
 			this.creator = ((WorkflowProcess) in.readObject()).creator;
 			this.timeCreated = ((WorkflowProcess) in.readObject()).timeCreated;
 		} catch (IOException e) {
@@ -80,8 +80,8 @@ public class WorkflowProcess implements Serializable {
 		out.defaultWriteObject();
 		// write the object
 		out.writeObject(taskId);
-		out.writeObject(stampSequence);
-		out.writeObject(components);
+		out.writeObject(stampSequences);
+		out.writeObject(concept);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 	}
@@ -92,8 +92,8 @@ public class WorkflowProcess implements Serializable {
 		ois.defaultReadObject();
 
 		taskId = (Integer) ois.readObject();
-		stampSequence = (Integer) ois.readObject();
-		components = (Set<UUID>) ois.readObject();
+		stampSequences = (List<Integer>) ois.readObject();
+		concept = (UUID) ois.readObject();
 		creator = (Integer) ois.readObject();
 		timeCreated = (Long) ois.readObject();
 	}
@@ -102,14 +102,14 @@ public class WorkflowProcess implements Serializable {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (UUID uid : components) {
-			buf.append(uid + ", ");
+		for (Integer stampSeq : stampSequences) {
+			buf.append(stampSeq + ", ");
 		}
 
 		return "UsersProcessCreationContentStore:" + 
 			   "\n\t\tTask Id: " + taskId +
-			   "\n\t\tStamp Sequence: " + stampSequence +  
-			   "\n\t\tComponents: " + buf.toString() +  
+			   "\n\t\tStamp Sequence: " + buf.toString() +  
+			   "\n\t\tConcept: " + concept +   
 			   "\n\t\tCreator Id: " + creator +  
 			   "\n\t\tTime Created: " + timeCreated;
 	}
@@ -119,15 +119,34 @@ public class WorkflowProcess implements Serializable {
 		WorkflowProcess other = (WorkflowProcess) obj;
 
 		return this.taskId.equals(other.taskId) &&
-			   this.stampSequence.equals(other.stampSequence) &&
-			   this.components.equals(other.components) &&
+			   this.stampSequences.equals(other.stampSequences) &&
+			   this.concept.equals(other.concept) &&
 			   this.creator.equals(other.creator) &&
 			   this.timeCreated.equals(other.timeCreated);
 	}
 
 	@Override
 	public int hashCode() {
-		return taskId.hashCode() + stampSequence.hashCode() + components.hashCode() + creator.hashCode() + timeCreated.hashCode();
+		return taskId.hashCode() + stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();
 	}
 
+	public Integer getTaskId() {
+		return taskId;
+	}
+
+	public List<Integer> getStampSequences() {
+		return stampSequences;
+	}
+
+	public UUID getConcept() {
+		return concept;
+	}
+
+	public Integer getCreator() {
+		return creator;
+	}
+
+	public Long getTimeCreated() {
+		return timeCreated;
+	}
 }
