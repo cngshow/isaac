@@ -1,0 +1,142 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package gov.vha.isaac.metacontent.workflow.contents;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+
+/**
+ * Definition of Actions to Outcomes based on Roles and Current State
+ *
+ * {@link ProcessDefinition}
+ * {@link StorableWorkflowContents}
+ *
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
+ */
+public class ProcessDefinition implements StorableWorkflowContents {
+	private static final Logger logger = LogManager.getLogger();
+
+	private List<Integer> stampSequences;
+	private UUID concept;
+	private Integer creator;
+	private Long timeCreated;
+
+	public ProcessDefinition(List<Integer> stampSequences, UUID concept, Integer creator,
+			Long timeCreated) {
+		this.stampSequences = stampSequences;
+		this.concept = concept;
+		this.creator = creator;
+		this.timeCreated = timeCreated;
+	}
+
+	public ProcessDefinition(byte[] data) {
+		ByteArrayInputStream bis = new ByteArrayInputStream(data);
+		ObjectInput in;
+		try {
+			in = new ObjectInputStream(bis);
+			this.stampSequences = (List<Integer>) in.readObject();
+			this.concept = (UUID) in.readObject();
+			this.creator = (Integer) in.readObject();
+			this.timeCreated = (Long) in.readObject();
+		} catch (IOException e) {
+			logger.error("Failure to deserialize data into ProcessDefinition", e);
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			logger.error("Failure to cast ProcessDefinition fields", e);
+			e.printStackTrace();
+		}
+	}
+
+	public List<Integer> getStampSequences() {
+		return stampSequences;
+	}
+
+	public UUID getConcept() {
+		return concept;
+	}
+
+	public Integer getCreator() {
+		return creator;
+	}
+
+	public Long getTimeCreated() {
+		return timeCreated;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
+	 * serialize()
+	 */
+	@Override
+	public byte[] serialize() throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream out = new ObjectOutputStream(bos);
+
+		// write the object
+		out.writeObject(stampSequences);
+		out.writeObject(concept);
+		out.writeObject(creator);
+		out.writeObject(timeCreated);
+
+		return bos.toByteArray();
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer buf = new StringBuffer();
+
+		for (Integer stampSeq : stampSequences) {
+			buf.append(stampSeq + ", ");
+		}
+
+		return "\n\t\tStamp Sequence: " + buf.toString() +  
+			   "\n\t\tConcept: " + concept.toString() +   
+			   "\n\t\tCreator Id: " + creator +  
+			   "\n\t\tTime Created: " + timeCreated;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		ProcessDefinition other = (ProcessDefinition) obj;
+
+		return this.stampSequences.equals(other.stampSequences) &&
+			   this.concept.equals(other.concept) &&
+			   this.creator.equals(other.creator) &&
+			   this.timeCreated.equals(other.timeCreated);
+	}
+
+	@Override
+	public int hashCode() {
+		return stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();
+	}
+}

@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.jvnet.hk2.annotations.Contract;
 
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
 
 /**
  * {@link MetaContentService}
@@ -34,10 +33,7 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Contract
-public interface MetaContentService
-{
-	static enum WorkflowContentTypes {ADVANCEMENT, AUTHOR_ROLE, PROCESS_CREATION, STATE_ACTION_OUTCOME};
-
+public interface MetaContentService {
 	/**
 	 * Call prior to JVM exit for safe shutdown
 	 */
@@ -61,32 +57,6 @@ public interface MetaContentService
 	 * Erase any stored user prefs
 	 */
 	public void removeUserPrefs(int userId);
-	
-	/**
-	 * @param type - type of workflow content to add
-	 * @param workflowContent - workflow content to store
-	 * @return the old value, or null, if no old value
-	 */
-	public byte[] putWorkflowContent(WorkflowContentTypes type, StorableWorkflowContent workflowContent);
-
-	/**
-	 * @param type - type of workflow content to read
-	 * @return the byte[] that stores the workflow content, which was obtained by calling {@link StorableWorkflowContent#serialize()}
-	 * This value should be able to be passed into the concrete implementation constructor of a class that implements {@link StorableWorkflowContent}
-	 */
-	public byte[] getWorkflowContent(WorkflowContentTypes type);
-	
-	/**
-	 * @param type - type of workflow content
-	 * Erase stored workflow content of given type
-	 */
-	void removeWorkflowContent(WorkflowContentTypes type);
-
-	/**
-	 * Erase all stored workflow content
-	 */
-	public void removeWorkflowContent();
-
 
 	/**
 	 * Open or create a new data store.  The type of the key and value must be specified.

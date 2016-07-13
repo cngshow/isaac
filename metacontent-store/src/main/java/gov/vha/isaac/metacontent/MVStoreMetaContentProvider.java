@@ -34,7 +34,6 @@ import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContent;
 
 /**
  * 
@@ -51,11 +50,9 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	private final Logger LOG = LogManager.getLogger();
 
 	private static final String USER_PREFS_STORE = "_userPrefs_";
-	private static final String WORKFLOW_STORE = "_workflow_";
 
 	MVStore store;
 	MVMap<Integer, byte[]> userPrefsMap;
-	MVMap<WorkflowContentTypes, byte[]> workflowContentMap;
 
 	@SuppressWarnings("unused")
 	private MVStoreMetaContentProvider() {
@@ -102,7 +99,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 		store = new MVStore.Builder().fileName(dataFile.getAbsolutePath()).open();
 		// store.setVersionsToKeep(0); TODO check group answer
 		userPrefsMap = store.<Integer, byte[]> openMap(USER_PREFS_STORE);
-		workflowContentMap = store.<WorkflowContentTypes, byte[]> openMap(WORKFLOW_STORE);
 		return this;
 	}
 
@@ -145,52 +141,11 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	}
 
 	/**
-	 * @see gov.vha.isaac.ochre.api.metacontent.MetaContentService#putWorkflowContent(WorkflowContentTypes,
-	 *      gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableWorkflowContent)
-	 */
-	@Override
-	public byte[] putWorkflowContent(WorkflowContentTypes type, StorableWorkflowContent workflowContent) {
-		return workflowContentMap.put(type, workflowContent.serialize());
-	}
-
-	/**
-	 * @see gov.vha.isaac.ochre.api.metacontent.MetaContentService#getWorkflowContent(WorkflowContentTypes)
-	 */
-	@Override
-	public byte[] getWorkflowContent(WorkflowContentTypes type) {
-		try {
-			return workflowContentMap.get(type);
-		} catch (NullPointerException e) {
-			return null;
-		}
-	}
-
-	/**
-	 * @see gov.vha.isaac.ochre.api.metacontent.MetaContentService#removeWorkflowContent(WorkflowContentTypes)
-	 */
-	@Override
-	public void removeWorkflowContent(WorkflowContentTypes type) {
-		try {
-			workflowContentMap.remove(type);
-		} catch (NullPointerException e) {
-			LOG.info("Workflow content already empty for Type: " + type + ".  No action taken");
-		}
-	}
-
-	/**
-	 * @see gov.vha.isaac.ochre.api.metacontent.MetaContentService#removeWorkflowContent()
-	 */
-	@Override
-	public void removeWorkflowContent() {
-		workflowContentMap.clear();
-	}
-
-	/**
 	 * @see gov.vha.isaac.ochre.api.metacontent.MetaContentService#openStore(java.lang.String)
 	 */
 	@Override
 	public <K, V> ConcurrentMap<K, V> openStore(String storeName) {
-		if (storeName.equals(USER_PREFS_STORE) || storeName.equals(WORKFLOW_STORE)) {
+		if (storeName.equals(USER_PREFS_STORE)) {
 			throw new IllegalArgumentException("reserved store name");
 		}
 		return store.<K, V> openMap(storeName);
@@ -201,7 +156,7 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	 */
 	@Override
 	public void removeStore(String storeName) {
-		if (storeName.equals(USER_PREFS_STORE) || storeName.equals(WORKFLOW_STORE)) {
+		if (storeName.equals(USER_PREFS_STORE)) {
 			throw new IllegalArgumentException("reserved store name");
 		}
 		store.removeMap(store.openMap(storeName));

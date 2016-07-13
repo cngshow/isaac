@@ -19,13 +19,15 @@
 package gov.vha.isaac.ochre.api.metacontent.workflow;
 
 /**
- * {@link StorableWorkflowContent}
+ * {@link StorableWorkflowContents}
  *
- * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
  */
-public interface StorableWorkflowContent {
+import java.io.IOException;
+
+public interface StorableWorkflowContents {
 	/**
 	 * Turn the concrete class into a suitable byte[] for storage
 	 */
-	public byte[] serialize();
+	public byte[] serialize() throws IOException;
 }
