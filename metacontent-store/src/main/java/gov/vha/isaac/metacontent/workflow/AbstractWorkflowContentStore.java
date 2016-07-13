@@ -30,12 +30,24 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
-// TODO: Auto-generated Javadoc
 /**
- * The Class AbstractWorkflowContentStore.
+ * Abstract Content Store specific to Workflow to avoid repeated functionality.
+ * 
+ * {@link AuthorPermissionWorkflowContentStore}
+ * {@link AvailableActionWorkflowContentStore}
+ * {@link HistoricalWorkflowContentStore}
+ * {@link ProcessDefinitionWorkflowContentStore}
+ * 
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowContentStore {
-	static enum WorkflowContentStoreType {AUTHOR_PERMISSION, AVAILABLE_ACTION, HISTORICAL_WORKFLOW, PROCESS_DEFINITION};
+
+	/**
+	 * The Enum WorkflowContentStoreType.
+	 */
+	static enum WorkflowContentStoreType {
+		AUTHOR_PERMISSION, AVAILABLE_ACTION, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
+	};
 
 	/** The map. */
 	private ConcurrentMap<UUID, byte[]> map = null;
@@ -49,7 +61,10 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Instantiates a new abstract workflow content store.
 	 *
-	 * @param store the store
+	 * @param store
+	 *            the store
+	 * @param type
+	 *            the type
 	 */
 	public AbstractWorkflowContentStore(MVStoreMetaContentProvider store, WorkflowContentStoreType type) {
 		if (this.store == null) {
@@ -64,7 +79,8 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Gets the entry.
 	 *
-	 * @param key the key
+	 * @param key
+	 *            the key
 	 * @return the entry
 	 */
 	abstract public Object getEntry(UUID key);
@@ -88,7 +104,8 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Adds the entry.
 	 *
-	 * @param entry the entry
+	 * @param entry
+	 *            the entry
 	 * @return the uuid
 	 */
 	public UUID addEntry(StorableWorkflowContents entry) {
@@ -107,8 +124,10 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Update entry.
 	 *
-	 * @param key the key
-	 * @param entry the entry
+	 * @param key
+	 *            the key
+	 * @param entry
+	 *            the entry
 	 */
 	public void updateEntry(UUID key, StorableWorkflowContents entry) {
 		try {
@@ -122,7 +141,8 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Removes the entry.
 	 *
-	 * @param key the key
+	 * @param key
+	 *            the key
 	 */
 	public void removeEntry(UUID key) {
 		map.remove(key);
@@ -138,7 +158,8 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Gets the generic entry.
 	 *
-	 * @param key the key
+	 * @param key
+	 *            the key
 	 * @return the generic entry
 	 */
 	protected byte[] getGenericEntry(UUID key) {
@@ -166,13 +187,19 @@ public abstract class AbstractWorkflowContentStore {
 	/**
 	 * Gets the new uuid.
 	 *
-	 * @param hashCode the hash code
+	 * @param hashCode
+	 *            the hash code
 	 * @return the new uuid
 	 */
 	private UUID getNewUUID(int hashCode) {
 		return UUID.randomUUID();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		AbstractWorkflowContentStore other = (AbstractWorkflowContentStore) obj;

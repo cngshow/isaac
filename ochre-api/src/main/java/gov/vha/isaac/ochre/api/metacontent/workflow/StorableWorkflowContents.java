@@ -19,15 +19,28 @@
 package gov.vha.isaac.ochre.api.metacontent.workflow;
 
 /**
- * {@link StorableWorkflowContents}
+ * Entries for Workflow Content Store
+ * 
+ * {@link AvailableAction}
+ * {@link AvailableAction}
+ * {@link HistoricalWorkflow} 
+ * {@link ProcessDefinition}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
  */
 import java.io.IOException;
 
+/**
+ * The Interface StorableWorkflowContents.
+ */
 public interface StorableWorkflowContents {
+
 	/**
-	 * Turn the concrete class into a suitable byte[] for storage
+	 * Turn the concrete class into a suitable byte[] for storage.
+	 *
+	 * @return the byte[]
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
 	 */
 	public byte[] serialize() throws IOException;
 }

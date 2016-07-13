@@ -27,14 +27,13 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDefinition;
 
 /**
- * User created workflow processes initialized at runtime only
+ * Dynamic workflow processes populated at runtime only
  *
  * {@link ProcessDefinitionWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-
 public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowContentStore {
 
 	public ProcessDefinitionWorkflowContentStore(MVStoreMetaContentProvider store) {
@@ -72,7 +71,9 @@ public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowConte
 		return retSet;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

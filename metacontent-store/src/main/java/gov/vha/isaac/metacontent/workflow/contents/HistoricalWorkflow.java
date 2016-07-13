@@ -32,9 +32,9 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Storage of workflow advancements executed by all users
+ * Storage of workflow history
  * 
- * {@link HistoricalWorkflow} {@link StorableWorkflowContents}.
+ * {@link HistoricalWorkflow} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */

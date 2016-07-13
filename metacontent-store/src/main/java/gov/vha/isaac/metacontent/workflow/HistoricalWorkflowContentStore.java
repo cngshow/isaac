@@ -27,35 +27,42 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.HistoricalWorkflow;
 
 /**
- * User created workflow advancements initialized at runtime only
- *
+ * Dynamic workflow history populated at runtime only
+ * 
  * {@link HistoricalWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-
 public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore {
-	
+
 	/**
 	 * Instantiates a new users process advancement content store.
 	 *
-	 * @param store the store
+	 * @param store
+	 *            the store
 	 */
 	public HistoricalWorkflowContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.HISTORICAL_WORKFLOW);
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#getEntry(java.util.UUID)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#getEntry(
+	 * java.util.UUID)
 	 */
 	@Override
 	public HistoricalWorkflow getEntry(UUID key) {
 		return new HistoricalWorkflow(getGenericEntry(key));
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#getAllEntries()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#
+	 * getAllEntries()
 	 */
 	@Override
 	public Set<HistoricalWorkflow> getAllEntries() {
@@ -70,7 +77,9 @@ public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore
 		return retSet;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

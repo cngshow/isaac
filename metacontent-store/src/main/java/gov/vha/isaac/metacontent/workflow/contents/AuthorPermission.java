@@ -34,27 +34,28 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Roles available to a given author
  * 
- * {@link AvailableAction}
- * {@link StorableWorkflowContents}
+ * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class AuthorPermission implements StorableWorkflowContents {
-	
+
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
 	/** The author. */
 	private Integer author;
-	
+
 	/** The roles. */
 	private Set<String> roles;
 
 	/**
 	 * Instantiates a new author permission.
 	 *
-	 * @param author the author
-	 * @param roles the roles
+	 * @param author
+	 *            the author
+	 * @param roles
+	 *            the roles
 	 */
 	public AuthorPermission(Integer author, Set<String> roles) {
 		this.author = author;
@@ -64,7 +65,8 @@ public class AuthorPermission implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new author permission.
 	 *
-	 * @param data the data
+	 * @param data
+	 *            the data
 	 */
 	public AuthorPermission(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -127,11 +129,11 @@ public class AuthorPermission implements StorableWorkflowContents {
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		
+
 		for (String r : roles) {
 			buf.append(r + ", ");
 		}
-		
+
 		return "\n\t\tAuthor: " + author + "\n\t\tRoles: " + buf.toString();
 	}
 

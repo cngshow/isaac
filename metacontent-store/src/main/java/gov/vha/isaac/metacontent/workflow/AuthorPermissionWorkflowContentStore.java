@@ -26,10 +26,9 @@ import java.util.UUID;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AuthorPermission;
 
-
 /**
- * Static workflow permissions initialized during reading of WF Definition only
- *
+ * Statically populated author permissions initialized during reading of WF Definition only
+ * 
  * {@link AuthorPermissionWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
@@ -37,15 +36,34 @@ import gov.vha.isaac.metacontent.workflow.contents.AuthorPermission;
  */
 public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
 
+	/**
+	 * Instantiates a new author permission workflow content store.
+	 *
+	 * @param store
+	 *            the store
+	 */
 	public AuthorPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.AUTHOR_PERMISSION);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#getEntry(
+	 * java.util.UUID)
+	 */
 	@Override
 	public AuthorPermission getEntry(UUID key) {
 		return new AuthorPermission(getGenericEntry(key));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see gov.vha.isaac.metacontent.workflow.AbstractWorkflowContentStore#
+	 * getAllEntries()
+	 */
 	@Override
 	public Set<AuthorPermission> getAllEntries() {
 		Set<AuthorPermission> retSet = new HashSet<>();
@@ -59,6 +77,11 @@ public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowConten
 		return retSet;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();

@@ -33,29 +33,54 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Definition of Actions to Outcomes based on Roles and Current State
- *
- * {@link ProcessDefinition}
- * {@link StorableWorkflowContents}
+ * Definition of process when new workflow instance created
+ * 
+ * {@link ProcessDefinition} {@link StorableWorkflowContents}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessDefinition implements StorableWorkflowContents {
+
+	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
+	/** The stamp sequences. */
 	private List<Integer> stampSequences;
+
+	/** The concept. */
 	private UUID concept;
+
+	/** The creator. */
 	private Integer creator;
+
+	/** The time created. */
 	private Long timeCreated;
 
-	public ProcessDefinition(List<Integer> stampSequences, UUID concept, Integer creator,
-			Long timeCreated) {
+	/**
+	 * Instantiates a new process definition.
+	 *
+	 * @param stampSequences
+	 *            the stamp sequences
+	 * @param concept
+	 *            the concept
+	 * @param creator
+	 *            the creator
+	 * @param timeCreated
+	 *            the time created
+	 */
+	public ProcessDefinition(List<Integer> stampSequences, UUID concept, Integer creator, Long timeCreated) {
 		this.stampSequences = stampSequences;
 		this.concept = concept;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 	}
 
+	/**
+	 * Instantiates a new process definition.
+	 *
+	 * @param data
+	 *            the data
+	 */
 	public ProcessDefinition(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
@@ -74,18 +99,38 @@ public class ProcessDefinition implements StorableWorkflowContents {
 		}
 	}
 
+	/**
+	 * Gets the stamp sequences.
+	 *
+	 * @return the stamp sequences
+	 */
 	public List<Integer> getStampSequences() {
 		return stampSequences;
 	}
 
+	/**
+	 * Gets the concept.
+	 *
+	 * @return the concept
+	 */
 	public UUID getConcept() {
 		return concept;
 	}
 
+	/**
+	 * Gets the creator.
+	 *
+	 * @return the creator
+	 */
 	public Integer getCreator() {
 		return creator;
 	}
 
+	/**
+	 * Gets the time created.
+	 *
+	 * @return the time created
+	 */
 	public Long getTimeCreated() {
 		return timeCreated;
 	}
@@ -111,6 +156,11 @@ public class ProcessDefinition implements StorableWorkflowContents {
 		return bos.toByteArray();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
@@ -119,22 +169,28 @@ public class ProcessDefinition implements StorableWorkflowContents {
 			buf.append(stampSeq + ", ");
 		}
 
-		return "\n\t\tStamp Sequence: " + buf.toString() +  
-			   "\n\t\tConcept: " + concept.toString() +   
-			   "\n\t\tCreator Id: " + creator +  
-			   "\n\t\tTime Created: " + timeCreated;
+		return "\n\t\tStamp Sequence: " + buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: "
+				+ creator + "\n\t\tTime Created: " + timeCreated;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		ProcessDefinition other = (ProcessDefinition) obj;
 
-		return this.stampSequences.equals(other.stampSequences) &&
-			   this.concept.equals(other.concept) &&
-			   this.creator.equals(other.creator) &&
-			   this.timeCreated.equals(other.timeCreated);
+		return this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
+				&& this.creator.equals(other.creator) && this.timeCreated.equals(other.timeCreated);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
 	@Override
 	public int hashCode() {
 		return stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();

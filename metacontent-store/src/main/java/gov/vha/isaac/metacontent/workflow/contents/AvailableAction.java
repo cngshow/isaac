@@ -33,8 +33,7 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of Actions to Outcomes based on Roles and Current State
  * 
- * {@link AvailableAction}
- * {@link StorableWorkflowContents}
+ * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -132,10 +131,6 @@ public class AvailableAction implements StorableWorkflowContents {
 	 */
 	public String getRole() {
 		return role;
-	}
-
-	public void setRole(String role) {
-		this.role = role;
 	}
 
 	/*

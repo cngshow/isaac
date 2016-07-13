@@ -27,15 +27,13 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
- * Static workflow possible actions initialized during reading of WF Definition
- * only
+* Statically populated available actions initialized during reading of WF Definition only
  * 
  * {@link AvailableActionWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-
 public class AvailableActionWorkflowContentStore extends AbstractWorkflowContentStore {
 
 	/**

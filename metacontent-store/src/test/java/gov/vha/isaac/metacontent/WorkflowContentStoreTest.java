@@ -44,24 +44,41 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDefinition;
 /**
  * Test both static and user based workflow content as defined in the
  * metacontent-store
- *
- * {@link WorkflowContentStoreTest}
+ * 
+ * {@link AuthorPermissionWorkflowContentStore}
+ * {@link AvailableActionWorkflowContentStore}
+ * {@link HistoricalWorkflowContentStore}
+ * {@link ProcessDefinitionWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowContentStoreTest {
+
+	/** The store. */
 	private MVStoreMetaContentProvider store;
 
+	/**
+	 * Sets the up.
+	 */
 	@Before
 	public void setUp() {
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", true);
 	}
 
+	/**
+	 * Tear down.
+	 */
 	@After
 	public void tearDown() {
 		store.close();
 	}
 
+	/**
+	 * Test author permission store.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
 	@Test
 	public void testAuthorPermissionStore() throws Exception {
 		Set<String> roles1 = new HashSet<>();
@@ -71,16 +88,16 @@ public class WorkflowContentStoreTest {
 
 		// New scope to ensure closing store
 		AuthorPermissionWorkflowContentStore availableActionStore = new AuthorPermissionWorkflowContentStore(store);
-    
+
 		// Add new entry
 		UUID key1 = availableActionStore.addEntry(createdEntry1);
 		store.close();
-		
+
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		availableActionStore = new AuthorPermissionWorkflowContentStore(store);
 		AuthorPermission pulledEntry1 = availableActionStore.getEntry(key1);
-		
+
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
@@ -108,17 +125,15 @@ public class WorkflowContentStoreTest {
 		AuthorPermission updatedEntry2 = new AuthorPermission(2, roles3);
 		availableActionStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
-		
+
 		pulledEntry2 = availableActionStore.getEntry(key2);
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
-		
+
 		Assert.assertEquals(createdEntry2.getAuthor(), pulledEntry2.getAuthor());
 		Assert.assertNotEquals(createdEntry2.getRoles(), pulledEntry2.getRoles());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
-		
-		
 		// Test Removing single entry
 		availableActionStore.removeEntry(key2);
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
@@ -137,23 +152,29 @@ public class WorkflowContentStoreTest {
 		allEntries = availableActionStore.getAllEntries();
 		Assert.assertEquals(allEntries.size(), 0);
 	}
-	
+
+	/**
+	 * Test available action store.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
 	@Test
 	public void testAvailableActionStore() throws Exception {
 		AvailableAction createdEntry1 = new AvailableAction("EDIT", "REVIEW", "REVIEW", "REVIEWER");
 
 		// New scope to ensure closing store
 		AvailableActionWorkflowContentStore availableActionStore = new AvailableActionWorkflowContentStore(store);
-    
+
 		// Add new entry
 		UUID key1 = availableActionStore.addEntry(createdEntry1);
 		store.close();
-		
+
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		availableActionStore = new AvailableActionWorkflowContentStore(store);
 		AvailableAction pulledEntry1 = availableActionStore.getEntry(key1);
-		
+
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
@@ -174,10 +195,10 @@ public class WorkflowContentStoreTest {
 		AvailableAction updatedEntry2 = new AvailableAction("REVIEW", "Ready for Approval", "APPROVE", "APPROVER");
 		availableActionStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
-		
+
 		pulledEntry2 = availableActionStore.getEntry(key2);
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
-		
+
 		Assert.assertEquals(createdEntry2.getCurrentState(), pulledEntry2.getCurrentState());
 		Assert.assertEquals(createdEntry2.getOutcome(), pulledEntry2.getOutcome());
 		Assert.assertEquals(createdEntry2.getRole(), pulledEntry2.getRole());
@@ -185,8 +206,6 @@ public class WorkflowContentStoreTest {
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
-		
-		
 		// Test Removing single entry
 		availableActionStore.removeEntry(key2);
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
@@ -206,27 +225,35 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(allEntries.size(), 0);
 	}
 
+	/**
+	 * Test historical workflow store.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
 	@Test
 	public void testHistoricalWorkflowStore() throws Exception {
-		HistoricalWorkflow createdEntry1 = new HistoricalWorkflow(UUID.randomUUID(), 1, new Date().getTime(), "Edit", "Review", "Ready for Approval", "No issues found");
+		HistoricalWorkflow createdEntry1 = new HistoricalWorkflow(UUID.randomUUID(), 1, new Date().getTime(), "Edit",
+				"Review", "Ready for Approval", "No issues found");
 
 		// New scope to ensure closing store
 		HistoricalWorkflowContentStore historicalWorkflowStore = new HistoricalWorkflowContentStore(store);
-    
+
 		// Add new entry
 		UUID key1 = historicalWorkflowStore.addEntry(createdEntry1);
 		store.close();
-		
+
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		historicalWorkflowStore = new HistoricalWorkflowContentStore(store);
 		HistoricalWorkflow pulledEntry1 = historicalWorkflowStore.getEntry(key1);
-		
+
 		Assert.assertEquals(historicalWorkflowStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		HistoricalWorkflow createdEntry2 = new HistoricalWorkflow(UUID.randomUUID(), 2, new Date().getTime(), "Commit", "Edit", "Ready for Review", "");
+		HistoricalWorkflow createdEntry2 = new HistoricalWorkflow(UUID.randomUUID(), 2, new Date().getTime(), "Commit",
+				"Edit", "Ready for Review", "");
 		UUID key2 = historicalWorkflowStore.addEntry(createdEntry2);
 		Assert.assertEquals(historicalWorkflowStore.getNumberOfEntries(), 2);
 
@@ -239,13 +266,15 @@ public class WorkflowContentStoreTest {
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		HistoricalWorkflow updatedEntry2 = new HistoricalWorkflow(createdEntry2.getTaskId(), 2, createdEntry2.getTimeAdvanced(), "Commit", "Edit", "Ready for Review", "Added description I think is missing");
+		HistoricalWorkflow updatedEntry2 = new HistoricalWorkflow(createdEntry2.getTaskId(), 2,
+				createdEntry2.getTimeAdvanced(), "Commit", "Edit", "Ready for Review",
+				"Added description I think is missing");
 		historicalWorkflowStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
-		
+
 		pulledEntry2 = historicalWorkflowStore.getEntry(key2);
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
-		
+
 		Assert.assertEquals(createdEntry2.getTaskId(), pulledEntry2.getTaskId());
 		Assert.assertEquals(createdEntry2.getAdvancer(), pulledEntry2.getAdvancer());
 		Assert.assertEquals(createdEntry2.getTimeAdvanced(), pulledEntry2.getTimeAdvanced());
@@ -256,8 +285,6 @@ public class WorkflowContentStoreTest {
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
-		
-		
 		// Test Removing single entry
 		historicalWorkflowStore.removeEntry(key2);
 		Assert.assertEquals(historicalWorkflowStore.getNumberOfEntries(), 1);
@@ -277,6 +304,12 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(allEntries.size(), 0);
 	}
 
+	/**
+	 * Test process definition store.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
 	@Test
 	public void testProcessDefinitionStore() throws Exception {
 		List<Integer> sequences1 = new ArrayList<>();
@@ -286,16 +319,16 @@ public class WorkflowContentStoreTest {
 
 		// New scope to ensure closing store
 		ProcessDefinitionWorkflowContentStore processDefinitionStore = new ProcessDefinitionWorkflowContentStore(store);
-    
+
 		// Add new entry
 		UUID key1 = processDefinitionStore.addEntry(createdEntry1);
 		store.close();
-		
+
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		processDefinitionStore = new ProcessDefinitionWorkflowContentStore(store);
 		ProcessDefinition pulledEntry1 = processDefinitionStore.getEntry(key1);
-		
+
 		Assert.assertEquals(processDefinitionStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
@@ -317,13 +350,14 @@ public class WorkflowContentStoreTest {
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		ProcessDefinition updatedEntry2 = new ProcessDefinition(sequences2, UUID.randomUUID(), 3, createdEntry2.getTimeCreated());
+		ProcessDefinition updatedEntry2 = new ProcessDefinition(sequences2, UUID.randomUUID(), 3,
+				createdEntry2.getTimeCreated());
 		processDefinitionStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
-		
+
 		pulledEntry2 = processDefinitionStore.getEntry(key2);
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
-		
+
 		Assert.assertEquals(createdEntry2.getStampSequences(), pulledEntry2.getStampSequences());
 		Assert.assertEquals(createdEntry2.getCreator(), pulledEntry2.getCreator());
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
@@ -331,8 +365,6 @@ public class WorkflowContentStoreTest {
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
-		
-		
 		// Test Removing single entry
 		processDefinitionStore.removeEntry(key2);
 		Assert.assertEquals(processDefinitionStore.getNumberOfEntries(), 1);
