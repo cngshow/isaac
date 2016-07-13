@@ -25,6 +25,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +35,9 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Roles available to a given author
  * 
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store.
+ * Used to support different roles for different workflow definitions.
+ *
  * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -42,6 +46,9 @@ public class AuthorPermission implements StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
+
+	/** The definition id. */
+	private UUID definitionId;
 
 	/** The author. */
 	private Integer author;
@@ -52,12 +59,15 @@ public class AuthorPermission implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new author permission.
 	 *
+	 * @param definitionId
+	 *            the definition id
 	 * @param author
 	 *            the author
 	 * @param roles
 	 *            the roles
 	 */
-	public AuthorPermission(Integer author, Set<String> roles) {
+	public AuthorPermission(UUID definitionId, Integer author, Set<String> roles) {
+		this.definitionId = definitionId;
 		this.author = author;
 		this.roles = roles;
 	}
@@ -73,6 +83,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.definitionId = (UUID) in.readObject();
 			this.author = (Integer) in.readObject();
 			this.roles = (Set<String>) in.readObject();
 		} catch (IOException e) {
@@ -82,6 +93,15 @@ public class AuthorPermission implements StorableWorkflowContents {
 			logger.error("Failure to cast AuthorPermission fields into String", e);
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Gets the definition Id.
+	 *
+	 * @return the definition Id
+	 */
+	public UUID getDefinitionId() {
+		return definitionId;
 	}
 
 	/**
@@ -115,6 +135,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(definitionId);
 		out.writeObject(author);
 		out.writeObject(roles);
 
@@ -134,7 +155,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-		return "\n\t\tAuthor: " + author + "\n\t\tRoles: " + buf.toString();
+		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tAuthor: " + author + "\n\t\tRoles: " + buf.toString();
 	}
 
 	/*
@@ -146,7 +167,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AuthorPermission other = (AuthorPermission) obj;
 
-		return this.author.equals(other.author) && this.roles.equals(other.roles);
+		return this.definitionId.equals(other.definitionId) && this.author.equals(other.author) && this.roles.equals(other.roles);
 
 	}
 
@@ -157,6 +178,6 @@ public class AuthorPermission implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return author.hashCode() + roles.hashCode();
+		return definitionId.hashCode() + author.hashCode() + roles.hashCode();
 	}
 }

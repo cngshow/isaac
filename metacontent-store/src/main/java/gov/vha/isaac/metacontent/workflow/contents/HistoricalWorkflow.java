@@ -36,6 +36,8 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * 
  * {@link HistoricalWorkflow} {@link StorableWorkflowContents}
  *
+ * NOTE: The processId is the Key of the Process Definition Content Store.
+ *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class HistoricalWorkflow implements StorableWorkflowContents {
@@ -43,8 +45,8 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
-	/** The task id. */
-	private UUID taskId;
+	/** The process id. */
+	private UUID processId;
 
 	/** The advancer. */
 	private Integer advancer;
@@ -67,8 +69,8 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new workflow advancement.
 	 *
-	 * @param taskId
-	 *            the task id
+	 * @param processId
+	 *            the process id
 	 * @param advancer
 	 *            the advancer
 	 * @param timeAdvanced
@@ -82,9 +84,9 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	 * @param comment
 	 *            the comment
 	 */
-	public HistoricalWorkflow(UUID taskId, Integer advancer, Long timeAdvanced, String state, String action,
+	public HistoricalWorkflow(UUID processId, Integer advancer, Long timeAdvanced, String state, String action,
 			String outcome, String comment) {
-		this.taskId = taskId;
+		this.processId = processId;
 		this.advancer = advancer;
 		this.timeAdvanced = timeAdvanced;
 		this.state = state;
@@ -104,7 +106,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
-			this.taskId = (UUID) in.readObject();
+			this.processId = (UUID) in.readObject();
 			this.advancer = (Integer) in.readObject();
 			this.timeAdvanced = (Long) in.readObject();
 			this.state = (String) in.readObject();
@@ -121,12 +123,12 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the task id.
+	 * Gets the process id.
 	 *
-	 * @return the task id
+	 * @return the process id
 	 */
-	public UUID getTaskId() {
-		return taskId;
+	public UUID getProcessId() {
+		return processId;
 	}
 
 	/**
@@ -196,7 +198,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
-		out.writeObject(taskId);
+		out.writeObject(processId);
 		out.writeObject(advancer);
 		out.writeObject(timeAdvanced);
 		out.writeObject(state);
@@ -214,7 +216,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tTask Id: " + taskId + "\n\t\tAdvancer Id: " + advancer + "\n\t\tTime Advanced: " + timeAdvanced
+		return "\n\t\tProcess Id: " + processId + "\n\t\tAdvancer Id: " + advancer + "\n\t\tTime Advanced: " + timeAdvanced
 				+ "\n\t\tState: " + state + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tComment: "
 				+ comment;
 	}
@@ -228,7 +230,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		HistoricalWorkflow other = (HistoricalWorkflow) obj;
 
-		return this.taskId.equals(other.taskId) && this.advancer.equals(other.advancer)
+		return this.processId.equals(other.processId) && this.advancer.equals(other.advancer)
 				&& this.timeAdvanced.equals(other.timeAdvanced) && this.state.equals(other.state)
 				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
 				&& this.comment.equals(other.comment);
@@ -241,7 +243,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return taskId.hashCode() + advancer.hashCode() + timeAdvanced.hashCode() + state.hashCode() + action.hashCode()
+		return processId.hashCode() + advancer.hashCode() + timeAdvanced.hashCode() + state.hashCode() + action.hashCode()
 				+ outcome.hashCode() + comment.hashCode();
 	}
 }

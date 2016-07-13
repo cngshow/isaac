@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.workflow.provider;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -34,11 +35,11 @@ import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 /**
  * Test the WorkflowDefinitionUtility class
  * 
- * {@link WorkflowDefinitionUtility}.
+ * {@link ImportBpmn2FileUtility}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowStartupTest {
+public class ImportBpmn2FileTest {
 
 	/** The bpmn file path. */
 	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
@@ -52,7 +53,7 @@ public class WorkflowStartupTest {
 	@Before
 	public void setUp() {
 		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		new WorkflowDefinitionUtility(store, BPMN_FILE_PATH);
+		new ImportBpmn2FileUtility(store, BPMN_FILE_PATH);
 	}
 
 	/**
@@ -82,7 +83,14 @@ public class WorkflowStartupTest {
 		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
+		UUID definitionId = null;
+
 		for (AvailableAction entry : createdStateActionCdontent.getAllEntries()) {
+			if (definitionId == null) {
+				definitionId = entry.getDefinitionId();
+			}
+			
+			Assert.assertEquals(definitionId, entry.getDefinitionId());
 			Assert.assertTrue(possibleRoles.contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
 			Assert.assertTrue(possibleStates.contains(entry.getCurrentState()));

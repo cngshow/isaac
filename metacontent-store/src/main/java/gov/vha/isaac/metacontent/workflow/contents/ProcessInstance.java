@@ -35,14 +35,20 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of process when new workflow instance created
  * 
- * {@link ProcessDefinition} {@link StorableWorkflowContents}.
+ * {@link ProcessInstance} {@link StorableWorkflowContents}.
+ *
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store as
+ * multiple process instances will exist for a single Workflow Definition
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDefinition implements StorableWorkflowContents {
+public class ProcessInstance implements StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
+
+	/** The definition id. */
+	private UUID definitionId;
 
 	/** The stamp sequences. */
 	private List<Integer> stampSequences;
@@ -59,6 +65,8 @@ public class ProcessDefinition implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new process definition.
 	 *
+	 * @param definitionId
+	 *            the definition id
 	 * @param stampSequences
 	 *            the stamp sequences
 	 * @param concept
@@ -68,7 +76,8 @@ public class ProcessDefinition implements StorableWorkflowContents {
 	 * @param timeCreated
 	 *            the time created
 	 */
-	public ProcessDefinition(List<Integer> stampSequences, UUID concept, Integer creator, Long timeCreated) {
+	public ProcessInstance(UUID definitionId, List<Integer> stampSequences, UUID concept, Integer creator, Long timeCreated) {
+		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
 		this.concept = concept;
 		this.creator = creator;
@@ -81,11 +90,12 @@ public class ProcessDefinition implements StorableWorkflowContents {
 	 * @param data
 	 *            the data
 	 */
-	public ProcessDefinition(byte[] data) {
+	public ProcessInstance(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.definitionId = (UUID) in.readObject();
 			this.stampSequences = (List<Integer>) in.readObject();
 			this.concept = (UUID) in.readObject();
 			this.creator = (Integer) in.readObject();
@@ -97,6 +107,15 @@ public class ProcessDefinition implements StorableWorkflowContents {
 			logger.error("Failure to cast ProcessDefinition fields", e);
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Gets the definition Id.
+	 *
+	 * @return the definition Id
+	 */
+	public UUID getDefinitionId() {
+		return definitionId;
 	}
 
 	/**
@@ -148,6 +167,7 @@ public class ProcessDefinition implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(definitionId);
 		out.writeObject(stampSequences);
 		out.writeObject(concept);
 		out.writeObject(creator);
@@ -169,7 +189,7 @@ public class ProcessDefinition implements StorableWorkflowContents {
 			buf.append(stampSeq + ", ");
 		}
 
-		return "\n\t\tStamp Sequence: " + buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: "
+		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: " + buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: "
 				+ creator + "\n\t\tTime Created: " + timeCreated;
 	}
 
@@ -180,9 +200,9 @@ public class ProcessDefinition implements StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		ProcessDefinition other = (ProcessDefinition) obj;
+		ProcessInstance other = (ProcessInstance) obj;
 
-		return this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
+		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
 				&& this.creator.equals(other.creator) && this.timeCreated.equals(other.timeCreated);
 	}
 
@@ -193,6 +213,6 @@ public class ProcessDefinition implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();
+		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();
 	}
 }

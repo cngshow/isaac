@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,11 +71,11 @@ import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link WorkflowDefinitionUtility}
+ * {@link ImportBpmn2FileUtility}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowDefinitionUtility {
+public class ImportBpmn2FileUtility {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -99,7 +100,7 @@ public class WorkflowDefinitionUtility {
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
 	/** The print for analysis. */
-	boolean printForAnalysis = false;
+	boolean printForAnalysis = true;
 
 	/** The process. */
 	private RuleFlowProcess process;
@@ -113,7 +114,7 @@ public class WorkflowDefinitionUtility {
 	 * @param store
 	 *            the store
 	 */
-	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store) {
+	public ImportBpmn2FileUtility(MVStoreMetaContentProvider store) {
 		this.store = store;
 	}
 
@@ -125,10 +126,10 @@ public class WorkflowDefinitionUtility {
 	 * @param bpmn2FilePath
 	 *            the bpmn2 file path
 	 */
-	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store, String bpmn2FilePath) {
+	public ImportBpmn2FileUtility(MVStoreMetaContentProvider store, String bpmn2FilePath) {
 		this.store = store;
-		setDefinition(bpmn2FilePath);
-		setNodes(bpmn2FilePath);
+		UUID key = setDefinition(bpmn2FilePath);
+		setNodes(bpmn2FilePath, key);
 	}
 
 	/**
@@ -137,12 +138,16 @@ public class WorkflowDefinitionUtility {
 	 * @param bpmn2FilePath
 	 *            the new definition
 	 */
-	public void setDefinition(String bpmn2FilePath) {
+	public UUID setDefinition(String bpmn2FilePath) {
 		String xmlContents;
+		UUID key = null;
+		
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
 			processWorkflowDefinition("test", xmlContents);
 
+			key = populateWorkflowDefinitionRecords();
+			
 			if (printForAnalysis) {
 				printProcessDefinition();
 			}
@@ -150,6 +155,13 @@ public class WorkflowDefinitionUtility {
 			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
+		
+		return key;
+	}
+
+	private UUID populateWorkflowDefinitionRecords() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	/**
@@ -158,7 +170,7 @@ public class WorkflowDefinitionUtility {
 	 * @param bpmn2FilePath
 	 *            the new nodes
 	 */
-	public void setNodes(String bpmn2FilePath) {
+	public void setNodes(String bpmn2FilePath, UUID definitionId) {
 		processNodes.clear();
 		visitedNodes.clear();
 		nodeToOutgoingMap.clear();
@@ -171,7 +183,7 @@ public class WorkflowDefinitionUtility {
 			processNodes.add(process.getNode(nodeId));
 		}
 
-		populateActionOutcomesRecords(bpmn2FilePath);
+		populateAvailableActionRecords(bpmn2FilePath, definitionId);
 
 		if (printForAnalysis) {
 			printNodes();
@@ -183,12 +195,13 @@ public class WorkflowDefinitionUtility {
 	 *
 	 * @param bpmn2FilePath
 	 *            the bpmn2 file path
+	 * @param definitionId 
 	 */
-	private void populateActionOutcomesRecords(String bpmn2FilePath) {
+	private void populateAvailableActionRecords(String bpmn2FilePath, UUID definitionId) {
 		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, connections);
+			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, definitionId, connections);
 			AvailableActionWorkflowContentStore createdStateActionCdontent = new AvailableActionWorkflowContentStore(
 					store);
 
@@ -209,6 +222,7 @@ public class WorkflowDefinitionUtility {
 	 *            the nodes
 	 * @param nodeToOutgoingMap2
 	 *            the node to outgoing map2
+	 * @param definitionId 
 	 * @param connections
 	 *            the connections
 	 * @return the sets the
@@ -216,7 +230,7 @@ public class WorkflowDefinitionUtility {
 	 *             the exception
 	 */
 	private Set<AvailableAction> generateAvaialbleActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
-			List<SequenceFlow> connections) throws Exception {
+			UUID definitionId, List<SequenceFlow> connections) throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 
 		for (Node node : nodes) {
@@ -252,7 +266,7 @@ public class WorkflowDefinitionUtility {
 						throw new Exception("BPMN2 file missing key requirements");
 					}
 
-					actions.add(new AvailableAction(state, action, outcome, role));
+					actions.add(new AvailableAction(definitionId, state, action, outcome, role));
 				}
 			}
 		}

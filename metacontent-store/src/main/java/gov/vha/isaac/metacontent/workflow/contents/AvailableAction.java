@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +34,9 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of Actions to Outcomes based on Roles and Current State
  * 
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store.
+ * Different actions are defined per workflow definitions.
+ * 
  * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -41,6 +45,9 @@ public class AvailableAction implements StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
+
+	/** The definition id. */
+	private UUID definitionId;
 
 	/** The current state. */
 	private String currentState;
@@ -57,6 +64,8 @@ public class AvailableAction implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new possible action.
 	 *
+	 * @param definitionId
+	 *            the definition id
 	 * @param currentState
 	 *            the current state
 	 * @param action
@@ -66,7 +75,8 @@ public class AvailableAction implements StorableWorkflowContents {
 	 * @param role
 	 *            the role
 	 */
-	public AvailableAction(String currentState, String action, String outcome, String role) {
+	public AvailableAction(UUID definitionId, String currentState, String action, String outcome, String role) {
+		this.definitionId = definitionId;
 		this.currentState = currentState;
 		this.action = action;
 		this.outcome = outcome;
@@ -84,6 +94,7 @@ public class AvailableAction implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.definitionId = (UUID) in.readObject();
 			this.currentState = (String) in.readObject();
 			this.action = (String) in.readObject();
 			this.outcome = (String) in.readObject();
@@ -95,6 +106,15 @@ public class AvailableAction implements StorableWorkflowContents {
 			logger.error("Failure to cast Available Action fields", e);
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Gets the definition Id.
+	 *
+	 * @return the definition Id
+	 */
+	public UUID getDefinitionId() {
+		return definitionId;
 	}
 
 	/**
@@ -146,6 +166,7 @@ public class AvailableAction implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(definitionId);
 		out.writeObject(currentState);
 		out.writeObject(action);
 		out.writeObject(outcome);
@@ -161,8 +182,8 @@ public class AvailableAction implements StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tCurrent State: " + currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome
-				+ "\n\t\tRole State: " + role;
+		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: " + currentState
+				+ "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
 	}
 
 	/*
@@ -174,8 +195,9 @@ public class AvailableAction implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AvailableAction other = (AvailableAction) obj;
 
-		return this.currentState.equals(other.currentState) && this.action.equals(other.action)
-				&& this.outcome.equals(other.outcome) && this.role.equals(other.role);
+		return this.definitionId.equals(other.definitionId) && this.currentState.equals(other.currentState)
+				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
+				&& this.role.equals(other.role);
 
 	}
 
@@ -186,6 +208,7 @@ public class AvailableAction implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return currentState.hashCode() + action.hashCode() + outcome.hashCode() + role.hashCode();
+		return definitionId.hashCode() + currentState.hashCode() + action.hashCode() + outcome.hashCode()
+				+ role.hashCode();
 	}
 }

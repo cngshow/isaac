@@ -24,19 +24,19 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDefinition;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessInstance;
 
 /**
  * Dynamic workflow processes populated at runtime only
  *
- * {@link ProcessDefinitionWorkflowContentStore}
+ * {@link ProcessInstanceWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowContentStore {
+public class ProcessInstanceWorkflowContentStore extends AbstractWorkflowContentStore {
 
-	public ProcessDefinitionWorkflowContentStore(MVStoreMetaContentProvider store) {
+	public ProcessInstanceWorkflowContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);
 	}
 
@@ -48,8 +48,8 @@ public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowConte
 	 * java.util.UUID)
 	 */
 	@Override
-	public ProcessDefinition getEntry(UUID key) {
-		return new ProcessDefinition(getGenericEntry(key));
+	public ProcessInstance getEntry(UUID key) {
+		return new ProcessInstance(getGenericEntry(key));
 	}
 
 	/*
@@ -59,13 +59,13 @@ public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowConte
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<ProcessDefinition> getAllEntries() {
-		Set<ProcessDefinition> retSet = new HashSet<>();
+	public Set<ProcessInstance> getAllEntries() {
+		Set<ProcessInstance> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new ProcessDefinition(entry));
+			retSet.add(new ProcessInstance(entry));
 		}
 
 		return retSet;
@@ -83,11 +83,11 @@ public class ProcessDefinitionWorkflowContentStore extends AbstractWorkflowConte
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tProcess Definition" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tProcess Instance" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "ProcessDefinitionWorkflowContentStore: " + buf.toString();
+		return "ProcessInstanceWorkflowContentStore: " + buf.toString();
 	}
 
 }

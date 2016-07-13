@@ -36,7 +36,8 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * {@link AuthorPermissionWorkflowContentStore}
  * {@link AvailableActionWorkflowContentStore}
  * {@link HistoricalWorkflowContentStore}
- * {@link ProcessDefinitionWorkflowContentStore}
+ * {@link ProcessInstanceWorkflowContentStore}
+ * {@link DefinitionDetailsWorkflowContentStore}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -46,7 +47,7 @@ public abstract class AbstractWorkflowContentStore {
 	 * The Enum WorkflowContentStoreType.
 	 */
 	static enum WorkflowContentStoreType {
-		AUTHOR_PERMISSION, AVAILABLE_ACTION, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
+		AUTHOR_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAILS, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
 	};
 
 	/** The map. */
