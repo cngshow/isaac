@@ -27,6 +27,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -48,7 +49,11 @@ import org.jbpm.kie.services.impl.bpmn2.ProcessDescriptor;
 import org.jbpm.kie.services.impl.model.ProcessAssetDesc;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
 import org.jbpm.services.api.DefinitionService;
+import org.jbpm.workflow.core.node.EndNode;
+import org.jbpm.workflow.core.node.HumanTaskNode;
+import org.jbpm.workflow.core.node.Join;
 import org.jbpm.workflow.core.node.Split;
+import org.jbpm.workflow.core.node.StartNode;
 import org.kie.api.definition.process.Connection;
 import org.kie.api.definition.process.Node;
 import org.kie.api.definition.process.Process;
@@ -59,100 +64,169 @@ import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.PossibleAction;
-import gov.vha.isaac.metacontent.workflow.StaticStateActionContentStore;
-import gov.vha.isaac.ochre.api.metacontent.MetaContentService.WorkflowContentTypes;
+import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
- * Routines enabling access of workflow definition.
+ * Routines enabling access of content built when importing a bpmn2 file
  * 
  * {@link WorkflowDefinitionUtility}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowDefinitionUtility {
+
+	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
+
+	/** The bpmn2 service. */
 	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
 
+	/** The process descriptor. */
 	private ProcessDescriptor processDescriptor = null;
+
+	/** The process definition. */
 	private ProcessAssetDesc processDefinition = null;
 
+	/** The process nodes. */
 	// Handling of Nodes
 	private List<Node> processNodes = new ArrayList<Node>();
+
+	/** The visited nodes. */
 	private List<Long> visitedNodes = new ArrayList<>();
+
+	/** The node to outgoing map. */
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
+	/** The print for analysis. */
+	boolean printForAnalysis = false;
+
+	/** The process. */
 	private RuleFlowProcess process;
+
+	/** The store. */
 	MVStoreMetaContentProvider store = null;
 
-	public WorkflowDefinitionUtility() {
-		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-	}
-
-	public WorkflowDefinitionUtility(String bpmn2FilePath) {
-		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		setDefinition(bpmn2FilePath);
-		setNodes(bpmn2FilePath);
-	}
-
+	/**
+	 * Instantiates a new workflow definition utility.
+	 *
+	 * @param store
+	 *            the store
+	 */
 	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store) {
 		this.store = store;
-    }
-	
+	}
+
+	/**
+	 * Instantiates a new workflow definition utility.
+	 *
+	 * @param store
+	 *            the store
+	 * @param bpmn2FilePath
+	 *            the bpmn2 file path
+	 */
 	public WorkflowDefinitionUtility(MVStoreMetaContentProvider store, String bpmn2FilePath) {
 		this.store = store;
 		setDefinition(bpmn2FilePath);
 		setNodes(bpmn2FilePath);
 	}
 
+	/**
+	 * Sets the definition.
+	 *
+	 * @param bpmn2FilePath
+	 *            the new definition
+	 */
 	public void setDefinition(String bpmn2FilePath) {
 		String xmlContents;
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
 			processWorkflowDefinition("test", xmlContents);
+
+			if (printForAnalysis) {
+				printProcessDefinition();
+			}
 		} catch (IOException e) {
 			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Sets the nodes.
+	 *
+	 * @param bpmn2FilePath
+	 *            the new nodes
+	 */
 	public void setNodes(String bpmn2FilePath) {
 		processNodes.clear();
 		visitedNodes.clear();
 		nodeToOutgoingMap.clear();
-		
-		processNodes(bpmn2FilePath);
+
+		process = buildProcessFromFile(bpmn2FilePath);
+		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
+
+		// Populate the actual nodes object
+		for (Long nodeId : nodesInOrder) {
+			processNodes.add(process.getNode(nodeId));
+		}
 
 		populateActionOutcomesRecords(bpmn2FilePath);
+
+		if (printForAnalysis) {
+			printNodes();
+		}
 	}
 
+	/**
+	 * Populate action outcomes records.
+	 *
+	 * @param bpmn2FilePath
+	 *            the bpmn2 file path
+	 */
 	private void populateActionOutcomesRecords(String bpmn2FilePath) {
-		Set<PossibleAction> actions = new HashSet<>();
-		List<Node> nodes = getProcessNodes();
-		Map<Long, List<Long>> nodeToOutgoingMap = getNodesToOutgoingMap();
-
-		List<SequenceFlow> connections = (List<SequenceFlow>) getProcess().getMetaData(ProcessHandler.CONNECTIONS);
+		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			transformNodesToPossibleActions(nodes, nodeToOutgoingMap, connections, actions);
+			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, connections);
+			AvailableActionWorkflowContentStore createdStateActionCdontent = new AvailableActionWorkflowContentStore(
+					store);
 
-			StaticStateActionContentStore createdStateActionContent = new StaticStateActionContentStore(actions);
-
-			// Write content into database
-			store.putWorkflowContent(WorkflowContentTypes.STATE_ACTION_OUTCOME, createdStateActionContent);
+			for (AvailableAction entry : entries) {
+				// Write content into database
+				createdStateActionCdontent.addEntry(entry);
+			}
 		} catch (Exception e) {
 			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
 	}
 
-	private void transformNodesToPossibleActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
-			List<SequenceFlow> connections, Set<PossibleAction> actions) throws Exception {
+	/**
+	 * Generate avaialble actions.
+	 *
+	 * @param nodes
+	 *            the nodes
+	 * @param nodeToOutgoingMap2
+	 *            the node to outgoing map2
+	 * @param connections
+	 *            the connections
+	 * @return the sets the
+	 * @throws Exception
+	 *             the exception
+	 */
+	private Set<AvailableAction> generateAvaialbleActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
+			List<SequenceFlow> connections) throws Exception {
+		Set<AvailableAction> actions = new HashSet<>();
+
 		for (Node node : nodes) {
 			if (node instanceof Split) {
 				for (Long id : nodeToOutgoingMap.get(node.getId())) {
 					String state = node.getName();
-					String role = "SME";
+
+					// ** JOEL TO UPDATE role (replacing 'null') ***
+					String role = null;
+					role = "SME";
 					String action = null;
 					String outcome = null;
 
@@ -178,26 +252,22 @@ public class WorkflowDefinitionUtility {
 						throw new Exception("BPMN2 file missing key requirements");
 					}
 
-					actions.add(new PossibleAction(state, action, outcome, role));
+					actions.add(new AvailableAction(state, action, outcome, role));
 				}
 			}
 		}
+
+		return actions;
 	}
 
-	private void processNodes(String bpmn2FilePath) {
-		process = buildProcessFromFile(bpmn2FilePath);
-
-		visitedNodes.clear();
-		nodeToOutgoingMap.clear();
-		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
-
-		// Populate the actual nodes object
-		processNodes.clear();
-		for (Long nodeId : nodesInOrder) {
-			processNodes.add(process.getNode(nodeId));
-		}
-	}
-
+	/**
+	 * Process workflow definition.
+	 *
+	 * @param string
+	 *            the string
+	 * @param xmlContents
+	 *            the xml contents
+	 */
 	private void processWorkflowDefinition(String string, String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
@@ -217,8 +287,16 @@ public class WorkflowDefinitionUtility {
 		processDefinition.setServiceTasks(processDescriptor.getServiceTasks());
 
 		processDefinition.setReusableSubProcesses(processDescriptor.getReusableSubProcesses());
+
 	}
 
+	/**
+	 * Builds the process from file.
+	 *
+	 * @param bpmn2FilePath
+	 *            the bpmn2 file path
+	 * @return the rule flow process
+	 */
 	private RuleFlowProcess buildProcessFromFile(String bpmn2FilePath) {
 		SemanticModules modules = new SemanticModules();
 		modules.addSemanticModule(new BPMNSemanticModule());
@@ -243,6 +321,15 @@ public class WorkflowDefinitionUtility {
 		return null;
 	}
 
+	/**
+	 * Identify output order.
+	 *
+	 * @param node
+	 *            the node
+	 * @param retList
+	 *            the ret list
+	 * @return the list
+	 */
 	private List<Long> identifyOutputOrder(Node node, List<Long> retList) {
 		if (visitedNodes.contains(node.getId())) {
 			return retList;
@@ -262,11 +349,29 @@ public class WorkflowDefinitionUtility {
 		}
 	}
 
+	/**
+	 * Read file.
+	 *
+	 * @param path
+	 *            the path
+	 * @param encoding
+	 *            the encoding
+	 * @return the string
+	 * @throws IOException
+	 *             Signals that an I/O exception has occurred.
+	 */
 	private String readFile(String path, Charset encoding) throws IOException {
 		byte[] encoded = Files.readAllBytes(Paths.get(path));
 		return new String(encoded, encoding);
 	}
 
+	/**
+	 * Gets the outgoing nodes.
+	 *
+	 * @param node
+	 *            the node
+	 * @return the outgoing nodes
+	 */
 	private List<Node> getOutgoingNodes(Node node) {
 		List<Node> retList = new ArrayList<Node>();
 
@@ -280,23 +385,109 @@ public class WorkflowDefinitionUtility {
 		return retList;
 	}
 
-	public List<Node> getProcessNodes() {
-		return processNodes;
+	/**
+	 * Prints the process definition.
+	 */
+	private void printProcessDefinition() {
+		System.out.println("\t\t ***** Definition Processing *****");
+		System.out.println("Definition Name: " + processDefinition.getName());
+		System.out.println("Definition Namespace: " + processDefinition.getPackageName());
+		System.out.println("Definition Id: " + processDefinition.getId());
+		System.out.println("Definition DeploymentId: " + processDefinition.getDeploymentId());
+		System.out.println("Definition Knowledge Type: " + processDefinition.getKnowledgeType());
+		System.out.println("Definition Type: " + processDefinition.getType());
+		System.out.println("Definition Version: " + processDefinition.getVersion());
+
+		System.out.println("*****Printing out Global Item Definitions Map<String, String>*****");
+		Map<String, String> globalItems = processDescriptor.getGlobalItemDefinitions();
+		for (String key : globalItems.keySet()) {
+			System.out.println("Key: " + key + " with values: " + globalItems.get(key));
+		}
+
+		System.out.println("\n\n\n\n*****Printing out Task AssignmentsMap<String, Collection<String>> *****");
+		Map<String, Collection<String>> taskAssignments = processDescriptor.getTaskAssignments();
+		for (String key : taskAssignments.keySet()) {
+			System.out.println("\nKey: " + key + " with values:");
+			for (String colValue : taskAssignments.get(key)) {
+				System.out.println("Value: " + colValue);
+			}
+		}
+
+		System.out.println("\n\n\n\n*****Printing out Task Input Mappings Map<String, Map<String, String>>*****");
+		Map<String, Map<String, String>> taskInputMappings = processDescriptor.getTaskInputMappings();
+		for (String key : taskInputMappings.keySet()) {
+			System.out.println("\nKey: " + key + " with sub-key/value:");
+			for (String key2 : taskInputMappings.get(key).keySet()) {
+				String val = taskInputMappings.get(key).get(key2);
+				System.out.println("\tKey2: " + key2 + " with value: " + val);
+			}
+		}
+
+		System.out.println("\n\n\n\n*****Printing out Task Output Mappings Map<String, Map<String, String>>*****");
+		Map<String, Map<String, String>> taskOutputMappings = processDescriptor.getTaskOutputMappings();
+		for (String key : taskOutputMappings.keySet()) {
+			System.out.println("\nKey: " + key + " with sub-key/value:");
+			for (String key2 : taskOutputMappings.get(key).keySet()) {
+				String val = taskOutputMappings.get(key).get(key2);
+				System.out.println("\tKey2: " + key2 + " with value: " + val);
+			}
+		}
 	}
 
-	public Map<Long, List<Long>> getNodesToOutgoingMap() {
-		return nodeToOutgoingMap;
-	}
+	/**
+	 * Prints the nodes.
+	 */
+	private void printNodes() {
+		/* Process Nodes */
+		System.out.println("\n\n\n\n\t\t ***** Node Processing *****");
+		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
-	public ProcessAssetDesc getProcessDefinition() {
-		return processDefinition;
-	}
+		// Print out remaining nodes
+		for (Node node : processNodes) {
+			if (node.getName() == null || node.getName().isEmpty()) {
+				System.out.println("\n\n\n**** Printing out unnamed node");
+			} else {
+				System.out.println("\n\n\n**** Printing out node named: " + node.getName());
+			}
 
-	public RuleFlowProcess getProcess() {
-		return process;
-	}
+			System.out.println("ID: " + node.getId());
 
-	public ProcessDescriptor getProcessDescriptor() {
-		return processDescriptor;
+			if (node instanceof StartNode) {
+				System.out.println("Type: StartNode");
+			} else if (node instanceof EndNode) {
+				System.out.println("Type: EndNode");
+			} else if (node instanceof HumanTaskNode) {
+				System.out.println("Type: HumanTaskNode");
+			} else if (node instanceof Join) {
+				System.out.println("Type: Join");
+			} else if (node instanceof Split) {
+				System.out.println("Type: Split");
+			}
+
+			if (!nodeToOutgoingMap.get(node.getId()).isEmpty()) {
+				System.out.println("This node has the following outgoing connections:");
+
+				for (Long id : nodeToOutgoingMap.get(node.getId())) {
+					String splitOption = "NOT FOUND";
+					for (Connection connection : ((Split) node).getDefaultOutgoingConnections()) {
+						if (connection.getTo().getId() == id) {
+							String connectionId = (String) connection.getMetaData().get("UniqueId");
+
+							for (SequenceFlow sequence : connections) {
+								if (sequence.getId().equals(connectionId)) {
+									splitOption = sequence.getName();
+								}
+							}
+						}
+					}
+
+					if (node instanceof Split) {
+						System.out.println("\t" + id + " that is associated to action: " + splitOption);
+					} else {
+						System.out.println("\t" + id);
+					}
+				}
+			}
+		}
 	}
 }
