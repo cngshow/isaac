@@ -39,6 +39,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.io.impl.ByteArrayResource;
+import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
 import org.jbpm.bpmn2.core.SequenceFlow;
 import org.jbpm.bpmn2.xml.BPMNDISemanticModule;
@@ -177,9 +178,7 @@ public class ImportBpmn2FileUtility {
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
 				definition.getNamespace(), definition.getVersion(), roles);
 
-		UUID definitionId = createdStateActionContentStore.addEntry(entry);
-
-		return definitionId;
+		return createdStateActionContentStore.addEntry(entry);
 	}
 
 	/**
@@ -222,7 +221,7 @@ public class ImportBpmn2FileUtility {
 		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, definitionId,
+			Set<AvailableAction> entries = generateAvailableActions(processNodes, nodeToOutgoingMap, definitionId,
 					connections);
 			AvailableActionWorkflowContentStore createdStateActionContentStore = new AvailableActionWorkflowContentStore(
 					store);
@@ -252,20 +251,19 @@ public class ImportBpmn2FileUtility {
 	 * @throws Exception
 	 *             the exception
 	 */
-	private Set<AvailableAction> generateAvaialbleActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
+	private Set<AvailableAction> generateAvailableActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
 			UUID definitionId, List<SequenceFlow> connections) throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 
 		for (Node node : nodes) {
 			if (node instanceof Split) {
-				for (Long id : nodeToOutgoingMap.get(node.getId())) {
-					String state = node.getName();
+				// attempt to get roles from preceding HumanTaskNode
+				Set<String> roles = getActorFromPrecedingHumanTask(node);
 
-					// ** JOEL TO UPDATE role (replacing 'null') ***
-					String role = null;
-					role = "SME";
+				for (Long id : nodeToOutgoingMap.get(node.getId())) {
 					String action = null;
 					String outcome = null;
+					String state = node.getName();
 
 					for (Connection connection : ((Split) node).getDefaultOutgoingConnections()) {
 						if (connection.getTo().getId() == id) {
@@ -285,11 +283,16 @@ public class ImportBpmn2FileUtility {
 						}
 					}
 
-					if (action == null || outcome == null) {
+					// Verify that all requirements met
+					if (action == null || outcome == null || state == null || roles.size() == 0) {
 						throw new Exception("BPMN2 file missing key requirements");
 					}
 
-					actions.add(new AvailableAction(definitionId, state, action, outcome, role));
+					// Generate a new AvailableAction for each role
+					for (String role : roles) {
+						AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
+						actions.add(newAction);
+					}
 				}
 			}
 		}
@@ -373,6 +376,49 @@ public class ImportBpmn2FileUtility {
 
 			return retList;
 		}
+	}
+
+	/**
+	 * @param node
+	 *            any node
+	 * @return Set of role strings
+	 * 
+	 *         IFF passed Node is a HumanTask then simply return the HumanTask
+	 *         ActorId(s) from parameters, ELSE recursively apply to nodes that
+	 *         precede this one until a HumanTask is found and its role(s)
+	 *         returned
+	 * 
+	 *         This will return empty set for nodes preceded only by Start event
+	 *         (i.e. no preceding HumanTask)
+	 */
+	private static Set<String> getActorFromPrecedingHumanTask(Node node) {
+		Set<String> restrictions = new HashSet<>();
+
+		if (node instanceof HumanTaskNode) {
+			// Get HumanTaskNode's restrictions
+			Work work = ((HumanTaskNode) node).getWork();
+
+			if (work.getParameters() != null) {
+				String roleString = (String) work.getParameters().get("ActorId");
+
+				if (roleString != null) {
+					String[] roles = roleString.split(",");
+					for (String role : roles) {
+						restrictions.add(role.trim());
+					}
+				}
+			}
+		} else {
+			// Find preceding node and call recursively
+			for (Map.Entry<String, List<Connection>> entry : node.getIncomingConnections().entrySet()) {
+				for (Connection conn : entry.getValue()) {
+					Node currentFromNode = conn.getFrom();
+					restrictions.addAll(getActorFromPrecedingHumanTask(currentFromNode));
+				}
+			}
+		}
+
+		return restrictions;
 	}
 
 	/**
