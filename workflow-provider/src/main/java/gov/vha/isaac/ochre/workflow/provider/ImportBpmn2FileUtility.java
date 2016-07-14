@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,6 +40,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.io.impl.ByteArrayResource;
+import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
 import org.jbpm.bpmn2.core.SequenceFlow;
 import org.jbpm.bpmn2.xml.BPMNDISemanticModule;
@@ -222,7 +224,7 @@ public class ImportBpmn2FileUtility {
 		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, definitionId,
+			Set<AvailableAction> entries = generateAvailableActions(processNodes, nodeToOutgoingMap, definitionId,
 					connections);
 			AvailableActionWorkflowContentStore createdStateActionContentStore = new AvailableActionWorkflowContentStore(
 					store);
@@ -238,6 +240,96 @@ public class ImportBpmn2FileUtility {
 	}
 
 	/**
+	 * @param node
+	 * 		any node
+	 * @return
+	 * 		Set of role strings
+	 * 
+	 * IFF passed Node is a HumanTask then simply return the HumanTask ActorId(s) from parameters,
+	 * ELSE recursively apply to nodes that follow this one until a HumanTask is found and its role(s) returned
+	 * 
+	 * This will return empty set for nodes followed only by End event (i.e. no subsequent HumanTask)
+	 */
+	private static Set<String> getActorRestrictionsBasedOnSubsequentHumanTask(Node node) {
+		Set<String> restrictions = new HashSet<>();
+		if (node instanceof HumanTaskNode) {
+			// IFF node is a HumanTaskNode it declares its own ActorId restrictions
+			HumanTaskNode humanTaskNode = (HumanTaskNode)node;
+
+			Work work = humanTaskNode.getWork();
+			Object obj = work.getParameters().get("ActorId");
+			if (obj != null) {
+				String roleString = obj.toString();
+				if (roleString.contains(",")) {
+					String[] roles = roleString.split(",");
+					for (String role : roles) {
+						restrictions.add(role.trim());
+					}
+				} else {
+					restrictions.add(roleString.trim());
+				}
+			}
+			
+			return Collections.unmodifiableSet(restrictions);
+		} else {
+			// IFF node is NOT a HumanTaskNode, then get restrictions from next HumanTaskNode, if any
+			for (Map.Entry<String, List<Connection>> entry : node.getOutgoingConnections().entrySet()) {
+				for (Connection conn : entry.getValue()) {
+					Node currentToNode = conn.getTo();
+					restrictions.addAll(getActorRestrictionsBasedOnSubsequentHumanTask(currentToNode));
+				}
+			}
+		}
+
+		return Collections.unmodifiableSet(restrictions);
+	}
+
+	/**
+	 * @param node
+	 * 		any node
+	 * @return
+	 * 		Set of role strings
+	 * 
+	 * IFF passed Node is a HumanTask then simply return the HumanTask ActorId(s) from parameters,
+	 * ELSE recursively apply to nodes that precede this one until a HumanTask is found and its role(s) returned
+	 * 
+	 * This will return empty set for nodes preceded only by Start event (i.e. no preceding HumanTask)
+	 */
+	private static Set<String> getActorRestrictionsBasedOnPrecedingHumanTask(Node node) {
+		Set<String> restrictions = new HashSet<>();
+		if (node instanceof HumanTaskNode) {
+			// IFF node is a HumanTaskNode it declares its own ActorId restrictions
+			HumanTaskNode humanTaskNode = (HumanTaskNode)node;
+
+			Work work = humanTaskNode.getWork();
+			Object obj = work.getParameters().get("ActorId");
+			if (obj != null) {
+				String roleString = obj.toString();
+				if (roleString.contains(",")) {
+					String[] roles = roleString.split(",");
+					for (String role : roles) {
+						restrictions.add(role.trim());
+					}
+				} else {
+					restrictions.add(roleString.trim());
+				}
+			}
+			
+			return Collections.unmodifiableSet(restrictions);
+		} else {
+			// IFF node is NOT a HumanTaskNode, then get restrictions from preceding HumanTaskNode, if any
+			for (Map.Entry<String, List<Connection>> entry : node.getIncomingConnections().entrySet()) {
+				for (Connection conn : entry.getValue()) {
+					Node currentFromNode = conn.getFrom();
+					restrictions.addAll(getActorRestrictionsBasedOnPrecedingHumanTask(currentFromNode));
+				}
+			}
+		}
+
+		return Collections.unmodifiableSet(restrictions);
+	}
+	
+	/**
 	 * Generate avaialble actions.
 	 *
 	 * @param nodes
@@ -252,7 +344,7 @@ public class ImportBpmn2FileUtility {
 	 * @throws Exception
 	 *             the exception
 	 */
-	private Set<AvailableAction> generateAvaialbleActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
+	private Set<AvailableAction> generateAvailableActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
 			UUID definitionId, List<SequenceFlow> connections) throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 
@@ -262,13 +354,17 @@ public class ImportBpmn2FileUtility {
 					String state = node.getName();
 
 					// ** JOEL TO UPDATE role (replacing 'null') ***
-					String role = null;
-					role = "SME";
+					Set<String> roles = new HashSet<>();
+
 					String action = null;
 					String outcome = null;
 
 					for (Connection connection : ((Split) node).getDefaultOutgoingConnections()) {
-						if (connection.getTo().getId() == id) {
+						Node followingNode = connection.getTo();
+
+						if (followingNode.getId() == id) {
+							// Populate roles recursively based on subsequent HumanTaskNode
+							roles.addAll(getActorRestrictionsBasedOnSubsequentHumanTask(followingNode));
 							String connectionId = (String) connection.getMetaData().get("UniqueId");
 
 							for (SequenceFlow sequence : connections) {
@@ -289,7 +385,19 @@ public class ImportBpmn2FileUtility {
 						throw new Exception("BPMN2 file missing key requirements");
 					}
 
-					actions.add(new AvailableAction(definitionId, state, action, outcome, role));
+					//System.out.println("Creating AvailableAction objects for " + node.getName());
+					if (roles.size() == 0) {
+						// If roles not found by examining subsequent HumanTaskNode,
+						// attempt to get roles from preceding HumanTaskNode
+						roles.addAll(getActorRestrictionsBasedOnPrecedingHumanTask(node));
+					}
+					
+					// Generate a new AvailableAction for each potentialOwner role
+					for (String role : roles) {
+						AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
+						actions.add(newAction);
+						System.out.println("Created " + newAction);
+					}
 				}
 			}
 		}

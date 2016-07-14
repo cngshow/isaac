@@ -77,7 +77,7 @@ public class ImportBpmn2FileTest {
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdStateActionCdontent.getNumberOfEntries(), 7);
 
-		List<String> possibleRoles = Arrays.asList("SME");
+		List<String> possibleRoles = Arrays.asList("Editor", "Reviewer", "Approver", "Promoter");
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review");
 		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
