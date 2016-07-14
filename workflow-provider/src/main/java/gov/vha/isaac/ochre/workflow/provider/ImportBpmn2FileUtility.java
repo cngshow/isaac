@@ -100,7 +100,7 @@ public class ImportBpmn2FileUtility {
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
 	/** The print for analysis. */
-	boolean printForAnalysis = true;
+	boolean printForAnalysis = false;
 
 	/** The process. */
 	private RuleFlowProcess process;
