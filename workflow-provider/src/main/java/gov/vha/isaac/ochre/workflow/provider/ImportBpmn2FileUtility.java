@@ -66,12 +66,14 @@ import org.xml.sax.SAXException;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link ImportBpmn2FileUtility}
+ * {@link ImportBpmn2FileUtility}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -82,12 +84,6 @@ public class ImportBpmn2FileUtility {
 
 	/** The bpmn2 service. */
 	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
-
-	/** The process descriptor. */
-	private ProcessDescriptor processDescriptor = null;
-
-	/** The process definition. */
-	private ProcessAssetDesc processDefinition = null;
 
 	/** The process nodes. */
 	// Handling of Nodes
@@ -137,31 +133,53 @@ public class ImportBpmn2FileUtility {
 	 *
 	 * @param bpmn2FilePath
 	 *            the new definition
+	 * @return the uuid
 	 */
 	public UUID setDefinition(String bpmn2FilePath) {
 		String xmlContents;
 		UUID key = null;
-		
+
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
-			processWorkflowDefinition("test", xmlContents);
+			ProcessDescriptor descriptor = processWorkflowDefinition("test", xmlContents);
 
-			key = populateWorkflowDefinitionRecords();
-			
+			key = populateWorkflowDefinitionRecords(descriptor);
+
 			if (printForAnalysis) {
-				printProcessDefinition();
+				printProcessDefinition(descriptor);
 			}
 		} catch (IOException e) {
 			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
-		
+
 		return key;
 	}
 
-	private UUID populateWorkflowDefinitionRecords() {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * Populate workflow definition records.
+	 *
+	 * @param descriptor
+	 *            the descriptor
+	 * @return the uuid
+	 */
+	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
+		Set<String> roles = new HashSet<>();
+
+		DefinitionDetailWorkflowContentStore createdStateActionContentStore = new DefinitionDetailWorkflowContentStore(
+				store);
+		ProcessAssetDesc definition = descriptor.getProcess();
+
+		for (String key : descriptor.getTaskAssignments().keySet()) {
+			roles.addAll(descriptor.getTaskAssignments().get(key));
+		}
+
+		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
+				definition.getNamespace(), definition.getVersion(), roles);
+
+		UUID definitionId = createdStateActionContentStore.addEntry(entry);
+
+		return definitionId;
 	}
 
 	/**
@@ -169,6 +187,8 @@ public class ImportBpmn2FileUtility {
 	 *
 	 * @param bpmn2FilePath
 	 *            the new nodes
+	 * @param definitionId
+	 *            the definition id
 	 */
 	public void setNodes(String bpmn2FilePath, UUID definitionId) {
 		processNodes.clear();
@@ -195,19 +215,21 @@ public class ImportBpmn2FileUtility {
 	 *
 	 * @param bpmn2FilePath
 	 *            the bpmn2 file path
-	 * @param definitionId 
+	 * @param definitionId
+	 *            the definition id
 	 */
 	private void populateAvailableActionRecords(String bpmn2FilePath, UUID definitionId) {
 		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, definitionId, connections);
-			AvailableActionWorkflowContentStore createdStateActionCdontent = new AvailableActionWorkflowContentStore(
+			Set<AvailableAction> entries = generateAvaialbleActions(processNodes, nodeToOutgoingMap, definitionId,
+					connections);
+			AvailableActionWorkflowContentStore createdStateActionContentStore = new AvailableActionWorkflowContentStore(
 					store);
 
 			for (AvailableAction entry : entries) {
 				// Write content into database
-				createdStateActionCdontent.addEntry(entry);
+				createdStateActionContentStore.addEntry(entry);
 			}
 		} catch (Exception e) {
 			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);
@@ -222,7 +244,8 @@ public class ImportBpmn2FileUtility {
 	 *            the nodes
 	 * @param nodeToOutgoingMap2
 	 *            the node to outgoing map2
-	 * @param definitionId 
+	 * @param definitionId
+	 *            the definition id
 	 * @param connections
 	 *            the connections
 	 * @return the sets the
@@ -281,27 +304,16 @@ public class ImportBpmn2FileUtility {
 	 *            the string
 	 * @param xmlContents
 	 *            the xml contents
+	 * @return the process descriptor
 	 */
-	private void processWorkflowDefinition(String string, String xmlContents) {
+	private ProcessDescriptor processWorkflowDefinition(String string, String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
 		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
 
 		Process process = pckg.getProcesses().iterator().next();
 
-		processDescriptor = (ProcessDescriptor) process.getMetaData().get("ProcessDescriptor");
-		processDefinition = processDescriptor.getProcess();
-
-		processDefinition.setAssociatedEntities(processDescriptor.getTaskAssignments());
-		processDefinition.setProcessVariables(processDescriptor.getInputs());
-		processDefinition.setServiceTasks(processDescriptor.getServiceTasks());
-
-		processDefinition.setAssociatedEntities(processDescriptor.getTaskAssignments());
-		processDefinition.setProcessVariables(processDescriptor.getInputs());
-		processDefinition.setServiceTasks(processDescriptor.getServiceTasks());
-
-		processDefinition.setReusableSubProcesses(processDescriptor.getReusableSubProcesses());
-
+		return (ProcessDescriptor) process.getMetaData().get("ProcessDescriptor");
 	}
 
 	/**
@@ -401,8 +413,13 @@ public class ImportBpmn2FileUtility {
 
 	/**
 	 * Prints the process definition.
+	 *
+	 * @param processDescriptor
+	 *            the process descriptor
 	 */
-	private void printProcessDefinition() {
+	private void printProcessDefinition(ProcessDescriptor processDescriptor) {
+		ProcessAssetDesc processDefinition = processDescriptor.getProcess();
+
 		System.out.println("\t\t ***** Definition Processing *****");
 		System.out.println("Definition Name: " + processDefinition.getName());
 		System.out.println("Definition Namespace: " + processDefinition.getPackageName());

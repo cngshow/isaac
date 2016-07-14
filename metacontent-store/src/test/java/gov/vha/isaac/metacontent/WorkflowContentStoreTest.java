@@ -34,12 +34,12 @@ import org.junit.Test;
 
 import gov.vha.isaac.metacontent.workflow.AuthorPermissionWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailsWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.HistoricalWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessInstanceWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AuthorPermission;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetails;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.HistoricalWorkflow;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessInstance;
 
@@ -49,7 +49,7 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessInstance;
  * 
  * {@link AuthorPermissionWorkflowContentStore}
  * {@link AvailableActionWorkflowContentStore}
- * {@link DefinitionDetailsWorkflowContentStore}
+ * {@link DefinitionDetailWorkflowContentStore}
  * {@link HistoricalWorkflowContentStore}
  * {@link ProcessInstanceWorkflowContentStore}
  *
@@ -401,10 +401,10 @@ public class WorkflowContentStoreTest {
 		Set<String> roles1 = new HashSet<>();
 		roles1.add("Editor");
 		roles1.add("Reviewer");
-		DefinitionDetails createdEntry1 = new DefinitionDetails("BPMN2 ID-X", "JUnit BPMN2", "Testing", 1.0, roles1);
+		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1);
 
 		// New scope to ensure closing store
-		DefinitionDetailsWorkflowContentStore definitionDetailsStore = new DefinitionDetailsWorkflowContentStore(store);
+		DefinitionDetailWorkflowContentStore definitionDetailsStore = new DefinitionDetailWorkflowContentStore(store);
 
 		// Add new entry
 		UUID key1 = definitionDetailsStore.addEntry(createdEntry1);
@@ -412,8 +412,8 @@ public class WorkflowContentStoreTest {
 
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
-		definitionDetailsStore = new DefinitionDetailsWorkflowContentStore(store);
-		DefinitionDetails pulledEntry1 = definitionDetailsStore.getEntry(key1);
+		definitionDetailsStore = new DefinitionDetailWorkflowContentStore(store);
+		DefinitionDetail pulledEntry1 = definitionDetailsStore.getEntry(key1);
 
 		Assert.assertEquals(definitionDetailsStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
@@ -422,21 +422,21 @@ public class WorkflowContentStoreTest {
 		Set<String> roles2 = new HashSet<>();
 		roles2.add("Editor");
 		roles2.add("Approver");
-		DefinitionDetails createdEntry2 = new DefinitionDetails("BPMN2 ID-Y", "JUnit BPMN2", "Testing", 1.0, roles2);
+		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2);
 
 		UUID key2 = definitionDetailsStore.addEntry(createdEntry2);
 		Assert.assertEquals(definitionDetailsStore.getNumberOfEntries(), 2);
 
 		// Verify entries are as expected
-		DefinitionDetails pulledEntry2 = definitionDetailsStore.getEntry(key2);
+		DefinitionDetail pulledEntry2 = definitionDetailsStore.getEntry(key2);
 		Assert.assertEquals(createdEntry2, pulledEntry2);
-		Collection<DefinitionDetails> allEntries = definitionDetailsStore.getAllEntries();
+		Collection<DefinitionDetail> allEntries = definitionDetailsStore.getAllEntries();
 		Assert.assertEquals(allEntries.size(), 2);
 		Assert.assertTrue(allEntries.contains(createdEntry1));
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		DefinitionDetails updatedEntry2 = new DefinitionDetails(createdEntry2.getBpmn2Id(), createdEntry2.getName(), createdEntry2.getNamespace(), 2.0,
+		DefinitionDetail updatedEntry2 = new DefinitionDetail(createdEntry2.getBpmn2Id(), createdEntry2.getName(), createdEntry2.getNamespace(), "2.0",
 				createdEntry2.getRoles());
 		definitionDetailsStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);

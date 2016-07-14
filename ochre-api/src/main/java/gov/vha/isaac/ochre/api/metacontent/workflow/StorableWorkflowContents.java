@@ -25,6 +25,7 @@ package gov.vha.isaac.ochre.api.metacontent.workflow;
  * {@link AvailableAction}
  * {@link HistoricalWorkflow} 
  * {@link ProcessInstance}
+ * {@link DefinitionDetail}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
  */

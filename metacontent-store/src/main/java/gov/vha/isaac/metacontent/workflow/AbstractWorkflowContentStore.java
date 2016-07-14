@@ -37,7 +37,7 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * {@link AvailableActionWorkflowContentStore}
  * {@link HistoricalWorkflowContentStore}
  * {@link ProcessInstanceWorkflowContentStore}
- * {@link DefinitionDetailsWorkflowContentStore}
+ * {@link DefinitionDetailWorkflowContentStore}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
