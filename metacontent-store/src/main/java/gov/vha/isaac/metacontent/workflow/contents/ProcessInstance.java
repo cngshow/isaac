@@ -37,12 +37,13 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * 
  * {@link ProcessInstance} {@link StorableWorkflowContents}.
  *
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store as
- * multiple process instances will exist for a single Workflow Definition
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
+ * Store as multiple process instances will exist for a single Workflow
+ * Definition
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessInstance implements StorableWorkflowContents {
+public class ProcessInstance extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -76,7 +77,8 @@ public class ProcessInstance implements StorableWorkflowContents {
 	 * @param timeCreated
 	 *            the time created
 	 */
-	public ProcessInstance(UUID definitionId, List<Integer> stampSequences, UUID concept, Integer creator, Long timeCreated) {
+	public ProcessInstance(UUID definitionId, List<Integer> stampSequences, UUID concept, Integer creator,
+			Long timeCreated) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
 		this.concept = concept;
@@ -95,6 +97,7 @@ public class ProcessInstance implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.stampSequences = (List<Integer>) in.readObject();
 			this.concept = (UUID) in.readObject();
@@ -167,6 +170,7 @@ public class ProcessInstance implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(stampSequences);
 		out.writeObject(concept);
@@ -189,8 +193,9 @@ public class ProcessInstance implements StorableWorkflowContents {
 			buf.append(stampSeq + ", ");
 		}
 
-		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: " + buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: "
-				+ creator + "\n\t\tTime Created: " + timeCreated;
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
+				+ buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: " + creator
+				+ "\n\t\tTime Created: " + timeCreated;
 	}
 
 	/*
@@ -202,7 +207,8 @@ public class ProcessInstance implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessInstance other = (ProcessInstance) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
+		return this.definitionId.equals(other.definitionId)
+				&& this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
 				&& this.creator.equals(other.creator) && this.timeCreated.equals(other.timeCreated);
 	}
 
@@ -213,6 +219,7 @@ public class ProcessInstance implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode() + creator.hashCode() + timeCreated.hashCode();
+		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode()
+				+ creator.hashCode() + timeCreated.hashCode();
 	}
 }

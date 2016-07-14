@@ -111,7 +111,8 @@ public abstract class AbstractWorkflowContentStore {
 	 */
 	public UUID addEntry(StorableWorkflowContents entry) {
 		UUID key = getNewUUID(entry.hashCode());
-
+		entry.setId(key);
+		
 		try {
 			map.put(key, entry.serialize());
 		} catch (IOException e) {

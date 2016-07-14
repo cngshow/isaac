@@ -20,7 +20,9 @@ package gov.vha.isaac.ochre.workflow.provider;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.After;
@@ -30,7 +32,9 @@ import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 
 /**
  * Test the WorkflowDefinitionUtility class
@@ -64,6 +68,33 @@ public class ImportBpmn2FileTest {
 		store.close();
 	}
 
+
+	/**
+	 * Test vetz workflow set nodes.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
+	@Test
+	public void testVetzWorkflowSetDefinition() throws Exception {
+		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(store);
+
+		Assert.assertSame("Expected number of actionOutome records not what expected",
+				createdDefinitionDetailContentStore.getNumberOfEntries(), 1);
+		
+		DefinitionDetail entry = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
+		Set<String> expectedRoles = new HashSet<>();
+		expectedRoles.add("Editor");
+		expectedRoles.add("Reviewer");
+		expectedRoles.add("Approver");
+		
+		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow"); 
+		Assert.assertEquals(entry.getName(), "VetzWorkflow"); 
+		Assert.assertEquals(entry.getNamespace(), "org.jbpm"); 
+		Assert.assertEquals(entry.getVersion(), "1.2"); 
+		Assert.assertEquals(entry.getRoles(), expectedRoles); 
+	}
+
 	/**
 	 * Test vetz workflow set nodes.
 	 *
@@ -72,30 +103,25 @@ public class ImportBpmn2FileTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetNodes() throws Exception {
-		AvailableActionWorkflowContentStore createdStateActionCdontent = new AvailableActionWorkflowContentStore(store);
-
+		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(store);
+		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(store);
+		
 		Assert.assertSame("Expected number of actionOutome records not what expected",
-				createdStateActionCdontent.getNumberOfEntries(), 7);
+				createdAvailableActionContentStore.getNumberOfEntries(), 7);
 
-		List<String> possibleRoles = Arrays.asList("SME");
+		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
+		
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review");
 		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
-		UUID definitionId = null;
-
-		for (AvailableAction entry : createdStateActionCdontent.getAllEntries()) {
-			if (definitionId == null) {
-				definitionId = entry.getDefinitionId();
-			}
-			
-			Assert.assertEquals(definitionId, entry.getDefinitionId());
-			Assert.assertTrue(possibleRoles.contains(entry.getRole()));
+		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
+			Assert.assertEquals(definitionDetails.getId(),entry.getDefinitionId());
+			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
 			Assert.assertTrue(possibleStates.contains(entry.getCurrentState()));
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
 	}
-
 }

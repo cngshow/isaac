@@ -40,7 +40,7 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class HistoricalWorkflow implements StorableWorkflowContents {
+public class HistoricalWorkflow extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -106,6 +106,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.id = (UUID) in.readObject();
 			this.processId = (UUID) in.readObject();
 			this.advancer = (Integer) in.readObject();
 			this.timeAdvanced = (Long) in.readObject();
@@ -198,6 +199,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(id);
 		out.writeObject(processId);
 		out.writeObject(advancer);
 		out.writeObject(timeAdvanced);
@@ -216,9 +218,9 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tProcess Id: " + processId + "\n\t\tAdvancer Id: " + advancer + "\n\t\tTime Advanced: " + timeAdvanced
-				+ "\n\t\tState: " + state + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tComment: "
-				+ comment;
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tAdvancer Id: " + advancer
+				+ "\n\t\tTime Advanced: " + timeAdvanced + "\n\t\tState: " + state + "\n\t\tAction: " + action
+				+ "\n\t\tOutcome: " + outcome + "\n\t\tComment: " + comment;
 	}
 
 	/*
@@ -230,10 +232,10 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		HistoricalWorkflow other = (HistoricalWorkflow) obj;
 
-		return this.processId.equals(other.processId) && this.advancer.equals(other.advancer)
-				&& this.timeAdvanced.equals(other.timeAdvanced) && this.state.equals(other.state)
-				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
-				&& this.comment.equals(other.comment);
+		return this.processId.equals(other.processId)
+				&& this.advancer.equals(other.advancer) && this.timeAdvanced.equals(other.timeAdvanced)
+				&& this.state.equals(other.state) && this.action.equals(other.action)
+				&& this.outcome.equals(other.outcome) && this.comment.equals(other.comment);
 	}
 
 	/*
@@ -243,7 +245,7 @@ public class HistoricalWorkflow implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + advancer.hashCode() + timeAdvanced.hashCode() + state.hashCode() + action.hashCode()
-				+ outcome.hashCode() + comment.hashCode();
+		return processId.hashCode() + advancer.hashCode() + timeAdvanced.hashCode() + state.hashCode()
+				+ action.hashCode() + outcome.hashCode() + comment.hashCode();
 	}
 }

@@ -34,14 +34,14 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of Actions to Outcomes based on Roles and Current State
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store.
- * Different actions are defined per workflow definitions.
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
+ * Store. Different actions are defined per workflow definitions.
  * 
  * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AvailableAction implements StorableWorkflowContents {
+public class AvailableAction extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -94,6 +94,7 @@ public class AvailableAction implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.currentState = (String) in.readObject();
 			this.action = (String) in.readObject();
@@ -166,6 +167,7 @@ public class AvailableAction implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(currentState);
 		out.writeObject(action);
@@ -182,8 +184,8 @@ public class AvailableAction implements StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: " + currentState
-				+ "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: "
+				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
 	}
 
 	/*
@@ -195,9 +197,9 @@ public class AvailableAction implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AvailableAction other = (AvailableAction) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.currentState.equals(other.currentState)
-				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
-				&& this.role.equals(other.role);
+		return this.definitionId.equals(other.definitionId)
+				&& this.currentState.equals(other.currentState) && this.action.equals(other.action)
+				&& this.outcome.equals(other.outcome) && this.role.equals(other.role);
 
 	}
 
@@ -208,7 +210,7 @@ public class AvailableAction implements StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + currentState.hashCode() + action.hashCode() + outcome.hashCode()
-				+ role.hashCode();
+		return definitionId.hashCode() + currentState.hashCode() + action.hashCode()
+				+ outcome.hashCode() + role.hashCode();
 	}
 }

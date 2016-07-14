@@ -35,14 +35,14 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Roles available to a given author
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store.
- * Used to support different roles for different workflow definitions.
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
+ * Store. Used to support different roles for different workflow definitions.
  *
  * {@link AvailableAction} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AuthorPermission implements StorableWorkflowContents {
+public class AuthorPermission extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -83,6 +83,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.author = (Integer) in.readObject();
 			this.roles = (Set<String>) in.readObject();
@@ -135,6 +136,7 @@ public class AuthorPermission implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(author);
 		out.writeObject(roles);
@@ -155,7 +157,8 @@ public class AuthorPermission implements StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-		return "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tAuthor: " + author + "\n\t\tRoles: " + buf.toString();
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tAuthor: " + author
+				+ "\n\t\tRoles: " + buf.toString();
 	}
 
 	/*
@@ -167,7 +170,8 @@ public class AuthorPermission implements StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AuthorPermission other = (AuthorPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.author.equals(other.author) && this.roles.equals(other.roles);
+		return this.definitionId.equals(other.definitionId)
+				&& this.author.equals(other.author) && this.roles.equals(other.roles);
 
 	}
 

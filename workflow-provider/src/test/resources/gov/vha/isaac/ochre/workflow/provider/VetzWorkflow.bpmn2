@@ -398,7 +398,7 @@
       </bpmn2:dataInputAssociation>
       <bpmn2:potentialOwner id="PotentialOwner_1" name="Potential Owner 1">
         <bpmn2:resourceAssignmentExpression id="ResourceAssignmentExpression_1">
-          <bpmn2:formalExpression id="FormalExpression_41">Review</bpmn2:formalExpression>
+          <bpmn2:formalExpression id="FormalExpression_41">Reviewer</bpmn2:formalExpression>
         </bpmn2:resourceAssignmentExpression>
       </bpmn2:potentialOwner>
     </bpmn2:userTask>
@@ -569,13 +569,13 @@
         <di:waypoint xsi:type="dc:Point" x="100.0" y="288.0"/>
         <di:waypoint xsi:type="dc:Point" x="100.0" y="288.0"/>
         <di:waypoint xsi:type="dc:Point" x="110.0" y="288.0"/>
-        <bpmndi:BPMNLabel/>
+        <bpmndi:BPMNLabel id="BPMNLabel_2"/>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_SequenceFlow_9" bpmnElement="SequenceFlow_9" sourceElement="BPMNShape_UserTask_7" targetElement="BPMNShape_EndEvent_3">
         <di:waypoint xsi:type="dc:Point" x="1150.0" y="485.0"/>
         <di:waypoint xsi:type="dc:Point" x="1190.0" y="485.0"/>
         <di:waypoint xsi:type="dc:Point" x="1230.0" y="485.0"/>
-        <bpmndi:BPMNLabel/>
+        <bpmndi:BPMNLabel id="BPMNLabel_10"/>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
     <bpmndi:BPMNLabelStyle id="BPMNLabelStyle_1">

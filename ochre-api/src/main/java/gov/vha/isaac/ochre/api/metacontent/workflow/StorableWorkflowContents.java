@@ -30,11 +30,15 @@ package gov.vha.isaac.ochre.api.metacontent.workflow;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
  */
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * The Interface StorableWorkflowContents.
  */
-public interface StorableWorkflowContents {
+public abstract class StorableWorkflowContents {
+
+	/** The id. */
+	protected UUID id;
 
 	/**
 	 * Turn the concrete class into a suitable byte[] for storage.
@@ -43,5 +47,23 @@ public interface StorableWorkflowContents {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public byte[] serialize() throws IOException;
+	abstract public byte[] serialize() throws IOException;
+
+	/**
+	 * Sets the id.
+	 *
+	 * @param key the new id
+	 */
+	public void setId(UUID key) {
+		id = key;
+	}
+
+	/**
+	 * Gets the id.
+	 *
+	 * @return the id
+	 */
+	public UUID getId() {
+		return id;
+	}
 }

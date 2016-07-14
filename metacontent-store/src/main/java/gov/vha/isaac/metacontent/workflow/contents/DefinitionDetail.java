@@ -25,6 +25,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,14 +35,14 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of workflow to Outcomes based on Roles and Current State
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content Store.
- * Different actions are defined per workflow definitions.
+ * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
+ * Store. Different actions are defined per workflow definitions.
  * 
  * {@link DefinitionDetail} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DefinitionDetail implements StorableWorkflowContents {
+public class DefinitionDetail extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -64,11 +65,16 @@ public class DefinitionDetail implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new definition details.
 	 *
-	 * @param bpmn2Id the bpmn2 id
-	 * @param name the name
-	 * @param namespace the namespace
-	 * @param version the version
-	 * @param roles the roles
+	 * @param bpmn2Id
+	 *            the bpmn2 id
+	 * @param name
+	 *            the name
+	 * @param namespace
+	 *            the namespace
+	 * @param version
+	 *            the version
+	 * @param roles
+	 *            the roles
 	 */
 	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles) {
 		this.bpmn2Id = bpmn2Id;
@@ -81,13 +87,15 @@ public class DefinitionDetail implements StorableWorkflowContents {
 	/**
 	 * Instantiates a new definition details from a serialized byte array.
 	 *
-	 * @param data serialized byte array
+	 * @param data
+	 *            serialized byte array
 	 */
 	public DefinitionDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
+			this.id = (UUID) in.readObject();
 			this.bpmn2Id = (String) in.readObject();
 			this.name = (String) in.readObject();
 			this.namespace = (String) in.readObject();
@@ -135,6 +143,7 @@ public class DefinitionDetail implements StorableWorkflowContents {
 		ObjectOutputStream out = new ObjectOutputStream(bos);
 
 		// write the object
+		out.writeObject(id);
 		out.writeObject(bpmn2Id);
 		out.writeObject(name);
 		out.writeObject(namespace);
@@ -157,8 +166,8 @@ public class DefinitionDetail implements StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-		return "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name
-				+ "\n\t\tNamespace: " + namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString();
+		return "\n\t\tId: " + id + "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name + "\n\t\tNamespace: "
+				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString();
 	}
 
 	/*
