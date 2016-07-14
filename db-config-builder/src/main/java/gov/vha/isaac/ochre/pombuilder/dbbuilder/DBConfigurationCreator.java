@@ -56,7 +56,7 @@ public class DBConfigurationCreator
 	private static final String parentGroupId = "gov.vha.isaac.ochre.modules";
 	private static final String parentArtifactId = "db-builder";
 	private static final String parentVersion = VersionFinder.findProjectVersion();
-	private static final String groupId = "gov.vha.isaac.db";
+	public static final String groupId = "gov.vha.isaac.db";
 	
 	/**
 	 * Construct a new DB builder project which is executable via maven.
