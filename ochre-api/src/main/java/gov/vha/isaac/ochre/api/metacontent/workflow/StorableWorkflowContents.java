@@ -47,7 +47,7 @@ public abstract class StorableWorkflowContents {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	abstract public byte[] serialize() throws IOException;
+	public abstract byte[] serialize() throws IOException;
 
 	/**
 	 * Sets the id.
