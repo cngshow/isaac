@@ -314,7 +314,7 @@ public class SyncServiceGIT implements SyncFiles
 		}
 		catch (TransportException te)
 		{
-			if (te.getMessage().contains("Auth fail"))
+			if (te.getMessage().contains("Auth fail") || te.getMessage().contains("not authorized"))
 			{
 				log.info("Auth fail", te);
 				throw new AuthenticationException("Auth fail");
@@ -661,7 +661,7 @@ public class SyncServiceGIT implements SyncFiles
 		}
 		catch (TransportException te)
 		{
-			if (te.getMessage().contains("Auth fail"))
+			if (te.getMessage().contains("Auth fail") || te.getMessage().contains("not authorized"))
 			{
 				log.info("Auth fail", te);
 				throw new AuthenticationException("Auth fail");
