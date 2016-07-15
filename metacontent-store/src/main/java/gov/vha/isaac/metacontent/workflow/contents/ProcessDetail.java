@@ -35,15 +35,15 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of process when new workflow instance created
  * 
- * {@link ProcessInstance} {@link StorableWorkflowContents}.
+ * {@link ProcessDetail} {@link StorableWorkflowContents}.
  *
  * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store as multiple process instances will exist for a single Workflow
+ * Store as multiple Process Detailss will exist for a single Workflow
  * Definition
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessInstance extends StorableWorkflowContents {
+public class ProcessDetail extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -58,10 +58,16 @@ public class ProcessInstance extends StorableWorkflowContents {
 	private UUID concept;
 
 	/** The creator. */
-	private Integer creator;
+	private int creator;
 
 	/** The time created. */
-	private Long timeCreated;
+	private long timeCreated;
+
+	/** The time created. */
+	private long timeConcluded = -1L;
+
+	/** The active flag. */
+	private Boolean active;
 
 	/**
 	 * Instantiates a new process definition.
@@ -77,13 +83,14 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 * @param timeCreated
 	 *            the time created
 	 */
-	public ProcessInstance(UUID definitionId, List<Integer> stampSequences, UUID concept, Integer creator,
-			Long timeCreated) {
+	public ProcessDetail(UUID definitionId, UUID concept, List<Integer> stampSequences, int creator, long timeCreated,
+			boolean active) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
 		this.concept = concept;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
+		this.active = active;
 	}
 
 	/**
@@ -92,7 +99,7 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 * @param data
 	 *            the data
 	 */
-	public ProcessInstance(byte[] data) {
+	public ProcessDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
@@ -103,11 +110,13 @@ public class ProcessInstance extends StorableWorkflowContents {
 			this.concept = (UUID) in.readObject();
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
+			this.timeConcluded = (Long) in.readObject();
+			this.active = (Boolean) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into ProcessDefinition", e);
+			logger.error("Failure to deserialize data into ProcessDetail", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast ProcessDefinition fields", e);
+			logger.error("Failure to cast ProcessDetail fields", e);
 			e.printStackTrace();
 		}
 	}
@@ -131,6 +140,17 @@ public class ProcessInstance extends StorableWorkflowContents {
 	}
 
 	/**
+	 * Gets the stamp sequences.
+	 *
+	 * @return the stamp sequences
+	 */
+	public List<Integer> addStampSequences(List<Integer> newStamps) {
+		stampSequences.addAll(newStamps);
+
+		return stampSequences;
+	}
+
+	/**
 	 * Gets the concept.
 	 *
 	 * @return the concept
@@ -144,7 +164,7 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 *
 	 * @return the creator
 	 */
-	public Integer getCreator() {
+	public int getCreator() {
 		return creator;
 	}
 
@@ -153,8 +173,40 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 *
 	 * @return the time created
 	 */
-	public Long getTimeCreated() {
+	public long getTimeCreated() {
 		return timeCreated;
+	}
+
+	/**
+	 * Gets the time concluded.
+	 *
+	 * @return the time concluded
+	 */
+	public long getTimeConcluded() {
+		return timeConcluded;
+	}
+
+	/**
+	 * Sets the time concluded.
+	 */
+	public void setTimeConcluded(long time) {
+		timeConcluded = time;
+	}
+
+	/**
+	 * Gets the active flag.
+	 *
+	 * @return the active flag value
+	 */
+	public boolean isActive() {
+		return active;
+	}
+
+	/**
+	 * Sets the active flag.
+	 */
+	public void setActive(boolean val) {
+		active = val;
 	}
 
 	/*
@@ -176,6 +228,8 @@ public class ProcessInstance extends StorableWorkflowContents {
 		out.writeObject(concept);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
+		out.writeObject(timeConcluded);
+		out.writeObject(active);
 
 		return bos.toByteArray();
 	}
@@ -195,7 +249,8 @@ public class ProcessInstance extends StorableWorkflowContents {
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
 				+ buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: " + creator
-				+ "\n\t\tTime Created: " + timeCreated;
+				+ "\n\t\tTime Created: " + timeCreated + "\n\t\tTime Concluded: " + timeConcluded + "\n\t\tActive: "
+				+ active;
 	}
 
 	/*
@@ -205,11 +260,12 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		ProcessInstance other = (ProcessInstance) obj;
+		ProcessDetail other = (ProcessDetail) obj;
 
-		return this.definitionId.equals(other.definitionId)
-				&& this.stampSequences.equals(other.stampSequences) && this.concept.equals(other.concept)
-				&& this.creator.equals(other.creator) && this.timeCreated.equals(other.timeCreated);
+		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
+				&& this.concept.equals(other.concept) && this.creator == other.creator
+				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
+				&& this.active.equals(other.active);
 	}
 
 	/*
@@ -219,7 +275,7 @@ public class ProcessInstance extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode()
-				+ creator.hashCode() + timeCreated.hashCode();
+		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode() + creator
+				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + active.hashCode();
 	}
 }

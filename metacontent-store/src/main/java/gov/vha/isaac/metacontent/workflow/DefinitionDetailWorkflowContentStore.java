@@ -27,7 +27,8 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 
 /**
- * Statically populated workflow details initialized from BPMN2 file during reading of WF Definition only
+ * Statically populated workflow details initialized from BPMN2 file during
+ * reading of WF Definition only
  * 
  * {@link DefinitionDetailWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
