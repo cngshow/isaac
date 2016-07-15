@@ -24,26 +24,26 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AuthorPermission;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 
 /**
- * Statically populated author permissions initialized during reading of WF Definition only
+ * Dynamic workflow history populated at runtime only
  * 
- * {@link AuthorPermissionWorkflowContentStore}
+ * {@link ProcessHistoryContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
+public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new author permission workflow content store.
+	 * Instantiates a new users process advancement content store.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public AuthorPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.AUTHOR_PERMISSION);
+	public ProcessHistoryContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.HISTORICAL_WORKFLOW);
 	}
 
 	/*
@@ -54,8 +54,8 @@ public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowConten
 	 * java.util.UUID)
 	 */
 	@Override
-	public AuthorPermission getEntry(UUID key) {
-		return new AuthorPermission(getGenericEntry(key));
+	public ProcessHistory getEntry(UUID key) {
+		return new ProcessHistory(getGenericEntry(key));
 	}
 
 	/*
@@ -65,13 +65,13 @@ public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowConten
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<AuthorPermission> getAllEntries() {
-		Set<AuthorPermission> retSet = new HashSet<>();
+	public Set<ProcessHistory> getAllEntries() {
+		Set<ProcessHistory> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new AuthorPermission(entry));
+			retSet.add(new ProcessHistory(entry));
 		}
 
 		return retSet;
@@ -89,10 +89,10 @@ public class AuthorPermissionWorkflowContentStore extends AbstractWorkflowConten
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tAuthor Permission" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tProcess History" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "AuthorPermissionWorkflowContentStore: " + buf.toString();
+		return "ProcessHistoryContentStore: " + buf.toString();
 	}
 }

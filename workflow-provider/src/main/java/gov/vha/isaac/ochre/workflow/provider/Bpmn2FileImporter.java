@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.drools.core.io.impl.ByteArrayResource;
 import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
@@ -66,22 +64,17 @@ import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link ImportBpmn2FileUtility}.
+ * {@link AbstractWorkflowUtilities} {@link Bpmn2FileImporter}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ImportBpmn2FileUtility {
-
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
+public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 	/** The bpmn2 service. */
 	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
@@ -102,8 +95,9 @@ public class ImportBpmn2FileUtility {
 	/** The process. */
 	private RuleFlowProcess process;
 
-	/** The store. */
-	MVStoreMetaContentProvider store = null;
+	public Bpmn2FileImporter() throws Exception {
+		// Default Constructor fails if store not already set
+	}
 
 	/**
 	 * Instantiates a new workflow definition utility.
@@ -111,8 +105,8 @@ public class ImportBpmn2FileUtility {
 	 * @param store
 	 *            the store
 	 */
-	public ImportBpmn2FileUtility(MVStoreMetaContentProvider store) {
-		this.store = store;
+	public Bpmn2FileImporter(MVStoreMetaContentProvider store) {
+		super(store);
 	}
 
 	/**
@@ -123,8 +117,9 @@ public class ImportBpmn2FileUtility {
 	 * @param bpmn2FilePath
 	 *            the bpmn2 file path
 	 */
-	public ImportBpmn2FileUtility(MVStoreMetaContentProvider store, String bpmn2FilePath) {
-		this.store = store;
+	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
+		super(store);
+
 		UUID key = setDefinition(bpmn2FilePath);
 		setNodes(bpmn2FilePath, key);
 	}
@@ -167,8 +162,6 @@ public class ImportBpmn2FileUtility {
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		Set<String> roles = new HashSet<>();
 
-		DefinitionDetailWorkflowContentStore createdStateActionContentStore = new DefinitionDetailWorkflowContentStore(
-				store);
 		ProcessAssetDesc definition = descriptor.getProcess();
 
 		for (String key : descriptor.getTaskAssignments().keySet()) {
@@ -177,8 +170,10 @@ public class ImportBpmn2FileUtility {
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
 				definition.getNamespace(), definition.getVersion(), roles);
+		System.out.println("**** 111 with entry: " + entry);
+		System.out.println("**** 222 with definitionDetStore: " + definitionDetailStore);
 
-		return createdStateActionContentStore.addEntry(entry);
+		return definitionDetailStore.addEntry(entry);
 	}
 
 	/**
@@ -223,12 +218,10 @@ public class ImportBpmn2FileUtility {
 		try {
 			Set<AvailableAction> entries = generateAvailableActions(processNodes, nodeToOutgoingMap, definitionId,
 					connections);
-			AvailableActionWorkflowContentStore createdStateActionContentStore = new AvailableActionWorkflowContentStore(
-					store);
 
 			for (AvailableAction entry : entries) {
 				// Write content into database
-				createdStateActionContentStore.addEntry(entry);
+				availableActionStore.addEntry(entry);
 			}
 		} catch (Exception e) {
 			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);

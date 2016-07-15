@@ -24,26 +24,26 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.HistoricalWorkflow;
+import gov.vha.isaac.metacontent.workflow.contents.UserWorkflowPermission;
 
 /**
- * Dynamic workflow history populated at runtime only
+ * Statically populated user workflow permissions initialized during reading of WF Definition only
  * 
- * {@link HistoricalWorkflowContentStore}
+ * {@link UserWorkflowPermissionWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore {
+public class UserWorkflowPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new users process advancement content store.
+	 * Instantiates a new user workflow permission workflow content store.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public HistoricalWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.HISTORICAL_WORKFLOW);
+	public UserWorkflowPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.AUTHOR_PERMISSION);
 	}
 
 	/*
@@ -54,8 +54,8 @@ public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore
 	 * java.util.UUID)
 	 */
 	@Override
-	public HistoricalWorkflow getEntry(UUID key) {
-		return new HistoricalWorkflow(getGenericEntry(key));
+	public UserWorkflowPermission getEntry(UUID key) {
+		return new UserWorkflowPermission(getGenericEntry(key));
 	}
 
 	/*
@@ -65,13 +65,13 @@ public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<HistoricalWorkflow> getAllEntries() {
-		Set<HistoricalWorkflow> retSet = new HashSet<>();
+	public Set<UserWorkflowPermission> getAllEntries() {
+		Set<UserWorkflowPermission> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new HistoricalWorkflow(entry));
+			retSet.add(new UserWorkflowPermission(entry));
 		}
 
 		return retSet;
@@ -89,10 +89,10 @@ public class HistoricalWorkflowContentStore extends AbstractWorkflowContentStore
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tHistorical Workflow" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tUser Workflow Permission" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "HistoricalWorkflowContentStore: " + buf.toString();
+		return "UserWorkflowPermissionWorkflowContentStore: " + buf.toString();
 	}
 }

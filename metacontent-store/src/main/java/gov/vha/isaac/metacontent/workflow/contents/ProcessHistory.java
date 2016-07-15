@@ -34,13 +34,13 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Storage of workflow history
  * 
- * {@link HistoricalWorkflow} {@link StorableWorkflowContents}
+ * {@link ProcessHistory} {@link StorableWorkflowContents}
  *
  * NOTE: The processId is the Key of the Process Definition Content Store.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class HistoricalWorkflow extends StorableWorkflowContents {
+public class ProcessHistory extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -48,11 +48,11 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	/** The process id. */
 	private UUID processId;
 
-	/** The advancer. */
-	private Integer advancer;
+	/** The workflowUser. */
+	private int workflowUser;
 
 	/** The time advanced. */
-	private Long timeAdvanced;
+	private long timeAdvanced;
 
 	/** The state. */
 	private String state;
@@ -71,8 +71,8 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param advancer
-	 *            the advancer
+	 * @param workflowUser
+	 *            the workflowUser
 	 * @param timeAdvanced
 	 *            the time advanced
 	 * @param state
@@ -84,10 +84,10 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 * @param comment
 	 *            the comment
 	 */
-	public HistoricalWorkflow(UUID processId, Integer advancer, Long timeAdvanced, String state, String action,
-			String outcome, String comment) {
+	public ProcessHistory(UUID processId, int workflowUser, long timeAdvanced, String state, String action, String outcome,
+			String comment) {
 		this.processId = processId;
-		this.advancer = advancer;
+		this.workflowUser = workflowUser;
 		this.timeAdvanced = timeAdvanced;
 		this.state = state;
 		this.action = action;
@@ -101,24 +101,24 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 * @param data
 	 *            the data
 	 */
-	public HistoricalWorkflow(byte[] data) {
+	public ProcessHistory(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.processId = (UUID) in.readObject();
-			this.advancer = (Integer) in.readObject();
+			this.workflowUser = (Integer) in.readObject();
 			this.timeAdvanced = (Long) in.readObject();
 			this.state = (String) in.readObject();
 			this.action = (String) in.readObject();
 			this.outcome = (String) in.readObject();
 			this.comment = (String) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into HistoricalWorkflow", e);
+			logger.error("Failure to deserialize data into ProcessHistory", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast HistoricalWorkflow fields", e);
+			logger.error("Failure to cast ProcessHistory fields", e);
 			e.printStackTrace();
 		}
 	}
@@ -133,12 +133,12 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the advancer.
+	 * Gets the workflowUser.
 	 *
-	 * @return the advancer
+	 * @return the workflowUser
 	 */
-	public Integer getAdvancer() {
-		return advancer;
+	public int getWorkflowUser() {
+		return workflowUser;
 	}
 
 	/**
@@ -146,7 +146,7 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 *
 	 * @return the time advanced
 	 */
-	public Long getTimeAdvanced() {
+	public long getTimeAdvanced() {
 		return timeAdvanced;
 	}
 
@@ -201,7 +201,7 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(processId);
-		out.writeObject(advancer);
+		out.writeObject(workflowUser);
 		out.writeObject(timeAdvanced);
 		out.writeObject(state);
 		out.writeObject(action);
@@ -218,7 +218,7 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tAdvancer Id: " + advancer
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + workflowUser
 				+ "\n\t\tTime Advanced: " + timeAdvanced + "\n\t\tState: " + state + "\n\t\tAction: " + action
 				+ "\n\t\tOutcome: " + outcome + "\n\t\tComment: " + comment;
 	}
@@ -230,12 +230,12 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		HistoricalWorkflow other = (HistoricalWorkflow) obj;
+		ProcessHistory other = (ProcessHistory) obj;
 
-		return this.processId.equals(other.processId)
-				&& this.advancer.equals(other.advancer) && this.timeAdvanced.equals(other.timeAdvanced)
-				&& this.state.equals(other.state) && this.action.equals(other.action)
-				&& this.outcome.equals(other.outcome) && this.comment.equals(other.comment);
+		return this.processId.equals(other.processId) && this.workflowUser == other.workflowUser
+				&& this.timeAdvanced == other.timeAdvanced && this.state.equals(other.state)
+				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
+				&& this.comment.equals(other.comment);
 	}
 
 	/*
@@ -245,7 +245,7 @@ public class HistoricalWorkflow extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + advancer.hashCode() + timeAdvanced.hashCode() + state.hashCode()
+		return processId.hashCode() + workflowUser + new Long(timeAdvanced).hashCode() + state.hashCode()
 				+ action.hashCode() + outcome.hashCode() + comment.hashCode();
 	}
 }

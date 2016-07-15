@@ -33,16 +33,20 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Roles available to a given author
+ * Roles available to a given workflow user
  * 
  * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
  * Store. Used to support different roles for different workflow definitions.
  *
- * {@link AvailableAction} {@link StorableWorkflowContents}
+ * {@link UserWorkflowPermission} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AuthorPermission extends StorableWorkflowContents {
+/**
+ * @author yishai
+ *
+ */
+public class UserWorkflowPermission extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -50,48 +54,48 @@ public class AuthorPermission extends StorableWorkflowContents {
 	/** The definition id. */
 	private UUID definitionId;
 
-	/** The author. */
-	private Integer author;
+	/** The user. */
+	private int user;
 
 	/** The roles. */
 	private Set<String> roles;
 
 	/**
-	 * Instantiates a new author permission.
+	 * Instantiates a new workflow user permission.
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param author
-	 *            the author
+	 * @param user
+	 *            the user
 	 * @param roles
 	 *            the roles
 	 */
-	public AuthorPermission(UUID definitionId, Integer author, Set<String> roles) {
+	public UserWorkflowPermission(UUID definitionId, int user, Set<String> roles) {
 		this.definitionId = definitionId;
-		this.author = author;
+		this.user = user;
 		this.roles = roles;
 	}
 
 	/**
-	 * Instantiates a new author permission.
+	 * Instantiates a new workflow user permission.
 	 *
 	 * @param data
 	 *            the data
 	 */
-	public AuthorPermission(byte[] data) {
+	public UserWorkflowPermission(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.author = (Integer) in.readObject();
+			this.user = (Integer) in.readObject();
 			this.roles = (Set<String>) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into AuthorPermission", e);
+			logger.error("Failure to deserialize data into UserWorkflowPermission", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast AuthorPermission fields into String", e);
+			logger.error("Failure to cast UserWorkflowPermission fields into String", e);
 			e.printStackTrace();
 		}
 	}
@@ -106,12 +110,12 @@ public class AuthorPermission extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the author.
+	 * Gets the user.
 	 *
-	 * @return the author
+	 * @return the user
 	 */
-	public Integer getAuthor() {
-		return author;
+	public int getUser() {
+		return user;
 	}
 
 	/**
@@ -121,6 +125,15 @@ public class AuthorPermission extends StorableWorkflowContents {
 	 */
 	public Set<String> getRoles() {
 		return roles;
+	}
+
+	/**
+	 * Sets the roles.
+	 *
+	 * @param newRoles the new roles
+	 */
+	public void setRoles(Set<String> newRoles) {
+		roles = newRoles;
 	}
 
 	/*
@@ -138,7 +151,7 @@ public class AuthorPermission extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(definitionId);
-		out.writeObject(author);
+		out.writeObject(user);
 		out.writeObject(roles);
 
 		return bos.toByteArray();
@@ -157,7 +170,7 @@ public class AuthorPermission extends StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tAuthor: " + author
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + user
 				+ "\n\t\tRoles: " + buf.toString();
 	}
 
@@ -168,10 +181,10 @@ public class AuthorPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		AuthorPermission other = (AuthorPermission) obj;
+		UserWorkflowPermission other = (UserWorkflowPermission) obj;
 
-		return this.definitionId.equals(other.definitionId)
-				&& this.author.equals(other.author) && this.roles.equals(other.roles);
+		return this.definitionId.equals(other.definitionId) && this.user == other.user
+				&& this.roles.equals(other.roles);
 
 	}
 
@@ -182,6 +195,6 @@ public class AuthorPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + author.hashCode() + roles.hashCode();
+		return definitionId.hashCode() + user + roles.hashCode();
 	}
 }

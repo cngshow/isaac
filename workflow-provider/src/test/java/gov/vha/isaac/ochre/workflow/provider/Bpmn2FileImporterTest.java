@@ -23,11 +23,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
@@ -39,35 +38,34 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 /**
  * Test the WorkflowDefinitionUtility class
  * 
- * {@link ImportBpmn2FileUtility}.
+ * {@link Bpmn2FileImporter}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ImportBpmn2FileTest {
+public class Bpmn2FileImporterTest {
 
 	/** The bpmn file path. */
-	private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
+	static private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 
 	/** The store. */
-	private MVStoreMetaContentProvider store;
+	static private MVStoreMetaContentProvider store;
 
 	/**
 	 * Sets the up.
 	 */
-	@Before
-	public void setUp() {
+	@BeforeClass
+	public static void setUpClass() {
 		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		new ImportBpmn2FileUtility(store, BPMN_FILE_PATH);
+		new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 	}
 
 	/**
 	 * Tear down.
 	 */
-	@After
-	public void tearDown() {
+	@AfterClass
+	public static void tearDownClass() {
 		store.close();
 	}
-
 
 	/**
 	 * Test vetz workflow set nodes.
@@ -77,22 +75,23 @@ public class ImportBpmn2FileTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetDefinition() throws Exception {
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(store);
+		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+				store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdDefinitionDetailContentStore.getNumberOfEntries(), 1);
-		
+
 		DefinitionDetail entry = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
 		Set<String> expectedRoles = new HashSet<>();
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
-		
-		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow"); 
-		Assert.assertEquals(entry.getName(), "VetzWorkflow"); 
-		Assert.assertEquals(entry.getNamespace(), "org.jbpm"); 
-		Assert.assertEquals(entry.getVersion(), "1.2"); 
-		Assert.assertEquals(entry.getRoles(), expectedRoles); 
+
+		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
+		Assert.assertEquals(entry.getName(), "VetzWorkflow");
+		Assert.assertEquals(entry.getNamespace(), "org.jbpm");
+		Assert.assertEquals(entry.getVersion(), "1.2");
+		Assert.assertEquals(entry.getRoles(), expectedRoles);
 	}
 
 	/**
@@ -103,21 +102,26 @@ public class ImportBpmn2FileTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetNodes() throws Exception {
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(store);
-		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(store);
-		
+		System.out.println("**** AAAA");
+		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+				store);
+		System.out.println("**** BBBB");
+		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(
+				store);
+		System.out.println("**** CCCC");
+
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdAvailableActionContentStore.getNumberOfEntries(), 7);
 
 		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
-		
+
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review");
 		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
-			Assert.assertEquals(definitionDetails.getId(),entry.getDefinitionId());
+			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
 			Assert.assertTrue(possibleStates.contains(entry.getCurrentState()));
