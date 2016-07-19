@@ -3,7 +3,6 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,13 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-
 import javax.inject.Singleton;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -61,6 +57,7 @@ import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -944,5 +941,83 @@ public class Frills implements DynamicSememeColumnUtility {
 			columnDescription = columnName;
 		}
 		return new String[] {columnName, columnDescription};
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with nulls. 
+	 * @param conceptUUID - identifier for a concept
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID) {
+		return getDescription(conceptUUID, null, null);
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)}. 
+	 * @param conceptId - either a sequence or a nid
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId) {
+		return getDescription(conceptId, null, null);
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptUUID - identifier for a concept
+	 * @param tc - optional - if not provided, defaults to system preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param tc - optional - if not provided, defaults to system preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to system preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to system preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
+	{
+		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to system preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to system preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
+	{
+		Optional<LatestVersion<DescriptionSememe<?>>> desc = Get.conceptService()
+			.getSnapshot(stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate() : stampCoordinate,
+						languageCoordinate == null ? Get.configurationService().getDefaultLanguageCoordinate() : languageCoordinate)
+					.getDescriptionOptional(conceptId);
+		
+		return desc.isPresent() ? Optional.of(desc.get().value().getText()) : Optional.empty();
 	}
 }
