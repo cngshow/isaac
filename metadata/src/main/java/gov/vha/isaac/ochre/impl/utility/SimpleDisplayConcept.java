@@ -113,7 +113,7 @@ public class SimpleDisplayConcept implements Comparable<SimpleDisplayConcept>
 		return uncommitted_;
 	}
 	
-	protected void setNid(int nid)
+	public void setNid(int nid)
 	{
 		nid_ = nid;
 	}
