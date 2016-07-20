@@ -23,10 +23,13 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -49,6 +52,7 @@ public class SrcUploadCreator
 	
 	
 	public static void logCrap() {
+		Map<String, Appender> appenders = ((org.apache.logging.log4j.core.Logger)LogManager.getRootLogger()).getAppenders();
 		LOG.debug("Hi Cris");
 		LOG.info("It is a nice day.");
 		LOG.warn("It is a rainy day");
