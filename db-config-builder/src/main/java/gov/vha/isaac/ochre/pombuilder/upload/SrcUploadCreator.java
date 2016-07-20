@@ -75,7 +75,7 @@ public class SrcUploadCreator
 		LOG.info("It is a nice day.");
 		LOG.warn("It is a rainy day");
 		LOG.error("It is a scary day");
-		LOG.fatal("Armegeddon is upon us.");
+		LOG.fatal("Armegeddon is upon us.");//Some test logging
 		
 		LOG.info("Building the task to create a source upload configuration...");
 
