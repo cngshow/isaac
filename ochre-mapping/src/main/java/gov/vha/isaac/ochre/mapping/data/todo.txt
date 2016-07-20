@@ -1,1 +1,0 @@
-Port the code from the javafx gui mapping project here (all of the data related code)
