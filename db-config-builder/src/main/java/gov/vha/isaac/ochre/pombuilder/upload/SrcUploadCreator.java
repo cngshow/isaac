@@ -71,6 +71,12 @@ public class SrcUploadCreator
 			String gitRepositoryURL, String gitUsername, String gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
+		LOG.debug("Hi Cris");
+		LOG.info("It is a nice day.");
+		LOG.warn("It is a rainy day");
+		LOG.error("It is a scary day");
+		LOG.fatal("Armegeddon is upon us.");
+		
 		LOG.info("Building the task to create a source upload configuration...");
 
 		if (filesToUpload == null || filesToUpload.size() == 0)
