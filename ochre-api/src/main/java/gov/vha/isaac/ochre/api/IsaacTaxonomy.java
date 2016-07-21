@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -287,6 +288,8 @@ public class IsaacTaxonomy {
     
     public void exportYamlBinding(Writer out, String packageName, String className) throws IOException  {
         out.append("#YAML Bindings for " + packageName + "." + className + "\n");
+        //TODO use common code (when moved somewhere common) to extract the version number from the pom.xml
+        out.append("#Generated " + new Date().toString() + "\n");
         
         for (ConceptBuilder concept : conceptBuildersInInsertionOrder) {
             String preferredName = concept.getConceptDescriptionText();

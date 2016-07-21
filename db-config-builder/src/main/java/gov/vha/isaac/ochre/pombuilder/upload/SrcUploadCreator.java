@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -46,6 +48,15 @@ import javafx.concurrent.Task;
 public class SrcUploadCreator
 {
 	private static final Logger LOG = LogManager.getLogger();
+	
+	
+	public static void logCrap() {
+		LOG.debug("Hi Cris");
+		LOG.info("It is a nice day.");
+		LOG.warn("It is a rainy day");
+		LOG.error("It is a scary day");
+		LOG.fatal("Armegeddon is upon us.");//Some test logging to integrate with rails
+	}
 	
 	/**
 	 * @param uploadType - What type of content is being uploaded.
@@ -71,6 +82,14 @@ public class SrcUploadCreator
 			String gitRepositoryURL, String gitUsername, String gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
+		LOG.debug("Hi Cris");
+		LOG.info("It is a nice day.");
+		LOG.warn("It is a rainy day");
+		LOG.error("It is a scary day");
+		LOG.fatal("Armegeddon is upon us.");//Some test logging to integrate with rails
+		
+		LOG.info("Building the task to create a source upload configuration...");
+
 		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
 			throw new Exception("No content was found to upload!");

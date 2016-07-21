@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.07</version>
+    <version>3.08</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -27,9 +27,9 @@
     <packaging>pom</packaging>
     
     <scm>
-        <url>https://github.com/VA-CTT/ISAAC</url>
+        <url>https://vadev.mantech.com:4848/git/summary/ISAAC.git</url>
     </scm>
-    
+
     <properties>
         <branch>woolsthorpe</branch>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -42,7 +42,8 @@
         <sonar.jacoco.itReportPath>${project.build.directory}/jacoco-it.exec</sonar.jacoco.itReportPath>
         <jersey.version>2.22.1</jersey.version>
         <maven-project-info-reports-plugin.version>2.9</maven-project-info-reports-plugin.version>  
-    </properties>
+        <jbpm.version>6.4.0.Final</jbpm.version>
+	</properties>
     
     <organization>
         <name>U.S. Department of Veterans Affairs</name>
@@ -264,7 +265,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
+
     <build>
         <pluginManagement>
             <plugins>
@@ -654,6 +655,7 @@
         <module>ochre-mapping</module>
         <module>sync-git</module>
         <module>metacontent-store</module>
+        <module>workflow-provider</module>
         <!-- <module>ibdf-differ</module>-->
     </modules>
     

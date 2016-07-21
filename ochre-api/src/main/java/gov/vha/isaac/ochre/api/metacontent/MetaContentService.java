@@ -19,7 +19,9 @@
 package gov.vha.isaac.ochre.api.metacontent;
 
 import java.util.concurrent.ConcurrentMap;
+
 import org.jvnet.hk2.annotations.Contract;
+
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
 
 /**
@@ -31,8 +33,7 @@ import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Contract
-public interface MetaContentService
-{
+public interface MetaContentService {
 	/**
 	 * Call prior to JVM exit for safe shutdown
 	 */
@@ -56,7 +57,7 @@ public interface MetaContentService
 	 * Erase any stored user prefs
 	 */
 	public void removeUserPrefs(int userId);
-	
+
 	/**
 	 * Open or create a new data store.  The type of the key and value must be specified.
 	 * Not being consistent with the Key/Value types for a particular store name will result in 
