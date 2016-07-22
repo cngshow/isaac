@@ -300,13 +300,18 @@ public class SrcUploadCreator
 	 */
 	public static String fetchResult(Task<String> task) 
 	{
+		LOG.trace("In fetchResult");
+		
 		javafx.concurrent.Worker.State s = task.getState();
+		LOG.trace("Current state is " + s.toString());
 		if(s == javafx.concurrent.Worker.State.READY) {
-			throw new IllegalStateException("The task has not been started.  Please start the task.");
+			//throw new IllegalStateException("The task has not been started.  Please start the task.");
 		}
 		String result = null;
 		try {
+			LOG.trace("Calling task.get");
 			result = task.get();
+			LOG.trace("task.get is done, result= " + result);
 		} catch (Exception e) {
 			result = e.getMessage();
 			LOG.error("Exception thrown during task.get", e);
