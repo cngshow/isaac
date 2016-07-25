@@ -75,7 +75,7 @@ public class MappingItemDAO extends MappingDAO
 		Optional<LatestVersion<DynamicSememe<?>>> latest = built.getLatestVersion(DynamicSememe.class, 
 				stampCoord.makeAnalog(State.ACTIVE, State.INACTIVE));
 		
-		return new MappingItem(latest.get().value(), stampCoord);
+		return new MappingItem(latest.get().value());
 	}
 	
 	/**
@@ -97,10 +97,10 @@ public class MappingItemDAO extends MappingDAO
 				if (latest.isPresent())
 				{
 					//TODO figure out how to handle contradictions!
-					result.add(new MappingItem(latest.get().value(), stampCoord));
+					result.add(new MappingItem(latest.get().value()));
 					if (latest.get().contradictions().isPresent())
 					{
-						latest.get().contradictions().get().forEach((contradiction) -> result.add(new MappingItem(contradiction, stampCoord)));
+						latest.get().contradictions().get().forEach((contradiction) -> result.add(new MappingItem(contradiction)));
 					}
 				}
 			});

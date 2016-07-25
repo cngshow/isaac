@@ -73,28 +73,29 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		};
 		
 	//These next two don't need to be public, just want them in the hierarchy
-	private static final MetadataConceptConstant pending = new MetadataConceptConstant("Pending", 
-		UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9")) {};
-		
-	private static final MetadataConceptConstant reviewed = new MetadataConceptConstant("Reviewed", 
-		UUID.fromString("45b49b0d-e2d2-5a27-a08d-8f79856b6307")) {};
-		
-	public final MetadataConceptConstantGroup MAPPING_STATUS = new MetadataConceptConstantGroup("mapping status type", 
-		UUID.fromString("f4523b36-3714-5d0e-999b-edb8f21dc0fa"), 
-		"Stores the editor selected status of the mapping set or mapping instance") 
-		{
-			{
-				addChild(pending);
-				addChild(reviewed);
-			}
-		};
+//workflow status shouldn't be part of the mapset
+//	private static final MetadataConceptConstant pending = new MetadataConceptConstant("Pending", 
+//		UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9")) {};
+//		
+//	private static final MetadataConceptConstant reviewed = new MetadataConceptConstant("Reviewed", 
+//		UUID.fromString("45b49b0d-e2d2-5a27-a08d-8f79856b6307")) {};
+//		
+//	public final MetadataConceptConstantGroup MAPPING_STATUS = new MetadataConceptConstantGroup("mapping status type", 
+//		UUID.fromString("f4523b36-3714-5d0e-999b-edb8f21dc0fa"), 
+//		"Stores the editor selected status of the mapping set or mapping instance") 
+//		{
+//			{
+//				addChild(pending);
+//				addChild(reviewed);
+//			}
+//		};
 	public final MetadataConceptConstantGroup MAPPING_METADATA = new MetadataConceptConstantGroup("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7")) 
 	{
 		{
 			addChild(MAPPING_NAMESPACE);
 			addChild(MAPPING_QUALIFIERS);
-			addChild(MAPPING_STATUS);
+//			addChild(MAPPING_STATUS);
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
@@ -103,10 +104,10 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
 		"A Sememe used to specify how user-created mapping Sememes are structured", 
 			new DynamicSememeColumnInfo[] {
-				new DynamicSememeColumnInfo(0, MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
-					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
-					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
-				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
+//				new DynamicSememeColumnInfo(0, MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+//					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
+//					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
 						null, false, false)},
 			null) 
 	{

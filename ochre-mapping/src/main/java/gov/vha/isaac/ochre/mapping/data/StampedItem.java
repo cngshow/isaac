@@ -35,49 +35,47 @@ import javafx.beans.property.SimpleStringProperty;
  */
 public abstract class StampedItem
 {
-	private UUID authorUUID;
-	private UUID moduleUUID;
-	private UUID pathUUID;
-	private long creationTime;
-	private boolean isActive;
+	private StampedVersion componentVersion_;
 	
-	private SimpleStringProperty authorSSP = new SimpleStringProperty("-");
-	private SimpleStringProperty moduleSSP = new SimpleStringProperty("-");;
-	private SimpleStringProperty pathSSP   = new SimpleStringProperty("-");;
+	private transient boolean lazyLoadFinished_ = false;
+	private transient SimpleStringProperty authorSSP = new SimpleStringProperty("-");
+	private transient SimpleStringProperty moduleSSP = new SimpleStringProperty("-");;
+	private transient SimpleStringProperty pathSSP   = new SimpleStringProperty("-");;
+	private transient SimpleStringProperty statusSSP   = new SimpleStringProperty("-");;
+	private transient SimpleStringProperty timeSSP   = new SimpleStringProperty("-");;
+	private transient UUID authorUUID;
+	private transient UUID moduleUUID;
+	private transient UUID pathUUID;
 	
-	private int authorSequence;
-	private int moduleSequence;
-	private int pathSequence;
-	
+
 	protected void readStampDetails(StampedVersion componentVersion) throws RuntimeException
 	{
-		try
+		componentVersion_ = componentVersion;
+	}
+	
+	private void lazyLoad()
+	{
+		if (!lazyLoadFinished_)
 		{
-			authorSequence = componentVersion.getAuthorSequence();
-			moduleSequence = componentVersion.getModuleSequence();
-			pathSequence = componentVersion.getPathSequence();
-			creationTime = componentVersion.getTime();
-			isActive = componentVersion.getState() == State.ACTIVE;
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Unexpected", e);
-		}
-		authorUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(authorSequence).get();
-		moduleUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(moduleSequence).get();
-		pathUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(pathSequence).get();
-		
-		Get.workExecutors().getExecutor().execute(() ->
-		{
-			String authorName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(authorUUID));
-			String moduleName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(moduleUUID));
-			String pathName =   Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(pathUUID));
-			Platform.runLater(() -> {
-				authorSSP.set(authorName);
-				moduleSSP.set(moduleName);
-				pathSSP.set(pathName);
+			authorUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getAuthorSequence()).get();
+			moduleUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getModuleSequence()).get();
+			pathUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getPathSequence()).get();
+			
+			Get.workExecutors().getExecutor().execute(() ->
+			{
+				String authorName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(authorUUID));
+				String moduleName = Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(moduleUUID));
+				String pathName =   Get.conceptDescriptionText(Get.identifierService().getConceptSequenceForUuids(pathUUID));
+				Platform.runLater(() -> {
+					authorSSP.set(authorName);
+					moduleSSP.set(moduleName);
+					pathSSP.set(pathName);
+					statusSSP.set(this.isActive() ? "Active" : "Inactive");
+					timeSSP.set(new SimpleDateFormat("MM/dd/yy HH:mm").format(this.getTime()));
+				});
 			});
-		});
+		}
+		lazyLoadFinished_ = true;
 	}
 	
 	/**
@@ -85,15 +83,16 @@ public abstract class StampedItem
 	 */
 	public UUID getAuthorName()
 	{
+		lazyLoad();
 		return authorUUID;
 	}
 
 	/**
 	 * @return the creationDate
 	 */
-	public long getCreationDate()
+	public long getTime()
 	{
-		return creationTime;
+		return componentVersion_.getTime();
 	}
 
 	/**
@@ -101,7 +100,7 @@ public abstract class StampedItem
 	 */
 	public boolean isActive()
 	{
-		return isActive;
+		return componentVersion_.getState() == State.ACTIVE;
 	}
 
 	/**
@@ -109,6 +108,7 @@ public abstract class StampedItem
 	 */
 	public UUID getModuleUUID()
 	{
+		lazyLoad();
 		return moduleUUID;
 	}
 
@@ -117,26 +117,57 @@ public abstract class StampedItem
 	 */
 	public UUID getPathUUID()
 	{
+		lazyLoad();
 		return pathUUID;
 	}
 
-	public SimpleStringProperty getStatusProperty() { return new SimpleStringProperty(isActive? "Active" : "Inactive"); }
-	public SimpleStringProperty getTimeProperty()   {
-		SimpleStringProperty property = new SimpleStringProperty();
-		try {
-			property.set(new SimpleDateFormat("MM/dd/yy HH:mm").format(creationTime));
-		} catch (Exception e) {
-			//TODO something
-		}
-		return property;
+	public SimpleStringProperty getStatusProperty() 
+	{ 
+		lazyLoad();
+		return statusSSP;
 	}
-	public SimpleStringProperty getAuthorProperty() { return authorSSP; }
-	public SimpleStringProperty getModuleProperty() { return moduleSSP; }
-	public SimpleStringProperty getPathProperty()   { return pathSSP; }
 	
-	public int getAuthorNid() { return authorSequence; }
-	public int getModuleNid() { return moduleSequence; }
-	public int getPathNid()   { return pathSequence; }
+	public SimpleStringProperty getTimeProperty()   
+	{
+		lazyLoad();
+		return timeSSP;
+	}
+	
+	public SimpleStringProperty getAuthorProperty() 
+	{ 
+		lazyLoad();
+		return authorSSP; 
+	}
+	
+	public SimpleStringProperty getModuleProperty() 
+	{
+		lazyLoad();
+		return moduleSSP; 
+	}
+	
+	public SimpleStringProperty getPathProperty()
+	{ 
+		lazyLoad();
+		return pathSSP; 
+	}
+	
+	public int getAuthor() 
+	{ 
+		return componentVersion_.getAuthorSequence(); 
+	}
+	public int getModule() 
+	{ 
+		return componentVersion_.getModuleSequence(); 
+	}
+	public int getPath()   
+	{ 
+		return componentVersion_.getPathSequence(); 
+	}
+	
+	public StampedVersion getComponentVersion()
+	{
+		return componentVersion_;
+	}
 	
 	public static final Comparator<StampedItem> statusComparator = new Comparator<StampedItem>() {
 		@Override
@@ -149,7 +180,7 @@ public abstract class StampedItem
 	public static final Comparator<StampedItem> timeComparator = new Comparator<StampedItem>() {
 		@Override
 		public int compare(StampedItem o1, StampedItem o2) {
-			return Long.compare(o1.getCreationDate(), o2.getCreationDate());
+			return Long.compare(o1.getTime(), o2.getTime());
 		}
 	};
 	
