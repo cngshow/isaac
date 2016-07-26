@@ -68,7 +68,7 @@ public class WorkExecutors
 	private ForkJoinPool forkJoinExecutor_;
 	private ThreadPoolExecutor blockingThreadPoolExecutor_;
 	private ThreadPoolExecutor threadPoolExecutor_;
-	private final Logger log = LogManager.getLogger();
+	private static final Logger log = LogManager.getLogger();
 
 	private WorkExecutors()
 	{
@@ -174,15 +174,24 @@ public class WorkExecutors
 	 */
 	public static void safeExecute(Runnable r)
 	{
-		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
+		log.debug("In safeExecute");
+		try
 		{
-			Get.workExecutors().getExecutor().execute(r);
+			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
+			{
+				Get.workExecutors().getExecutor().execute(r);
+			}
+			else
+			{
+				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
+				LookupService.startupFxPlatform();
+				ForkJoinPool.commonPool().execute(r);
+			}
 		}
-		else
+		catch (Exception e)
 		{
-			//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-			LookupService.startupFxPlatform();
-			ForkJoinPool.commonPool().execute(r);
+			log.debug("Threaded execution threw an unchecked error", e);
+			throw e;
 		}
 	}
 	
