@@ -107,7 +107,7 @@ public class MappingSetDAO extends MappingDAO
 		SememeChronology mappingAnnotation = Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
 				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getSequence(), 
 				new DynamicSememeData[] {
-						(editorStatus == null ? null : new DynamicSememeUUIDImpl(editorStatus)),
+//						(editorStatus == null ? null : new DynamicSememeUUIDImpl(editorStatus)),
 						(StringUtils.isBlank(purpose) ? null : new DynamicSememeStringImpl(purpose))}).build(
 				editCoord, ChangeCheckerMode.ACTIVE);
 

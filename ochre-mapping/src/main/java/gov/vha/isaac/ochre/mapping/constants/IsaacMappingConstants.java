@@ -50,6 +50,24 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS = new MetadataConceptConstant("map set extended fields", 
+		UUID.fromString("34d59a1d-880c-5aa2-a526-e53d2351019f"),
+		"Stores UUID that identifies the sememe assemblage that further describes the mapping set") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS = new MetadataConceptConstant("map item extended fields", 
+		UUID.fromString("9458de87-19b4-56ea-b0fc-05c2800e1a56"),
+		"Stores UUID that identifies the sememe assemblage that further describes the mapping item") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
 		
 	//These next 3 don't have to be public - just want the hierarchy created during the DB build
 	private static final MetadataConceptConstant broader = new MetadataConceptConstant("Broader Than", 
@@ -108,7 +126,11 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 //					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
 //					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
 				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
-						null, false, false)},
+						null, false, true),
+				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
+					null, false, true),
+				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
+					null, false, true)},
 			null) 
 	{
 		{
@@ -118,6 +140,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
-		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
+		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS, 
+			DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
 	} 
 }
