@@ -24,26 +24,27 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.UserWorkflowPermission;
+import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
 
 /**
- * Statically populated user workflow permissions initialized during reading of WF Definition only
+ * Statically populated workflow details initialized from BPMN2 file during
+ * reading of WF Definition only
  * 
- * {@link UserWorkflowPermissionWorkflowContentStore}
- * {@link AbstractWorkflowContentStore}
+ * {@link DomainStandardWorkflowContentStore}
+ * {@link AbstractWorkflowContentStore}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class UserWorkflowPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
+public class DomainStandardWorkflowContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new user workflow permission workflow content store.
+	 * Instantiates a new Definition Details Workflow Content Store.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public UserWorkflowPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.AUTHOR_PERMISSION);
+	public DomainStandardWorkflowContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.DOMAIN_STANDARD);
 	}
 
 	/*
@@ -54,8 +55,8 @@ public class UserWorkflowPermissionWorkflowContentStore extends AbstractWorkflow
 	 * java.util.UUID)
 	 */
 	@Override
-	public UserWorkflowPermission getEntry(UUID key) {
-		return new UserWorkflowPermission(getGenericEntry(key));
+	public DomainStandard getEntry(UUID key) {
+		return new DomainStandard(getGenericEntry(key));
 	}
 
 	/*
@@ -65,13 +66,13 @@ public class UserWorkflowPermissionWorkflowContentStore extends AbstractWorkflow
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<UserWorkflowPermission> getAllEntries() {
-		Set<UserWorkflowPermission> retSet = new HashSet<>();
+	public Set<DomainStandard> getAllEntries() {
+		Set<DomainStandard> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new UserWorkflowPermission(entry));
+			retSet.add(new DomainStandard(entry));
 		}
 
 		return retSet;
@@ -89,10 +90,10 @@ public class UserWorkflowPermissionWorkflowContentStore extends AbstractWorkflow
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tUser Workflow Permission" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tDomain Standard" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "UserWorkflowPermissionWorkflowContentStore: " + buf.toString();
+		return "DomainStandardWorkflowContentStore: " + buf.toString();
 	}
 }

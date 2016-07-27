@@ -27,7 +27,8 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
-* Statically populated available actions initialized during reading of WF Definition only
+ * Statically populated available actions initialized during reading of WF
+ * Definition only
  * 
  * {@link AvailableActionWorkflowContentStore}
  * {@link AbstractWorkflowContentStore}

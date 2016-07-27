@@ -33,11 +33,11 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Abstract Content Store specific to Workflow to avoid repeated functionality.
  * 
- * {@link UserWorkflowPermissionWorkflowContentStore}
+ * {@link UserPermissionWorkflowContentStore}
  * {@link AvailableActionWorkflowContentStore}
- * {@link ProcessHistoryContentStore}
- * {@link ProcessDetailsWorkflowContentStore}
+ * {@link ProcessHistoryContentStore} {@link ProcessDetailWorkflowContentStore}
  * {@link DefinitionDetailWorkflowContentStore}
+ * {@link DomainStandardWorkflowContentStore}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -47,7 +47,7 @@ public abstract class AbstractWorkflowContentStore {
 	 * The Enum WorkflowContentStoreType.
 	 */
 	protected static enum WorkflowContentStoreType {
-		AUTHOR_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAILS, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
+		USER_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAIL, DOMAIN_STANDARD, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
 	};
 
 	/** The map. */
@@ -112,7 +112,7 @@ public abstract class AbstractWorkflowContentStore {
 	public UUID addEntry(StorableWorkflowContents entry) {
 		UUID key = getNewUUID(entry.hashCode());
 		entry.setId(key);
-		
+
 		try {
 			map.put(key, entry.serialize());
 		} catch (IOException e) {

@@ -170,8 +170,6 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
 				definition.getNamespace(), definition.getVersion(), roles);
-		System.out.println("**** 111 with entry: " + entry);
-		System.out.println("**** 222 with definitionDetStore: " + definitionDetailStore);
 
 		return definitionDetailStore.addEntry(entry);
 	}

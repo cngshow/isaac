@@ -44,7 +44,7 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 	 *            the store
 	 */
 	public DefinitionDetailWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.DEFINITION_DETAILS);
+		super(store, WorkflowContentStoreType.DEFINITION_DETAIL);
 	}
 
 	/*

@@ -20,15 +20,19 @@ package gov.vha.isaac.ochre.workflow.provider;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
+import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.DefiningStatus;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 
 /**
  * Utility to start, complete, or conclude a workflow process
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowInitializerConcluder}
+ * {@link AbstractWorkflowUtilities} {@link WorkflowInitializerConcluder}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -59,21 +63,34 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param concept
-	 *            the concept
+	 * @param concepts
+	 *            the concepts
 	 * @param stampSequence
 	 *            the stamp sequence
-	 * @param author
-	 *            the author
+	 * @param user
+	 *            the user
+	 * @param subjectMatter
+	 *            the subject matter
 	 * @return the uuid
 	 */
-	public UUID startWorkflow(UUID definitionId, UUID concept, List<Integer> stampSequence, int author) {
-		ProcessDetail details = new ProcessDetail(definitionId, concept, stampSequence, author, new Date().getTime(),
-				true);
+	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequence, int user,
+			SubjectMatter subjectMatter, DomainStandard domain) {
+		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
+				true, subjectMatter, DefiningStatus.ENABLED, domain);
 		UUID processId = processDetailStore.addEntry(details);
 
 		logger.info("Initializing Workflow " + processId + " with values: " + details.toString());
 		return processId;
+	}
+
+	/**
+	 * Launch workflow.
+	 *
+	 * @param processId
+	 *            the process id
+	 */
+	public void launchWorkflow(UUID processId) {
+		processDetailStore.getEntry(processId).setDefiningStatus(DefiningStatus.COMPLETED);
 	}
 
 	/**

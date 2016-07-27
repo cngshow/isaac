@@ -24,20 +24,27 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 
 /**
- * Dynamic workflow processes populated at runtime only
- *
- * {@link ProcessDetailsWorkflowContentStore}
- * {@link AbstractWorkflowContentStore}
+ * Statically populated user workflow permissions initialized during reading of
+ * WF Definition only
+ * 
+ * {@link UserPermissionWorkflowContentStore}
+ * {@link AbstractWorkflowContentStore}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDetailsWorkflowContentStore extends AbstractWorkflowContentStore {
+public class UserPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
 
-	public ProcessDetailsWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);
+	/**
+	 * Instantiates a new user permission workflow content store.
+	 *
+	 * @param store
+	 *            the store
+	 */
+	public UserPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.USER_PERMISSION);
 	}
 
 	/*
@@ -48,8 +55,8 @@ public class ProcessDetailsWorkflowContentStore extends AbstractWorkflowContentS
 	 * java.util.UUID)
 	 */
 	@Override
-	public ProcessDetail getEntry(UUID key) {
-		return new ProcessDetail(getGenericEntry(key));
+	public UserPermission getEntry(UUID key) {
+		return new UserPermission(getGenericEntry(key));
 	}
 
 	/*
@@ -59,13 +66,13 @@ public class ProcessDetailsWorkflowContentStore extends AbstractWorkflowContentS
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<ProcessDetail> getAllEntries() {
-		Set<ProcessDetail> retSet = new HashSet<>();
+	public Set<UserPermission> getAllEntries() {
+		Set<UserPermission> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new ProcessDetail(entry));
+			retSet.add(new UserPermission(entry));
 		}
 
 		return retSet;
@@ -83,11 +90,10 @@ public class ProcessDetailsWorkflowContentStore extends AbstractWorkflowContentS
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tProcess Detail" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tUser Permission" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "ProcessDetailsWorkflowContentStore: " + buf.toString();
+		return "UserPermissionWorkflowContentStore: " + buf.toString();
 	}
-
 }

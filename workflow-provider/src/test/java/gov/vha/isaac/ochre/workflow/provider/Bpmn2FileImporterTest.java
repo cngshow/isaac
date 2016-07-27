@@ -102,13 +102,10 @@ public class Bpmn2FileImporterTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetNodes() throws Exception {
-		System.out.println("**** AAAA");
 		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
 				store);
-		System.out.println("**** BBBB");
 		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(
 				store);
-		System.out.println("**** CCCC");
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdAvailableActionContentStore.getNumberOfEntries(), 7);

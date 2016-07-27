@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Set;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,12 +32,12 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Roles available to a given workflow user
+ * Role available to a given workflow user
  * 
  * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store. Used to support different roles for different workflow definitions.
+ * Store. Used to support different role for different workflow definitions.
  *
- * {@link UserWorkflowPermission} {@link StorableWorkflowContents}
+ * {@link UserPermission} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -46,7 +45,7 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * @author yishai
  *
  */
-public class UserWorkflowPermission extends StorableWorkflowContents {
+public class UserPermission extends StorableWorkflowContents {
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -57,32 +56,38 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 	/** The user. */
 	private int user;
 
-	/** The roles. */
-	private Set<String> roles;
+	/** The role. */
+	private String role;
+
+	/** The domain standard. */
+	private DomainStandard domainStandard;
 
 	/**
-	 * Instantiates a new workflow user permission.
+	 * Instantiates a new user permission.
 	 *
 	 * @param definitionId
 	 *            the definition id
 	 * @param user
 	 *            the user
-	 * @param roles
-	 *            the roles
+	 * @param role
+	 *            the role
+	 * @param domainStandard
+	 *            the domain standard
 	 */
-	public UserWorkflowPermission(UUID definitionId, int user, Set<String> roles) {
+	public UserPermission(UUID definitionId, int user, String role, DomainStandard domainStandard) {
 		this.definitionId = definitionId;
 		this.user = user;
-		this.roles = roles;
+		this.role = role;
+		this.domainStandard = domainStandard;
 	}
 
 	/**
-	 * Instantiates a new workflow user permission.
+	 * Instantiates a new user permission.
 	 *
 	 * @param data
 	 *            the data
 	 */
-	public UserWorkflowPermission(byte[] data) {
+	public UserPermission(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
@@ -90,12 +95,13 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.user = (Integer) in.readObject();
-			this.roles = (Set<String>) in.readObject();
+			this.role = (String) in.readObject();
+			this.domainStandard = (DomainStandard) in.readObject();
 		} catch (IOException e) {
-			logger.error("Failure to deserialize data into UserWorkflowPermission", e);
+			logger.error("Failure to deserialize data into UserPermission", e);
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast UserWorkflowPermission fields into String", e);
+			logger.error("Failure to cast UserPermission fields into String", e);
 			e.printStackTrace();
 		}
 	}
@@ -119,21 +125,21 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the roles.
+	 * Gets the role.
 	 *
-	 * @return the roles
+	 * @return the role
 	 */
-	public Set<String> getRoles() {
-		return roles;
+	public String getRole() {
+		return role;
 	}
 
 	/**
-	 * Sets the roles.
+	 * Gets the domain standard.
 	 *
-	 * @param newRoles the new roles
+	 * @return the domain standard
 	 */
-	public void setRoles(Set<String> newRoles) {
-		roles = newRoles;
+	public DomainStandard getDomainStandard() {
+		return domainStandard;
 	}
 
 	/*
@@ -152,7 +158,8 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(user);
-		out.writeObject(roles);
+		out.writeObject(role);
+		out.writeObject(domainStandard);
 
 		return bos.toByteArray();
 	}
@@ -164,14 +171,8 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		StringBuffer buf = new StringBuffer();
-
-		for (String r : roles) {
-			buf.append(r + ", ");
-		}
-
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + user
-				+ "\n\t\tRoles: " + buf.toString();
+				+ "\n\t\tRole: " + role + "\n\t\tDomain Standard: " + domainStandard;
 	}
 
 	/*
@@ -181,10 +182,10 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		UserWorkflowPermission other = (UserWorkflowPermission) obj;
+		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.user == other.user
-				&& this.roles.equals(other.roles);
+		return this.definitionId.equals(other.definitionId) && this.user == other.user && this.role.equals(other.role)
+				&& this.domainStandard.equals(other.domainStandard);
 
 	}
 
@@ -195,6 +196,6 @@ public class UserWorkflowPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + user + roles.hashCode();
+		return definitionId.hashCode() + user + role.hashCode() + domainStandard.hashCode();
 	}
 }

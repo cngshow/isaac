@@ -24,25 +24,20 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 
 /**
- * Dynamic workflow history populated at runtime only
- * 
- * {@link ProcessHistoryContentStore} {@link AbstractWorkflowContentStore}
+ * Dynamic workflow processes populated at runtime only
+ *
+ * {@link ProcessDetailWorkflowContentStore} {@link ProcessDetail}
+ * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
+public class ProcessDetailWorkflowContentStore extends AbstractWorkflowContentStore {
 
-	/**
-	 * Instantiates a new users process advancement content store.
-	 *
-	 * @param store
-	 *            the store
-	 */
-	public ProcessHistoryContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.HISTORICAL_WORKFLOW);
+	public ProcessDetailWorkflowContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);
 	}
 
 	/*
@@ -53,8 +48,8 @@ public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 	 * java.util.UUID)
 	 */
 	@Override
-	public ProcessHistory getEntry(UUID key) {
-		return new ProcessHistory(getGenericEntry(key));
+	public ProcessDetail getEntry(UUID key) {
+		return new ProcessDetail(getGenericEntry(key));
 	}
 
 	/*
@@ -64,13 +59,13 @@ public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<ProcessHistory> getAllEntries() {
-		Set<ProcessHistory> retSet = new HashSet<>();
+	public Set<ProcessDetail> getAllEntries() {
+		Set<ProcessDetail> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new ProcessHistory(entry));
+			retSet.add(new ProcessDetail(entry));
 		}
 
 		return retSet;
@@ -88,10 +83,11 @@ public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tProcess History" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tProcess Detail" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "ProcessHistoryContentStore: " + buf.toString();
+		return "ProcessDetailsWorkflowContentStore: " + buf.toString();
 	}
+
 }

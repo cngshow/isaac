@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -34,53 +37,39 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Definition of Actions to Outcomes based on Roles and Current State
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store. Different actions are defined per workflow definitions.
+ * NOTE: The ClinicalDomain is the Key of the Definition Details Workflow
+ * Content Store. Different actions are defined per workflow definitions.
  * 
- * {@link AvailableAction} {@link StorableWorkflowContents}
+ * {@link DomainStandard} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AvailableAction extends StorableWorkflowContents {
+public class DomainStandard extends StorableWorkflowContents implements Serializable {
+
+	/** The Constant serialVersionUID. */
+	private static final long serialVersionUID = 5383504672997938543L;
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
-	/** The definition id. */
-	private UUID definitionId;
+	/** The clinical domain. */
+	private WorkflowDomain clinicalDomain;
 
-	/** The current state. */
-	private String currentState;
-
-	/** The action. */
-	private String action;
-
-	/** The outcome. */
-	private String outcome;
-
-	/** The role. */
-	private String role;
+	/** The element terminology map. */
+	private Map<WorkflowDataElement, Set<WorkflowTerminology>> elementTerminologyMap;
 
 	/**
 	 * Instantiates a new possible action.
 	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param currentState
-	 *            the current state
-	 * @param action
-	 *            the action
-	 * @param outcome
-	 *            the outcome
-	 * @param role
-	 *            the role
+	 * @param clinicalDomain
+	 *            the clinical domain
+	 * @param elementTerminologyMap
+	 *            the element terminology map
 	 */
-	public AvailableAction(UUID definitionId, String currentState, String action, String outcome, String role) {
-		this.definitionId = definitionId;
-		this.currentState = currentState;
-		this.action = action;
-		this.outcome = outcome;
-		this.role = role;
+	public DomainStandard(WorkflowDomain clinicalDomain,
+			Map<WorkflowDataElement, Set<WorkflowTerminology>> elementTerminologyMap) {
+		this.clinicalDomain = clinicalDomain;
+		this.elementTerminologyMap = elementTerminologyMap;
 	}
 
 	/**
@@ -89,17 +78,14 @@ public class AvailableAction extends StorableWorkflowContents {
 	 * @param data
 	 *            the data
 	 */
-	public AvailableAction(byte[] data) {
+	public DomainStandard(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
-			this.definitionId = (UUID) in.readObject();
-			this.currentState = (String) in.readObject();
-			this.action = (String) in.readObject();
-			this.outcome = (String) in.readObject();
-			this.role = (String) in.readObject();
+			this.clinicalDomain = (WorkflowDomain) in.readObject();
+			this.elementTerminologyMap = (Map<WorkflowDataElement, Set<WorkflowTerminology>>) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into Available Action", e);
 			e.printStackTrace();
@@ -110,48 +96,21 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the definition Id.
+	 * Gets the clinical domain.
 	 *
-	 * @return the definition Id
+	 * @return the clinical domain
 	 */
-	public UUID getDefinitionId() {
-		return definitionId;
+	public WorkflowDomain getClinicalDomain() {
+		return clinicalDomain;
 	}
 
 	/**
-	 * Gets the current state.
+	 * Gets the element terminology map.
 	 *
-	 * @return the current state
+	 * @return the element terminology map
 	 */
-	public String getCurrentState() {
-		return currentState;
-	}
-
-	/**
-	 * Gets the action.
-	 *
-	 * @return the action
-	 */
-	public String getAction() {
-		return action;
-	}
-
-	/**
-	 * Gets the outcome.
-	 *
-	 * @return the outcome
-	 */
-	public String getOutcome() {
-		return outcome;
-	}
-
-	/**
-	 * Gets the role.
-	 *
-	 * @return the role
-	 */
-	public String getRole() {
-		return role;
+	public Map<WorkflowDataElement, Set<WorkflowTerminology>> getElementTerminologyMap() {
+		return elementTerminologyMap;
 	}
 
 	/*
@@ -168,11 +127,8 @@ public class AvailableAction extends StorableWorkflowContents {
 
 		// write the object
 		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(currentState);
-		out.writeObject(action);
-		out.writeObject(outcome);
-		out.writeObject(role);
+		out.writeObject(clinicalDomain);
+		out.writeObject(elementTerminologyMap);
 
 		return bos.toByteArray();
 	}
@@ -184,8 +140,8 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: "
-				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
+		return "\n\t\tId: " + id + "\n\t\tClinical Domain: " + clinicalDomain.toString()
+				+ "\n\t\tElement Terminology Map: " + elementTerminologyMap;
 	}
 
 	/*
@@ -195,11 +151,10 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		AvailableAction other = (AvailableAction) obj;
+		DomainStandard other = (DomainStandard) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.currentState.equals(other.currentState)
-				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
-				&& this.role.equals(other.role);
+		return this.clinicalDomain.equals(other.clinicalDomain)
+				&& this.elementTerminologyMap.equals(other.elementTerminologyMap);
 
 	}
 
@@ -210,7 +165,6 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + currentState.hashCode() + action.hashCode() + outcome.hashCode()
-				+ role.hashCode();
+		return clinicalDomain.hashCode() + elementTerminologyMap.hashCode();
 	}
 }

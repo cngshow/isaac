@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +47,28 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  */
 public class ProcessDetail extends StorableWorkflowContents {
 
+	/**
+	 * The Enum SubjectMatter.
+	 */
+	public enum SubjectMatter {
+
+		/** The mapping. */
+		MAPPING,
+		/** The concept. */
+		CONCEPT
+	};
+
+	/**
+	 * The Enum DefiningStatus.
+	 */
+	public enum DefiningStatus {
+
+		/** The enabled. */
+		ENABLED,
+		/** The completed. */
+		COMPLETED
+	};
+
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
@@ -54,8 +78,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The stamp sequences. */
 	private List<Integer> stampSequences;
 
-	/** The concept. */
-	private UUID concept;
+	/** The concepts. */
+	private Set<Integer> concepts;
 
 	/** The creator. */
 	private int creator;
@@ -69,28 +93,56 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The active flag. */
 	private Boolean active;
 
+	/** The subject matter. */
+	private SubjectMatter subjectMatter;
+
+	/** The defining status. */
+	private DefiningStatus definingStatus;
+
+	/** The defining status. */
+	private DomainStandard domainStandard;
+
+	/**
+	 * Instantiates a new process detail.
+	 */
+	public ProcessDetail() {
+
+	}
+
 	/**
 	 * Instantiates a new process definition.
 	 *
 	 * @param definitionId
 	 *            the definition id
+	 * @param concepts
+	 *            the concepts
 	 * @param stampSequences
 	 *            the stamp sequences
-	 * @param concept
-	 *            the concept
 	 * @param creator
 	 *            the creator
 	 * @param timeCreated
 	 *            the time created
+	 * @param active
+	 *            the active flag
+	 * @param subjectMatter
+	 *            the subject matter
+	 * @param definingStatus
+	 *            the defining status
+	 * @param domainStandard
+	 *            the domain standard
 	 */
-	public ProcessDetail(UUID definitionId, UUID concept, List<Integer> stampSequences, int creator, long timeCreated,
-			boolean active) {
+	public ProcessDetail(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int creator,
+			long timeCreated, boolean active, SubjectMatter subjectMatter, DefiningStatus definingStatus,
+			DomainStandard domainStandard) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
-		this.concept = concept;
+		this.concepts = concepts;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 		this.active = active;
+		this.subjectMatter = subjectMatter;
+		this.definingStatus = definingStatus;
+		this.domainStandard = domainStandard;
 	}
 
 	/**
@@ -107,11 +159,14 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.stampSequences = (List<Integer>) in.readObject();
-			this.concept = (UUID) in.readObject();
+			this.concepts = (Set<Integer>) in.readObject();
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
 			this.timeConcluded = (Long) in.readObject();
 			this.active = (Boolean) in.readObject();
+			this.subjectMatter = (SubjectMatter) in.readObject();
+			this.definingStatus = (DefiningStatus) in.readObject();
+			this.domainStandard = (DomainStandard) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into ProcessDetail", e);
 			e.printStackTrace();
@@ -142,6 +197,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/**
 	 * Gets the stamp sequences.
 	 *
+	 * @param newStamps
+	 *            the new stamps
 	 * @return the stamp sequences
 	 */
 	public List<Integer> addStampSequences(List<Integer> newStamps) {
@@ -151,12 +208,12 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the concept.
+	 * Gets the concepts.
 	 *
-	 * @return the concept
+	 * @return the concepts
 	 */
-	public UUID getConcept() {
-		return concept;
+	public Set<Integer> getConcepts() {
+		return concepts;
 	}
 
 	/**
@@ -188,6 +245,9 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 	/**
 	 * Sets the time concluded.
+	 *
+	 * @param time
+	 *            the new time concluded
 	 */
 	public void setTimeConcluded(long time) {
 		timeConcluded = time;
@@ -204,9 +264,44 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 	/**
 	 * Sets the active flag.
+	 *
+	 * @param val
+	 *            the new active
 	 */
 	public void setActive(boolean val) {
 		active = val;
+	}
+
+	/**
+	 * Gets the subjectMatter.
+	 *
+	 * @return the workflow subject matter
+	 */
+	public SubjectMatter getSubjectMatter() {
+		return subjectMatter;
+	}
+
+	/**
+	 * Gets the defining status.
+	 *
+	 * @return the defining status
+	 */
+	public DefiningStatus getDefiningStatus() {
+		return definingStatus;
+	}
+
+	/**
+	 * Sets the defining status.
+	 *
+	 * @param definingStatus
+	 *            the new defining status
+	 */
+	public void setDefiningStatus(DefiningStatus definingStatus) {
+		this.definingStatus = definingStatus;
+	}
+
+	public DomainStandard getDomainStandard() {
+		return domainStandard;
 	}
 
 	/*
@@ -225,11 +320,14 @@ public class ProcessDetail extends StorableWorkflowContents {
 		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(stampSequences);
-		out.writeObject(concept);
+		out.writeObject(concepts);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 		out.writeObject(timeConcluded);
 		out.writeObject(active);
+		out.writeObject(subjectMatter);
+		out.writeObject(definingStatus);
+		out.writeObject(domainStandard);
 
 		return bos.toByteArray();
 	}
@@ -247,10 +345,17 @@ public class ProcessDetail extends StorableWorkflowContents {
 			buf.append(stampSeq + ", ");
 		}
 
+		StringBuffer buf2 = new StringBuffer();
+
+		for (Integer conId : concepts) {
+			buf2.append(conId + ", ");
+		}
+
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
-				+ buf.toString() + "\n\t\tConcept: " + concept.toString() + "\n\t\tCreator Id: " + creator
+				+ buf.toString() + "\n\t\tConcept: " + buf2.toString() + "\n\t\tCreator Id: " + creator
 				+ "\n\t\tTime Created: " + timeCreated + "\n\t\tTime Concluded: " + timeConcluded + "\n\t\tActive: "
-				+ active;
+				+ active + "\n\t\tSubject Matter: " + subjectMatter + "\n\t\tDefining Status: " + definingStatus
+				+ "\n\t\tDomain Standard: " + domainStandard;
 	}
 
 	/*
@@ -263,9 +368,10 @@ public class ProcessDetail extends StorableWorkflowContents {
 		ProcessDetail other = (ProcessDetail) obj;
 
 		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
-				&& this.concept.equals(other.concept) && this.creator == other.creator
+				&& this.concepts.equals(other.concepts) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
-				&& this.active.equals(other.active);
+				&& this.active.equals(other.active) && this.subjectMatter == other.subjectMatter
+				&& this.definingStatus == other.definingStatus && this.domainStandard.equals(other.domainStandard);
 	}
 
 	/*
@@ -275,7 +381,38 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + concept.hashCode() + creator
-				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + active.hashCode();
+		return definitionId.hashCode() + stampSequences.hashCode() + concepts.hashCode() + creator
+				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + active.hashCode()
+				+ subjectMatter.hashCode() + definingStatus.hashCode() + domainStandard.hashCode();
+	}
+
+	/**
+	 * The Class ProcessDetailComparator.
+	 */
+	public static class ProcessDetailComparator implements Comparator<ProcessDetail> {
+
+		/**
+		 * Instantiates a new process detail comparator.
+		 */
+		public ProcessDetailComparator() {
+
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+		 */
+		@Override
+		public int compare(ProcessDetail o1, ProcessDetail o2) {
+			long t1 = o1.getTimeCreated();
+			long t2 = o2.getTimeCreated();
+			if (t2 > t1)
+				return 1;
+			else if (t1 > t2)
+				return -1;
+			else
+				return 0;
+		}
 	}
 }

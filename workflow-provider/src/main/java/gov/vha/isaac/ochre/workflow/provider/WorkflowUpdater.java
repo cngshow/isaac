@@ -24,18 +24,26 @@ import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.UserWorkflowPermission;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 
 /**
  * Utility to update workflow content stores after initialization
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
+ * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowUpdater extends AbstractWorkflowUtilities {
 
+	/**
+	 * Instantiates a new workflow updater.
+	 *
+	 * @throws Exception
+	 *             the exception
+	 */
 	public WorkflowUpdater() throws Exception {
 		// Default Constructor fails if store not already set
 	}
@@ -63,53 +71,109 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		details.addStampSequences(stampSequence);
 	}
 
-	public String advanceWorkflow(UUID processId, int workflowUser, String currentState, String actionRequested,
-			String comment) throws Exception {
-		Set<AvailableAction> permissableActions = getValidActionsForState(processId, currentState, workflowUser);
+	/**
+	 * Advance workflow.
+	 *
+	 * @param processId
+	 *            the process id
+	 * @param userId
+	 *            the user id
+	 * @param actionRequested
+	 *            the action requested
+	 * @param comment
+	 *            the comment
+	 * @param domain
+	 *            the domain
+	 * @return the string
+	 * @throws Exception
+	 *             the exception
+	 */
+	public String advanceWorkflow(UUID processId, int userId, String actionRequested, String comment,
+			DomainStandard domain) throws Exception {
+		WorkflowAdvancementAccessor advancementAccessor = new WorkflowAdvancementAccessor(store);
+		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
 
-		if (permissableActions.isEmpty()) {
-			throw new Exception(
-					"User does not have permission to advance workflow for this process based on current state: "
-							+ currentState);
+		// Get User Permissible actions
+		Set<AvailableAction> userPermissableActions = advancementAccessor.getUserPermissibleActionsForProcess(processId,
+				userId, domain);
+
+		if (userPermissableActions.isEmpty()) {
+			ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
+			ProcessDetail details = processDetailStore.getEntry(processId);
+
+			throw new Exception("User does not have permission to advance workflow for this process: " + processId
+					+ " for this user: " + userId + " for this domain: " + details.getDomainStandard()
+					+ " based on current state: " + processLatest.getOutcome());
 		}
 
-		String outcome = null;
 		// Advance Workflow
-		for (AvailableAction action : permissableActions) {
+		String outcome = null;
+		for (AvailableAction action : userPermissableActions) {
 			if (action.getAction().equals(actionRequested)) {
 				outcome = action.getOutcome();
 			}
-		}
-
-		if (outcome == null) {
-			throw new Exception("User does not have permission to advance workflow with action: " + actionRequested
-					+ " for this process based on current state: " + currentState);
 		}
 
 		return outcome;
 	}
 
 	/**
-	 * Update user permissions.
+	 * Update user roles.
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param author
-	 *            the author
+	 * @param user
+	 *            the user
+	 * @param domain
+	 *            the domain
 	 * @param newRoles
 	 *            the new roles
-	 * @param replaceRoles
-	 *            the replace roles
 	 */
-	public void updateUserPermissions(UUID definitionId, int workflowUser, Set<String> newRoles, boolean replaceRoles) {
-		UserWorkflowPermission permission = getPermissionsForUser(definitionId, workflowUser);
+	public void updateUserRoles(UUID definitionId, int user, DomainStandard domain, Set<String> newRoles) {
+		WorkflowAdvancementAccessor advancementAccessor = new WorkflowAdvancementAccessor(store);
 
-		if (replaceRoles) {
-			permission.setRoles(newRoles);
-		} else {
-			Set<String> currentRoles = permission.getRoles();
-			currentRoles.addAll(newRoles);
-			permission.setRoles(currentRoles);
+		Set<UserPermission> allUserPermissions = advancementAccessor.getAllPermissionsForUser(definitionId, user);
+
+		// Remove all existing permissions for definition/user/domain triplet
+		for (UserPermission permission : allUserPermissions) {
+			if (permission.getDefinitionId().equals(definitionId) && permission.getUser() == user
+					&& permission.getDomainStandard().equals(domain)) {
+				userPermissionStore.removeEntry(permission.getId());
+			}
 		}
+
+		// For each role, add new entry
+		for (String role : newRoles) {
+			addNewUserRole(definitionId, user, domain, role);
+		}
+	}
+
+	/**
+	 * Adds the new user role.
+	 *
+	 * @param definitionId
+	 *            the definition id
+	 * @param user
+	 *            the user
+	 * @param domain
+	 *            the domain
+	 * @param role
+	 *            the role
+	 * @return the uuid
+	 */
+	public UUID addNewUserRole(UUID definitionId, int user, DomainStandard domain, String role) {
+		return userPermissionStore.addEntry(new UserPermission(definitionId, user, role, domain));
+	}
+
+	/**
+	 * Update workflow concepts.
+	 *
+	 * @param processId
+	 *            the process id
+	 * @param concepts
+	 *            the concepts
+	 */
+	public void updateWorkflowConcepts(UUID processId, Set<Integer> concepts) {
+		processDetailStore.getEntry(processId).getConcepts().addAll(concepts);
 	}
 }
