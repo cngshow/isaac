@@ -7,3 +7,4 @@ mvn clean deploy -DaltDeploymentRepository=vadev::default::https://vadev.mantech
 
 Release Notes
 mvn jgitflow:release-start jgitflow:release-finish -DreleaseVersion=3.08 -DdevelopmentVersion=3.09-SNAPSHOT
+

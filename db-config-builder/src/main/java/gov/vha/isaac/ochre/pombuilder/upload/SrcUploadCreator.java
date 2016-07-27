@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -46,6 +48,7 @@ import javafx.concurrent.Task;
 public class SrcUploadCreator
 {
 	private static final Logger LOG = LogManager.getLogger();
+	
 	
 	/**
 	 * @param uploadType - What type of content is being uploaded.
@@ -288,6 +291,32 @@ public class SrcUploadCreator
 		};
 		
 		return uploader;
+	}
+	
+	/**
+	 * A utility method to fetch a tasks result.  It assumes the task has been previously started.
+	 * @param task
+	 * @return the string returned by the task
+	 */
+	public static String fetchResult(Task<String> task) 
+	{
+		LOG.trace("In fetchResult");
+		
+		javafx.concurrent.Worker.State s = task.getState();
+		LOG.trace("Current state is " + s.toString());
+		if(s == javafx.concurrent.Worker.State.READY) {
+			//throw new IllegalStateException("The task has not been started.  Please start the task.");
+		}
+		String result = null;
+		try {
+			LOG.trace("Calling task.get");
+			result = task.get();
+			LOG.trace("task.get is done, result= " + result);
+		} catch (Exception e) {
+			result = e.getMessage();
+			LOG.error("Exception thrown during task.get", e);
+		} 
+		return result;
 	}
 	
 	/**

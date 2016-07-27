@@ -3,7 +3,7 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,13 +20,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-
 import javax.inject.Singleton;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -40,6 +38,8 @@ import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
@@ -61,6 +61,7 @@ import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -70,6 +71,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
+import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
@@ -725,6 +727,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @throws RuntimeException 
 	 */
 	
+	@SuppressWarnings("deprecation")
 	public static ConceptChronology<? extends ConceptVersion<?>> createNewDynamicSememeColumnInfoConcept(String columnName, String columnDescription) 
 			throws RuntimeException
 	{
@@ -785,6 +788,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param referencedComponentSubRestriction - optional - may be null - subtype restriction for {@link ObjectChronologyType#SEMEME} restrictions
 	 * @return a reference to the newly created sememe item
 	 */
+	@SuppressWarnings("deprecation")
 	public static DynamicSememeUsageDescription createNewDynamicSememeUsageDescriptionConcept(String sememeFSN, String sememePreferredTerm, 
 			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
 			SememeType referencedComponentSubRestriction)
@@ -944,5 +948,281 @@ public class Frills implements DynamicSememeColumnUtility {
 			columnDescription = columnName;
 		}
 		return new String[] {columnName, columnDescription};
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with nulls. 
+	 * @param conceptUUID - identifier for a concept
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID) {
+		return getDescription(conceptUUID, null, null);
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the user preferences.  
+	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)}. 
+	 * @param conceptId - either a sequence or a nid
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId) {
+		return getDescription(conceptId, null, null);
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptUUID - identifier for a concept
+	 * @param tc - optional - if not provided, defaults to system preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptUUID, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param tc - optional - if not provided, defaults to system preferences values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, TaxonomyCoordinate taxonomyCoordinate) {
+		return getDescription(conceptId, taxonomyCoordinate == null ? null : taxonomyCoordinate.getStampCoordinate(), 
+				taxonomyCoordinate == null ? null : taxonomyCoordinate.getLanguageCoordinate());
+	}
+	
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences.  Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} with values 
+	 * extracted from the taxonomyCoordinate, or null. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to system preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to system preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(UUID conceptUUID, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
+	{
+		return getDescription(Get.identifierService().getConceptSequenceForUuids(conceptUUID), stampCoordinate, languageCoordinate);
+	}
+
+	/**
+	 * Utility method to get the best text value description for a concept, according to the passed in options, 
+	 * or the user preferences. 
+	 * @param conceptId - either a sequence or a nid
+	 * @param languageCoordinate - optional - if not provided, defaults to system preferences values
+	 * @param stampCoordinate - optional - if not provided, defaults to system preference values
+	 * @return
+	 */
+	public static Optional<String> getDescription(int conceptId, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate) 
+	{
+		Optional<LatestVersion<DescriptionSememe<?>>> desc = Get.conceptService()
+			.getSnapshot(stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate() : stampCoordinate,
+						languageCoordinate == null ? Get.configurationService().getDefaultLanguageCoordinate() : languageCoordinate)
+					.getDescriptionOptional(conceptId);
+		
+		return desc.isPresent() ? Optional.of(desc.get().value().getText()) : Optional.empty();
+	}
+	
+	public static List<SimpleDisplayConcept> getExtendedDescriptionTypes() throws IOException
+	{
+		Set<Integer> extendedDescriptionTypes;
+		ArrayList<SimpleDisplayConcept> temp = new ArrayList<>();
+		extendedDescriptionTypes = Frills.getAllChildrenOfConcept(MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getConceptSequence(), true, true);
+		for (Integer seq : extendedDescriptionTypes)
+		{
+			temp.add(new SimpleDisplayConcept(seq));
+		}
+		Collections.sort(temp);
+		return temp;
+	}
+	
+	/**
+	 * Calls {@link #getConceptForUnknownIdentifier(String)} in a background thread.  returns immediately. 
+	 * 
+	 * 
+	 * @param identifier - what to search for
+	 * @param callback - who to inform when lookup completes
+	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 */
+	public static void lookupConceptForUnknownIdentifier(
+			final String identifier,
+			final TaskCompleteCallback<ConceptSnapshot> callback,
+			final Integer callId,
+			final StampCoordinate stampCoord,
+			final LanguageCoordinate langCoord)
+	{
+		log.debug("Threaded Lookup: '{}'", identifier);
+		final long submitTime = System.currentTimeMillis();
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				ConceptSnapshot result = null;
+				Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = getConceptForUnknownIdentifier(identifier);
+				if (c.isPresent())
+				{
+					Optional<ConceptSnapshot> temp = getConceptSnapshot(c.get().getConceptSequence(), stampCoord, langCoord);
+					if (temp.isPresent())
+					{
+						result = temp.get();
+					}
+				}
+				callback.taskComplete(result, submitTime, callId);
+			}
+		};
+		Get.workExecutors().getExecutor().execute(r);
+	}
+	
+	/**
+	 * If the passed in value is a {@link UUID}, calls {@link ConceptService#getOptionalConcept(int)} after converting the UUID to nid.
+	 * Next, if no hit, if the passed in value is parseable as a int < 0 (a nid), calls {@link ConceptService#getOptionalConcept(int)}
+	 * Next, if no hit, if the passed in value is parseable as a long, and is a valid SCTID (checksum is valid) - treats it as 
+	 * a SCTID and attempts to look up the SCTID in the lucene index.  Note that is is possible for some 
+	 * sequence identifiers to look like SCTIDs - if a passed in value is valid as both a SCTID and a sequence identifier - it will be 
+	 * treated as an SCTID.
+	 * Finally, if it is a positive integer, it treats is as a sequence identity, converts it to a nid, then looks up the nid.
+	 */
+	public static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getConceptForUnknownIdentifier(String identifier)
+	{
+		log.debug("Concept Chronology lookup by string '{}'", identifier);
+
+		if (StringUtils.isBlank(identifier))
+		{
+			return Optional.empty();
+		}
+		String localIdentifier = identifier.trim();
+
+		Optional<UUID> uuid = UUIDUtil.getUUID(localIdentifier);
+		if (uuid.isPresent())
+		{
+			return Get.conceptService().getOptionalConcept(uuid.get());
+		}
+		
+		//if it is a negative integer, assume nid
+		Optional<Integer> nid = NumericUtils.getNID(localIdentifier);
+		if (nid.isPresent()) {
+			return Get.conceptService().getOptionalConcept(nid.get());
+		}
+		
+		if (SctId.isValidSctId(localIdentifier))
+		{
+			
+			IndexServiceBI si = LookupService.get().getService(IndexServiceBI.class, "sememe indexer");
+			if (si != null)
+			{
+				//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+				List<SearchResult> result = si.query(localIdentifier + " ", true, 
+						new Integer[] {MetaData.SNOMED_INTEGER_ID.getConceptSequence()}, 5, Long.MIN_VALUE);
+				if (result.size() > 0)
+				{
+					int componentNid = Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid();
+					if (Get.identifierService().getChronologyTypeForNid(componentNid) == ObjectChronologyType.CONCEPT)
+					{
+						return Get.conceptService().getOptionalConcept(componentNid);
+					}
+					else
+					{
+						log.warn("Passed in SCTID is not a Concept ID!");
+						return Optional.empty();
+					}
+				}
+			}
+			else
+			{
+				log.warn("Sememe Index not available - can't lookup SCTID");
+			}
+		}
+		else if (NumericUtils.isInt(localIdentifier))
+		{
+			//Must be a postive integer, which wasn't a valid SCTID - it may be a sequence ID.
+			int nidFromSequence = Get.identifierService().getConceptNid(Integer.parseInt(localIdentifier));
+			if (nidFromSequence != 0)
+			{
+				return Get.conceptService().getOptionalConcept(nidFromSequence);
+			}
+		}
+		return Optional.empty();
+	}
+	
+	
+	/**
+	 * @param conceptNidOrSequence
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
+	 * have a version available on the specified stampCoord
+	 */
+	public static Optional<ConceptSnapshot> getConceptSnapshot(int conceptNidOrSequence, 
+			StampCoordinate stampCoord, LanguageCoordinate langCoord)
+	{
+		Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> c = Get.conceptService().getOptionalConcept(conceptNidOrSequence);
+		if (c.isPresent())
+		{
+			try
+			{
+				return Optional.of(Get.conceptService().getSnapshot(
+						stampCoord == null ? Get.configurationService().getDefaultStampCoordinate() : stampCoord,
+						langCoord == null ? Get.configurationService().getDefaultLanguageCoordinate() : langCoord)
+							.getConceptSnapshot(c.get().getConceptSequence()));
+			}
+			catch (Exception e)
+			{
+				//TODO conceptSnapshot APIs are currently broken, provide no means of detecting if a concept doesn't exist on a given coordinate
+				//See slack convo https://informatics-arch.slack.com/archives/dev-isaac/p1440568057000512
+				return Optional.empty();
+			}
+		}
+		return Optional.empty();
+	}
+	
+	/**
+	 * @param conceptUUID
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
+	 *   have a version available on the specified stampCoord
+	 */
+	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate stampCoord, LanguageCoordinate langCoord)
+	{
+		return getConceptSnapshot(Get.identifierService().getNidForUuids(conceptUUID), stampCoord, langCoord);
+	}
+	
+	/**
+	 * 
+	 * All done in a background thread, method returns immediately
+	 * 
+	 * @param identifier - The NID to search for
+	 * @param callback - who to inform when lookup completes
+	 * @param callId - An arbitrary identifier that will be returned to the caller when this completes
+	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
+	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
+	 */
+	public static void lookupConceptSnapshot(
+			final int nid,
+			final TaskCompleteCallback<ConceptSnapshot> callback,
+			final Integer callId,
+			final StampCoordinate stampCoord,
+			final LanguageCoordinate langCoord)
+	{
+		log.debug("Threaded Lookup: '{}'", nid);
+		final long submitTime = System.currentTimeMillis();
+		Runnable r = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				Optional<ConceptSnapshot> c = getConceptSnapshot(nid, stampCoord, langCoord);
+				callback.taskComplete(c.isPresent() ? c.get() : null, submitTime, callId);
+			}
+		};
+		Get.workExecutors().getExecutor().execute(r);
 	}
 }
