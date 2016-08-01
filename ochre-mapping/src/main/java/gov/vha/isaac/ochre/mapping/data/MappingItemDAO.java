@@ -10,6 +10,7 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSnapshot;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -156,6 +157,32 @@ public class MappingItemDAO extends MappingDAO
 		
 		DynamicSememeData[] data = rdv.getData();
 		data[2] = (mappingItem.getEditorStatusConcept() != null ? new DynamicSememeUUIDImpl(mappingItem.getEditorStatusConcept()) : null);
+		
+		Get.sememeBuilderService().getDynamicSememeBuilder(rdv.getReferencedComponentNid(),  
+				rdv.getAssemblageSequence(), data).build(editCoord, ChangeCheckerMode.ACTIVE);
+
+		@SuppressWarnings("deprecation")
+		Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
+		
+		try
+		{
+			task.get();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException();
+		}
+	}
+	public static void updateMappingItem(
+			SememeChronology<?> mappingItemSememe,
+			ConceptChronology<?> mappingItemEditorConcept,
+			StampCoordinate stampCoord,
+			EditCoordinate editCoord) throws IOException
+	{
+		DynamicSememe<?> rdv = readCurrentRefex(mappingItemSememe.getPrimordialUuid(), stampCoord);
+		
+		DynamicSememeData[] data = rdv.getData();
+		data[2] = (mappingItemEditorConcept != null ? new DynamicSememeUUIDImpl(mappingItemEditorConcept.getPrimordialUuid()) : null);
 		
 		Get.sememeBuilderService().getDynamicSememeBuilder(rdv.getReferencedComponentNid(),  
 				rdv.getAssemblageSequence(), data).build(editCoord, ChangeCheckerMode.ACTIVE);
