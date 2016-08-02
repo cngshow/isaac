@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider;
+package gov.vha.isaac.ochre.workflow.provider.metastore;
 
 import java.util.Date;
 import java.util.List;
@@ -24,10 +24,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.DefiningStatus;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
  * Utility to start, complete, or conclude a workflow process
@@ -74,9 +74,9 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 * @return the uuid
 	 */
 	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequence, int user,
-			SubjectMatter subjectMatter, DomainStandard domain) {
+			SubjectMatter subjectMatter) {
 		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
-				true, subjectMatter, DefiningStatus.ENABLED, domain);
+				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
 
 		logger.info("Initializing Workflow " + processId + " with values: " + details.toString());
@@ -90,7 +90,9 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the process id
 	 */
 	public void launchWorkflow(UUID processId) {
-		processDetailStore.getEntry(processId).setDefiningStatus(DefiningStatus.COMPLETED);
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		entry.setProcessStatus(ProcessStatus.LAUNCHED);
+		processDetailStore.updateEntry(processId, entry);
 	}
 
 	/**
@@ -115,9 +117,10 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the process id
 	 */
 	void concludeWorkflow(UUID processId) {
-		ProcessDetail detail = processDetailStore.getEntry(processId);
-		detail.setActive(false);
-		detail.setTimeConcluded(new Date().getTime());
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		entry.setProcessStatus(ProcessStatus.CONCLUDED);
+		entry.setTimeConcluded(new Date().getTime());
+		processDetailStore.updateEntry(processId, entry);
 		logger.info("Concluding Workflow " + processId);
 	}
 }

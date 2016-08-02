@@ -61,12 +61,12 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/**
 	 * The Enum DefiningStatus.
 	 */
-	public enum DefiningStatus {
+	public enum ProcessStatus {
 
 		/** The enabled. */
-		ENABLED,
+		READY_TO_LAUNCH,
 		/** The completed. */
-		COMPLETED
+		LAUNCHED, CANCELED, CONCLUDED
 	};
 
 	/** The Constant logger. */
@@ -90,17 +90,11 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The time created. */
 	private long timeConcluded = -1L;
 
-	/** The active flag. */
-	private Boolean active;
-
 	/** The subject matter. */
 	private SubjectMatter subjectMatter;
 
 	/** The defining status. */
-	private DefiningStatus definingStatus;
-
-	/** The defining status. */
-	private DomainStandard domainStandard;
+	private ProcessStatus processStatus;
 
 	/**
 	 * Instantiates a new process detail.
@@ -132,17 +126,14 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *            the domain standard
 	 */
 	public ProcessDetail(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int creator,
-			long timeCreated, boolean active, SubjectMatter subjectMatter, DefiningStatus definingStatus,
-			DomainStandard domainStandard) {
+			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
 		this.concepts = concepts;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
-		this.active = active;
 		this.subjectMatter = subjectMatter;
-		this.definingStatus = definingStatus;
-		this.domainStandard = domainStandard;
+		this.processStatus = definingStatus;
 	}
 
 	/**
@@ -163,10 +154,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
 			this.timeConcluded = (Long) in.readObject();
-			this.active = (Boolean) in.readObject();
 			this.subjectMatter = (SubjectMatter) in.readObject();
-			this.definingStatus = (DefiningStatus) in.readObject();
-			this.domainStandard = (DomainStandard) in.readObject();
+			this.processStatus = (ProcessStatus) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into ProcessDetail", e);
 			e.printStackTrace();
@@ -254,25 +243,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the active flag.
-	 *
-	 * @return the active flag value
-	 */
-	public boolean isActive() {
-		return active;
-	}
-
-	/**
-	 * Sets the active flag.
-	 *
-	 * @param val
-	 *            the new active
-	 */
-	public void setActive(boolean val) {
-		active = val;
-	}
-
-	/**
 	 * Gets the subjectMatter.
 	 *
 	 * @return the workflow subject matter
@@ -286,8 +256,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the defining status
 	 */
-	public DefiningStatus getDefiningStatus() {
-		return definingStatus;
+	public ProcessStatus getProcessStatus() {
+		return processStatus;
 	}
 
 	/**
@@ -296,12 +266,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param definingStatus
 	 *            the new defining status
 	 */
-	public void setDefiningStatus(DefiningStatus definingStatus) {
-		this.definingStatus = definingStatus;
-	}
-
-	public DomainStandard getDomainStandard() {
-		return domainStandard;
+	public void setProcessStatus(ProcessStatus definingStatus) {
+		this.processStatus = definingStatus;
 	}
 
 	/*
@@ -324,10 +290,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 		out.writeObject(timeConcluded);
-		out.writeObject(active);
 		out.writeObject(subjectMatter);
-		out.writeObject(definingStatus);
-		out.writeObject(domainStandard);
+		out.writeObject(processStatus);
 
 		return bos.toByteArray();
 	}
@@ -353,9 +317,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
 				+ buf.toString() + "\n\t\tConcept: " + buf2.toString() + "\n\t\tCreator Id: " + creator
-				+ "\n\t\tTime Created: " + timeCreated + "\n\t\tTime Concluded: " + timeConcluded + "\n\t\tActive: "
-				+ active + "\n\t\tSubject Matter: " + subjectMatter + "\n\t\tDefining Status: " + definingStatus
-				+ "\n\t\tDomain Standard: " + domainStandard;
+				+ "\n\t\tTime Created: " + timeCreated + "\n\t\tTime Concluded: " + timeConcluded
+				+ "\n\t\tSubject Matter: " + subjectMatter + "\n\t\tProcess Status: " + processStatus;
 	}
 
 	/*
@@ -370,8 +333,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
 				&& this.concepts.equals(other.concepts) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
-				&& this.active.equals(other.active) && this.subjectMatter == other.subjectMatter
-				&& this.definingStatus == other.definingStatus && this.domainStandard.equals(other.domainStandard);
+				&& this.subjectMatter == other.subjectMatter && this.processStatus == other.processStatus;
 	}
 
 	/*
@@ -382,8 +344,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	@Override
 	public int hashCode() {
 		return definitionId.hashCode() + stampSequences.hashCode() + concepts.hashCode() + creator
-				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + active.hashCode()
-				+ subjectMatter.hashCode() + definingStatus.hashCode() + domainStandard.hashCode();
+				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + subjectMatter.hashCode()
+				+ processStatus.hashCode();
 	}
 
 	/**
@@ -414,5 +376,9 @@ public class ProcessDetail extends StorableWorkflowContents {
 			else
 				return 0;
 		}
+	}
+
+	public boolean isActive() {
+		return processStatus == ProcessStatus.LAUNCHED || processStatus == ProcessStatus.READY_TO_LAUNCH;
 	}
 }

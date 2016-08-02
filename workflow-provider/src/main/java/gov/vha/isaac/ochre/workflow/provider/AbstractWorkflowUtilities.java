@@ -27,6 +27,10 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionWorkflowContentStore;
+import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowAdvancementAccessor;
+import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowHistoryAccessor;
+import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowInitializerConcluder;
+import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowUpdater;
 
 /**
  * Abstract class for higher-level workflow routines
@@ -42,19 +46,19 @@ public abstract class AbstractWorkflowUtilities {
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The user workflow permission store. */
-	protected UserPermissionWorkflowContentStore userPermissionStore;
+	protected static UserPermissionWorkflowContentStore userPermissionStore;
 
 	/** The available action store. */
-	protected AvailableActionWorkflowContentStore availableActionStore;
+	protected static AvailableActionWorkflowContentStore availableActionStore;
 
 	/** The definition detail store. */
-	protected DefinitionDetailWorkflowContentStore definitionDetailStore;
+	protected static DefinitionDetailWorkflowContentStore definitionDetailStore;
 
 	/** The process detail store. */
-	protected ProcessDetailWorkflowContentStore processDetailStore;
+	protected static ProcessDetailWorkflowContentStore processDetailStore;
 
 	/** The process history store. */
-	protected ProcessHistoryContentStore processHistoryStore;
+	protected static ProcessHistoryContentStore processHistoryStore;
 
 	/** The store. */
 	protected static MVStoreMetaContentProvider store = null;

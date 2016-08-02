@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider;
+package gov.vha.isaac.ochre.workflow.provider.metastore;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -29,6 +29,7 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
  * Utility to access workflow data from content stores
