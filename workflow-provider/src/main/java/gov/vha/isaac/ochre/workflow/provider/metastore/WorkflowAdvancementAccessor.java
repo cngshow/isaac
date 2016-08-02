@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider;
+package gov.vha.isaac.ochre.workflow.provider.metastore;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,10 +27,10 @@ import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
  * Utility to access workflow data from content stores
@@ -71,20 +71,15 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 	 * @return the user roles by domain standard
 	 */
 	/* USER-BASED INFORMATION */
-	public Map<DomainStandard, Set<String>> getUserRolesByDomainStandard(UUID definitionId, int userId) {
-		Map<DomainStandard, Set<String>> domainRoleMap = new HashMap<>();
+	public Set<String> getUserRoles(UUID definitionId, int userId) {
+		Set<String> domainRoles = new HashSet<>();
 
 		for (UserPermission permission : getAllPermissionsForUser(definitionId, userId)) {
-			if (!domainRoleMap.containsKey(permission.getDomainStandard())) {
-				// First time seeing domainRoleMap so setup
-				Set<String> roles = new HashSet<>();
-				domainRoleMap.put(permission.getDomainStandard(), roles);
-			}
-
-			domainRoleMap.get(permission.getDomainStandard()).add(permission.getRole());
+			// First time seeing domainRoleMap so setup
+			domainRoles.add(permission.getRole());
 		}
 
-		return domainRoleMap;
+		return domainRoles;
 	}
 
 	/**
@@ -141,7 +136,7 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 	 *            the domain
 	 * @return the permissible actions for process
 	 */
-	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userId, DomainStandard domain) {
+	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userId) {
 		Set<AvailableAction> availableActionsForProcess = new HashSet<>();
 
 		// Get current state of process
@@ -151,7 +146,7 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 
 		// get user's available roles
 		UUID definitionId = processDetailStore.getEntry(processId).getDefinitionId();
-		Set<String> availableRoles = getUserRolesByDomainStandard(definitionId, userId).get(domain);
+		Set<String> availableRoles = getUserRoles(definitionId, userId);
 
 		// get available actions based on current state
 		Set<AvailableAction> allAvailableActions = getAvailableActionsForState(definitionId, currentState);
@@ -181,7 +176,7 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 		WorkflowStatusAccessor statusAccessory = new WorkflowStatusAccessor(store);
 
 		Map<String, Set<UUID>> stateLatestMap = new HashMap<>();
-		Map<DomainStandard, Set<UUID>> domainLatestMap = new HashMap<>();
+		Set<UUID> latestProcesses = new HashSet<>();
 
 		// get all active processes
 		Map<UUID, SortedSet<ProcessHistory>> processHxMap = historyAccessory.getActiveByProcess();
@@ -202,29 +197,19 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 				}
 				stateLatestMap.get(currentState).add(hx.getProcessId());
 
-				// Find the domain for each process and map by
-				// domain-Set<Process> map
-				DomainStandard domain = processDetails.getDomainStandard();
-				if (!domainLatestMap.containsKey(domain)) {
-					Set<UUID> latestByDomain = new HashSet<>();
-					domainLatestMap.put(domain, latestByDomain);
-				}
-				domainLatestMap.get(domain).add(hx.getProcessId());
-
+				latestProcesses.add(hx.getProcessId());
 			}
 		}
 
 		// get user roles by domain
-		Map<DomainStandard, Set<String>> domainRolesMap = getUserRolesByDomainStandard(definitionId, userId);
+		Set<String> userRoles = getUserRoles(definitionId, userId);
 
 		// For each state, look through the processes's domain, and ensure user
 		// has permissions for the state/domain pair
 		for (String state : stateLatestMap.keySet()) {
 			for (UUID processId : stateLatestMap.get(state)) {
-				ProcessDetail processDetails = statusAccessory.getProcessDetail(processId);
-
-				if (domainLatestMap.get(processDetails.getDomainStandard()).contains(processId)) {
-					for (String role : domainRolesMap.get(processDetails.getDomainStandard())) {
+				if (latestProcesses.contains(processId)) {
+					for (String role : userRoles) {
 						if (!latestProcessHistoryPermissibleByState.containsKey(role)) {
 							Set<ProcessHistory> latestProcessHistory = new HashSet<>();
 							latestProcessHistoryPermissibleByState.put(role, latestProcessHistory);

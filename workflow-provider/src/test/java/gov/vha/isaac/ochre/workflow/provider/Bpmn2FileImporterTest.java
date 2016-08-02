@@ -34,6 +34,7 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowProviderTestPackage;
 
 /**
  * Test the WorkflowDefinitionUtility class
@@ -42,21 +43,17 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class Bpmn2FileImporterTest {
-
-	/** The bpmn file path. */
-	static private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
-
-	/** The store. */
-	static private MVStoreMetaContentProvider store;
+public class Bpmn2FileImporterTest extends WorkflowProviderTestPackage {
 
 	/**
 	 * Sets the up.
 	 */
 	@BeforeClass
 	public static void setUpClass() {
-		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+		if (store == null) {
+			store = new MVStoreMetaContentProvider(new File("target"), "test", true);
+			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+		}
 	}
 
 	/**
@@ -64,7 +61,6 @@ public class Bpmn2FileImporterTest {
 	 */
 	@AfterClass
 	public static void tearDownClass() {
-		store.close();
 	}
 
 	/**

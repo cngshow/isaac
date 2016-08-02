@@ -59,9 +59,6 @@ public class UserPermission extends StorableWorkflowContents {
 	/** The role. */
 	private String role;
 
-	/** The domain standard. */
-	private DomainStandard domainStandard;
-
 	/**
 	 * Instantiates a new user permission.
 	 *
@@ -74,11 +71,10 @@ public class UserPermission extends StorableWorkflowContents {
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public UserPermission(UUID definitionId, int user, String role, DomainStandard domainStandard) {
+	public UserPermission(UUID definitionId, int user, String role) {
 		this.definitionId = definitionId;
 		this.user = user;
 		this.role = role;
-		this.domainStandard = domainStandard;
 	}
 
 	/**
@@ -96,7 +92,6 @@ public class UserPermission extends StorableWorkflowContents {
 			this.definitionId = (UUID) in.readObject();
 			this.user = (Integer) in.readObject();
 			this.role = (String) in.readObject();
-			this.domainStandard = (DomainStandard) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into UserPermission", e);
 			e.printStackTrace();
@@ -133,15 +128,6 @@ public class UserPermission extends StorableWorkflowContents {
 		return role;
 	}
 
-	/**
-	 * Gets the domain standard.
-	 *
-	 * @return the domain standard
-	 */
-	public DomainStandard getDomainStandard() {
-		return domainStandard;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -159,7 +145,6 @@ public class UserPermission extends StorableWorkflowContents {
 		out.writeObject(definitionId);
 		out.writeObject(user);
 		out.writeObject(role);
-		out.writeObject(domainStandard);
 
 		return bos.toByteArray();
 	}
@@ -172,7 +157,7 @@ public class UserPermission extends StorableWorkflowContents {
 	@Override
 	public String toString() {
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + user
-				+ "\n\t\tRole: " + role + "\n\t\tDomain Standard: " + domainStandard;
+				+ "\n\t\tRole: " + role;
 	}
 
 	/*
@@ -184,8 +169,7 @@ public class UserPermission extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.user == other.user && this.role.equals(other.role)
-				&& this.domainStandard.equals(other.domainStandard);
+		return this.definitionId.equals(other.definitionId) && this.user == other.user && this.role.equals(other.role);
 
 	}
 
@@ -196,6 +180,6 @@ public class UserPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + user + role.hashCode() + domainStandard.hashCode();
+		return definitionId.hashCode() + user + role.hashCode();
 	}
 }
