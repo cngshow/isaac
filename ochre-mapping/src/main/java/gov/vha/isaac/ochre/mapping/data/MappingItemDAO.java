@@ -173,32 +173,6 @@ public class MappingItemDAO extends MappingDAO
 			throw new RuntimeException();
 		}
 	}
-	public static void updateMappingItem(
-			SememeChronology<?> mappingItemSememe,
-			ConceptChronology<?> mappingItemEditorConcept,
-			StampCoordinate stampCoord,
-			EditCoordinate editCoord) throws IOException
-	{
-		DynamicSememe<?> rdv = readCurrentRefex(mappingItemSememe.getPrimordialUuid(), stampCoord);
-		
-		DynamicSememeData[] data = rdv.getData();
-		data[2] = (mappingItemEditorConcept != null ? new DynamicSememeUUIDImpl(mappingItemEditorConcept.getPrimordialUuid()) : null);
-		
-		Get.sememeBuilderService().getDynamicSememeBuilder(rdv.getReferencedComponentNid(),  
-				rdv.getAssemblageSequence(), data).build(editCoord, ChangeCheckerMode.ACTIVE);
-
-		@SuppressWarnings("deprecation")
-		Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
-		
-		try
-		{
-			task.get();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException();
-		}
-	}
 
 	/**
 	 * @param mappingItemPrimordial - The identifier of the mapping item to be retired
