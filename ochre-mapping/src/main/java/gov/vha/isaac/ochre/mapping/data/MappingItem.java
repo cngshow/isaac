@@ -267,11 +267,4 @@ public class MappingItem extends MappingObject
 			return StringUtils.compareStringsIgnoreCase(o1.getQualifierConceptProperty().get(), o2.getQualifierConceptProperty().get());
 		}
 	};
-//	
-//	public static final Comparator<MappingItem> commentsComparator = new Comparator<MappingItem>() {
-//		@Override
-//		public int compare(MappingItem o1, MappingItem o2) {
-//			return StringUtils.compareStringsIgnoreCase(o1.getCommentsProperty().get(), o2.getCommentsProperty().get());
-//		}
-//	};
 }
