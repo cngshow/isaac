@@ -30,12 +30,12 @@ import gov.vha.isaac.metacontent.workflow.contents.DomainStandard;
  * Statically populated workflow details initialized from BPMN2 file during
  * reading of WF Definition only
  * 
- * {@link DomainStandardWorkflowContentStore}
+ * {@link DomainStandardContentStore}
  * {@link AbstractWorkflowContentStore}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DomainStandardWorkflowContentStore extends AbstractWorkflowContentStore {
+public class DomainStandardContentStore extends AbstractWorkflowContentStore {
 
 	/**
 	 * Instantiates a new Definition Details Workflow Content Store.
@@ -43,7 +43,7 @@ public class DomainStandardWorkflowContentStore extends AbstractWorkflowContentS
 	 * @param store
 	 *            the store
 	 */
-	public DomainStandardWorkflowContentStore(MVStoreMetaContentProvider store) {
+	public DomainStandardContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.DOMAIN_STANDARD);
 	}
 

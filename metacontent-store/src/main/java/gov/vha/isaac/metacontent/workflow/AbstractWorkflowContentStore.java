@@ -33,11 +33,11 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 /**
  * Abstract Content Store specific to Workflow to avoid repeated functionality.
  * 
- * {@link UserPermissionWorkflowContentStore}
- * {@link AvailableActionWorkflowContentStore}
- * {@link ProcessHistoryContentStore} {@link ProcessDetailWorkflowContentStore}
- * {@link DefinitionDetailWorkflowContentStore}
- * {@link DomainStandardWorkflowContentStore}
+ * {@link UserPermissionContentStore}
+ * {@link AvailableActionContentStore}
+ * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
+ * {@link DefinitionDetailContentStore}
+ * {@link DomainStandardContentStore}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -207,5 +207,10 @@ public abstract class AbstractWorkflowContentStore {
 		AbstractWorkflowContentStore other = (AbstractWorkflowContentStore) obj;
 
 		return this.map.equals(other.map);
+	}
+	
+	public void close() {
+		store = null;
+		map = null;
 	}
 }

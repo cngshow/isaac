@@ -27,6 +27,8 @@ import java.util.UUID;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
@@ -128,9 +130,14 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 * @return true, if is concept in active workflow
 	 */
 	public boolean isConceptInActiveWorkflow(int conceptId) {
-		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
+		for (ProcessDetail proc : getProcessesForConcept(conceptId)) {
+			if (proc.getProcessStatus() != ProcessStatus.LAUNCHED && 
+				proc.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+				return false;
+			}
+		}
 
-		return !historyAccessor.getActiveForConcept(conceptId).isEmpty();
+		return true;
 	}
 
 	/**
@@ -152,6 +159,25 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 		}
 
 		return false;
+	}
 
+
+	/**
+	 * Gets the active for concept.
+	 *
+	 * @param conceptId
+	 *            the concept id
+	 * @return the active for concept
+	 */
+	public ProcessDetail getActiveProcessForConcept(int conceptId) {
+
+		for (ProcessDetail proc : getProcessesForConcept(conceptId)) {
+			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
+				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
+				return proc;
+			}
+		}
+
+		return null;
 	}
 }

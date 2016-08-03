@@ -101,27 +101,29 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	public Map<UUID, SortedSet<ProcessHistory>> getActiveByDefinition() {
 		Map<UUID, SortedSet<ProcessHistory>> allHistoryByDefinition = new HashMap<>();
 		Map<UUID, Boolean> processActivationMap = new HashMap<>();
+		Map<UUID, UUID> processDefinitionMap = new HashMap<>();
 
 		for (ProcessHistory hx : processHistoryStore.getAllEntries()) {
 			if (!processActivationMap.containsKey(hx.getProcessId())) {
 				// First time seeing processId so setup
-				ProcessDetail process = processDetailStore.getEntry(hx.getProcessId());
-
-				if (!process.isActive()) {
-					processActivationMap.put(process.getId(), false);
+				ProcessDetail procDetails = processDetailStore.getEntry(hx.getProcessId());
+				processDefinitionMap.put(procDetails.getId(), procDetails.getDefinitionId());
+				
+				if (!procDetails.isActive()) {
+					processActivationMap.put(procDetails.getId(), false);
 				} else {
-					processActivationMap.put(process.getId(), true);
+					processActivationMap.put(procDetails.getId(), true);
 
 					// Active process. But since first time seeing it, setup the
 					// history set
 					SortedSet<ProcessHistory> processHistory = new TreeSet<>(
 							new ProcessHistory.ProcessHistoryComparator());
-					allHistoryByDefinition.put(hx.getProcessId(), processHistory);
+					allHistoryByDefinition.put(procDetails.getDefinitionId(), processHistory);
 				}
 			}
 
 			if (processActivationMap.get(hx.getProcessId())) {
-				allHistoryByDefinition.get(hx.getProcessId()).add(hx);
+				allHistoryByDefinition.get(processDefinitionMap.get(hx.getProcessId())).add(hx);
 			}
 		}
 
@@ -141,6 +143,7 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
 			if (process.getConcepts().contains(conceptId) && process.isActive()) {
 				allHistoryForConcept.addAll(getForProcess(process.getId()));
+				break;
 			}
 		}
 
@@ -176,12 +179,14 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 		Map<UUID, SortedSet<ProcessHistory>> allHistoryByDefinition = new HashMap<>();
 
 		for (ProcessHistory hx : processHistoryStore.getAllEntries()) {
-			if (!allHistoryByDefinition.containsKey(hx.getProcessId())) {
+			ProcessDetail procDetails = processDetailStore.getEntry(hx.getProcessId());
+			
+			if (!allHistoryByDefinition.containsKey(procDetails.getDefinitionId())) {
 				SortedSet<ProcessHistory> processHistory = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
-				allHistoryByDefinition.put(hx.getProcessId(), processHistory);
+				allHistoryByDefinition.put(procDetails.getDefinitionId(), processHistory);
 			}
 
-			allHistoryByDefinition.get(hx.getProcessId()).add(hx);
+			allHistoryByDefinition.get(procDetails.getDefinitionId()).add(hx);
 		}
 
 		return allHistoryByDefinition;

@@ -19,78 +19,52 @@
 package gov.vha.isaac.ochre.workflow.provider.metastore;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
-import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
  * Test the WorkflowInitializerConcluder class
  * 
- * {@link Bpmn2FileImporter}.
+ * {@link WorkflowInitializerConcluder}.
+ * {@link AbstractWorkflowProviderTestPackage}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackage {
-	private static int userIdForTesting;
+public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTestPackage {
+	private static boolean setupCompleted = false;
 
-	private static List<Integer> stampSequenceForTesting;
-
-	private static Set<Integer> conceptsForTesting;
-
-	private static WorkflowInitializerConcluder initConcluder;
-
-	private static UUID definitionId;
-
-	private static UUID processId;
+	private static MVStoreMetaContentProvider store;
 
 	/**
 	 * Sets the up.
 	 */
-	@BeforeClass
-	public static void setUpClass() {
-		if (store == null) {
-			store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+	@Before
+	public void setUpClass() {
+		if (!setupCompleted) {
+			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowInitConclude", true);
+			setupCompleted = true;
 		}
 
-		initConcluder = new WorkflowInitializerConcluder(store);
-
-		DefinitionDetailWorkflowContentStore definitionDetailStore = new DefinitionDetailWorkflowContentStore(store);
-		definitionId = definitionDetailStore.getAllEntries().iterator().next().getId();
-
-		userIdForTesting = 99;
-
-		stampSequenceForTesting = Arrays.asList(11, 12, 13);
-
-		conceptsForTesting = new HashSet<>(Arrays.asList(55, 56, 57));
-
+		globalSetup(true, store);
 	}
 
-	/**
-	 * Tear down.
-	 */
 	@AfterClass
 	public static void tearDownClass() {
-		System.out.println("OUT");
+		AbstractWorkflowUtilities.close();
 	}
 
 	/**
@@ -102,24 +76,20 @@ public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackag
 	@Test
 	public void testADefineWorkflow() throws Exception {
 		// Initialization
-		ProcessDetailWorkflowContentStore processDetailStore = new ProcessDetailWorkflowContentStore(store);
-
-		// Create new process
-		processId = initConcluder.defineWorkflow(definitionId, conceptsForTesting, stampSequenceForTesting,
-				userIdForTesting, SubjectMatter.CONCEPT);
+		initializeMainWorkflow(mainDefinitionId);
 
 		Set<ProcessDetail> entries = processDetailStore.getAllEntries();
 
 		// verify content in workflow is as expected
 		ProcessDetail entry = entries.iterator().next();
-		Assert.assertEquals(processId, entry.getId());
+		Assert.assertEquals(mainProcessId, entry.getId());
 		Assert.assertEquals(3, entry.getConcepts().size());
 		Assert.assertTrue(entry.getConcepts().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
 		Assert.assertEquals(99, entry.getCreator());
-		Assert.assertEquals(definitionId, entry.getDefinitionId());
+		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertEquals(3, entry.getStampSequences().size());
 		Assert.assertTrue(entry.getStampSequences().contains(11));
 
@@ -135,12 +105,12 @@ public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackag
 	 */
 	@Test
 	public void testBLaunchWorkflow() throws Exception {
-		initConcluder.launchWorkflow(processId);
+		initConcluder.launchWorkflow(mainProcessId);
 
-		ProcessDetailWorkflowContentStore processDetailStore = new ProcessDetailWorkflowContentStore(store);
+		ProcessDetailContentStore processDetailStore = new ProcessDetailContentStore(store);
 
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		Assert.assertEquals(processId, entry.getId());
+		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
+		Assert.assertEquals(mainProcessId, entry.getId());
 
 		Assert.assertEquals(3, entry.getConcepts().size());
 		Assert.assertTrue(entry.getConcepts().contains(55));
@@ -148,7 +118,7 @@ public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackag
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.LAUNCHED, entry.getProcessStatus());
 		Assert.assertEquals(99, entry.getCreator());
-		Assert.assertEquals(definitionId, entry.getDefinitionId());
+		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertEquals(3, entry.getStampSequences().size());
 		Assert.assertTrue(entry.getStampSequences().contains(11));
 
@@ -178,12 +148,12 @@ public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackag
 		// TODO: Once completed implementation testCCancelWorkflowProcess(),
 		// must recreate A&B test methods
 
-		initConcluder.concludeWorkflow(processId);
+		initConcluder.concludeWorkflow(mainProcessId);
 
-		ProcessDetailWorkflowContentStore processDetailStore = new ProcessDetailWorkflowContentStore(store);
+		ProcessDetailContentStore processDetailStore = new ProcessDetailContentStore(store);
 
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		Assert.assertEquals(processId, entry.getId());
+		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
+		Assert.assertEquals(mainProcessId, entry.getId());
 
 		Assert.assertEquals(3, entry.getConcepts().size());
 		Assert.assertTrue(entry.getConcepts().contains(55));
@@ -191,24 +161,11 @@ public class WorkflowInitializerConcluderTest extends WorkflowProviderTestPackag
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.CONCLUDED, entry.getProcessStatus());
 		Assert.assertEquals(99, entry.getCreator());
-		Assert.assertEquals(definitionId, entry.getDefinitionId());
+		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertEquals(3, entry.getStampSequences().size());
 		Assert.assertTrue(entry.getStampSequences().contains(11));
 
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeConcluded()));
 	}
-
-	private boolean timeSinceYesterdayBeforeTomorrow(long time) {
-		Calendar cal = Calendar.getInstance();
-		cal.add(Calendar.DATE, -1);
-		long yesterdayTimestamp = cal.getTimeInMillis();
-
-		cal = Calendar.getInstance();
-		cal.add(Calendar.DATE, 1);
-		long tomorrowTimestamp = cal.getTimeInMillis();
-
-		return time >= yesterdayTimestamp && time <= tomorrowTimestamp;
-	}
-
 }

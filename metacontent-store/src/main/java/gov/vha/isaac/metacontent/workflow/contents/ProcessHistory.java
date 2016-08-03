@@ -259,9 +259,9 @@ public class ProcessHistory extends StorableWorkflowContents {
 		public int compare(ProcessHistory o1, ProcessHistory o2) {
 			long t1 = o1.getTimeAdvanced();
 			long t2 = o2.getTimeAdvanced();
-			if (t2 > t1)
+			if (t1 > t2)
 				return 1;
-			else if (t1 > t2)
+			else if (t1 < t2)
 				return -1;
 			else
 				return 0;

@@ -137,7 +137,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
-			ProcessDescriptor descriptor = processWorkflowDefinition("test", xmlContents);
+			ProcessDescriptor descriptor = processWorkflowDefinition(xmlContents);
 
 			key = populateWorkflowDefinitionRecords(descriptor);
 
@@ -293,14 +293,12 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 	/**
 	 * Process workflow definition.
-	 *
-	 * @param string
-	 *            the string
 	 * @param xmlContents
 	 *            the xml contents
+	 *
 	 * @return the process descriptor
 	 */
-	private ProcessDescriptor processWorkflowDefinition(String string, String xmlContents) {
+	private ProcessDescriptor processWorkflowDefinition(String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
 		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();

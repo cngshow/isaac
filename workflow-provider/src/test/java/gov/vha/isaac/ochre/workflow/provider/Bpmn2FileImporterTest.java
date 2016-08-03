@@ -26,15 +26,15 @@ import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowProviderTestPackage;
+import gov.vha.isaac.ochre.workflow.provider.metastore.AbstractWorkflowProviderTestPackage;
 
 /**
  * Test the WorkflowDefinitionUtility class
@@ -43,24 +43,27 @@ import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowProviderTestPacka
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class Bpmn2FileImporterTest extends WorkflowProviderTestPackage {
+public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
+	private static boolean setupCompleted = false;
+
+	private static MVStoreMetaContentProvider store;
 
 	/**
 	 * Sets the up.
 	 */
-	@BeforeClass
-	public static void setUpClass() {
-		if (store == null) {
-			store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+	@Before
+	public void setUpClass() {
+		if (!setupCompleted) {
+			store = new MVStoreMetaContentProvider(new File("target"), "testBpmn2FileImport", true);
+			setupCompleted = true;
 		}
+
+		globalSetup(true, store);
 	}
 
-	/**
-	 * Tear down.
-	 */
 	@AfterClass
 	public static void tearDownClass() {
+		AbstractWorkflowUtilities.close();
 	}
 
 	/**
@@ -71,7 +74,7 @@ public class Bpmn2FileImporterTest extends WorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testVetzWorkflowSetDefinition() throws Exception {
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
 				store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
@@ -98,9 +101,9 @@ public class Bpmn2FileImporterTest extends WorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testVetzWorkflowSetNodes() throws Exception {
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
 				store);
-		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(
+		AvailableActionContentStore createdAvailableActionContentStore = new AvailableActionContentStore(
 				store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",

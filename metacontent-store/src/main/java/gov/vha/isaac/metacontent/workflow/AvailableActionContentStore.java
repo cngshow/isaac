@@ -24,27 +24,27 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
- * Statically populated user workflow permissions initialized during reading of
- * WF Definition only
+ * Statically populated available actions initialized during reading of WF
+ * Definition only
  * 
- * {@link UserPermissionWorkflowContentStore}
- * {@link AbstractWorkflowContentStore}.
+ * {@link AvailableActionContentStore}
+ * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class UserPermissionWorkflowContentStore extends AbstractWorkflowContentStore {
+public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new user permission workflow content store.
+	 * Instantiates a new static state action content store.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public UserPermissionWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.USER_PERMISSION);
+	public AvailableActionContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.AVAILABLE_ACTION);
 	}
 
 	/*
@@ -55,8 +55,8 @@ public class UserPermissionWorkflowContentStore extends AbstractWorkflowContentS
 	 * java.util.UUID)
 	 */
 	@Override
-	public UserPermission getEntry(UUID key) {
-		return new UserPermission(getGenericEntry(key));
+	public AvailableAction getEntry(UUID key) {
+		return new AvailableAction(getGenericEntry(key));
 	}
 
 	/*
@@ -66,23 +66,18 @@ public class UserPermissionWorkflowContentStore extends AbstractWorkflowContentS
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<UserPermission> getAllEntries() {
-		Set<UserPermission> retSet = new HashSet<>();
+	public Set<AvailableAction> getAllEntries() {
+		Set<AvailableAction> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new UserPermission(entry));
+			retSet.add(new AvailableAction(entry));
 		}
 
 		return retSet;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
@@ -90,10 +85,10 @@ public class UserPermissionWorkflowContentStore extends AbstractWorkflowContentS
 		int i = 1;
 		for (UUID key : keySet()) {
 			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tUser Permission" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tAvailable Action" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "UserPermissionWorkflowContentStore: " + buf.toString();
+		return "AvailableActionWorkflowContentStore: " + buf.toString();
 	}
 }

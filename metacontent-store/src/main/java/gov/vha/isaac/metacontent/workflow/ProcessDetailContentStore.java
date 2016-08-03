@@ -24,27 +24,20 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 
 /**
- * Statically populated workflow details initialized from BPMN2 file during
- * reading of WF Definition only
- * 
- * {@link DefinitionDetailWorkflowContentStore}
+ * Dynamic workflow processes populated at runtime only
+ *
+ * {@link ProcessDetailContentStore} {@link ProcessDetail}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowContentStore {
+public class ProcessDetailContentStore extends AbstractWorkflowContentStore {
 
-	/**
-	 * Instantiates a new Definition Details Workflow Content Store.
-	 *
-	 * @param store
-	 *            the store
-	 */
-	public DefinitionDetailWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.DEFINITION_DETAIL);
+	public ProcessDetailContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);
 	}
 
 	/*
@@ -55,8 +48,8 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 	 * java.util.UUID)
 	 */
 	@Override
-	public DefinitionDetail getEntry(UUID key) {
-		return new DefinitionDetail(getGenericEntry(key));
+	public ProcessDetail getEntry(UUID key) {
+		return new ProcessDetail(getGenericEntry(key));
 	}
 
 	/*
@@ -66,13 +59,13 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<DefinitionDetail> getAllEntries() {
-		Set<DefinitionDetail> retSet = new HashSet<>();
+	public Set<ProcessDetail> getAllEntries() {
+		Set<ProcessDetail> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new DefinitionDetail(entry));
+			retSet.add(new ProcessDetail(entry));
 		}
 
 		return retSet;
@@ -89,11 +82,11 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 
 		int i = 1;
 		for (UUID key : keySet()) {
-			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tDefinition Detail" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tProcess Detail #" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "DefinitionDetailWorkflowContentStore: " + buf.toString();
+		return "ProcessDetailsWorkflowContentStore: " + buf.toString();
 	}
+
 }

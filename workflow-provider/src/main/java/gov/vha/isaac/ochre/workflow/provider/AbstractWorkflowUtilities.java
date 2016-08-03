@@ -22,11 +22,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
+import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.metacontent.workflow.UserPermissionWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowAdvancementAccessor;
 import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowHistoryAccessor;
 import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowInitializerConcluder;
@@ -46,16 +46,16 @@ public abstract class AbstractWorkflowUtilities {
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The user workflow permission store. */
-	protected static UserPermissionWorkflowContentStore userPermissionStore;
+	protected static UserPermissionContentStore userPermissionStore;
 
 	/** The available action store. */
-	protected static AvailableActionWorkflowContentStore availableActionStore;
+	protected static AvailableActionContentStore availableActionStore;
 
 	/** The definition detail store. */
-	protected static DefinitionDetailWorkflowContentStore definitionDetailStore;
+	protected static DefinitionDetailContentStore definitionDetailStore;
 
 	/** The process detail store. */
-	protected static ProcessDetailWorkflowContentStore processDetailStore;
+	protected static ProcessDetailContentStore processDetailStore;
 
 	/** The process history store. */
 	protected static ProcessHistoryContentStore processHistoryStore;
@@ -85,11 +85,21 @@ public abstract class AbstractWorkflowUtilities {
 		if (store == null) {
 			store = workflowStore;
 
-			userPermissionStore = new UserPermissionWorkflowContentStore(store);
-			availableActionStore = new AvailableActionWorkflowContentStore(store);
-			definitionDetailStore = new DefinitionDetailWorkflowContentStore(store);
-			processDetailStore = new ProcessDetailWorkflowContentStore(store);
+			userPermissionStore = new UserPermissionContentStore(store);
+			availableActionStore = new AvailableActionContentStore(store);
+			definitionDetailStore = new DefinitionDetailContentStore(store);
+			processDetailStore = new ProcessDetailContentStore(store);
 			processHistoryStore = new ProcessHistoryContentStore(store);
 		}
+	}
+	
+	public static void close() {
+		store = null;
+
+		userPermissionStore.close();
+		availableActionStore.close();
+		definitionDetailStore.close();
+		processDetailStore.close();
+		processHistoryStore.close();
 	}
 }

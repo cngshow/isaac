@@ -32,11 +32,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
+import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.metacontent.workflow.UserPermissionWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
@@ -49,10 +49,10 @@ import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
  * Test both static and user based workflow content as defined in the
  * metacontent-store
  * 
- * {@link UserPermissionWorkflowContentStore}
- * {@link AvailableActionWorkflowContentStore}
- * {@link DefinitionDetailWorkflowContentStore}
- * {@link ProcessHistoryContentStore} {@link ProcessDetailWorkflowContentStore}
+ * {@link UserPermissionContentStore}
+ * {@link AvailableActionContentStore}
+ * {@link DefinitionDetailContentStore}
+ * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -88,7 +88,7 @@ public class WorkflowContentStoreTest {
 		UserPermission createdEntry1 = new UserPermission(UUID.randomUUID(), 1, "Role A");
 
 		// New scope to ensure closing store
-		UserPermissionWorkflowContentStore availableActionStore = new UserPermissionWorkflowContentStore(store);
+		UserPermissionContentStore availableActionStore = new UserPermissionContentStore(store);
 
 		// Add new entry
 		UUID key1 = availableActionStore.addEntry(createdEntry1);
@@ -96,7 +96,7 @@ public class WorkflowContentStoreTest {
 
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
-		availableActionStore = new UserPermissionWorkflowContentStore(store);
+		availableActionStore = new UserPermissionContentStore(store);
 		UserPermission pulledEntry1 = availableActionStore.getEntry(key1);
 
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
@@ -160,7 +160,7 @@ public class WorkflowContentStoreTest {
 		AvailableAction createdEntry1 = new AvailableAction(UUID.randomUUID(), "EDIT", "REVIEW", "REVIEW", "REVIEWER");
 
 		// New scope to ensure closing store
-		AvailableActionWorkflowContentStore availableActionStore = new AvailableActionWorkflowContentStore(store);
+		AvailableActionContentStore availableActionStore = new AvailableActionContentStore(store);
 
 		// Add new entry
 		UUID key1 = availableActionStore.addEntry(createdEntry1);
@@ -168,7 +168,7 @@ public class WorkflowContentStoreTest {
 
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
-		availableActionStore = new AvailableActionWorkflowContentStore(store);
+		availableActionStore = new AvailableActionContentStore(store);
 		AvailableAction pulledEntry1 = availableActionStore.getEntry(key1);
 
 		Assert.assertEquals(availableActionStore.getNumberOfEntries(), 1);
@@ -322,7 +322,7 @@ public class WorkflowContentStoreTest {
 				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
 
 		// New scope to ensure closing store
-		ProcessDetailWorkflowContentStore processInstanceStore = new ProcessDetailWorkflowContentStore(store);
+		ProcessDetailContentStore processInstanceStore = new ProcessDetailContentStore(store);
 
 		// Add new entry
 		UUID key1 = processInstanceStore.addEntry(createdEntry1);
@@ -330,7 +330,7 @@ public class WorkflowContentStoreTest {
 
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
-		processInstanceStore = new ProcessDetailWorkflowContentStore(store);
+		processInstanceStore = new ProcessDetailContentStore(store);
 		ProcessDetail pulledEntry1 = processInstanceStore.getEntry(key1);
 
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 1);
@@ -409,7 +409,7 @@ public class WorkflowContentStoreTest {
 		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1);
 
 		// New scope to ensure closing store
-		DefinitionDetailWorkflowContentStore definitionDetailStore = new DefinitionDetailWorkflowContentStore(store);
+		DefinitionDetailContentStore definitionDetailStore = new DefinitionDetailContentStore(store);
 
 		// Add new entry
 		UUID key1 = definitionDetailStore.addEntry(createdEntry1);
@@ -417,7 +417,7 @@ public class WorkflowContentStoreTest {
 
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
-		definitionDetailStore = new DefinitionDetailWorkflowContentStore(store);
+		definitionDetailStore = new DefinitionDetailContentStore(store);
 		DefinitionDetail pulledEntry1 = definitionDetailStore.getEntry(key1);
 
 		Assert.assertEquals(definitionDetailStore.getNumberOfEntries(), 1);
