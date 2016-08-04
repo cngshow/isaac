@@ -89,7 +89,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *             the exception
 	 */
 	public String advanceWorkflow(UUID processId, int userId, String actionRequested, String comment) throws Exception {
-		WorkflowAdvancementAccessor advancementAccessor = new WorkflowAdvancementAccessor(store);
+		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
 		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
 
 		// Get User Permissible actions
@@ -127,7 +127,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *            the new roles
 	 */
 	public void updateUserRoles(UUID definitionId, int user, Set<String> newRoles) {
-		WorkflowAdvancementAccessor advancementAccessor = new WorkflowAdvancementAccessor(store);
+		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
 
 		Set<UserPermission> allUserPermissions = advancementAccessor.getAllPermissionsForUser(definitionId, user);
 

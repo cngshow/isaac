@@ -85,6 +85,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
+		expectedRoles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -107,16 +108,18 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
-				createdAvailableActionContentStore.getNumberOfEntries(), 7);
+				createdAvailableActionContentStore.getNumberOfEntries(), 9);
 
 		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
 
-		List<String> possibleActions = Arrays.asList("Cancel Workflow", "QA Fails", "QA Passes", "Approve",
-				"Reject Edit", "Reject Review");
-		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
+		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
+				"Reject Edit", "Reject Review", "Begin Authoring Workflow");
+		
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
+			System.out.println("\n" + entry + "\n");
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));

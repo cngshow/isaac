@@ -91,7 +91,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = allProcessHistory.iterator().next();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -108,7 +108,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = allProcessHistory.first();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -118,7 +118,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = allProcessHistory.last();
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -145,7 +145,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = processHistory.first();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -155,7 +155,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = processHistory.last();
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -166,14 +166,14 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		createSecondaryDefinitionWithSingleAdvancement();
 		historyByDef = accessor.getActiveByDefinition();
 		Assert.assertEquals(2, historyByDef.keySet().size());
-		Assert.assertEquals(1, historyByDef.get(secondDefinitionId).size());
+		Assert.assertEquals(1, historyByDef.get(secondaryDefinitionId).size());
 
-		processHistory = historyByDef.get(secondDefinitionId);
+		processHistory = historyByDef.get(secondaryDefinitionId);
 
 		testingEntry = processHistory.first();
 		Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -195,7 +195,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = processHistory.first();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -205,7 +205,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = processHistory.last();
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -232,7 +232,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 				ProcessHistory testingEntry = processHistory.first();
 				Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 				Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-				Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+				Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 				Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 				Assert.assertEquals(firstState, testingEntry.getState());
 				Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -242,7 +242,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 				testingEntry = processHistory.last();
 				Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 				Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-				Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+				Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 				Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 				Assert.assertEquals(secondState, testingEntry.getState());
 				Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -252,7 +252,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 				ProcessHistory testingEntry = processHistory.first();
 				Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 				Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-				Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+				Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 				Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 				Assert.assertEquals(firstState, testingEntry.getState());
 				Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -273,7 +273,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		Map<UUID, SortedSet<ProcessHistory>> historyByDefinition = accessor.getByDefinitionMap();
 	
 		Assert.assertEquals(2, historyByDefinition.keySet().size());
-		Assert.assertEquals(1, historyByDefinition.get(secondDefinitionId).size());
+		Assert.assertEquals(1, historyByDefinition.get(secondaryDefinitionId).size());
 
 	
 		Assert.assertEquals(2, historyByDefinition.get(mainDefinitionId).size());
@@ -283,7 +283,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = processHistory.first();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -293,7 +293,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = processHistory.last();
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -301,12 +301,12 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		Assert.assertEquals(secondComment, testingEntry.getComment());
 		
 		
-		processHistory = historyByDefinition.get(secondDefinitionId);
+		processHistory = historyByDefinition.get(secondaryDefinitionId);
 
 		testingEntry = processHistory.first();
 		Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -346,7 +346,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 			ProcessHistory testingEntry = processHistory.first();
 			Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 			Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-			Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+			Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 			Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 			Assert.assertEquals(firstState, testingEntry.getState());
 			Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -356,7 +356,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 			testingEntry = processHistory.last();
 			Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 			Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-			Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+			Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 			Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 			Assert.assertEquals(secondState, testingEntry.getState());
 			Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -370,7 +370,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 			ProcessHistory testingEntry = processHistory.first();
 			Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 			Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-			Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+			Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 			Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 			Assert.assertEquals(firstState, testingEntry.getState());
 			Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -392,7 +392,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = processHistory.first();
 		Assert.assertEquals(firstHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -402,7 +402,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = processHistory.last();
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -413,7 +413,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = processHistory.first();
 		Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());
@@ -433,7 +433,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		ProcessHistory testingEntry = accessor.getLatestForProcess(mainProcessId);
 		Assert.assertEquals(secondHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(secondState, testingEntry.getState());
 		Assert.assertEquals(secondAction, testingEntry.getAction());
@@ -443,7 +443,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		testingEntry = accessor.getLatestForProcess(secondaryProcessId);
 		Assert.assertEquals(secondaryHistoryEntryId, testingEntry.getId());
 		Assert.assertEquals(secondaryProcessId, testingEntry.getProcessId());
-		Assert.assertEquals(userId, testingEntry.getWorkflowUser());
+		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, testingEntry.getTimeAdvanced());
 		Assert.assertEquals(firstState, testingEntry.getState());
 		Assert.assertEquals(firstAction, testingEntry.getAction());

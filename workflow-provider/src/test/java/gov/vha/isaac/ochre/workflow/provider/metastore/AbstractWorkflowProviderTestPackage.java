@@ -18,11 +18,13 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
+import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.DBLocator;
@@ -31,7 +33,8 @@ import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 /**
  * Test the AbstractWorkflowProviderTestPackage class
  * 
- * {@link WorkflowInitializerConcluder}. {@link WorkflowStatusAccessorTest}.
+ * {@link WorkflowInitializerConcluderTest}. {@link WorkflowStatusAccessorTest}.
+ * {@link WorkflowHistoryAccessorTest}. {@link WorkflowActionsPermissionsAccessorTest}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -52,11 +55,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected DefinitionDetailContentStore definitionDetailStore;
 
+	protected UserPermissionContentStore userPermissionStore;
+	
 	protected Bpmn2FileImporter importer;
 
 	protected static Set<Integer> secondaryConceptsForTesting = new HashSet<>(Arrays.asList(199, 299));
 
-	protected static int userId = 99;
+	protected static int mainUserId = 99;
+	protected static int secondaryUserId = 999;
 
 	protected static List<Integer> stampSequenceForTesting = Arrays.asList(11, 12, 13);
 
@@ -90,7 +96,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final String secondComment = "Comment #2";
 	protected static UUID secondaryHistoryEntryId;
 
-	protected static UUID secondDefinitionId;
+	protected static UUID secondaryDefinitionId;
 
 	protected static File DATASTORE_PATH = new File(
 			"C:/SW/WCI/Mantech/Workspace/ISAAC/testDB/vets-1.2-SNAPSHOT-all.data/");
@@ -102,12 +108,26 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		processHistoryStore = new ProcessHistoryContentStore(store);
 
+		userPermissionStore = new UserPermissionContentStore(store);
+				
 		// if (firstTimeCreatingStore) {
 		if (mainDefinitionId == null) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			mainDefinitionId = definitionDetailStore.getAllEntries().iterator().next().getId();
 		}
 		initConcluder = new WorkflowInitializerConcluder(store);
+		
+	}
+
+	protected void setupUserRoles() {
+		UserPermission perm = new UserPermission(mainDefinitionId, mainUserId, "EDITOR");
+		userPermissionStore.addEntry(perm);
+		
+		perm = new UserPermission(mainDefinitionId, secondaryUserId, "REVIEWER");
+		userPermissionStore.addEntry(perm);
+		
+		perm = new UserPermission(mainDefinitionId, mainUserId, "APPROVER");
+		userPermissionStore.addEntry(perm);
 	}
 
 	protected boolean timeSinceYesterdayBeforeTomorrow(long time) {
@@ -161,6 +181,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
+		
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready For Edit", "");
+		processHistoryStore.addEntry(advanceEntry);
 	}
 
 	protected void createSecondaryDefinitionWithSingleAdvancement() {
@@ -168,8 +191,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		roles.add("Editor");
 		roles.add("Reviewer");
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles);
-		secondDefinitionId = definitionDetailStore.addEntry(createdEntry);
-		initializeSecondaryWorkflow(secondDefinitionId, secondaryConceptsForTesting);
+		secondaryDefinitionId = definitionDetailStore.addEntry(createdEntry);
+		initializeSecondaryWorkflow(secondaryDefinitionId, secondaryConceptsForTesting);
 		secondaryHistoryEntryId = advanceInitialWorkflow(secondaryProcessId);
 
 	}
@@ -177,19 +200,19 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void initializeMainWorkflow(UUID requestedDefinitionId) {
 		// Create new process
 		mainProcessId = initConcluder.defineWorkflow(requestedDefinitionId, conceptsForTesting, stampSequenceForTesting,
-				userId, SubjectMatter.CONCEPT);
+				mainUserId, SubjectMatter.CONCEPT);
 
 	}
 
 	protected void initializeSecondaryWorkflow(UUID requestedDefinitionId, Set<Integer> requestedConceptForTesting) {
 		// Create new process
 		secondaryProcessId = initConcluder.defineWorkflow(requestedDefinitionId, requestedConceptForTesting,
-				stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 
 	}
 
 	protected UUID advanceInitialWorkflow(UUID requestedProcessId) {
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, firstHistoryTimestamp, firstState,
+		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, firstHistoryTimestamp, firstState,
 				firstAction, firstOutcome, firstComment);
 		return processHistoryStore.addEntry(entry);
 	}
@@ -197,7 +220,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UUID advanceSecondWorkflow(UUID requestedProcessId) {
 		secondHistoryTimestamp = new Date().getTime();
 
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, secondHistoryTimestamp, secondState,
+		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, secondHistoryTimestamp, secondState,
 				secondAction, secondOutcome, secondComment);
 		return processHistoryStore.addEntry(entry);
 	}

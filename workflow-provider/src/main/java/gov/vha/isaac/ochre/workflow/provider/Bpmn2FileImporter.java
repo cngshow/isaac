@@ -101,6 +101,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 	private Set<Long> humanNodesProcessed = new HashSet<>();
 
+
 	public Bpmn2FileImporter() throws Exception {
 		// Default Constructor fails if store not already set
 	}
@@ -167,6 +168,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 */
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		Set<String> roles = new HashSet<>();
+		roles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
 
 		ProcessAssetDesc definition = descriptor.getProcess();
 
@@ -174,6 +176,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			roles.addAll(descriptor.getTaskAssignments().get(key));
 		}
 
+		
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
 				definition.getNamespace(), definition.getVersion(), roles);
 
@@ -323,7 +326,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 
 			if (roles.size() == 0 && node.getId() == process.getStartNodes().iterator().next().getId()) {
-				roles.add("SYSTEM_AUTOMATED");
+				roles.add(SYSTEM_AUTOMATED );
 			}
 
 			// Verify that all requirements met

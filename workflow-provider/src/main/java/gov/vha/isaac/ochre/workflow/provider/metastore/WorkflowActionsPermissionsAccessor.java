@@ -35,11 +35,11 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 /**
  * Utility to access workflow data from content stores
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowAdvancementAccessor}.
+ * {@link AbstractWorkflowUtilities} {@link WorkflowActionsPermissionsAccessor}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
+public class WorkflowActionsPermissionsAccessor extends AbstractWorkflowUtilities {
 
 	/**
 	 * Instantiates a new workflow information accessor.
@@ -47,7 +47,7 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	public WorkflowAdvancementAccessor() throws Exception {
+	public WorkflowActionsPermissionsAccessor() throws Exception {
 		// Default Constructor fails if store not already set
 	}
 
@@ -57,7 +57,7 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 	 * @param store
 	 *            the store
 	 */
-	public WorkflowAdvancementAccessor(MVStoreMetaContentProvider store) {
+	public WorkflowActionsPermissionsAccessor(MVStoreMetaContentProvider store) {
 		super(store);
 	}
 
@@ -132,8 +132,6 @@ public class WorkflowAdvancementAccessor extends AbstractWorkflowUtilities {
 	 *            the process id
 	 * @param userId
 	 *            the user id
-	 * @param domain
-	 *            the domain
 	 * @return the permissible actions for process
 	 */
 	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userId) {

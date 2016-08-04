@@ -185,7 +185,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	@Override
 	public String toString() {
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: "
-				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
+				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole: " + role;
 	}
 
 	/*

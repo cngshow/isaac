@@ -70,10 +70,10 @@
     <bpmn2:sequenceFlow id="SequenceFlow_14" name="Cancel Workflow" sourceRef="ExclusiveGateway_4" targetRef="EndEvent_3">
       <bpmn2:conditionExpression xsi:type="bpmn2:tFormalExpression" id="FormalExpression_96" language="http://www.mvel.org/2.0">'Canceled'</bpmn2:conditionExpression>
     </bpmn2:sequenceFlow>
-    <bpmn2:endEvent id="EndEvent_4" name="Ready to Promote">
+    <bpmn2:endEvent id="EndEvent_4" name="Ready for Publish">
       <bpmn2:extensionElements>
         <drools:metaData name="elementname">
-          <drools:metaValue><![CDATA[Ready to Promote]]></drools:metaValue>
+          <drools:metaValue><![CDATA[Ready for Publish]]></drools:metaValue>
         </drools:metaData>
       </bpmn2:extensionElements>
       <bpmn2:incoming>SequenceFlow_17</bpmn2:incoming>
@@ -374,7 +374,7 @@
       <bpmndi:BPMNShape id="BPMNShape_EndEvent_3" bpmnElement="EndEvent_4">
         <dc:Bounds height="36.0" width="36.0" x="1065.0" y="467.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_26" labelStyle="BPMNLabelStyle_1">
-          <dc:Bounds height="30.0" width="58.0" x="1054.0" y="503.0"/>
+          <dc:Bounds height="30.0" width="62.0" x="1052.0" y="503.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_UserTask_6" bpmnElement="UserTask_6">
