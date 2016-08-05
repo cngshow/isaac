@@ -100,7 +100,7 @@ public class LoadTermstore extends AbstractMojo
 	{
 		final int statedSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("1f201994-960e-11e5-8994-feff819cdc9f"));
 		int statedDups = 0;
-                                        long loadTime = System.currentTimeMillis();
+		long loadTime = System.currentTimeMillis();
 		//Load IsaacMetadataAuxiliary first, otherwise, we have issues....
 		final AtomicBoolean hasMetadata = new AtomicBoolean(false);
 		Arrays.sort(ibdfFiles, new Comparator<File>()
@@ -148,74 +148,74 @@ public class LoadTermstore extends AbstractMojo
 						{
 							if (null != object.getOchreObjectType())
 							switch (object.getOchreObjectType()) {
-                                                        case CONCEPT:
-                                                            if (!activeOnly || isActive((ObjectChronology)object))
-                                                            {
-                                                                Get.conceptService().writeConcept(((ConceptChronology)object));
-                                                                conceptCount++;
-                                                            }
-                                                            else
-                                                            {
-                                                                skippedItems.add(((ObjectChronology)object).getNid());
-                                                            }
-                                                            break;
-                                                        case SEMEME:
-                                                            SememeChronology sc = (SememeChronology)object;
-                                                            if (sc.getAssemblageSequence() == statedSequence) {
-                                                                SememeSequenceSet sequences = Get.sememeService().getSememeSequencesForComponentFromAssemblage(sc.getReferencedComponentNid(), statedSequence);
-                                                                if (!sequences.isEmpty()) {
-                                                                    List<LogicalExpression> listToMerge = new ArrayList<>();
-                                                                    listToMerge.add(getLatestLogicalExpression(sc));
-                                                                    getLog().info("\nDuplicate: " + sc);
-                                                                    sequences.stream().forEach((sememeSequence) ->  listToMerge.add(getLatestLogicalExpression(Get.sememeService().getSememe(sememeSequence))));
-                                                                    
-                                                                    getLog().info("Duplicates: " + listToMerge);
-                                                                    
-                                                                    if (listToMerge.size() > 2) {
-                                                                        throw new UnsupportedOperationException("Can't merge list of size: " + listToMerge.size() + "\n" + listToMerge);
-                                                                    }
-                                                                    IsomorphicResults isomorphicResults = listToMerge.get(0).findIsomorphisms(listToMerge.get(1));
-                                                                    getLog().info("Isomorphic results: " + isomorphicResults);
-                                                                    
-                                                                    SememeChronology existingChronology = Get.sememeService().getSememe(sequences.findFirst().getAsInt());
-                                                                    
-                                                                    ConceptProxy moduleProxy = new ConceptProxy("SOLOR overlay module","9ecc154c-e490-5cf8-805d-d2865d62aef3");
-                                                                    ConceptProxy pathProxy = new ConceptProxy("development path","1f200ca6-960e-11e5-8994-feff819cdc9f");
-                                                                    ConceptProxy userProxy = new ConceptProxy("user","f7495b58-6630-3499-a44e-2052b5fcf06c");
-                                                                     
-                                                                    int stampSequence = Get.stampService().getStampSequence(State.ACTIVE, loadTime, userProxy.getConceptSequence(), moduleProxy.getConceptSequence(), pathProxy.getConceptSequence());
-                                                                    MutableLogicGraphSememe newVersion = (MutableLogicGraphSememe) existingChronology.createMutableVersion(MutableLogicGraphSememe.class, stampSequence);
-                                                                    newVersion.setGraphData(isomorphicResults.getMergedExpression().getData(DataTarget.INTERNAL));
-                                                                    sc = existingChronology;
-                                                                    
-                                                                }
-                                                            }
-                                                            if (!sememeTypesToSkip.contains(sc.getSememeType()) &&
-                                                                (!activeOnly || (isActive(sc) && !skippedItems.contains(sc.getReferencedComponentNid()))))
-                                                            {
-                                                                Get.sememeService().writeSememe(sc);
-                                                                if (((SememeChronology)object).getSememeType() == SememeType.LOGIC_GRAPH)
-                                                                {
-                                                                    Get.taxonomyService().updateTaxonomy((SememeChronology)object);
-                                                                }
-                                                                sememeCount++;
-                                                            }
-                                                            else
-                                                            {
-                                                                skippedItems.add(sc.getNid());
-                                                            }
-                                                            break;
-                                                        case STAMP_ALIAS:
-                                                            Get.commitService().addAlias(((StampAlias)object).getStampSequence(), ((StampAlias)object).getStampAlias(), null);
-                                                            stampAliasCount++;
-                                                            break;
-                                                        case STAMP_COMMENT:
-                                                            Get.commitService().setComment(((StampComment)object).getStampSequence(), ((StampComment)object).getComment());
-                                                            stampCommentCount++;
-                                                            break;
-                                                        default:
-                                                            throw new UnsupportedOperationException("Unknown ochre object type: " + object);
-                                                    }
+								case CONCEPT:
+									if (!activeOnly || isActive((ObjectChronology)object))
+									{
+										Get.conceptService().writeConcept(((ConceptChronology)object));
+										conceptCount++;
+									}
+									else
+									{
+										skippedItems.add(((ObjectChronology)object).getNid());
+									}
+									break;
+								case SEMEME:
+									SememeChronology sc = (SememeChronology)object;
+									if (sc.getAssemblageSequence() == statedSequence) {
+										SememeSequenceSet sequences = Get.sememeService().getSememeSequencesForComponentFromAssemblage(sc.getReferencedComponentNid(), statedSequence);
+										if (!sequences.isEmpty()) {
+											List<LogicalExpression> listToMerge = new ArrayList<>();
+											listToMerge.add(getLatestLogicalExpression(sc));
+											getLog().info("\nDuplicate: " + sc);
+											sequences.stream().forEach((sememeSequence) ->  listToMerge.add(getLatestLogicalExpression(Get.sememeService().getSememe(sememeSequence))));
+											
+											getLog().info("Duplicates: " + listToMerge);
+											
+											if (listToMerge.size() > 2) {
+												throw new UnsupportedOperationException("Can't merge list of size: " + listToMerge.size() + "\n" + listToMerge);
+											}
+											IsomorphicResults isomorphicResults = listToMerge.get(0).findIsomorphisms(listToMerge.get(1));
+											getLog().info("Isomorphic results: " + isomorphicResults);
+											
+											SememeChronology existingChronology = Get.sememeService().getSememe(sequences.findFirst().getAsInt());
+											
+											ConceptProxy moduleProxy = new ConceptProxy("SOLOR overlay module","9ecc154c-e490-5cf8-805d-d2865d62aef3");
+											ConceptProxy pathProxy = new ConceptProxy("development path","1f200ca6-960e-11e5-8994-feff819cdc9f");
+											ConceptProxy userProxy = new ConceptProxy("user","f7495b58-6630-3499-a44e-2052b5fcf06c");
+											 
+											int stampSequence = Get.stampService().getStampSequence(State.ACTIVE, loadTime, userProxy.getConceptSequence(), moduleProxy.getConceptSequence(), pathProxy.getConceptSequence());
+											MutableLogicGraphSememe newVersion = (MutableLogicGraphSememe) existingChronology.createMutableVersion(MutableLogicGraphSememe.class, stampSequence);
+											newVersion.setGraphData(isomorphicResults.getMergedExpression().getData(DataTarget.INTERNAL));
+											sc = existingChronology;
+											
+										}
+									}
+									if (!sememeTypesToSkip.contains(sc.getSememeType()) &&
+										(!activeOnly || (isActive(sc) && !skippedItems.contains(sc.getReferencedComponentNid()))))
+									{
+										Get.sememeService().writeSememe(sc);
+										if (((SememeChronology)object).getSememeType() == SememeType.LOGIC_GRAPH)
+										{
+											Get.taxonomyService().updateTaxonomy((SememeChronology)object);
+										}
+										sememeCount++;
+									}
+									else
+									{
+										skippedItems.add(sc.getNid());
+									}
+									break;
+								case STAMP_ALIAS:
+									Get.commitService().addAlias(((StampAlias)object).getStampSequence(), ((StampAlias)object).getStampAlias(), null);
+									stampAliasCount++;
+									break;
+								case STAMP_COMMENT:
+									Get.commitService().setComment(((StampComment)object).getStampSequence(), ((StampComment)object).getComment());
+									stampCommentCount++;
+									break;
+								default:
+									throw new UnsupportedOperationException("Unknown ochre object type: " + object);
+							}
 						}
 						catch (Exception e)
 						{
@@ -288,17 +288,17 @@ public class LoadTermstore extends AbstractMojo
 			return ((StampedVersion)object.getVersionList().get(0)).getState() == State.ACTIVE;
 		}
 	}
-        
-        private static LogicalExpression getLatestLogicalExpression(SememeChronology sc) {
-            SememeChronology<? extends LogicGraphSememe> lgsc =  sc;
-            LogicGraphSememe latestVersion = null;
-            for (LogicGraphSememe version: lgsc.getVersionList()) {
-                if (latestVersion == null) {
-                    latestVersion = version;
-                } else if (latestVersion.getTime() < version.getTime()) {
-                        latestVersion = version;
-                }
-            }
-            return latestVersion.getLogicalExpression();
-        }
+
+	private static LogicalExpression getLatestLogicalExpression(SememeChronology sc) {
+		SememeChronology<? extends LogicGraphSememe> lgsc =  sc;
+		LogicGraphSememe latestVersion = null;
+		for (LogicGraphSememe version: lgsc.getVersionList()) {
+			if (latestVersion == null) {
+				latestVersion = version;
+			} else if (latestVersion.getTime() < version.getTime()) {
+					latestVersion = version;
+			}
+		}
+		return latestVersion.getLogicalExpression();
+	}
 }
