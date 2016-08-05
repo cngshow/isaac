@@ -35,6 +35,7 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -96,8 +97,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 		for (ProcessDetail entry : processes) {
     		// verify content in workflow is as expected
     		Assert.assertEquals(mainProcessId, entry.getId());
-    		Assert.assertEquals(3, entry.getConcepts().size());
-    		Assert.assertTrue(entry.getConcepts().contains(55));
+    		Assert.assertEquals(3, entry.getConceptSequences().size());
+    		Assert.assertTrue(entry.getConceptSequences().contains(55));
     
     		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
     		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
@@ -122,8 +123,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 		ProcessDetail entry = accessor.getProcessDetail(mainProcessId);
 
 		Assert.assertEquals(mainProcessId, entry.getId());
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
@@ -161,8 +162,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 		ProcessDetail entry = processes.iterator().next();
 		
 		Assert.assertEquals(mainProcessId, entry.getId());
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
@@ -207,8 +208,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 	 */
 	@Test
 	public void testEIsConceptInActiveWorkflow() throws Exception {
-		Assert.assertTrue(accessor.isConceptInActiveWorkflow(conceptsForTesting.iterator().next()));
-		Assert.assertFalse(accessor.isConceptInActiveWorkflow(specialTestingConId.iterator().next()));
+		Assert.assertTrue(accessor.isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, conceptsForTesting.iterator().next()));
+		Assert.assertFalse(accessor.isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, specialTestingConId.iterator().next()));
 	}
 
 
@@ -220,39 +221,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 	 */
 	@Test
 	public void testFIsComponentInActiveWorkflow() throws Exception {
-		// Cannot make this work without a full database.  Will push it to Integration-Test module's workflowIntegerationTest
+		// Cannot make this work without a full database.  Added to Integration-Test module's workflowFramworkTest
 		Assert.assertTrue(true);
-
-		/*
-    		MockWorkflowConceptService conceptService = LookupService.getService(MockWorkflowConceptService.class);
-    		MockWorkflowSememeService sememeService = LookupService.getService(MockWorkflowSememeService.class);
-    		
-    		if (conceptService.getConceptCount() == 0) {
-    			Assert.fail();
-    		}
-    		
-    		int conSeq = conceptService.getBasicConcept().getConceptSequence();
-    		int semSeq = sememeService.getBasicSememe().getSememeSequence();
-    
-    		Assert.assertFalse(accessor.isConceptInActiveWorkflow(conSeq));
-    		Assert.assertFalse(accessor.isComponentInActiveWorkflow(semSeq));
-    
-    		UUID testingProcessId = initConcluder.defineWorkflow(mainDefinitionId, new HashSet<>(Arrays.asList(conSeq)),
-    				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
-    		
-    		Assert.assertTrue(accessor.isConceptInActiveWorkflow(conSeq));
-    		Assert.assertTrue(accessor.isComponentInActiveWorkflow(semSeq));
-    
-    		launchWorkflow(testingProcessId);
-    
-    		Assert.assertTrue(accessor.isConceptInActiveWorkflow(conSeq));
-    		Assert.assertTrue(accessor.isComponentInActiveWorkflow(semSeq));
-    
-    		concludeWorkflow(testingProcessId);
-    		
-    		Assert.assertFalse(accessor.isConceptInActiveWorkflow(conSeq));
-    		Assert.assertFalse(accessor.isComponentInActiveWorkflow(semSeq));
-		*/
 	}
 
 	/**
@@ -266,8 +236,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 		ProcessDetail entry = accessor.getActiveProcessForConcept(conceptsForTesting.iterator().next());
 
 		Assert.assertEquals(mainProcessId, entry.getId());
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());

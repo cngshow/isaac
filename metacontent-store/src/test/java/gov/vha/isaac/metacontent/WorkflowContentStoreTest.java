@@ -372,7 +372,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
 		Assert.assertEquals(createdEntry2.getSubjectMatter(), pulledEntry2.getSubjectMatter());
 		Assert.assertEquals(createdEntry2.getProcessStatus(), pulledEntry2.getProcessStatus());
-		Assert.assertNotEquals(createdEntry2.getConcepts(), pulledEntry2.getConcepts());
+		Assert.assertNotEquals(createdEntry2.getConceptSequences(), pulledEntry2.getConceptSequences());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 

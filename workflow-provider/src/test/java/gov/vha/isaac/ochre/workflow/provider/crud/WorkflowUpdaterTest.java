@@ -117,12 +117,12 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		} catch (Exception e) {
 			ProcessDetail details = processDetailStore.getEntry(mainProcessId);
 
-			Assert.assertFalse(details.getConcepts().contains(12345));
+			Assert.assertFalse(details.getConceptSequences().contains(12345));
 		}
 		
-		Assert.assertFalse(processDetailStore.getEntry(secondaryProcessId).getConcepts().contains(12345));
+		Assert.assertFalse(processDetailStore.getEntry(secondaryProcessId).getConceptSequences().contains(12345));
 		updater.addConceptsToExistingProcess(secondaryProcessId, new HashSet<> (Arrays.asList(12345)));
-		Assert.assertTrue(processDetailStore.getEntry(secondaryProcessId).getConcepts().contains(12345));
+		Assert.assertTrue(processDetailStore.getEntry(secondaryProcessId).getConceptSequences().contains(12345));
 	}
 
 	/**

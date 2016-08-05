@@ -84,8 +84,8 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 		// verify content in workflow is as expected
 		ProcessDetail entry = entries.iterator().next();
 		Assert.assertEquals(mainProcessId, entry.getId());
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
@@ -113,8 +113,8 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
 		Assert.assertEquals(mainProcessId, entry.getId());
 
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.LAUNCHED, entry.getProcessStatus());
@@ -156,8 +156,8 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
 		Assert.assertEquals(mainProcessId, entry.getId());
 
-		Assert.assertEquals(3, entry.getConcepts().size());
-		Assert.assertTrue(entry.getConcepts().contains(55));
+		Assert.assertEquals(3, entry.getConceptSequences().size());
+		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
 		Assert.assertEquals(ProcessStatus.CONCLUDED, entry.getProcessStatus());

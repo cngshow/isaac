@@ -79,8 +79,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The stamp sequences. */
 	private ArrayList<Integer> stampSequences;
 
-	/** The concepts. */
-	private Set<Integer> concepts;
+	/** The concept Sequences. */
+	private Set<Integer> conceptSequences;
 
 	/** The creator. */
 	private int creator;
@@ -109,7 +109,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param concepts
+	 * @param conceptSequences
 	 *            the concepts
 	 * @param stampSequences
 	 *            the stamp sequences
@@ -126,11 +126,11 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public ProcessDetail(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequences, int creator,
+	public ProcessDetail(UUID definitionId, Set<Integer> conceptSequences, ArrayList<Integer> stampSequences, int creator,
 			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
-		this.concepts = concepts;
+		this.conceptSequences = conceptSequences;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 		this.subjectMatter = subjectMatter;
@@ -151,7 +151,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 			this.stampSequences = (ArrayList<Integer>) in.readObject();
-			this.concepts = (Set<Integer>) in.readObject();
+			this.conceptSequences = (Set<Integer>) in.readObject();
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
 			this.timeConcluded = (Long) in.readObject();
@@ -185,12 +185,12 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the concepts.
+	 * Gets the conceptSequences.
 	 *
-	 * @return the concepts
+	 * @return the concept sequences
 	 */
-	public Set<Integer> getConcepts() {
-		return concepts;
+	public Set<Integer> getConceptSequences() {
+		return conceptSequences;
 	}
 
 	/**
@@ -274,7 +274,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(stampSequences);
-		out.writeObject(concepts);
+		out.writeObject(conceptSequences);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 		out.writeObject(timeConcluded);
@@ -299,7 +299,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 		StringBuffer buf2 = new StringBuffer();
 
-		for (Integer conId : concepts) {
+		for (Integer conId : conceptSequences) {
 			buf2.append(conId + ", ");
 		}
 
@@ -319,7 +319,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		ProcessDetail other = (ProcessDetail) obj;
 
 		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
-				&& this.concepts.equals(other.concepts) && this.creator == other.creator
+				&& this.conceptSequences.equals(other.conceptSequences) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
 				&& this.subjectMatter == other.subjectMatter && this.processStatus == other.processStatus;
 	}
@@ -331,7 +331,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + concepts.hashCode() + creator
+		return definitionId.hashCode() + stampSequences.hashCode() + conceptSequences.hashCode() + creator
 				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + subjectMatter.hashCode()
 				+ processStatus.hashCode();
 	}

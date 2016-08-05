@@ -118,7 +118,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 * @param processId
 	 *            the process id
 	 */
-	void concludeWorkflow(UUID processId) {
+	public void concludeWorkflow(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		entry.setProcessStatus(ProcessStatus.CONCLUDED);
 		entry.setTimeConcluded(new Date().getTime());

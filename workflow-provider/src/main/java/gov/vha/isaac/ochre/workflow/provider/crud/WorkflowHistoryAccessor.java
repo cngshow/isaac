@@ -133,15 +133,15 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	/**
 	 * Gets the active for concept.
 	 *
-	 * @param conceptId
-	 *            the concept id
+	 * @param conceptSequence
+	 *            the concept sequence
 	 * @return the active for concept
 	 */
-	public SortedSet<ProcessHistory> getActiveForConcept(int conceptId) {
+	public SortedSet<ProcessHistory> getActiveForConcept(int conceptSequence) {
 		SortedSet<ProcessHistory> allHistoryForConcept = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConcepts().contains(conceptId) && process.isActive()) {
+			if (process.getConceptSequences().contains(conceptSequence) && process.isActive()) {
 				allHistoryForConcept.addAll(getForProcess(process.getId()));
 				break;
 			}
@@ -205,15 +205,15 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	/**
 	 * Gets the for concept.
 	 *
-	 * @param conceptId
-	 *            the concept id
+	 * @param conceptSequence
+	 *            the concept sequence
 	 * @return the for concept
 	 */
-	public SortedSet<ProcessHistory> getForConcept(int conceptId) {
+	public SortedSet<ProcessHistory> getForConcept(int conceptSequence) {
 		SortedSet<ProcessHistory> allHistoryForConcept = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConcepts().contains(conceptId)) {
+			if (process.getConceptSequences().contains(conceptSequence)) {
 				allHistoryForConcept.addAll(getForProcess(process.getId()));
 			}
 		}

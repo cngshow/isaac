@@ -95,7 +95,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
 		}
 	
-		details.getConcepts().addAll(stampSequence);
+		details.getConceptSequences().addAll(stampSequence);
 		processDetailStore.updateEntry(processId, details);
 	}
 
