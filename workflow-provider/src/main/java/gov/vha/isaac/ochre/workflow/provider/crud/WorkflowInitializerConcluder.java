@@ -80,7 +80,6 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
 
-		logger.info("Initializing Workflow " + processId + " with values: " + details.toString());
 		return processId;
 	}
 
@@ -109,7 +108,6 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 */
 	public void cancelWorkflowProcess(UUID processId, String comment) {
 		concludeWorkflow(processId);
-		logger.info("Canceling Workflow " + processId);
 
 		// TODO: Handle cancellation store and handle reverting automatically
 	}
@@ -125,6 +123,5 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 		entry.setProcessStatus(ProcessStatus.CONCLUDED);
 		entry.setTimeConcluded(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);
-		logger.info("Concluding Workflow " + processId);
 	}
 }

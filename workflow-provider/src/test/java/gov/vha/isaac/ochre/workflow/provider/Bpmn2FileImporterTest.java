@@ -119,7 +119,6 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				"Ready for Publish", "Ready for Review");
 
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
-			System.out.println("\n" + entry + "\n");
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
