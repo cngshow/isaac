@@ -50,7 +50,7 @@ public class WorkflowFrameworkTest {
 	
     @Test (groups = {"wf"})
     public void testLoadMetaData() {
-        LOG.info("Testing load");
+        LOG.info("Loading Metadata db");
         try {
             BinaryDataReaderService reader = Get.binaryDataReader(Paths.get("target", "data", "IsaacMetadataAuxiliary.ibdf"));
             CommitService commitService = Get.commitService();
@@ -74,15 +74,12 @@ public class WorkflowFrameworkTest {
     public void testStatusAccessorComponentInActiveWorkflow(){
         LOG.info("Testing Workflow History Accessor isComponentInActiveWorkflow()");
 
-        LOG.info("AAA: " + Get.conceptService().getConceptCount());
-		
         ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(MetaData.ISAAC_METADATA.getConceptSequence());
         SememeChronology<? extends DescriptionSememe<?>> descSem = con.getConceptDescriptionList().iterator().next();
 
         int conSeq = con.getConceptSequence();
         int semSeq = descSem.getSememeSequence();
         
-        LOG.info("ZZZ: SHOULD BE FINE HERE" );
 		try {
 			Assert.assertFalse(statusAccessor.isConceptInActiveWorkflow(con.getOchreObjectType(), conSeq));
 			Assert.assertFalse(statusAccessor.isComponentInActiveWorkflow(con.getOchreObjectType(), conSeq));
@@ -94,8 +91,6 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(statusAccessor.isConceptInActiveWorkflow(con.getOchreObjectType(), conSeq));
 			Assert.assertTrue(statusAccessor.isComponentInActiveWorkflow(con.getOchreObjectType(), conSeq));
 			Assert.assertTrue(statusAccessor.isComponentInActiveWorkflow(descSem.getOchreObjectType(), semSeq));
-
-			System.out.println("\n\n\n\nFailing here");
 
 			initConcluder.launchWorkflow(processId);
 
