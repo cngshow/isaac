@@ -859,7 +859,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			Get.commitService().addUncommitted(sememe);
 		}
 
-		Get.commitService().commit("creating new dynamic sememe assemblage: " + sememeFSN);
+		Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN + ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription);
 		return new DynamicSememeUsageDescriptionImpl(newCon.getNid());
 	}
 	
