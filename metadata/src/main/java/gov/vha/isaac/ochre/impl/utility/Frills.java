@@ -56,7 +56,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
-import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -784,18 +783,12 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * UUID that is set for the referenced component in an instance of this sememe.  If {@link ObjectChronologyType#UNKNOWN_NID} is passed, it is ignored, as 
 	 * if it were null.
 	 * @param referencedComponentSubRestriction - optional - may be null - subtype restriction for {@link ObjectChronologyType#SEMEME} restrictions
-	 * @param editCoord - an EditCoordinate
 	 * @return a reference to the newly created sememe item
 	 */
-	public static DynamicSememeUsageDescription createNewDynamicSememeUsageDescriptionConcept(
-			String sememeFSN,
-			String sememePreferredTerm, 
-			String sememeDescription,
-			DynamicSememeColumnInfo[] columns,
-			Integer parentConceptNidOrSequence,
-			ObjectChronologyType referencedComponentRestriction,
-			SememeType referencedComponentSubRestriction,
-			EditCoordinate editCoord)
+	@SuppressWarnings("deprecation")
+	public static DynamicSememeUsageDescription createNewDynamicSememeUsageDescriptionConcept(String sememeFSN, String sememePreferredTerm, 
+			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
+			SememeType referencedComponentSubRestriction)
 	{
 
 		ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
