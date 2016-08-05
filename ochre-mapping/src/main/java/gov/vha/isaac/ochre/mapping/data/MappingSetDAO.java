@@ -77,8 +77,7 @@ public class MappingSetDAO extends MappingDAO
 							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID()), false)},
 //					new DynamicSememeColumnInfo(2, IsaacMappingConstants.get().MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
 //							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
-				null, ObjectChronologyType.CONCEPT, null,
-				editCoord);
+				null, ObjectChronologyType.CONCEPT, null);
 		
 		Get.workExecutors().getExecutor().execute(() ->
 		{
