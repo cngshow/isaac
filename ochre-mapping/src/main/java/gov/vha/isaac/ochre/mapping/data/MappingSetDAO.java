@@ -16,7 +16,6 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
-import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
@@ -78,7 +77,8 @@ public class MappingSetDAO extends MappingDAO
 							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID()), false)},
 //					new DynamicSememeColumnInfo(2, IsaacMappingConstants.get().MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
 //							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
-				null, ObjectChronologyType.CONCEPT, null);
+				null, ObjectChronologyType.CONCEPT, null,
+				editCoord);
 		
 		Get.workExecutors().getExecutor().execute(() ->
 		{
@@ -116,12 +116,9 @@ public class MappingSetDAO extends MappingDAO
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).build(
 				editCoord, ChangeCheckerMode.ACTIVE);
 		
-		@SuppressWarnings("deprecation")
-		Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
-		
 		try
 		{
-			task.get();
+			Get.commitService().commit("update mapping item").get();
 		}
 		catch (Exception e)
 		{

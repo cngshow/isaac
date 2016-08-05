@@ -152,18 +152,18 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
     }
 
     /**
-     * Read the RefexUsageDescription data from the database for a given nid.
+     * Read the RefexUsageDescription data from the database for a given sequence or nid.
      *
      * Note that most users should call {@link #read(int)} instead, as that
      * utilizes a cache. This always reads directly from the DB.
      *
-     * @param refexUsageDescriptorSequence
+     * @param refexUsageDescriptorId sequence or NID of refexUsageDescriptor
      */
     @SuppressWarnings("unchecked")
-    public DynamicSememeUsageDescriptionImpl(int refexUsageDescriptorSequence) {
-        refexUsageDescriptorSequence_ = refexUsageDescriptorSequence;
+    public DynamicSememeUsageDescriptionImpl(int refexUsageDescriptorId) {
+    	ConceptChronology<?> assemblageConcept = Get.conceptService().getConcept(refexUsageDescriptorId);
+        refexUsageDescriptorSequence_ = assemblageConcept.getConceptSequence();
         TreeMap<Integer, DynamicSememeColumnInfo> allowedColumnInfo = new TreeMap<>();
-        ConceptChronology<?> assemblageConcept = Get.conceptService().getConcept(refexUsageDescriptorSequence_);
 
         for (SememeChronology<? extends DescriptionSememe<?>> descriptionSememe : assemblageConcept.getConceptDescriptionList()) {
             @SuppressWarnings("rawtypes")
