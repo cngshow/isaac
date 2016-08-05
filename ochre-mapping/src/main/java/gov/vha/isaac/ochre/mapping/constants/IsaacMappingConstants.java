@@ -129,7 +129,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 						null, false, true),
 				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
 					null, false, true),
-				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
+				new DynamicSememeColumnInfo(2, DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
 					null, false, true)},
 			null) 
 	{
