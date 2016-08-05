@@ -89,8 +89,7 @@ public class DomainStandardContentStore extends AbstractWorkflowContentStore {
 
 		int i = 1;
 		for (UUID key : keySet()) {
-			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tDomain Standard" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tDomain Standard #" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 

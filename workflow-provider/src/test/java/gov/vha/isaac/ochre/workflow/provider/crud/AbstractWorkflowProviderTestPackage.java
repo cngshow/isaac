@@ -1,13 +1,11 @@
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,15 +17,13 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.api.ConfigurationService;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.util.DBLocator;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 
 /**
@@ -59,12 +55,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	
 	protected Bpmn2FileImporter importer;
 
+	protected AvailableAction startNodeAction;
+
 	protected static Set<Integer> secondaryConceptsForTesting = new HashSet<>(Arrays.asList(199, 299));
 
 	protected static int mainUserId = 99;
 	protected static int secondaryUserId = 999;
 
-	protected static List<Integer> stampSequenceForTesting = Arrays.asList(11, 12, 13);
+	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
 
 	protected static Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56, 57));
 
@@ -78,30 +76,29 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static UUID secondHistoryEntryId;
 
-	protected static final long firstHistoryTimestamp = new Date().getTime();
+	protected static final long launchHistoryTimestamp = new Date().getTime();
+	protected static String launchState;
+	protected static String launchAction;
+	protected static String launchOutcome;
+	protected static final String launchComment = "Automated Launch Advancement";
 
-	protected static final String firstState = "READY_TO_START";
-	protected static final String firstAction = "EDIT";
-	protected static final String firstOutcome = "READY_TO_EDIT";
+	protected static final long firstHistoryTimestamp = launchHistoryTimestamp + 10000;
+	protected static final String firstState = "Ready for Edit";
+	protected static final String firstAction = "Edit";
+	protected static final String firstOutcome = "Ready for Review";
 	protected static final String firstComment = "Comment #1";
 
-	protected static long secondHistoryTimestamp;
-
-	protected static final String secondState = "READY_TO_EDIT";
-
-	protected static final String secondAction = "REVIEW";
-
-	protected static final String secondOutcome = "READY_TO_APPROV";
-
+	protected static long secondHistoryTimestamp = launchHistoryTimestamp + 20000;
+	protected static final String secondState = "Ready for Review";
+	protected static final String secondAction = "Review";
+	protected static final String secondOutcome = "Ready for Approve";
 	protected static final String secondComment = "Comment #2";
 	protected static UUID secondaryHistoryEntryId;
-
-	protected static UUID secondaryDefinitionId;
 
 	protected static File DATASTORE_PATH = new File(
 			"C:/SW/WCI/Mantech/Workspace/ISAAC/testDB/vets-1.2-SNAPSHOT-all.data/");
 
-	protected void globalSetup(boolean firstTimeCreatingStore, MVStoreMetaContentProvider store) {
+	protected void globalSetup(MVStoreMetaContentProvider store) {
 		definitionDetailStore = new DefinitionDetailContentStore(store);
 
 		processDetailStore = new ProcessDetailContentStore(store);
@@ -111,22 +108,26 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		userPermissionStore = new UserPermissionContentStore(store);
 				
 		// if (firstTimeCreatingStore) {
-		if (mainDefinitionId == null) {
+		if (definitionDetailStore.getAllEntries().size() == 0) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			mainDefinitionId = definitionDetailStore.getAllEntries().iterator().next().getId();
+			startNodeAction  = importer.getStartNodeAction();
+			launchState = startNodeAction.getCurrentState();
+			launchAction = startNodeAction.getAction();
+			launchOutcome = startNodeAction.getOutcome();
+			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
 		initConcluder = new WorkflowInitializerConcluder(store);
 		
 	}
 
 	protected void setupUserRoles() {
-		UserPermission perm = new UserPermission(mainDefinitionId, mainUserId, "EDITOR");
+		UserPermission perm = new UserPermission(mainDefinitionId, mainUserId, "Editor");
 		userPermissionStore.addEntry(perm);
 		
-		perm = new UserPermission(mainDefinitionId, secondaryUserId, "REVIEWER");
+		perm = new UserPermission(mainDefinitionId, secondaryUserId, "Reviewer");
 		userPermissionStore.addEntry(perm);
 		
-		perm = new UserPermission(mainDefinitionId, mainUserId, "APPROVER");
+		perm = new UserPermission(mainDefinitionId, mainUserId, "Approver");
 		userPermissionStore.addEntry(perm);
 	}
 
@@ -146,83 +147,50 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		initConcluder.close();
 	}
 
-	protected void setupDB() throws Exception {
-
-		LookupService.get();
-
-		File dataStoreLocation = DBLocator.findDBFolder(DATASTORE_PATH);
-
-		if (!dataStoreLocation.exists()) {
-			throw new IOException("Couldn't find a data store from the input of '"
-					+ dataStoreLocation.getAbsoluteFile().getAbsolutePath() + "'");
-		}
-		if (!dataStoreLocation.isDirectory()) {
-			throw new IOException(
-					"The specified data store: '" + dataStoreLocation.getAbsolutePath() + "' is not a folder");
-		}
-
-		Path path = dataStoreLocation.toPath();
-		ConfigurationService serv = LookupService.getService(ConfigurationService.class);
-		serv.setDataStoreFolderPath(path);
-		logger.info("  Setup AppContext, data store location = " + dataStoreLocation.getCanonicalPath());
-
-		LookupService.startupIsaac();
-
-		logger.info("Done setting up ISAAC");
-	}
-
-	protected void shutdownDB() throws Exception {
-		LookupService.shutdownIsaac();
-
-		logger.info("ISAAC shut down");
-	}
-
 	protected void launchWorkflow(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
 		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready For Edit", "");
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), launchHistoryTimestamp, launchState, launchAction, launchOutcome, launchComment);
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
-	protected void createSecondaryDefinitionWithSingleAdvancement() {
+	protected UUID createSecondaryDefinition() {
 		Set<String> roles = new HashSet<>();
 		roles.add("Editor");
 		roles.add("Reviewer");
+		roles.add("Approver");
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles);
-		secondaryDefinitionId = definitionDetailStore.addEntry(createdEntry);
-		initializeSecondaryWorkflow(secondaryDefinitionId, secondaryConceptsForTesting);
-		secondaryHistoryEntryId = advanceInitialWorkflow(secondaryProcessId);
+		return definitionDetailStore.addEntry(createdEntry);
 
 	}
 
-	protected void initializeMainWorkflow(UUID requestedDefinitionId) {
+	protected void createMainWorkflowProcess(UUID requestedDefinitionId) {
 		// Create new process
 		mainProcessId = initConcluder.defineWorkflow(requestedDefinitionId, conceptsForTesting, stampSequenceForTesting,
 				mainUserId, SubjectMatter.CONCEPT);
-
 	}
 
-	protected void initializeSecondaryWorkflow(UUID requestedDefinitionId, Set<Integer> requestedConceptForTesting) {
+	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId) {
 		// Create new process
-		secondaryProcessId = initConcluder.defineWorkflow(requestedDefinitionId, requestedConceptForTesting,
+		return initConcluder.defineWorkflow(requestedDefinitionId, secondaryConceptsForTesting,
 				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
-
 	}
 
-	protected UUID advanceInitialWorkflow(UUID requestedProcessId) {
+	protected UUID executeInitialAdvancement(UUID requestedProcessId) {
 		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, firstHistoryTimestamp, firstState,
 				firstAction, firstOutcome, firstComment);
 		return processHistoryStore.addEntry(entry);
 	}
 
-	protected UUID advanceSecondWorkflow(UUID requestedProcessId) {
-		secondHistoryTimestamp = new Date().getTime();
-
+	protected UUID executeSecondAdvancement(UUID requestedProcessId) {
 		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, secondHistoryTimestamp, secondState,
 				secondAction, secondOutcome, secondComment);
 		return processHistoryStore.addEntry(entry);
 	}
 
+	protected void concludeWorkflow(UUID processId) {
+		initConcluder.concludeWorkflow(processId);
+	}
 }

@@ -39,7 +39,6 @@ import java.util.UUID;
 import org.drools.core.io.impl.ByteArrayResource;
 import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
-import org.hamcrest.core.IsInstanceOf;
 import org.jbpm.bpmn2.core.SequenceFlow;
 import org.jbpm.bpmn2.xml.BPMNDISemanticModule;
 import org.jbpm.bpmn2.xml.BPMNSemanticModule;
@@ -101,6 +100,10 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 	private Set<Long> humanNodesProcessed = new HashSet<>();
 
+	private UUID currentDefinitionId;
+
+	private AvailableAction startNodeAction = null;
+
 
 	public Bpmn2FileImporter() throws Exception {
 		// Default Constructor fails if store not already set
@@ -127,8 +130,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
 		super(store);
 
-		UUID key = setDefinition(bpmn2FilePath);
-		setNodes(bpmn2FilePath, key);
+		currentDefinitionId = setDefinition(bpmn2FilePath);
+		setNodes(bpmn2FilePath, currentDefinitionId);
 	}
 
 	/**
@@ -197,6 +200,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		nodeToOutgoingMap.clear();
 		nodeNameMap.clear();
 		humanNodesProcessed.clear();
+		startNodeAction = null;
 
 		process = buildProcessFromFile(bpmn2FilePath);
 		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
@@ -336,6 +340,13 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
     			for (String role : roles) {
     				AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
     				availActions.add(newAction);
+    				if (node instanceof StartNode) {
+    					if (startNodeAction  != null) {
+    						throw new Exception("Only single Start Node Action permitted");
+    					} else{
+    						startNodeAction = newAction;
+    					}
+    				}
     			}
     		}
 		}
@@ -614,4 +625,13 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 		}
 	}
+	public UUID getCurrentDefinitionId() {
+		return currentDefinitionId;
+	}
+
+	public AvailableAction getStartNodeAction() {
+		return startNodeAction;
+	}
+
+
 }

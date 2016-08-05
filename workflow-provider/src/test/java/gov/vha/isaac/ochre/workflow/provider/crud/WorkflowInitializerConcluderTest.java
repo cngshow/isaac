@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.util.Set;
@@ -34,6 +34,7 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowInitializerConcluder;
 
 /**
  * Test the WorkflowInitializerConcluder class
@@ -59,7 +60,7 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 			setupCompleted = true;
 		}
 
-		globalSetup(true, store);
+		globalSetup(store);
 	}
 
 	@AfterClass
@@ -76,7 +77,7 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 	@Test
 	public void testADefineWorkflow() throws Exception {
 		// Initialization
-		initializeMainWorkflow(mainDefinitionId);
+		createMainWorkflowProcess(mainDefinitionId);
 
 		Set<ProcessDetail> entries = processDetailStore.getAllEntries();
 

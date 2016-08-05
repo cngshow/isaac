@@ -16,10 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -74,7 +74,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the subject matter
 	 * @return the uuid
 	 */
-	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequence, int user,
+	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequence, int user,
 			SubjectMatter subjectMatter) {
 		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
@@ -95,7 +95,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
 		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready For Edit", "");
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready for Edit", "");
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -111,7 +111,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 		concludeWorkflow(processId);
 		logger.info("Canceling Workflow " + processId);
 
-		// TODO: Handle cancellation store
+		// TODO: Handle cancellation store and handle reverting automatically
 	}
 
 	/**

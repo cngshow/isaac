@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.util.Arrays;
@@ -33,14 +33,12 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
 
 /**
  * Test the WorkflowInitializerConcluder class
@@ -67,10 +65,17 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 			accessor = new WorkflowActionsPermissionsAccessor(store);
 		}
 
-		globalSetup(true, store);
+		globalSetup(store);
 		
 		if (!setupCompleted) {
 			setupUserRoles();
+			createMainWorkflowProcess(mainDefinitionId);
+			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId);
+
+			launchWorkflow(mainProcessId);
+			launchWorkflow(secondaryProcessId);
+			
+			executeInitialAdvancement(mainProcessId);
 			setupCompleted = true;
 		}
 	}
@@ -91,12 +96,12 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 	public void testAGetUserRoles() throws Exception {
 		Set<String> roles = accessor.getUserRoles(mainDefinitionId, mainUserId);
 		Assert.assertEquals(2,  roles.size());
-		Assert.assertTrue(roles.contains("EDITOR"));
-		Assert.assertTrue(roles.contains("APPROVER"));
+		Assert.assertTrue(roles.contains("Editor"));
+		Assert.assertTrue(roles.contains("Approver"));
 
 		roles = accessor.getUserRoles(mainDefinitionId, secondaryUserId);
 		Assert.assertEquals(1,  roles.size());
-		Assert.assertTrue(roles.contains("REVIEWER"));
+		Assert.assertTrue(roles.contains("Reviewer"));
 	}
 
 	/**
@@ -113,7 +118,7 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		for (UserPermission perm : permissions) {
 			Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
 			Assert.assertEquals(mainUserId, perm.getUser());
-			Assert.assertTrue(perm.getRole().equals("EDITOR") || perm.getRole().equals("APPROVER"));
+			Assert.assertTrue(perm.getRole().equals("Editor") || perm.getRole().equals("Approver"));
 		}
 		
 		permissions = accessor.getAllPermissionsForUser(mainDefinitionId, secondaryUserId);
@@ -122,7 +127,7 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		UserPermission perm = permissions.iterator().next();
 		Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
 		Assert.assertEquals(secondaryUserId, perm.getUser());
-		Assert.assertEquals("REVIEWER", perm.getRole());
+		Assert.assertEquals("Reviewer", perm.getRole());
 	}
 
 	/**
@@ -134,14 +139,20 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 	@Test
 	public void testCGetAvailableActionsForState() throws Exception {
 		Set<AvailableAction> actions = accessor.getAvailableActionsForState(mainDefinitionId, "Ready for Edit");
-		Assert.assertEquals(0,  actions.size());
+		Assert.assertEquals(1,  actions.size());
+		AvailableAction singleAction = actions.iterator().next();
+		Assert.assertEquals(mainDefinitionId, singleAction.getDefinitionId());
+		Assert.assertEquals("Ready for Edit", singleAction.getCurrentState());
+		Assert.assertEquals("Editor", singleAction.getRole());
+		Assert.assertEquals("Ready for Review", singleAction.getOutcome());
+		Assert.assertEquals("Edit", singleAction.getAction());
 
 		actions = accessor.getAvailableActionsForState(mainDefinitionId, "Ready for Review");
 		Assert.assertEquals(3,  actions.size());
 		for (AvailableAction act : actions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Review", act.getCurrentState());
-			Assert.assertEquals("EDITOR", act.getRole());
+			Assert.assertEquals("Reviewer", act.getRole());
 			
 			if (act.getAction().equals("QA Passes")) {
 				Assert.assertTrue(act.getOutcome().equals("Ready for Approve"));
@@ -158,14 +169,14 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		Assert.assertEquals(4,  actions.size());
 		for (AvailableAction act : actions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
-			Assert.assertEquals("Ready for Review", act.getCurrentState());
-			Assert.assertEquals("EDITOR", act.getRole());
+			Assert.assertEquals("Ready for Approve", act.getCurrentState());
+			Assert.assertEquals("Approver", act.getRole());
 			
-			if (act.getAction().equals("QA Passes")) {
-				Assert.assertTrue(act.getOutcome().equals("Reject Edit"));
-			} else if (act.getAction().equals("Ready for Edit")) {
-				Assert.assertTrue(act.getOutcome().equals("Reject Review"));
-			} else if (act.getAction().equals("Ready for Review")) {
+			if (act.getAction().equals("Reject Review")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Review"));
+			} else if (act.getAction().equals("Reject Edit")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Edit"));
+			} else if (act.getAction().equals("Approve")) {
 				Assert.assertTrue(act.getOutcome().equals("Ready for Publish"));
 			} else if (act.getAction().equals("Cancel Workflow")) {
 				Assert.assertTrue(act.getOutcome().equals("Canceled"));
@@ -190,14 +201,14 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 	@Test
 	public void testDGetUserPermissibleActionsForProcess() throws Exception {
 		Set<AvailableAction> actions = accessor.getUserPermissibleActionsForProcess(mainProcessId, mainUserId);
-		Assert.assertEquals(0, actions);
+		Assert.assertEquals(0, actions.size());
 
 		actions = accessor.getUserPermissibleActionsForProcess(mainProcessId, secondaryUserId);
 		Assert.assertEquals(3,  actions.size());
 		for (AvailableAction act : actions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Review", act.getCurrentState());
-			Assert.assertEquals("REVIEWER", act.getRole());
+			Assert.assertEquals("Reviewer", act.getRole());
 			
 			if (act.getAction().equals("QA Passes")) {
 				Assert.assertTrue(act.getOutcome().equals("Ready for Approve"));
@@ -211,15 +222,70 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		}
 		
 		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, mainUserId);
-		Assert.assertEquals(1, actions);
-		AvailableAction singleAct = actions.iterator().next();
-		Assert.assertEquals(mainDefinitionId, singleAct.getDefinitionId());
-		Assert.assertEquals("Ready for Edit", singleAct.getCurrentState());
-		Assert.assertEquals("EDITOR", singleAct.getRole());
-		Assert.assertEquals("Edit", singleAct.getAction());
-		Assert.assertEquals("Ready for Review", singleAct.getOutcome());
+		Assert.assertEquals(1,  actions.size());
+		AvailableAction singleAction = actions.iterator().next();
+		Assert.assertEquals(mainDefinitionId, singleAction.getDefinitionId());
+		Assert.assertEquals("Ready for Edit", singleAction.getCurrentState());
+		Assert.assertEquals("Editor", singleAction.getRole());
+		Assert.assertEquals("Ready for Review", singleAction.getOutcome());
+		Assert.assertEquals("Edit", singleAction.getAction());
+
+		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, secondaryUserId);
+		Assert.assertEquals(0, actions.size());
+		
+		
+		
+		
+		// Should make secondaryProcess look like mainProcess
+		executeInitialAdvancement(secondaryProcessId);
+		
+		
+		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, mainUserId);
+		Assert.assertEquals(0, actions.size());
 
 		
+		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, secondaryUserId);
+		Assert.assertEquals(3,  actions.size());
+		for (AvailableAction act : actions) {
+			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
+			Assert.assertEquals("Ready for Review", act.getCurrentState());
+			Assert.assertEquals("Reviewer", act.getRole());
+			
+			if (act.getAction().equals("QA Passes")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Approve"));
+			} else if (act.getAction().equals("QA Fails")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Edit"));
+			} else if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertTrue(act.getOutcome().equals("Canceled"));
+			} else {
+				Assert.fail();
+			}
+		}
+		
+		executeSecondAdvancement(secondaryProcessId);
+		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, secondaryUserId);
+		Assert.assertEquals(0,  actions.size());
+
+		actions = accessor.getUserPermissibleActionsForProcess(secondaryProcessId, mainUserId);
+		Assert.assertEquals(4, actions.size());
+		for (AvailableAction act : actions) {
+			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
+			Assert.assertEquals("Ready for Approve", act.getCurrentState());
+			Assert.assertEquals("Approver", act.getRole());
+			
+			if (act.getAction().equals("Reject Review")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Review"));
+			} else if (act.getAction().equals("Reject Edit")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Edit"));
+			} else if (act.getAction().equals("Approve")) {
+				Assert.assertTrue(act.getOutcome().equals("Ready for Publish"));
+			} else if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertTrue(act.getOutcome().equals("Canceled"));
+			} else {
+				Assert.fail();
+			}
+		}
+
 	}
 	
 	/**
@@ -229,15 +295,15 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 	 *             the exception
 	 */
 	@Test
-	public void testEGetLatestProcessHistoryPermissibleByState() throws Exception {
-		Map<String, Set<ProcessHistory>> stateHistoryMap = accessor.getLatestProcessHistoryPermissibleByState(mainDefinitionId, mainUserId);
+	public void testEGetLatestActivePermissibleByRole() throws Exception {
+		Map<String, Set<ProcessHistory>> stateHistoryMap = accessor.getLatestActivePermissibleByRole(mainDefinitionId, mainUserId);
+		
 		Assert.assertEquals(1,  stateHistoryMap.keySet().size());
 		Set<ProcessHistory> allHistory = stateHistoryMap.get(stateHistoryMap.keySet().iterator().next());
 		Assert.assertEquals(1,  allHistory.size());
 		
 		ProcessHistory stateHistory = allHistory.iterator().next();
-		Assert.assertEquals(secondHistoryEntryId, stateHistory.getId());
-		Assert.assertEquals(mainProcessId, stateHistory.getProcessId());
+		Assert.assertEquals(secondaryProcessId, stateHistory.getProcessId());
 		Assert.assertEquals(mainUserId, stateHistory.getWorkflowUser());
 		Assert.assertEquals(secondHistoryTimestamp, stateHistory.getTimeAdvanced());
 		Assert.assertEquals(secondState, stateHistory.getState());
@@ -246,12 +312,13 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		Assert.assertEquals(secondComment, stateHistory.getComment());
 
 
-		stateHistoryMap = accessor.getLatestProcessHistoryPermissibleByState(secondaryDefinitionId, secondaryUserId);
+		stateHistoryMap = accessor.getLatestActivePermissibleByRole(mainDefinitionId, secondaryUserId);
 		Assert.assertEquals(1,  stateHistoryMap.keySet().size());
 		allHistory = stateHistoryMap.get(stateHistoryMap.keySet().iterator().next());
 		Assert.assertEquals(1,  allHistory.size());
-		Assert.assertEquals(secondaryHistoryEntryId, stateHistory.getId());
-		Assert.assertEquals(secondaryProcessId, stateHistory.getProcessId());
+		
+		stateHistory = allHistory.iterator().next();
+		Assert.assertEquals(mainProcessId, stateHistory.getProcessId());
 		Assert.assertEquals(mainUserId, stateHistory.getWorkflowUser());
 		Assert.assertEquals(firstHistoryTimestamp, stateHistory.getTimeAdvanced());
 		Assert.assertEquals(firstState, stateHistory.getState());
@@ -259,21 +326,20 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		Assert.assertEquals(firstOutcome, stateHistory.getOutcome());
 		Assert.assertEquals(firstComment, stateHistory.getComment());
 
-		UUID testingProcId = initConcluder.defineWorkflow(secondaryDefinitionId, new HashSet<>(Arrays.asList(9999)),
+
+		UUID testingProcId = initConcluder.defineWorkflow(mainDefinitionId, new HashSet<>(Arrays.asList(9999)),
 				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 		launchWorkflow(testingProcId);
 		
-		stateHistoryMap = accessor.getLatestProcessHistoryPermissibleByState(secondaryDefinitionId, secondaryUserId);
+		stateHistoryMap = accessor.getLatestActivePermissibleByRole(mainDefinitionId, secondaryUserId);
 		Assert.assertEquals(1,  stateHistoryMap.keySet().size());
-		allHistory = stateHistoryMap.get(stateHistoryMap.keySet().iterator().next());
-		Assert.assertEquals(2,  allHistory.size());
+
+		stateHistoryMap = accessor.getLatestActivePermissibleByRole(mainDefinitionId, mainUserId);
+		Assert.assertEquals(2,  stateHistoryMap.keySet().size());
 		
-		for (ProcessHistory hx : allHistory) {
-    		Assert.assertEquals(mainUserId, stateHistory.getWorkflowUser());
-    		Assert.assertEquals(firstState, stateHistory.getState());
-    		Assert.assertEquals(firstAction, stateHistory.getAction());
-    		Assert.assertEquals(firstOutcome, stateHistory.getOutcome());
-    		Assert.assertEquals(firstComment, stateHistory.getComment());
+		for (String role : stateHistoryMap.keySet()) {
+			allHistory = stateHistoryMap.get(role);
+			Assert.assertEquals(1,  allHistory.size());
 		}
 	}
 }

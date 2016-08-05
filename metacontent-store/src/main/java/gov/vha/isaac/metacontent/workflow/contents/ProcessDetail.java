@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +77,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	private UUID definitionId;
 
 	/** The stamp sequences. */
-	private List<Integer> stampSequences;
+	private ArrayList<Integer> stampSequences;
 
 	/** The concepts. */
 	private Set<Integer> concepts;
@@ -125,7 +126,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public ProcessDetail(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int creator,
+	public ProcessDetail(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequences, int creator,
 			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
@@ -149,7 +150,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.stampSequences = (List<Integer>) in.readObject();
+			this.stampSequences = (ArrayList<Integer>) in.readObject();
 			this.concepts = (Set<Integer>) in.readObject();
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
@@ -179,20 +180,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the stamp sequences
 	 */
-	public List<Integer> getStampSequences() {
-		return stampSequences;
-	}
-
-	/**
-	 * Gets the stamp sequences.
-	 *
-	 * @param newStamps
-	 *            the new stamps
-	 * @return the stamp sequences
-	 */
-	public List<Integer> addStampSequences(List<Integer> newStamps) {
-		stampSequences.addAll(newStamps);
-
+	public ArrayList<Integer> getStampSequences() {
 		return stampSequences;
 	}
 
@@ -374,7 +362,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			else if (t1 > t2)
 				return -1;
 			else
-				return 0;
+				return o1.getId().compareTo(o2.getId());
 		}
 	}
 

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -131,13 +131,13 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 */
 	public boolean isConceptInActiveWorkflow(int conceptId) {
 		for (ProcessDetail proc : getProcessesForConcept(conceptId)) {
-			if (proc.getProcessStatus() != ProcessStatus.LAUNCHED && 
-				proc.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
-				return false;
+			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
+				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
+				return true;
 			}
 		}
 
-		return true;
+		return false;
 	}
 
 	/**
@@ -152,7 +152,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 
 		if (type != ObjectChronologyType.CONCEPT) {
 			return isConceptInActiveWorkflow(componentId);
-		} else if (type == ObjectChronologyType.UNKNOWN_NID) {
+		} else if (type == ObjectChronologyType.SEMEME) {
 			return isConceptInActiveWorkflow(Get.sememeService().getSememe(componentId).getReferencedComponentNid());
 		} else if (type == ObjectChronologyType.UNKNOWN_NID) {
 			throw new RuntimeException("Couldn't determine component type from componentId '" + componentId + "'");
