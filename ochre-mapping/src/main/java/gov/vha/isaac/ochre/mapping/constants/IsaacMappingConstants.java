@@ -56,6 +56,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		"Stores UUID that identifies the sememe assemblage that further describes the mapping set") 
 	{
 		{
+			//TODO this needs a column definition, that has an array of data
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
@@ -65,6 +66,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		"Stores UUID that identifies the sememe assemblage that further describes the mapping item") 
 	{
 		{
+			//TODO this needs a column definition, that has an array of data
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
