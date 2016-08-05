@@ -243,14 +243,16 @@ public class LookupService {
      */
     public static void startupFxPlatform() {
         if (!fxPlatformUp) {
+            LOG.debug("FxPlatform is not yet up - obtaining lock");
             synchronized (STARTUP_LOCK) {
+                LOG.debug("Lock obtained, starting fxPlatform");
                 if (!fxPlatformUp) {
                     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
                     if (GraphicsEnvironment.isHeadless()) {
                         LOG.info("Installing headless toolkit");
                         HeadlessToolkit.installToolkit();
                     }
-
+                    LOG.debug("Starting JavaFX Platform");
                     PlatformImpl.startup(() -> {
                         // No need to do anything here
                     });

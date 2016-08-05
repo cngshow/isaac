@@ -179,12 +179,14 @@ public class WorkExecutors
 		{
 			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
 			{
+				log.debug("Executing in Work Executors thread pool");
 				Get.workExecutors().getExecutor().execute(r);
 			}
 			else
 			{
 				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
 				LookupService.startupFxPlatform();
+				log.debug("Executing in ForkJoinPool because LookupService is not up");
 				ForkJoinPool.commonPool().execute(r);
 			}
 		}

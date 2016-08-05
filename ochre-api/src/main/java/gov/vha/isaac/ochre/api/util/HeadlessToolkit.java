@@ -32,6 +32,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import javafx.geometry.Dimension2D;
 import javafx.scene.image.Image;
 import javafx.scene.input.Dragboard;
@@ -104,6 +106,7 @@ import com.sun.scenario.effect.Filterable;
 @SuppressWarnings("restriction")
 public class HeadlessToolkit extends Toolkit
 {
+    private static final Logger log = LogManager.getLogger();
     private AtomicBoolean toolkitRunning = new AtomicBoolean(false);
     
     /**
@@ -111,6 +114,7 @@ public class HeadlessToolkit extends Toolkit
      */
     public static void installToolkit()
     {
+        log.debug("installHeadlessToolkit begins");
         try
         {
             Field f = Toolkit.class.getDeclaredField("TOOLKIT");
@@ -118,11 +122,13 @@ public class HeadlessToolkit extends Toolkit
             Object currentToolkit = f.get(null);
             if (currentToolkit == null)
             {
+                log.debug("Installing the headless toolkit via reflection.");
                 f.set(null, new HeadlessToolkit());
             }
             else if (currentToolkit.getClass().getCanonicalName().equals(HeadlessToolkit.class.getCanonicalName()))
             {
                 //Just do nothing, if this code gets called twice
+                log.debug("The headless toolkit already appears to be installed, doing nothing.");
                 return;
             }
             else
@@ -218,9 +224,10 @@ public class HeadlessToolkit extends Toolkit
     
     @Override
     public void startup(Runnable runnable) {
-        
+        log.info("HeadlessTookit startup method called");
         if (!toolkitRunning.getAndSet(true)) 
         {
+            log.info("Starting a stand-in JavaFX Application Thread");
             Thread t = new Thread(() -> 
             {
                 Thread user = Thread.currentThread();
