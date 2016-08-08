@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
@@ -311,7 +311,7 @@ public class WorkflowContentStoreTest {
 	 */
 	@Test
 	public void testProcessInstanceStore() throws Exception {
-		List<Integer> sequences1 = new ArrayList<>();
+		ArrayList<Integer> sequences1 = new ArrayList<>();
 		sequences1.add(90);
 		sequences1.add(91);
 		Set<Integer> concepts1 = new HashSet<>();
@@ -337,7 +337,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		List<Integer> sequences2 = new ArrayList<>();
+		ArrayList<Integer> sequences2 = new ArrayList<>();
 		sequences2.add(90);
 		sequences2.add(91);
 		Set<Integer> concepts2 = new HashSet<>();
@@ -372,7 +372,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
 		Assert.assertEquals(createdEntry2.getSubjectMatter(), pulledEntry2.getSubjectMatter());
 		Assert.assertEquals(createdEntry2.getProcessStatus(), pulledEntry2.getProcessStatus());
-		Assert.assertNotEquals(createdEntry2.getConcepts(), pulledEntry2.getConcepts());
+		Assert.assertNotEquals(createdEntry2.getConceptSequences(), pulledEntry2.getConceptSequences());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 

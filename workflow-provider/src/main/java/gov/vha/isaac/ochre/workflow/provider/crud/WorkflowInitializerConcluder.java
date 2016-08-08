@@ -16,10 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -74,13 +74,12 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the subject matter
 	 * @return the uuid
 	 */
-	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequence, int user,
+	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequence, int user,
 			SubjectMatter subjectMatter) {
 		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
 
-		logger.info("Initializing Workflow " + processId + " with values: " + details.toString());
 		return processId;
 	}
 
@@ -95,7 +94,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
 		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready For Edit", "");
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready for Edit", "");
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -109,9 +108,8 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 */
 	public void cancelWorkflowProcess(UUID processId, String comment) {
 		concludeWorkflow(processId);
-		logger.info("Canceling Workflow " + processId);
 
-		// TODO: Handle cancellation store
+		// TODO: Handle cancellation store and handle reverting automatically
 	}
 
 	/**
@@ -120,11 +118,10 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 * @param processId
 	 *            the process id
 	 */
-	void concludeWorkflow(UUID processId) {
+	public void concludeWorkflow(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		entry.setProcessStatus(ProcessStatus.CONCLUDED);
 		entry.setTimeConcluded(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);
-		logger.info("Concluding Workflow " + processId);
 	}
 }

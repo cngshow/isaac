@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -76,10 +77,10 @@ public class ProcessDetail extends StorableWorkflowContents {
 	private UUID definitionId;
 
 	/** The stamp sequences. */
-	private List<Integer> stampSequences;
+	private ArrayList<Integer> stampSequences;
 
-	/** The concepts. */
-	private Set<Integer> concepts;
+	/** The concept Sequences. */
+	private Set<Integer> conceptSequences;
 
 	/** The creator. */
 	private int creator;
@@ -108,7 +109,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param concepts
+	 * @param conceptSequences
 	 *            the concepts
 	 * @param stampSequences
 	 *            the stamp sequences
@@ -125,11 +126,11 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public ProcessDetail(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int creator,
+	public ProcessDetail(UUID definitionId, Set<Integer> conceptSequences, ArrayList<Integer> stampSequences, int creator,
 			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
 		this.definitionId = definitionId;
 		this.stampSequences = stampSequences;
-		this.concepts = concepts;
+		this.conceptSequences = conceptSequences;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 		this.subjectMatter = subjectMatter;
@@ -149,8 +150,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.stampSequences = (List<Integer>) in.readObject();
-			this.concepts = (Set<Integer>) in.readObject();
+			this.stampSequences = (ArrayList<Integer>) in.readObject();
+			this.conceptSequences = (Set<Integer>) in.readObject();
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
 			this.timeConcluded = (Long) in.readObject();
@@ -179,30 +180,17 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the stamp sequences
 	 */
-	public List<Integer> getStampSequences() {
+	public ArrayList<Integer> getStampSequences() {
 		return stampSequences;
 	}
 
 	/**
-	 * Gets the stamp sequences.
+	 * Gets the conceptSequences.
 	 *
-	 * @param newStamps
-	 *            the new stamps
-	 * @return the stamp sequences
+	 * @return the concept sequences
 	 */
-	public List<Integer> addStampSequences(List<Integer> newStamps) {
-		stampSequences.addAll(newStamps);
-
-		return stampSequences;
-	}
-
-	/**
-	 * Gets the concepts.
-	 *
-	 * @return the concepts
-	 */
-	public Set<Integer> getConcepts() {
-		return concepts;
+	public Set<Integer> getConceptSequences() {
+		return conceptSequences;
 	}
 
 	/**
@@ -286,7 +274,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		out.writeObject(id);
 		out.writeObject(definitionId);
 		out.writeObject(stampSequences);
-		out.writeObject(concepts);
+		out.writeObject(conceptSequences);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 		out.writeObject(timeConcluded);
@@ -311,7 +299,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 		StringBuffer buf2 = new StringBuffer();
 
-		for (Integer conId : concepts) {
+		for (Integer conId : conceptSequences) {
 			buf2.append(conId + ", ");
 		}
 
@@ -331,7 +319,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		ProcessDetail other = (ProcessDetail) obj;
 
 		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
-				&& this.concepts.equals(other.concepts) && this.creator == other.creator
+				&& this.conceptSequences.equals(other.conceptSequences) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
 				&& this.subjectMatter == other.subjectMatter && this.processStatus == other.processStatus;
 	}
@@ -343,7 +331,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + concepts.hashCode() + creator
+		return definitionId.hashCode() + stampSequences.hashCode() + conceptSequences.hashCode() + creator
 				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + subjectMatter.hashCode()
 				+ processStatus.hashCode();
 	}
@@ -374,7 +362,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			else if (t1 > t2)
 				return -1;
 			else
-				return 0;
+				return o1.getId().compareTo(o2.getId());
 		}
 	}
 

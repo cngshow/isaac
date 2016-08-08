@@ -84,8 +84,7 @@ public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 
 		int i = 1;
 		for (UUID key : keySet()) {
-			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tAvailable Action" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tAvailable Action #" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 

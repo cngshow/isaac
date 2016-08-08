@@ -34,7 +34,7 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.ochre.workflow.provider.metastore.AbstractWorkflowProviderTestPackage;
+import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
 /**
  * Test the WorkflowDefinitionUtility class
@@ -58,7 +58,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			setupCompleted = true;
 		}
 
-		globalSetup(true, store);
+		globalSetup(store);
 	}
 
 	@AfterClass
@@ -119,7 +119,6 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				"Ready for Publish", "Ready for Review");
 
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
-			System.out.println("\n" + entry + "\n");
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));

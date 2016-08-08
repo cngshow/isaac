@@ -36,7 +36,7 @@ import org.testng.annotations.BeforeGroups;
 public class IntegrationSuiteManagement {
         private static final Logger LOG = LogManager.getLogger();
 
-    @BeforeGroups(groups = {"db", "load"})
+    @BeforeGroups(groups = {"db", "load", "wf"})
     public void setUpSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement setup");
 

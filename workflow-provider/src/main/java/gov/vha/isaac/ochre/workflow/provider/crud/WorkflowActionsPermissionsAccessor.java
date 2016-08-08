@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -117,7 +117,7 @@ public class WorkflowActionsPermissionsAccessor extends AbstractWorkflowUtilitie
 		Set<AvailableAction> allActions = availableActionStore.getAllEntries();
 
 		for (AvailableAction entry : allActions) {
-			if (entry.getDefinitionId() == definitionId && entry.getCurrentState() == currentState) {
+			if (entry.getDefinitionId().equals(definitionId) && entry.getCurrentState().equals(currentState)) {
 				availableActions.add(entry);
 			}
 		}
@@ -167,58 +167,36 @@ public class WorkflowActionsPermissionsAccessor extends AbstractWorkflowUtilitie
 	 *            the user id
 	 * @return the latest process history permissible by state
 	 */
-	public Map<String, Set<ProcessHistory>> getLatestProcessHistoryPermissibleByState(UUID definitionId, int userId) {
-		Map<String, Set<ProcessHistory>> latestProcessHistoryPermissibleByState = new HashMap<>();
-
+	public Map<String, Set<ProcessHistory>> getLatestActivePermissibleByRole(UUID definitionId, int userId) {
+		Map<String, Set<ProcessHistory>> roleLatestMap = new HashMap<>();
+		
 		WorkflowHistoryAccessor historyAccessory = new WorkflowHistoryAccessor(store);
 		WorkflowStatusAccessor statusAccessory = new WorkflowStatusAccessor(store);
 
-		Map<String, Set<UUID>> stateLatestMap = new HashMap<>();
-		Set<UUID> latestProcesses = new HashSet<>();
-
-		// get all active processes
+		// Only care about latest processes for Def
 		Map<UUID, SortedSet<ProcessHistory>> processHxMap = historyAccessory.getActiveByProcess();
 
 		for (UUID processId : processHxMap.keySet()) {
 			ProcessDetail processDetails = statusAccessory.getProcessDetail(processId);
 
-			if (processDetails.equals(definitionId)) {
-				// Identify latest history per active process
-				ProcessHistory hx = processHxMap.get(processId).last();
+			if (processDetails.getDefinitionId().equals(definitionId)) {
+				Set<AvailableAction> actions = getUserPermissibleActionsForProcess(processId, userId);
 
-				// Find each active process's current state and group by
-				// state-Set<Process> map
-				String currentState = hx.getOutcome();
-				if (!stateLatestMap.containsKey(currentState)) {
-					Set<UUID> latestByState = new HashSet<>();
-					stateLatestMap.put(currentState, latestByState);
-				}
-				stateLatestMap.get(currentState).add(hx.getProcessId());
-
-				latestProcesses.add(hx.getProcessId());
-			}
-		}
-
-		// get user roles by domain
-		Set<String> userRoles = getUserRoles(definitionId, userId);
-
-		// For each state, look through the processes's domain, and ensure user
-		// has permissions for the state/domain pair
-		for (String state : stateLatestMap.keySet()) {
-			for (UUID processId : stateLatestMap.get(state)) {
-				if (latestProcesses.contains(processId)) {
-					for (String role : userRoles) {
-						if (!latestProcessHistoryPermissibleByState.containsKey(role)) {
-							Set<ProcessHistory> latestProcessHistory = new HashSet<>();
-							latestProcessHistoryPermissibleByState.put(role, latestProcessHistory);
-						}
-
-						latestProcessHistoryPermissibleByState.get(role).add(processHxMap.get(processId).last());
+				Set<String> rolesInProcess = new HashSet<>();
+				
+				for (AvailableAction act : actions) {
+					if (!rolesInProcess.contains(act.getRole())) {
+    					rolesInProcess.add(act.getRole());
+        				if (!roleLatestMap.containsKey(act.getRole())) {
+        					Set<ProcessHistory> latestByState = new HashSet<>();
+        					roleLatestMap.put(act.getRole(), latestByState);
+        				}
+        				roleLatestMap.get(act.getRole()).add(processHxMap.get(processId).last());
 					}
-				}
-			}
-		}
+    			}
+    		}
+		}    
 
-		return latestProcessHistoryPermissibleByState;
+		return roleLatestMap;
 	}
 }

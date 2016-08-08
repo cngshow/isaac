@@ -27,10 +27,10 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
-import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowActionsPermissionsAccessor;
-import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowHistoryAccessor;
-import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowInitializerConcluder;
-import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowUpdater;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowInitializerConcluder;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 
 /**
  * Abstract class for higher-level workflow routines
@@ -38,11 +38,12 @@ import gov.vha.isaac.ochre.workflow.provider.metastore.WorkflowUpdater;
  * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
  * {@link Bpmn2FileImporter} {@link WorkflowInitializerConcluder}
  * {@link WorkflowActionsPermissionsAccessor} {@link WorkflowHistoryAccessor}
+ * {@line WorkflowUpdater}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowUtilities {
-	protected static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
+	public static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
 
 	/** The Constant logger. */
 	protected static final Logger logger = LogManager.getLogger();

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.provider.metastore;
+package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -30,7 +30,9 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -65,15 +67,15 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	/**
 	 * Gets the processes for concept.
 	 *
-	 * @param conceptId
-	 *            the concept id
+	 * @param conceptSeq
+	 *            the concept sequence
 	 * @return the processes for concept
 	 */
-	public SortedSet<ProcessDetail> getProcessesForConcept(int conceptId) {
+	public SortedSet<ProcessDetail> getProcessesForConcept(int conceptSeq) {
 		SortedSet<ProcessDetail> allProcessesByConcept = new TreeSet<>(new ProcessDetail.ProcessDetailComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConcepts().contains(conceptId)) {
+			if (process.getConceptSequences().contains(conceptSeq)) {
 				allProcessesByConcept.add(process);
 			}
 		}
@@ -125,53 +127,54 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	/**
 	 * Checks if is concept in active workflow.
 	 *
-	 * @param conceptId
-	 *            the concept id
+	 * @param conceptSeq
+	 *            the concept sequence
 	 * @return true, if is concept in active workflow
 	 */
-	public boolean isConceptInActiveWorkflow(int conceptId) {
-		for (ProcessDetail proc : getProcessesForConcept(conceptId)) {
-			if (proc.getProcessStatus() != ProcessStatus.LAUNCHED && 
-				proc.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
-				return false;
+	public boolean isConceptInActiveWorkflow(OchreExternalizableObjectType type, int conceptSeq) throws Exception {
+		if (type != OchreExternalizableObjectType.CONCEPT) {
+			throw new Exception("concept: " + conceptSeq + " is not of OchreExternalizableObjectType.CONCEPT type");
+		}
+		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
+			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
+				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
+				return true;
 			}
 		}
 
-		return true;
+		return false;
 	}
 
 	/**
 	 * Checks if is component in active workflow.
 	 *
-	 * @param componentId
-	 *            the component id
+	 * @param componentSequence
+	 *            the component sequence
 	 * @return true, if is component in active workflow
+	 * @throws Exception 
 	 */
-	public boolean isComponentInActiveWorkflow(int componentId) {
-		ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(componentId);
-
-		if (type != ObjectChronologyType.CONCEPT) {
-			return isConceptInActiveWorkflow(componentId);
-		} else if (type == ObjectChronologyType.UNKNOWN_NID) {
-			return isConceptInActiveWorkflow(Get.sememeService().getSememe(componentId).getReferencedComponentNid());
-		} else if (type == ObjectChronologyType.UNKNOWN_NID) {
-			throw new RuntimeException("Couldn't determine component type from componentId '" + componentId + "'");
+	public boolean isComponentInActiveWorkflow(OchreExternalizableObjectType type, int componentSequence) throws Exception {
+		if (type == OchreExternalizableObjectType.CONCEPT) {
+			return isConceptInActiveWorkflow(type, componentSequence);
+		} else if (type == OchreExternalizableObjectType.SEMEME) {
+			int conSeq = Get.conceptService().getConcept( Get.sememeService().getSememe(componentSequence).getReferencedComponentNid()).getConceptSequence();
+			return isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, conSeq);
+		} else {
+			throw new RuntimeException("Couldn't determine component type from componentId '" + componentSequence + "'");
 		}
-
-		return false;
 	}
 
 
 	/**
 	 * Gets the active for concept.
 	 *
-	 * @param conceptId
-	 *            the concept id
+	 * @param conceptSequence
+	 *            the concept sequence
 	 * @return the active for concept
 	 */
-	public ProcessDetail getActiveProcessForConcept(int conceptId) {
+	public ProcessDetail getActiveProcessForConcept(int conceptSequence) {
 
-		for (ProcessDetail proc : getProcessesForConcept(conceptId)) {
+		for (ProcessDetail proc : getProcessesForConcept(conceptSequence)) {
 			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
 				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
 				return proc;
