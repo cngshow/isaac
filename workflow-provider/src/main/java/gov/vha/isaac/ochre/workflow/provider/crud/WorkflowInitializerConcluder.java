@@ -73,9 +73,17 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 * @param subjectMatter
 	 *            the subject matter
 	 * @return the uuid
+	 * @throws Exception
 	 */
 	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequence, int user,
-			SubjectMatter subjectMatter) {
+			SubjectMatter subjectMatter) throws Exception {
+		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
+
+		for (Integer conSeq : concepts) {
+			if (accessor.isConceptInActiveWorkflow(conSeq)) {
+				throw new Exception("Concept to add in workflow exists in active workflow");
+			}
+		}
 		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
@@ -88,13 +96,22 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *
 	 * @param processId
 	 *            the process id
+	 * @throws Exception
 	 */
-	public void launchWorkflow(UUID processId) {
+	public void launchWorkflow(UUID processId) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot launch workflow that hasn't been defined first");
+		} else if (entry.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+			throw new Exception("Cannot launch workflow that has a process status of: " + entry.getProcessStatus());
+		}
+
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
-		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start", "Started", "Ready for Edit", "");
+
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start",
+				"Started", "Ready for Edit", "");
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -105,8 +122,17 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the process id
 	 * @param comment
 	 *            the comment
+	 * @throws Exception
 	 */
-	public void cancelWorkflowProcess(UUID processId, String comment) {
+	public void cancelWorkflow(UUID processId, String comment) throws Exception {
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot cancel workflow that hasn't been defined first");
+		} else if (entry.getProcessStatus() == ProcessStatus.CANCELED || entry.getProcessStatus() == ProcessStatus.CONCLUDED) {
+			throw new Exception("Cannot cancel workflow that has a process status of: " + entry.getProcessStatus());
+		}
+
 		concludeWorkflow(processId);
 
 		// TODO: Handle cancellation store and handle reverting automatically
@@ -117,9 +143,24 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *
 	 * @param processId
 	 *            the process id
+	 * @throws Exception
 	 */
-	public void concludeWorkflow(UUID processId) {
+	public void concludeWorkflow(UUID processId) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot conclude workflow that hasn't been defined first");
+		} else if (entry.getProcessStatus() != ProcessStatus.LAUNCHED) {
+			throw new Exception("Cannot conclude workflow that has a process status of: " + entry.getProcessStatus());
+		} else {
+			WorkflowHistoryAccessor accessor = new WorkflowHistoryAccessor();
+
+			if (!processConcludedStates.contains(accessor.getLatestForProcess(processId).getState())) {
+				throw new Exception(
+						"Cannot conclude workflow that has a process status of: " + entry.getProcessStatus());
+			}
+		}
+
 		entry.setProcessStatus(ProcessStatus.CONCLUDED);
 		entry.setTimeConcluded(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);

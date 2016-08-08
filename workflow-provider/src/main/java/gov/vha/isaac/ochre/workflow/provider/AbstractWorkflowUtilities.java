@@ -18,6 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -45,6 +48,10 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 public abstract class AbstractWorkflowUtilities {
 	public static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
 
+	protected static Set<String> processConcludedStates = new HashSet<>();
+	protected static Set<String> processStartedStates = new HashSet<>();
+	protected static Set<String> processCanceledStates = new HashSet<>();
+	
 	/** The Constant logger. */
 	protected static final Logger logger = LogManager.getLogger();
 
@@ -95,7 +102,22 @@ public abstract class AbstractWorkflowUtilities {
 			processHistoryStore = new ProcessHistoryContentStore(store);
 		}
 	}
-	
+
+	public static Set<String> getProcessConcludedStates() {
+		return processConcludedStates;
+	}
+
+	public static Set<String> getProcessCanceledStates() {
+		return processCanceledStates;
+	}
+
+	public static Set<String> getProcessStartedStates() {
+		return processStartedStates;
+	}
+	public static ProcessDetailContentStore getProcessDetailStore() {
+		return processDetailStore;
+	}
+
 	public static void close() {
 		store = null;
 

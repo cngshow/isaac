@@ -200,6 +200,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		nodeToOutgoingMap.clear();
 		nodeNameMap.clear();
 		humanNodesProcessed.clear();
+		processConcludedStates.clear();
+		processCanceledStates.clear();
 		startNodeAction = null;
 
 		process = buildProcessFromFile(bpmn2FilePath);
@@ -272,6 +274,9 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState, roles,
 						((StartNode) node).getDefaultOutgoingConnections());
 				actions.addAll(availActions);
+				for (AvailableAction act : availActions) {
+					processStartedStates.add(act.getCurrentState());
+				}
 			} else if (node instanceof Split) {
 				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState, roles,
 						((Split) node).getDefaultOutgoingConnections());
@@ -284,6 +289,9 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
     				actions.addAll(availActions);
     				humanNodesProcessed.add(node.getId());
 				}
+			} else if (node instanceof EndNode) {
+				processConcludedStates.add(node.getName());
+				processCanceledStates.add(node.getName());
 			}
 		}
 

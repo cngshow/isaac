@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Assert;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
@@ -24,13 +25,15 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
  * 
  * {@link WorkflowInitializerConcluderTest}. {@link WorkflowStatusAccessorTest}.
- * {@link WorkflowHistoryAccessorTest}. {@link WorkflowActionsPermissionsAccessorTest}.
+ * {@link WorkflowHistoryAccessorTest}.
+ * {@link WorkflowActionsPermissionsAccessorTest}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -52,7 +55,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected DefinitionDetailContentStore definitionDetailStore;
 
 	protected UserPermissionContentStore userPermissionStore;
-	
+
 	protected Bpmn2FileImporter importer;
 
 	protected AvailableAction startNodeAction;
@@ -106,27 +109,27 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		processHistoryStore = new ProcessHistoryContentStore(store);
 
 		userPermissionStore = new UserPermissionContentStore(store);
-				
+
 		// if (firstTimeCreatingStore) {
 		if (definitionDetailStore.getAllEntries().size() == 0) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			startNodeAction  = importer.getStartNodeAction();
+			startNodeAction = importer.getStartNodeAction();
 			launchState = startNodeAction.getCurrentState();
 			launchAction = startNodeAction.getAction();
 			launchOutcome = startNodeAction.getOutcome();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
 		initConcluder = new WorkflowInitializerConcluder(store);
-		
+
 	}
 
 	protected void setupUserRoles() {
 		UserPermission perm = new UserPermission(mainDefinitionId, mainUserId, "Editor");
 		userPermissionStore.addEntry(perm);
-		
+
 		perm = new UserPermission(mainDefinitionId, secondaryUserId, "Reviewer");
 		userPermissionStore.addEntry(perm);
-		
+
 		perm = new UserPermission(mainDefinitionId, mainUserId, "Approver");
 		userPermissionStore.addEntry(perm);
 	}
@@ -144,15 +147,16 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	}
 
 	protected void close() {
-		initConcluder.close();
+		AbstractWorkflowUtilities.close();
 	}
 
 	protected void launchWorkflow(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
-		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), launchHistoryTimestamp, launchState, launchAction, launchOutcome, launchComment);
+
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), launchHistoryTimestamp,
+				launchState, launchAction, launchOutcome, launchComment);
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -168,14 +172,25 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void createMainWorkflowProcess(UUID requestedDefinitionId) {
 		// Create new process
-		mainProcessId = initConcluder.defineWorkflow(requestedDefinitionId, conceptsForTesting, stampSequenceForTesting,
-				mainUserId, SubjectMatter.CONCEPT);
+		try {
+			mainProcessId = initConcluder.defineWorkflow(requestedDefinitionId, conceptsForTesting,
+					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
 	}
 
 	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId) {
 		// Create new process
-		return initConcluder.defineWorkflow(requestedDefinitionId, secondaryConceptsForTesting,
-				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
+		try {
+			return initConcluder.defineWorkflow(requestedDefinitionId, secondaryConceptsForTesting,
+					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+			return null;
+		}
 	}
 
 	protected UUID executeInitialAdvancement(UUID requestedProcessId) {
@@ -191,6 +206,11 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	}
 
 	protected void concludeWorkflow(UUID processId) {
-		initConcluder.concludeWorkflow(processId);
+		try {
+			initConcluder.concludeWorkflow(processId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
 	}
 }

@@ -27,11 +27,10 @@ import java.util.UUID;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
@@ -126,13 +125,15 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 
 	/**
 	 * Checks if is concept in active workflow.
-	 *
 	 * @param conceptSeq
 	 *            the concept sequence
+	 *
 	 * @return true, if is concept in active workflow
 	 */
-	public boolean isConceptInActiveWorkflow(OchreExternalizableObjectType type, int conceptSeq) throws Exception {
-		if (type != OchreExternalizableObjectType.CONCEPT) {
+	public boolean isConceptInActiveWorkflow(int conceptSeq) throws Exception {
+        ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(conceptSeq);
+
+        if (con.getOchreObjectType() != OchreExternalizableObjectType.CONCEPT) {
 			throw new Exception("concept: " + conceptSeq + " is not of OchreExternalizableObjectType.CONCEPT type");
 		}
 		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
@@ -155,10 +156,10 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 */
 	public boolean isComponentInActiveWorkflow(OchreExternalizableObjectType type, int componentSequence) throws Exception {
 		if (type == OchreExternalizableObjectType.CONCEPT) {
-			return isConceptInActiveWorkflow(type, componentSequence);
+			return isConceptInActiveWorkflow(componentSequence);
 		} else if (type == OchreExternalizableObjectType.SEMEME) {
 			int conSeq = Get.conceptService().getConcept( Get.sememeService().getSememe(componentSequence).getReferencedComponentNid()).getConceptSequence();
-			return isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, conSeq);
+			return isConceptInActiveWorkflow(conSeq);
 		} else {
 			throw new RuntimeException("Couldn't determine component type from componentId '" + componentSequence + "'");
 		}

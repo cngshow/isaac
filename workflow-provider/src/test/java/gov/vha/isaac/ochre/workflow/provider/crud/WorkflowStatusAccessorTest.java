@@ -35,7 +35,6 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -208,8 +207,8 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 	 */
 	@Test
 	public void testEIsConceptInActiveWorkflow() throws Exception {
-		Assert.assertTrue(accessor.isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, conceptsForTesting.iterator().next()));
-		Assert.assertFalse(accessor.isConceptInActiveWorkflow(OchreExternalizableObjectType.CONCEPT, specialTestingConId.iterator().next()));
+		Assert.assertTrue(accessor.isConceptInActiveWorkflow(conceptsForTesting.iterator().next()));
+		Assert.assertFalse(accessor.isConceptInActiveWorkflow(specialTestingConId.iterator().next()));
 	}
 
 
