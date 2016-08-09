@@ -48,10 +48,12 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 public abstract class AbstractWorkflowUtilities {
 	public static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
 
-	protected static Set<String> processConcludedStates = new HashSet<>();
-	protected static Set<String> processStartedStates = new HashSet<>();
-	protected static Set<String> processCanceledStates = new HashSet<>();
-	
+	protected static String processStartState;
+	protected static String processCancelState;
+	protected static String processCancelAction;
+	protected static String processConcludeState;
+	protected static String processConcludeAction;
+
 	/** The Constant logger. */
 	protected static final Logger logger = LogManager.getLogger();
 
@@ -103,21 +105,30 @@ public abstract class AbstractWorkflowUtilities {
 		}
 	}
 
-	public static Set<String> getProcessConcludedStates() {
-		return processConcludedStates;
-	}
-
-	public static Set<String> getProcessCanceledStates() {
-		return processCanceledStates;
-	}
-
-	public static Set<String> getProcessStartedStates() {
-		return processStartedStates;
-	}
 	public static ProcessDetailContentStore getProcessDetailStore() {
 		return processDetailStore;
 	}
+	
+	public static String getProcessStartState() {
+		return processStartState;
+	}
+	
+	public static String getProcessCancelAction() {
+		return processCancelAction;
+	}
 
+	public static String getProcessCancelState() {
+		return processCancelState;
+	}
+
+	public static String getProcessConcludeAction() {
+		return processConcludeAction;
+	}
+
+	public static String getProcessConcludeState() {
+		return processConcludeState;
+	}
+	
 	public static void close() {
 		store = null;
 

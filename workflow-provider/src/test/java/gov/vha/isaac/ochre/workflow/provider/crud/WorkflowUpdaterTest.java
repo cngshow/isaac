@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -66,7 +67,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 			setupUserRoles();
 
 			createMainWorkflowProcess(mainDefinitionId);
-			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId);
+			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId, secondaryConceptsForTesting);
 
 			launchWorkflow(mainProcessId);
 			firstHistoryEntryId = executeInitialAdvancement(mainProcessId);
@@ -134,15 +135,14 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testCAdvanceWorkflow() throws Exception {
 
-		String outcome = updater.advanceWorkflow(mainProcessId, mainUserId, "Approve", "Comment #1");
-		Assert.assertNull(outcome);
+		UUID entryId = updater.advanceWorkflow(mainProcessId, mainUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
 	
-		outcome = updater.advanceWorkflow(mainProcessId, secondaryUserId, "Approve", "Comment #1");
-		Assert.assertNull(outcome);
+		entryId = updater.advanceWorkflow(mainProcessId, secondaryUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
 
-		outcome = updater.advanceWorkflow(mainProcessId, secondaryUserId, "QA Passes", "Comment #1");
-		Assert.assertNotNull(outcome);
-		Assert.assertTrue(outcome.equals("Ready for Approve"));
+		entryId = updater.advanceWorkflow(mainProcessId, secondaryUserId, "QA Passes", "Comment #1");
+		Assert.assertNotNull(entryId);
 	}
 
 	/**

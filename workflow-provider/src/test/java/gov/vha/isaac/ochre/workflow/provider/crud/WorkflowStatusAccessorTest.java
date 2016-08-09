@@ -150,15 +150,17 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 		Assert.assertEquals(1, accessor.getProcessesForConcept(conceptsForTesting.iterator().next()).size());
 		Assert.assertEquals(2, accessor.getActiveProcessesByDefinition(mainDefinitionId).size());
 		
-		initConcluder.concludeWorkflow(secondaryProcessId);
-		
+		ProcessDetail entry = processDetailStore.getEntry(secondaryProcessId);
+		entry.setProcessStatus(ProcessStatus.CONCLUDED);
+		processDetailStore.updateEntry(secondaryProcessId, entry);
+
 		Assert.assertEquals(1, accessor.getProcessesForConcept(specialTestingConId.iterator().next()).size());
 		Assert.assertEquals(1, accessor.getProcessesForConcept(conceptsForTesting.iterator().next()).size());
 
 		Set<ProcessDetail> processes = accessor.getActiveProcessesByDefinition(mainDefinitionId);
 		Assert.assertEquals(1, processes.size());
 
-		ProcessDetail entry = processes.iterator().next();
+		entry = processes.iterator().next();
 		
 		Assert.assertEquals(mainProcessId, entry.getId());
 		Assert.assertEquals(3, entry.getConceptSequences().size());

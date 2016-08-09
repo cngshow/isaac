@@ -70,7 +70,7 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		if (!setupCompleted) {
 			setupUserRoles();
 			createMainWorkflowProcess(mainDefinitionId);
-			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId);
+			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId, secondaryConceptsForTesting);
 
 			launchWorkflow(mainProcessId);
 			launchWorkflow(secondaryProcessId);

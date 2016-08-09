@@ -193,16 +193,6 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Gets the by concept map.
-	 *
-	 * @return the by concept map
-	 */
-	public Map<Integer, SortedSet<ProcessHistory>> getByConceptMap() {
-		throw new UnsupportedOperationException(
-				"Should not attempt to get all history by concept as return object would be enormous");
-	}
-
-	/**
 	 * Gets the for concept.
 	 *
 	 * @param conceptSequence

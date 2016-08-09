@@ -181,10 +181,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId) {
+	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId, Set<Integer> concepts) {
 		// Create new process
 		try {
-			return initConcluder.defineWorkflow(requestedDefinitionId, secondaryConceptsForTesting,
+			return initConcluder.defineWorkflow(requestedDefinitionId, concepts,
 					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -205,9 +205,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		return processHistoryStore.addEntry(entry);
 	}
 
-	protected void concludeWorkflow(UUID processId) {
+	protected void concludeWorkflow(UUID processId, int workflowUser) {
 		try {
-			initConcluder.concludeWorkflow(processId);
+			initConcluder.concludeWorkflow(processId, workflowUser);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();

@@ -19,7 +19,10 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -34,8 +37,6 @@ import org.junit.runners.MethodSorters;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
-import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
 
 /**
  * Test the WorkflowInitializerConcluder class
@@ -134,7 +135,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 		Assert.assertEquals(1, historyByDef.keySet().size());
 		Assert.assertEquals(3, historyByDef.get(mainDefinitionId).size());
 		
-		secondaryProcessId = createSecondaryWorkflowProcess(secondaryDefinitionId);
+		secondaryProcessId = createSecondaryWorkflowProcess(secondaryDefinitionId, secondaryConceptsForTesting);
 		historyByDef = accessor.getActiveByDefinition();
 		Assert.assertEquals(1, historyByDef.keySet().size());
 		Assert.assertEquals(3, historyByDef.get(mainDefinitionId).size());
@@ -171,7 +172,8 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 	 */
 	@Test
 	public void testDGetByProcessMap() throws Exception {
-		thirdProcessId = createSecondaryWorkflowProcess(mainDefinitionId);
+		Set<Integer> concepts = new HashSet<> (Arrays.asList(8888));
+		thirdProcessId = createSecondaryWorkflowProcess(mainDefinitionId, concepts);
 		launchWorkflow(thirdProcessId);
 		
 		Map<UUID, SortedSet<ProcessHistory>> historyByProcess = accessor.getByProcessMap();
@@ -235,25 +237,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 	 *             the exception
 	 */
 	 @Test
-	public void testFGetByConceptMap() throws Exception {
-		try {
-			// Should not attempt to get all history by concept as return object would be enormous
-			accessor.getByConceptMap();
-		} catch (UnsupportedOperationException e) {
-			
-		}
-		
-		Assert.assertTrue(true);
-	}
-
-	/**
-	 * Test vetz workflow set nodes.
-	 *
-	 * @throws Exception
-	 *             the exception
-	 */
-	 @Test
-	public void testGGetForConcept() throws Exception {
+	public void testFGetForConcept() throws Exception {
 		for (int conId : conceptsForTesting) {
 			SortedSet<ProcessHistory> processHistory = accessor.getForConcept(conId);
 			assertHistoryForMainDefinition(processHistory, mainProcessId, 3);
@@ -268,7 +252,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 	 *             the exception
 	 */
 	 @Test
-	public void testHGetForProcess() throws Exception {
+	public void testGGetForProcess() throws Exception {
 		SortedSet<ProcessHistory> processHistory = accessor.getForProcess(mainProcessId);
 		assertHistoryForMainDefinition(processHistory, mainProcessId, 3);
 	}
@@ -280,7 +264,7 @@ public class WorkflowHistoryAccessorTest extends AbstractWorkflowProviderTestPac
 	 *             the exception
 	 */
 	 @Test
-	public void testIGetLatestForProcess() throws Exception {
+	public void testHGetLatestForProcess() throws Exception {
 		ProcessHistory testingEntry = accessor.getLatestForProcess(mainProcessId);
 		Assert.assertEquals(mainProcessId, testingEntry.getProcessId());
 		Assert.assertEquals(mainUserId, testingEntry.getWorkflowUser());

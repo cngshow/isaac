@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
+import java.util.Date;
 import java.util.Set;
 
 import org.junit.AfterClass;
@@ -33,8 +34,8 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowInitializerConcluder;
 
 /**
  * Test the WorkflowInitializerConcluder class
@@ -110,21 +111,30 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 
 		ProcessDetailContentStore processDetailStore = new ProcessDetailContentStore(store);
 
-		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
-		Assert.assertEquals(mainProcessId, entry.getId());
+		ProcessDetail detailEntry = processDetailStore.getEntry(mainProcessId);
+		Assert.assertEquals(mainProcessId, detailEntry.getId());
 
-		Assert.assertEquals(3, entry.getConceptSequences().size());
-		Assert.assertTrue(entry.getConceptSequences().contains(55));
+		Assert.assertEquals(3, detailEntry.getConceptSequences().size());
+		Assert.assertTrue(detailEntry.getConceptSequences().contains(55));
 
-		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
-		Assert.assertEquals(ProcessStatus.LAUNCHED, entry.getProcessStatus());
-		Assert.assertEquals(99, entry.getCreator());
-		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
-		Assert.assertEquals(3, entry.getStampSequences().size());
-		Assert.assertTrue(entry.getStampSequences().contains(11));
+		Assert.assertEquals(SubjectMatter.CONCEPT, detailEntry.getSubjectMatter());
+		Assert.assertEquals(ProcessStatus.LAUNCHED, detailEntry.getProcessStatus());
+		Assert.assertEquals(mainUserId, detailEntry.getCreator());
+		Assert.assertEquals(mainDefinitionId, detailEntry.getDefinitionId());
+		Assert.assertEquals(3, detailEntry.getStampSequences().size());
+		Assert.assertTrue(detailEntry.getStampSequences().contains(11));
 
-		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
-		Assert.assertEquals(-1L, entry.getTimeConcluded());
+		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(detailEntry.getTimeCreated()));
+		Assert.assertEquals(-1L, detailEntry.getTimeConcluded());
+		
+		// Verify the automated creation of the initial history record is correct
+		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor();
+		ProcessHistory historyEntry = historyAccessor.getLatestForProcess(mainProcessId);
+		Assert.assertEquals(AbstractWorkflowUtilities.getProcessStartState(), historyEntry.getState());
+		Assert.assertEquals(AbstractWorkflowUtilities.SYSTEM_AUTOMATED, historyEntry.getAction());
+		Assert.assertEquals("Ready for Edit", historyEntry.getOutcome());
+		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(historyEntry.getTimeAdvanced()));
+
 	}
 
 	/**
@@ -149,11 +159,14 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 		// TODO: Once completed implementation testCCancelWorkflowProcess(),
 		// must recreate A&B test methods
 
-		initConcluder.concludeWorkflow(mainProcessId);
+		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
+		entry.setProcessStatus(ProcessStatus.CONCLUDED);
+		entry.setTimeConcluded(new Date().getTime());
+		processDetailStore.updateEntry(mainProcessId, entry);
 
 		ProcessDetailContentStore processDetailStore = new ProcessDetailContentStore(store);
 
-		ProcessDetail entry = processDetailStore.getEntry(mainProcessId);
+		entry = processDetailStore.getEntry(mainProcessId);
 		Assert.assertEquals(mainProcessId, entry.getId());
 
 		Assert.assertEquals(3, entry.getConceptSequences().size());

@@ -131,11 +131,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 * @return true, if is concept in active workflow
 	 */
 	public boolean isConceptInActiveWorkflow(int conceptSeq) throws Exception {
-        ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(conceptSeq);
-
-        if (con.getOchreObjectType() != OchreExternalizableObjectType.CONCEPT) {
-			throw new Exception("concept: " + conceptSeq + " is not of OchreExternalizableObjectType.CONCEPT type");
-		}
+		// Assumes component is a concept
 		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
 			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
 				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {

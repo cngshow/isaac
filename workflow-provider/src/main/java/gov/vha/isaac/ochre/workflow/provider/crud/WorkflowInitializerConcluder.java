@@ -110,8 +110,8 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 		entry.setProcessStatus(ProcessStatus.LAUNCHED);
 		processDetailStore.updateEntry(processId, entry);
 
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), "Start",
-				"Started", "Ready for Edit", "");
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), AbstractWorkflowUtilities.processStartState,
+				SYSTEM_AUTOMATED, "Ready for Edit", "");
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -124,17 +124,34 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the comment
 	 * @throws Exception
 	 */
-	public void cancelWorkflow(UUID processId, String comment) throws Exception {
+	public void cancelWorkflow(UUID processId, int workflowUser, String comment) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
-
+		WorkflowStatusAccessor statusAccessor = new WorkflowStatusAccessor(store);
+		ProcessHistory processLatest = null;
+		
+		if (statusAccessor.getProcessDetail(processId).getProcessStatus().equals(ProcessStatus.LAUNCHED)) {
+			WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
+			processLatest = historyAccessor.getLatestForProcess(processId);
+		}
+		
 		if (entry == null) {
 			throw new Exception("Cannot cancel workflow that hasn't been defined first");
 		} else if (entry.getProcessStatus() == ProcessStatus.CANCELED || entry.getProcessStatus() == ProcessStatus.CONCLUDED) {
 			throw new Exception("Cannot cancel workflow that has a process status of: " + entry.getProcessStatus());
 		}
 
-		concludeWorkflow(processId);
+		entry.setProcessStatus(ProcessStatus.CANCELED);
+		entry.setTimeConcluded(new Date().getTime());
+		processDetailStore.updateEntry(processId, entry);
 
+		// Only add Cancel state in Workflow if process has already been launched
+		if (processLatest != null) {
+			ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), AbstractWorkflowUtilities.getProcessCancelAction(),
+    				AbstractWorkflowUtilities.getProcessCancelState(), "");
+    		processHistoryStore.addEntry(advanceEntry);
+		}
+
+		
 		// TODO: Handle cancellation store and handle reverting automatically
 	}
 
@@ -145,7 +162,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the process id
 	 * @throws Exception
 	 */
-	public void concludeWorkflow(UUID processId) throws Exception {
+	public void concludeWorkflow(UUID processId, int workflowUser) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -154,15 +171,24 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 			throw new Exception("Cannot conclude workflow that has a process status of: " + entry.getProcessStatus());
 		} else {
 			WorkflowHistoryAccessor accessor = new WorkflowHistoryAccessor();
-
-			if (!processConcludedStates.contains(accessor.getLatestForProcess(processId).getState())) {
+			ProcessHistory hx = accessor.getLatestForProcess(processId);
+			
+			if (!processConcludeState.equals(hx.getOutcome())) {
 				throw new Exception(
-						"Cannot conclude workflow that has a process status of: " + entry.getProcessStatus());
+						"Cannot conclude workflow that has a latest history with outcome: " + hx.getOutcome());
 			}
 		}
 
 		entry.setProcessStatus(ProcessStatus.CONCLUDED);
 		entry.setTimeConcluded(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);
+		
+		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
+		ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
+
+		ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), AbstractWorkflowUtilities.getProcessConcludeAction(),
+				AbstractWorkflowUtilities.getProcessConcludeState(), "");
+		processHistoryStore.addEntry(advanceEntry);
+
 	}
 }

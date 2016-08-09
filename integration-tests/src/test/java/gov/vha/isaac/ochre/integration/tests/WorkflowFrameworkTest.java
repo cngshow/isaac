@@ -11,8 +11,6 @@ import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.FixMethodOrder;
-import org.junit.runners.MethodSorters;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -42,7 +40,6 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
  * Created by kec on 1/2/16.
  */
 @HK2("integration")
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class WorkflowFrameworkTest {
     private static final Logger LOG = LogManager.getLogger();
 	private static MVStoreMetaContentProvider store;
@@ -84,7 +81,7 @@ public class WorkflowFrameworkTest {
 
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			definitionId = importer.getCurrentDefinitionId();
-
+			setupUserRoles();
         } catch (FileNotFoundException e) {
             Assert.fail("File not found", e);
         }
@@ -118,7 +115,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(statusAccessor.isComponentInActiveWorkflow(con.getOchreObjectType(), conSeq));
 			Assert.assertTrue(statusAccessor.isComponentInActiveWorkflow(descSem.getOchreObjectType(), semSeq));
 
-			initConcluder.cancelWorkflow(processId, "Canceling Workflow for Testing");
+			initConcluder.cancelWorkflow(processId, userId, "Canceling Workflow for Testing");
 			
 			Assert.assertFalse(statusAccessor.isConceptInActiveWorkflow(conSeq));
 			Assert.assertFalse(statusAccessor.isComponentInActiveWorkflow(con.getOchreObjectType(), conSeq));
@@ -135,14 +132,12 @@ public class WorkflowFrameworkTest {
 
     	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
-	    	initConcluder.cancelWorkflow(processId, "Cancel for Test");
+	    	initConcluder.cancelWorkflow(processId, userId, "Cancel for Test");
 		} catch (Exception e) {
 			Assert.fail();
 		}
 		
 		Assert.assertEquals(ProcessStatus.CANCELED, statusAccessor.getProcessDetail(processId).getProcessStatus());
-		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCanceledStates().contains(hx.getState()));
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -153,14 +148,14 @@ public class WorkflowFrameworkTest {
     	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
-	    	initConcluder.cancelWorkflow(processId, "Cancel for Test");
+	    	initConcluder.cancelWorkflow(processId, userId, "Cancel for Test");
 		} catch (Exception e) {
 			Assert.fail();
 		}
 		
 		Assert.assertEquals(ProcessStatus.CANCELED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCanceledStates().contains(hx.getState()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCancelState().contains(hx.getOutcome()));
    }
     
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -174,8 +169,14 @@ public class WorkflowFrameworkTest {
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 			
-	    	ProcessDetail process = statusAccessor.getProcessDetail(processId);
-	    	if (process == null) {
+			ProcessDetail process = null;
+			try {
+				process = statusAccessor.getProcessDetail(processId);
+			} catch (NullPointerException ee) {
+				
+			}
+
+			if (process == null) {
 				Assert.assertTrue(true);
 	    	} else {
 	    		Assert.fail();
@@ -187,27 +188,29 @@ public class WorkflowFrameworkTest {
     public void testFailDefineAfterDefine(){
         LOG.info("Testing inability to define a workflow on a concept that has already been defined");
     	UUID processId = null;
+    	Set<Integer> localConcepts = new HashSet<>(Arrays.asList(888888));
 
     	try {
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 		}
 		
-		Assert.assertEquals(ProcessStatus.LAUNCHED, statusAccessor.getProcessDetail(processId).getProcessStatus());
+		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, statusAccessor.getProcessDetail(processId).getProcessStatus());
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testFailDefineAfterLaunched(){
         LOG.info("Testing inability to define a workflow on a concept that has already been launched");
     	UUID processId = null;
+    	Set<Integer> localConcepts = new HashSet<>(Arrays.asList(555555));
 
     	try {
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -220,11 +223,12 @@ public class WorkflowFrameworkTest {
     public void testFailConclude(){
         LOG.info("Testing inability to conclude a workflow that hasn't reached a final workflow state");
     	UUID processId = null;
+    	Set<Integer> localConcepts = new HashSet<>(Arrays.asList(777777));
 
     	try {
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
-	    	initConcluder.concludeWorkflow(processId);
+	    	initConcluder.concludeWorkflow(processId, userId);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -232,7 +236,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.LAUNCHED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessStartedStates().contains(hx.getState()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessStartState().contains(hx.getState()));
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -246,18 +250,18 @@ public class WorkflowFrameworkTest {
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 	    	updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
 	    	updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-	    	initConcluder.concludeWorkflow(processId);
+	    	initConcluder.concludeWorkflow(processId, userId);
 		} catch (Exception e) {
 			Assert.fail();
 		}
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
     }
     
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
-    public void testFailedCancelCall(){
+    public void testFailCancelCall(){
         LOG.info("Testing inability to cancel an already concluded Workflow ");
     	UUID processId = null;
 
@@ -267,8 +271,8 @@ public class WorkflowFrameworkTest {
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 	    	updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
 	    	updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-	    	initConcluder.concludeWorkflow(processId);
-	    	initConcluder.cancelWorkflow(processId, "Cancel for Test");
+	    	initConcluder.concludeWorkflow(processId, userId);
+	    	initConcluder.cancelWorkflow(processId, userId, "Cancel for Test");
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -276,30 +280,32 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testRedefineCall(){
         LOG.info("Testing ability to define and launch workflow on a concept that has an already-concluded workflow");
     	UUID processId = null;
+    	Set<Integer> localConcepts = new HashSet<>(Arrays.asList(333333));
 
     	try {
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 	    	updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
 	    	updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-	    	initConcluder.concludeWorkflow(processId);
-			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
-			Assert.fail();
+	    	initConcluder.concludeWorkflow(processId, userId);
+	    	
+			Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
+			ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
+			Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+			
+			processId = initConcluder.defineWorkflow(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		} catch (Exception e) {
-			Assert.assertTrue(true);
+			Assert.fail();
 		}
-		
-		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
-		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
     }
 
 
@@ -321,14 +327,21 @@ public class WorkflowFrameworkTest {
 	    	updater.advanceWorkflow(processId, userId, "Reject Review", "Reject Review Comment");
 	    	updater.advanceWorkflow(processId, userId, "QA Passes", "Third Review Comment");
 	    	updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-	    	initConcluder.concludeWorkflow(processId);
-	    	initConcluder.concludeWorkflow(processId);
-		} catch (Exception e) {
+	    	initConcluder.concludeWorkflow(processId, userId);
+	    	initConcluder.concludeWorkflow(processId, userId);
 			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
 		}
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
-    }
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+ }
+
+	private void setupUserRoles() {
+		updater.addNewUserRole(definitionId, userId, "Editor");
+		updater.addNewUserRole(definitionId, userId, "Reviewer");
+		updater.addNewUserRole(definitionId, userId, "Approver");
+	}
 }

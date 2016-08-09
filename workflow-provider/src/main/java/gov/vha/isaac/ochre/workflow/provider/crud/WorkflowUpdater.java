@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -125,7 +126,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param userId
+	 * @param workflowUser
 	 *            the user id
 	 * @param actionRequested
 	 *            the action requested
@@ -135,32 +136,36 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	public String advanceWorkflow(UUID processId, int userId, String actionRequested, String comment) throws Exception {
-		String outcome = null;
-
+	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment) throws Exception {
 		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
 		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
 
 		// Get User Permissible actions
 		Set<AvailableAction> userPermissableActions = advancementAccessor.getUserPermissibleActionsForProcess(processId,
-				userId);
+				workflowUser);
+
+		ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
 
 		if (userPermissableActions.isEmpty()) {
-			ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
-
 			logger.info("User does not have permission to advance workflow for this process: " + processId
-					+ " for this user: " + userId + " based on current state: " + processLatest.getOutcome());
+					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcome());
 		} else {
-    
-    		// Advance Workflow
+			String outcome = null;
+
+			// Advance Workflow
     		for (AvailableAction action : userPermissableActions) {
     			if (action.getAction().equals(actionRequested)) {
     				outcome = action.getOutcome();
     			}
     		}
+    		
+    		if (outcome != null) {
+    			ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), actionRequested, outcome, comment);
+    			return processHistoryStore.addEntry(entry);
+    		}
 		}
 		
-		return outcome;
+		return null;
 	}
 	
 	/**
