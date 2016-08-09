@@ -54,10 +54,9 @@ public class WorkflowFrameworkTest {
 	private static Bpmn2FileImporter importer;
 	
 	/** The bpmn file path. */
-	protected static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
+	protected static final String BPMN_FILE_PATH = "src/test/resources/VetzWorkflow.bpmn2";
 
 	private static UUID definitionId;
-	private static UUID tempProcessId;
 	private static int userId = 99;
 	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
 	private static int testConceptSeq;
@@ -129,10 +128,12 @@ public class WorkflowFrameworkTest {
 		}
     }
 
-    @Test (groups = {"wf"}, dependsOnMethods = {"testCancelNoLaunch"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testCancelNoLaunch(){
+        LOG.info("Testing ability to cancel a workflow that has only been defined");
     	UUID processId = null;
-		try {
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 	    	initConcluder.cancelWorkflow(processId, "Cancel for Test");
 		} catch (Exception e) {
@@ -144,10 +145,12 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCanceledStates().contains(hx.getState()));
     }
 
-    @Test (groups = {"wf"}, dependsOnMethods = {"testStartCancel"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testStartCancel(){
+        LOG.info("Testing ability to cancel a workflow that has been defined and launched");
     	UUID processId = null;
-		try {
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	initConcluder.cancelWorkflow(processId, "Cancel for Test");
@@ -160,8 +163,9 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCanceledStates().contains(hx.getState()));
    }
     
-    @Test (groups = {"wf"}, dependsOnMethods = {"testFailLaunch"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testFailLaunch(){
+        LOG.info("Testing inability to launch a workflow that has yet to be defined");
     	UUID processId = UUID.randomUUID();
     	
     	try {
@@ -179,10 +183,28 @@ public class WorkflowFrameworkTest {
 		}
     }
 
-    @Test (groups = {"wf"}, dependsOnMethods = {"testCancelNoLaunch"})
-    public void testFailDefine(){
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
+    public void testFailDefineAfterDefine(){
+        LOG.info("Testing inability to define a workflow on a concept that has already been defined");
     	UUID processId = null;
-		try {
+
+    	try {
+			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+		
+		Assert.assertEquals(ProcessStatus.LAUNCHED, statusAccessor.getProcessDetail(processId).getProcessStatus());
+    }
+
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
+    public void testFailDefineAfterLaunched(){
+        LOG.info("Testing inability to define a workflow on a concept that has already been launched");
+    	UUID processId = null;
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
@@ -194,10 +216,12 @@ public class WorkflowFrameworkTest {
 		Assert.assertEquals(ProcessStatus.LAUNCHED, statusAccessor.getProcessDetail(processId).getProcessStatus());
     }
 
-    @Test (groups = {"wf"}, dependsOnMethods = {"testCancelNoLaunch"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testFailConclude(){
+        LOG.info("Testing inability to conclude a workflow that hasn't reached a final workflow state");
     	UUID processId = null;
-		try {
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	initConcluder.concludeWorkflow(processId);
@@ -211,10 +235,12 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(AbstractWorkflowUtilities.getProcessStartedStates().contains(hx.getState()));
     }
 
-    @Test (groups = {"wf"}, dependsOnMethods = {"testStartAllPassConclude"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testStartAllPassConclude(){
+        LOG.info("Testing ability to advance workflow to conclusion via its easy-path");
     	UUID processId = null;
-		try {
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -230,10 +256,12 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
     }
     
-    @Test (groups = {"wf"}, dependsOnMethods = {"testCancelNoLaunch"})
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
     public void testFailedCancelCall(){
+        LOG.info("Testing inability to cancel an already concluded Workflow ");
     	UUID processId = null;
-		try {
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -251,11 +279,36 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
     }
 
-
-    @Test (groups = {"wf"}, dependsOnMethods = {"testStartAllFailConclude"})
-    public void testStartAllFailConclude(){
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
+    public void testRedefineCall(){
+        LOG.info("Testing ability to define and launch workflow on a concept that has an already-concluded workflow");
     	UUID processId = null;
-		try {
+
+    	try {
+			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			initConcluder.launchWorkflow(processId);
+	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
+	    	updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
+	    	updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
+	    	initConcluder.concludeWorkflow(processId);
+			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+		
+		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
+		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludedStates().contains(hx.getState()));
+    }
+
+
+    @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
+    public void testStartAllFailConclude(){
+        LOG.info("Testing ability to advance workflow to conclusion via with a rejection/failure happening at each point in path");
+    	UUID processId = null;
+
+    	try {
 			processId = initConcluder.defineWorkflow(definitionId, testConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			initConcluder.launchWorkflow(processId);
 	    	updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
