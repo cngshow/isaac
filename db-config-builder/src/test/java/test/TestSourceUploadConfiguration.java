@@ -21,7 +21,7 @@ public class TestSourceUploadConfiguration
 		String gitUsername = "";
 		String gitPassword = "";
 		
-		String artifactRepository = "http://vadev.mantech.com:8081/nexus/content/sites/ets_tooling_snapshot/";
+		String artifactRepository = "https://vadev.mantech.com:8080/nexus/content/sites/ets_tooling_snapshot/";
 		String repositoryUsername = "";
 		String repositoryPassword = "";
 
@@ -44,7 +44,7 @@ public class TestSourceUploadConfiguration
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
 			{
-				System.out.println("Progress " + newValue);
+				System.out.println("[Change] Progress " + newValue);
 			}
 		});
 		t.messageProperty().addListener(new ChangeListener<String>()
@@ -52,7 +52,7 @@ public class TestSourceUploadConfiguration
 			@Override
 			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
 			{
-				System.out.println("Message " + newValue);
+				System.out.println("[Change] Message " + newValue);
 			}
 		});
 		t.titleProperty().addListener(new ChangeListener<String>()
@@ -60,7 +60,7 @@ public class TestSourceUploadConfiguration
 			@Override
 			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
 			{
-				System.out.println("Title " + newValue);
+				System.out.println("[Change] Title " + newValue);
 			}
 		});
 		

@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>3.08</version>
+        <version>3.09</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
     <artifactId>integration-tests</artifactId>
@@ -92,6 +92,12 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>workflow-provider</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
    <build>
         <plugins>
@@ -132,7 +138,7 @@
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <argLine>-ea -d64 -Xmx12g -Djava.awt.headless=true</argLine>
 <!--                     <argLine>-Xmx8g -Xms8g -Djava.awt.headless=true -agentpath:/Applications/jprofiler8/bin/macos/libjprofilerti.jnilib=port=8849</argLine> -->
-<!--                    <debugForkedProcess>true</debugForkedProcess>-->
+                   <!-- debugForkedProcess>true</debugForkedProcess -->
                     <includes>
                         <!-- Let JUnit annotations decide -->
                         <include>**/*.class</include>

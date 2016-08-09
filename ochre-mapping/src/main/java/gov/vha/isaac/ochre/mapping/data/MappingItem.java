@@ -46,48 +46,74 @@ public class MappingItem extends MappingObject
 
 	private static final String NO_MAP_NAME = "(not mapped)";
 	
-	private UUID primordialUUID, mappingSetIDConcept, qualifierConcept, sourceConcept, targetConcept;
-	private int	sourceConceptNid, targetConceptNid, qualifierConceptNid;
-	protected final SimpleStringProperty sourceConceptProperty    = new SimpleStringProperty();
-	protected final SimpleStringProperty targetConceptProperty    = new SimpleStringProperty();
-	protected final SimpleStringProperty qualifierConceptProperty = new SimpleStringProperty();
-	protected final SimpleStringProperty commentsProperty		  = new SimpleStringProperty();
+	private List<UUID> uuids;
+	private int	sourceConceptNid, mappingSetSequence;
+	private UUID qualifierConcept, targetConcept;
+	private DynamicSememeData[] data_;
 	
-	protected MappingItem(DynamicSememe<?> sememe, StampCoordinate stampCoord) throws RuntimeException
+
+	private transient boolean lazyLoadComplete = false;
+	private transient UUID mappingSetIDConcept, sourceConcept;
+	private transient int targetConceptNid, qualifierConceptNid;
+	private transient final SimpleStringProperty sourceConceptProperty = new SimpleStringProperty();
+	private transient final SimpleStringProperty targetConceptProperty = new SimpleStringProperty();
+	private transient final SimpleStringProperty qualifierConceptProperty = new SimpleStringProperty();
+	private transient final SimpleStringProperty commentsProperty = new SimpleStringProperty();
+	
+	protected MappingItem(DynamicSememe<?> sememe) throws RuntimeException
 	{
-		read(sememe, stampCoord);
+		read(sememe);
 	}
 	
-	private void read(DynamicSememe<?> sememe, StampCoordinate stampCoord) throws RuntimeException
+	private void read(DynamicSememe<?> sememe) throws RuntimeException
 	{
-		sourceConceptNid = sememe.getReferencedComponentNid();
-		
-		primordialUUID = sememe.getPrimordialUuid();
-		setSourceConcept(Get.identifierService().getUuidPrimordialForNid(sourceConceptNid).get());
-		mappingSetIDConcept = Get.identifierService().getUuidPrimordialForNid(sememe.getAssemblageSequence()).get();
 		readStampDetails(sememe);
-		
-		DynamicSememeData[] data = sememe.getData();
-		setTargetConcept      (((data != null && data.length > 0 && data[0] != null) ? ((DynamicSememeUUID) data[0]).getDataUUID() : null));
-		setQualifierConcept   (((data != null && data.length > 1 && data[1] != null) ? ((DynamicSememeUUID) data[1]).getDataUUID() : null)); 
-		setEditorStatusConcept(((data != null && data.length > 2 && data[2] != null) ? ((DynamicSememeUUID) data[2]).getDataUUID() : null));
-		
-		targetConceptNid    = getNidForUuidSafe(targetConcept);
-		qualifierConceptNid = getNidForUuidSafe(qualifierConcept);
-		
-		refreshCommentsProperty(stampCoord);
+		mappingSetSequence = sememe.getAssemblageSequence();
+		sourceConceptNid = sememe.getReferencedComponentNid();
+		uuids = sememe.getUuidList();
+		data_ = sememe.getData();
+		setTargetConcept(((data_ != null && data_.length > 0 && data_[0] != null) ? ((DynamicSememeUUID) data_[0]).getDataUUID() : null));
+		setQualifierConcept(((data_ != null && data_.length > 1 && data_[1] != null) ? ((DynamicSememeUUID) data_[1]).getDataUUID() : null)); 
+	}
+	
+	private void lazyLoad()
+	{
+		if (!lazyLoadComplete)
+		{
+			mappingSetIDConcept = Get.identifierService().getUuidPrimordialForNid(mappingSetSequence).get();
+			setSourceConcept(Get.identifierService().getUuidPrimordialForNid(sourceConceptNid).get());
+	
+			//TODO remove this
+			setEditorStatusConcept(((data_ != null && data_.length > 2 && data_[2] != null) ? ((DynamicSememeUUID) data_[2]).getDataUUID() : null));
+			
+			targetConceptNid    = getNidForUuidSafe(targetConcept);
+			qualifierConceptNid = getNidForUuidSafe(qualifierConcept);
+		}
+		lazyLoadComplete = true;
 	}
 
-	public int getSourceConceptNid() 	{ return sourceConceptNid; }
-	public int getTargetConceptNid() 	{ return targetConceptNid; }
-	public int getQualifierConceptNid() { return qualifierConceptNid; }
+	public int getSourceConceptNid() 
+	{ 
+		return sourceConceptNid; 
+	}
+	public int getTargetConceptNid() 
+	{ 
+		lazyLoad();
+		return targetConceptNid; 
+	}
+	
+	public int getQualifierConceptNid() 
+	{ 
+		lazyLoad();
+		return qualifierConceptNid; 
+	}
 	
 	public String getSummary() {
 		return  (isActive() ? "Active " : "Retired ") + "Mapping: " + Frills.getDescription(sourceConcept).get() 
 				+ "-" + Frills.getDescription(mappingSetIDConcept).get() 
 				+ "-" + (targetConcept == null ? "not mapped" : Frills.getDescription(targetConcept).get() ) + "-" 
 				+ (qualifierConcept == null ? "no qualifier" : Frills.getDescription(qualifierConcept).get() ) 
-				+ "-" + (editorStatusConcept == null ? "no status" : Frills.getDescription(editorStatusConcept).get() ) + "-" + primordialUUID.toString();
+				+ "-" + (editorStatusConcept == null ? "no status" : Frills.getDescription(editorStatusConcept).get() ) + "-" + uuids.get(0).toString();
 	}
 	
 	/**
@@ -117,18 +143,65 @@ public class MappingItem extends MappingObject
 	 */
 	public UUID getPrimordialUUID()
 	{
-		return primordialUUID;
+		return uuids.get(0);
+	}
+	
+	/**
+	 * @return the UUIDs of this Mapping Item.  Note that this doesn't uniquely identify a mapping item within the system
+	 * as changes to the mapping item will retain the same ID - there will now be multiple versions.  They will differ by date.
+	 * There will typically be only one entry in this list (identical to the value of {@link #getPrimordialUUID}
+	 */
+	public List<UUID> getUUIDs()
+	{
+		return uuids;
+	}
+	
+	public int getMapSetSequence()
+	{
+		return mappingSetSequence;
 	}
 
-	public UUID getMappingSetIDConcept() { return mappingSetIDConcept;	}
-	public UUID getSourceConcept()		 { return sourceConcept;	}
-	public UUID getTargetConcept()		 { return targetConcept;	}
-	public UUID getQualifierConcept()	 { return qualifierConcept;	}
+	public UUID getMappingSetIDConcept()
+	{ 
+		lazyLoad();
+		return mappingSetIDConcept;
+	}
+	public UUID getSourceConcept()
+	{ 
+		lazyLoad();
+		return sourceConcept;	
+	}
+	public UUID getTargetConcept()
+	{
+		return targetConcept;	
+	}
+	public UUID getQualifierConcept()
+	{
+		return qualifierConcept;	
+	}
 	
-	public SimpleStringProperty getSourceConceptProperty()	{ return sourceConceptProperty; }
-	public SimpleStringProperty getTargetConceptProperty()	{ return targetConceptProperty;	}
-	public SimpleStringProperty getQualifierConceptProperty() { return qualifierConceptProperty; }
-	public SimpleStringProperty getCommentsProperty()			{ return commentsProperty; }
+	public SimpleStringProperty getSourceConceptProperty()
+	{
+		lazyLoad();
+		return sourceConceptProperty;
+	}
+	
+	public SimpleStringProperty getCommentsProperty(StampCoordinate stampCoord)
+	{
+		refreshCommentsProperty(stampCoord);
+		return sourceConceptProperty;
+	}
+	
+	public SimpleStringProperty getTargetConceptProperty()
+	{
+		lazyLoad();
+		return targetConceptProperty;	
+	}
+	public SimpleStringProperty getQualifierConceptProperty() 
+	{ 
+		lazyLoad();
+		return qualifierConceptProperty; 
+	}
 	
 	private void setSourceConcept(UUID sourceConcept) {
 		this.sourceConcept = sourceConcept;
@@ -192,13 +265,6 @@ public class MappingItem extends MappingObject
 		@Override
 		public int compare(MappingItem o1, MappingItem o2) {
 			return StringUtils.compareStringsIgnoreCase(o1.getQualifierConceptProperty().get(), o2.getQualifierConceptProperty().get());
-		}
-	};
-	
-	public static final Comparator<MappingItem> commentsComparator = new Comparator<MappingItem>() {
-		@Override
-		public int compare(MappingItem o1, MappingItem o2) {
-			return StringUtils.compareStringsIgnoreCase(o1.getCommentsProperty().get(), o2.getCommentsProperty().get());
 		}
 	};
 }

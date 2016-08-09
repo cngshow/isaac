@@ -90,7 +90,7 @@ public class MavenPublish extends Task<Integer>
 			}
 		});
 		
-		WorkExecutors.safeExecute(gen);
+		WorkExecutors.get().getExecutor().execute(gen);
 		String checksum = gen.get();
 		
 		updateMessage("Writing checksum file");

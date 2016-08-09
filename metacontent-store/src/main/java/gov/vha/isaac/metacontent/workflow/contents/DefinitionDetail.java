@@ -192,7 +192,6 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode()
-				+ roles.hashCode();
+		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode() + roles.hashCode();
 	}
 }

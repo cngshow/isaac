@@ -50,6 +50,26 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS = new MetadataConceptConstant("map set extended fields", 
+		UUID.fromString("34d59a1d-880c-5aa2-a526-e53d2351019f"),
+		"Stores UUID that identifies the sememe assemblage that further describes the mapping set") 
+	{
+		{
+			//TODO this needs a column definition, that has an array of data
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS = new MetadataConceptConstant("map item extended fields", 
+		UUID.fromString("9458de87-19b4-56ea-b0fc-05c2800e1a56"),
+		"Stores UUID that identifies the sememe assemblage that further describes the mapping item") 
+	{
+		{
+			//TODO this needs a column definition, that has an array of data
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
 		
 	//These next 3 don't have to be public - just want the hierarchy created during the DB build
 	private static final MetadataConceptConstant broader = new MetadataConceptConstant("Broader Than", 
@@ -73,28 +93,29 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		};
 		
 	//These next two don't need to be public, just want them in the hierarchy
-	private static final MetadataConceptConstant pending = new MetadataConceptConstant("Pending", 
-		UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9")) {};
-		
-	private static final MetadataConceptConstant reviewed = new MetadataConceptConstant("Reviewed", 
-		UUID.fromString("45b49b0d-e2d2-5a27-a08d-8f79856b6307")) {};
-		
-	public final MetadataConceptConstantGroup MAPPING_STATUS = new MetadataConceptConstantGroup("mapping status type", 
-		UUID.fromString("f4523b36-3714-5d0e-999b-edb8f21dc0fa"), 
-		"Stores the editor selected status of the mapping set or mapping instance") 
-		{
-			{
-				addChild(pending);
-				addChild(reviewed);
-			}
-		};
+//workflow status shouldn't be part of the mapset
+//	private static final MetadataConceptConstant pending = new MetadataConceptConstant("Pending", 
+//		UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9")) {};
+//		
+//	private static final MetadataConceptConstant reviewed = new MetadataConceptConstant("Reviewed", 
+//		UUID.fromString("45b49b0d-e2d2-5a27-a08d-8f79856b6307")) {};
+//		
+//	public final MetadataConceptConstantGroup MAPPING_STATUS = new MetadataConceptConstantGroup("mapping status type", 
+//		UUID.fromString("f4523b36-3714-5d0e-999b-edb8f21dc0fa"), 
+//		"Stores the editor selected status of the mapping set or mapping instance") 
+//		{
+//			{
+//				addChild(pending);
+//				addChild(reviewed);
+//			}
+//		};
 	public final MetadataConceptConstantGroup MAPPING_METADATA = new MetadataConceptConstantGroup("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7")) 
 	{
 		{
 			addChild(MAPPING_NAMESPACE);
 			addChild(MAPPING_QUALIFIERS);
-			addChild(MAPPING_STATUS);
+//			addChild(MAPPING_STATUS);
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
@@ -103,11 +124,15 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
 		"A Sememe used to specify how user-created mapping Sememes are structured", 
 			new DynamicSememeColumnInfo[] {
-				new DynamicSememeColumnInfo(0, MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
-					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
-					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
-				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
-						null, false, false)},
+//				new DynamicSememeColumnInfo(0, MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+//					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
+//					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
+						null, false, true),
+				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
+					null, false, true),
+				new DynamicSememeColumnInfo(2, DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
+					null, false, true)},
 			null) 
 	{
 		{
@@ -117,6 +142,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
-		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
+		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS, 
+			DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
 	} 
 }

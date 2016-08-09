@@ -29,8 +29,7 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 /**
  * Dynamic workflow history populated at runtime only
  * 
- * {@link ProcessHistoryContentStore}
- * {@link AbstractWorkflowContentStore}
+ * {@link ProcessHistoryContentStore} {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -88,8 +87,7 @@ public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 
 		int i = 1;
 		for (UUID key : keySet()) {
-			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tProcess History" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tProcess History #" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 

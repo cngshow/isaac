@@ -89,11 +89,20 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	/** The node to outgoing map. */
 	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
 
+	/** The node to outgoing map. */
+	private Map<Long, String> nodeNameMap = new HashMap<Long, String>();
+
 	/** The print for analysis. */
 	boolean printForAnalysis = false;
 
 	/** The process. */
 	private RuleFlowProcess process;
+
+	private Set<Long> humanNodesProcessed = new HashSet<>();
+
+	private UUID currentDefinitionId;
+
+	private AvailableAction startNodeAction = null;
 
 	public Bpmn2FileImporter() throws Exception {
 		// Default Constructor fails if store not already set
@@ -120,8 +129,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
 		super(store);
 
-		UUID key = setDefinition(bpmn2FilePath);
-		setNodes(bpmn2FilePath, key);
+		currentDefinitionId = setDefinition(bpmn2FilePath);
+		setNodes(bpmn2FilePath, currentDefinitionId);
 	}
 
 	/**
@@ -137,7 +146,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
-			ProcessDescriptor descriptor = processWorkflowDefinition("test", xmlContents);
+			ProcessDescriptor descriptor = processWorkflowDefinition(xmlContents);
 
 			key = populateWorkflowDefinitionRecords(descriptor);
 
@@ -161,6 +170,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 */
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		Set<String> roles = new HashSet<>();
+		roles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
 
 		ProcessAssetDesc definition = descriptor.getProcess();
 
@@ -170,8 +180,6 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
 				definition.getNamespace(), definition.getVersion(), roles);
-		System.out.println("**** 111 with entry: " + entry);
-		System.out.println("**** 222 with definitionDetStore: " + definitionDetailStore);
 
 		return definitionDetailStore.addEntry(entry);
 	}
@@ -188,6 +196,14 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		processNodes.clear();
 		visitedNodes.clear();
 		nodeToOutgoingMap.clear();
+		nodeNameMap.clear();
+		humanNodesProcessed.clear();
+		processStartState = null;
+		startNodeAction = null;
+		processCancelAction = null;
+		processCancelState = null;
+		processConcludeAction = null;
+		processConcludeState = null;
 
 		process = buildProcessFromFile(bpmn2FilePath);
 		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
@@ -216,8 +232,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvailableActions(processNodes, nodeToOutgoingMap, definitionId,
-					connections);
+			Set<AvailableAction> entries = generateAvailableActions(definitionId, connections);
 
 			for (AvailableAction entry : entries) {
 				// Write content into database
@@ -236,6 +251,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *            the nodes
 	 * @param nodeToOutgoingMap2
 	 *            the node to outgoing map2
+	 * @param nodeNameMap
 	 * @param definitionId
 	 *            the definition id
 	 * @param connections
@@ -244,47 +260,56 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	private Set<AvailableAction> generateAvailableActions(List<Node> nodes, Map<Long, List<Long>> nodeToOutgoingMap2,
-			UUID definitionId, List<SequenceFlow> connections) throws Exception {
+	private Set<AvailableAction> generateAvailableActions(UUID definitionId, List<SequenceFlow> connections)
+			throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
+		String currentState = null;
+		Set<String> roles = new HashSet<>();
 
-		for (Node node : nodes) {
-			if (node instanceof Split) {
-				// attempt to get roles from preceding HumanTaskNode
-				Set<String> roles = getActorFromPrecedingHumanTask(node);
+		for (Node node : processNodes) {
+			if (node.getName() != null && !node.getName().isEmpty() && !(node instanceof HumanTaskNode)
+					&& !(node instanceof EndNode)) {
+				currentState = node.getName();
+			}
 
-				for (Long id : nodeToOutgoingMap.get(node.getId())) {
-					String action = null;
-					String outcome = null;
-					String state = node.getName();
-
-					for (Connection connection : ((Split) node).getDefaultOutgoingConnections()) {
-						if (connection.getTo().getId() == id) {
-							String connectionId = (String) connection.getMetaData().get("UniqueId");
-
-							for (SequenceFlow sequence : connections) {
-								if (sequence.getId().equals(connectionId)) {
-									action = sequence.getName();
-									outcome = sequence.getExpression().replaceAll("'", "");
-									break;
-								}
-							}
-						}
-
-						if (action != null) {
+			if (node instanceof StartNode) {
+				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState,
+						roles, ((StartNode) node).getDefaultOutgoingConnections());
+				actions.addAll(availActions);
+				for (AvailableAction act : availActions) {
+					processStartState = act.getCurrentState();
+				}
+			} else if (node instanceof Split) {
+				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState,
+						roles, ((Split) node).getDefaultOutgoingConnections());
+				actions.addAll(availActions);
+			} else if (node instanceof HumanTaskNode) {
+				roles = getActorFromHumanTask((HumanTaskNode) node);
+				if (!humanNodesProcessed.contains(node.getId())) {
+					Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId,
+							currentState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections());
+					actions.addAll(availActions);
+					humanNodesProcessed.add(node.getId());
+				}
+			} else if (node instanceof EndNode) {
+				if (node.getName().equals("Canceled")) {
+					if (processCancelAction == null) {
+						// Requirement: Only one type of Cancel Action & Outcome per BPMN2
+    					for (AvailableAction act : actions) {
+    						if (act.getOutcome().equals(node.getName())) {
+    							processCancelAction = act.getAction();
+    							processCancelState = node.getName();
+    							break;
+    						}
+    					}
+					}
+				} else {
+					for (AvailableAction act : actions) {
+						if (act.getOutcome().equals(node.getName())) {
+							processConcludeState = node.getName();
+							processConcludeAction = act.getAction();
 							break;
 						}
-					}
-
-					// Verify that all requirements met
-					if (action == null || outcome == null || state == null || roles.size() == 0) {
-						throw new Exception("BPMN2 file missing key requirements");
-					}
-
-					// Generate a new AvailableAction for each role
-					for (String role : roles) {
-						AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
-						actions.add(newAction);
 					}
 				}
 			}
@@ -293,16 +318,80 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		return actions;
 	}
 
+	private Set<AvailableAction> identifyNodeActions(Node node, List<SequenceFlow> connections, UUID definitionId,
+			String currentState, Set<String> roles, List<Connection> defaultOutgoingConnections) throws Exception {
+		Set<AvailableAction> availActions = new HashSet<>();
+
+		for (Long id : nodeToOutgoingMap.get(node.getId())) {
+			String action = null;
+			String outcome = null;
+			String state = currentState;
+
+			for (Connection connection : defaultOutgoingConnections) {
+				if (connection.getTo().getId() == id) {
+					String connectionId = (String) connection.getMetaData().get("UniqueId");
+
+					for (SequenceFlow sequence : connections) {
+						if (sequence.getId().equals(connectionId)) {
+							action = sequence.getName();
+							if (!(connection.getTo() instanceof HumanTaskNode)) {
+								outcome = nodeNameMap.get(id);
+							} else {
+								outcome = ((HumanTaskNode) connection.getTo()).getDefaultOutgoingConnections()
+										.iterator().next().getTo().getName();
+								humanNodesProcessed.add(connection.getTo().getId());
+							}
+							break;
+						}
+					}
+
+				}
+
+				if (outcome != null && action == null) {
+					if (node instanceof HumanTaskNode) {
+						action = getHumanTaskName((HumanTaskNode) node);
+					}
+				}
+
+				if (outcome != null || action != null) {
+					break;
+				}
+			}
+
+			if (roles.size() == 0 && node.getId() == process.getStartNodes().iterator().next().getId()) {
+				roles.add(SYSTEM_AUTOMATED);
+			}
+
+			// Verify that all requirements met
+			if (action != null && outcome != null && state != null && roles.size() > 0) {
+
+				// Generate a new AvailableAction for each role
+				for (String role : roles) {
+					AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
+					availActions.add(newAction);
+					if (node instanceof StartNode) {
+						if (startNodeAction != null) {
+							throw new Exception("Only single Start Node Action permitted");
+						} else {
+							startNodeAction = newAction;
+						}
+					}
+				}
+			}
+		}
+
+		return availActions;
+	}
+
 	/**
 	 * Process workflow definition.
-	 *
-	 * @param string
-	 *            the string
+	 * 
 	 * @param xmlContents
 	 *            the xml contents
+	 *
 	 * @return the process descriptor
 	 */
-	private ProcessDescriptor processWorkflowDefinition(String string, String xmlContents) {
+	private ProcessDescriptor processWorkflowDefinition(String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
 		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
@@ -366,6 +455,11 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 
 			nodeToOutgoingMap.put(node.getId(), outgoingNodeIds);
+			if (node instanceof HumanTaskNode) {
+				nodeNameMap.put(node.getId(), getHumanTaskName((HumanTaskNode) node));
+			} else {
+				nodeNameMap.put(node.getId(), node.getName());
+			}
 
 			return retList;
 		}
@@ -384,34 +478,34 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *         This will return empty set for nodes preceded only by Start event
 	 *         (i.e. no preceding HumanTask)
 	 */
-	private static Set<String> getActorFromPrecedingHumanTask(Node node) {
+	private static Set<String> getActorFromHumanTask(HumanTaskNode node) {
 		Set<String> restrictions = new HashSet<>();
 
-		if (node instanceof HumanTaskNode) {
-			// Get HumanTaskNode's restrictions
-			Work work = ((HumanTaskNode) node).getWork();
+		// Get HumanTaskNode's restrictions
+		Work work = node.getWork();
 
-			if (work.getParameters() != null) {
-				String roleString = (String) work.getParameters().get("ActorId");
+		if (work.getParameters() != null) {
+			String roleString = (String) work.getParameters().get("ActorId");
 
-				if (roleString != null) {
-					String[] roles = roleString.split(",");
-					for (String role : roles) {
-						restrictions.add(role.trim());
-					}
-				}
-			}
-		} else {
-			// Find preceding node and call recursively
-			for (Map.Entry<String, List<Connection>> entry : node.getIncomingConnections().entrySet()) {
-				for (Connection conn : entry.getValue()) {
-					Node currentFromNode = conn.getFrom();
-					restrictions.addAll(getActorFromPrecedingHumanTask(currentFromNode));
+			if (roleString != null) {
+				String[] roles = roleString.split(",");
+				for (String role : roles) {
+					restrictions.add(role.trim());
 				}
 			}
 		}
 
 		return restrictions;
+	}
+
+	private static String getHumanTaskName(HumanTaskNode node) {
+		Work work = node.getWork();
+
+		if (work.getParameters() != null) {
+			return (String) work.getParameters().get("TaskName");
+		}
+
+		return null;
 	}
 
 	/**
@@ -560,4 +654,13 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 		}
 	}
+
+	public UUID getCurrentDefinitionId() {
+		return currentDefinitionId;
+	}
+
+	public AvailableAction getStartNodeAction() {
+		return startNodeAction;
+	}
+
 }

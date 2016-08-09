@@ -190,10 +190,10 @@ public class MappingSet extends MappingObject
 		{
 			primordialUUID = mappingConcept.get().getPrimordialUuid();
 			readStampDetails(mappingConcept.get());
-			setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((DynamicSememeUUID) refex.getData()[0]).getDataUUID() : null));
-			if (refex.getData().length > 1 && refex.getData()[1] != null)
+			//setEditorStatusConcept((refex.getData().length > 0 && refex.getData()[0] != null ? ((DynamicSememeUUID) refex.getData()[0]).getDataUUID() : null));
+			if (refex.getData().length > 0 && refex.getData()[0] != null)
 			{
-				setPurpose(((DynamicSememeString) refex.getData()[1]).getDataString());
+				setPurpose(((DynamicSememeString) refex.getData()[0]).getDataString());
 			}
 
 			Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.get().getNid(), 

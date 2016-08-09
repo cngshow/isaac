@@ -65,7 +65,6 @@ import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -250,13 +249,11 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param lgs The LogicGraphSememe containing the logic graph data
 	 * @return true if the corresponding concept is fully defined, otherwise returns false (for primitive concepts)
 	 * 
-	 * Things that are defined with a SUFFICIENT_SET are defined.
-	 * Things that are defined with a NECESSARY_SET are primitive.
+	 * Things that are defined with at least one SUFFICIENT_SET node are defined.
+	 * Things that are defined without any SUFFICIENT_SET nodes are primitive.
 	 */
 	public static <T extends LogicGraphSememe<T>> boolean isConceptFullyDefined(LogicGraphSememe<T> lgs) {
-		LogicalExpression le = lgs.getLogicalExpression();
-		LogicNode rootNode = le.getRoot();
-		return rootNode.getChildren()[0].getNodeSemantic() == NodeSemantic.SUFFICIENT_SET;
+		return lgs.getLogicalExpression().contains(NodeSemantic.SUFFICIENT_SET);
 	}
 	
 	/**
@@ -862,7 +859,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			Get.commitService().addUncommitted(sememe);
 		}
 
-		Get.commitService().commit("creating new dynamic sememe assemblage: " + sememeFSN);
+		Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN + ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription);
 		return new DynamicSememeUsageDescriptionImpl(newCon.getNid());
 	}
 	

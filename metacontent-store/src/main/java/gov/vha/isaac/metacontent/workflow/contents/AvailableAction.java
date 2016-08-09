@@ -185,7 +185,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	@Override
 	public String toString() {
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: "
-				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole State: " + role;
+				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole: " + role;
 	}
 
 	/*
@@ -197,9 +197,9 @@ public class AvailableAction extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AvailableAction other = (AvailableAction) obj;
 
-		return this.definitionId.equals(other.definitionId)
-				&& this.currentState.equals(other.currentState) && this.action.equals(other.action)
-				&& this.outcome.equals(other.outcome) && this.role.equals(other.role);
+		return this.definitionId.equals(other.definitionId) && this.currentState.equals(other.currentState)
+				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
+				&& this.role.equals(other.role);
 
 	}
 
@@ -210,7 +210,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + currentState.hashCode() + action.hashCode()
-				+ outcome.hashCode() + role.hashCode();
+		return definitionId.hashCode() + currentState.hashCode() + action.hashCode() + outcome.hashCode()
+				+ role.hashCode();
 	}
 }

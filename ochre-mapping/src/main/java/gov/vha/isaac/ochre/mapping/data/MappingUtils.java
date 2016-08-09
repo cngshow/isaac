@@ -55,10 +55,10 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		for (Integer conSequence : Frills.getAllChildrenOfConcept(IsaacMappingConstants.get().MAPPING_STATUS.getSequence(), true, false))
-		{
-			result.add(new SimpleDisplayConcept(conSequence));
-		}
+//		for (Integer conSequence : Frills.getAllChildrenOfConcept(IsaacMappingConstants.get().MAPPING_STATUS.getSequence(), true, false))
+//		{
+//			result.add(new SimpleDisplayConcept(conSequence));
+//		}
 		
 		Collections.sort(result);
 		return result;

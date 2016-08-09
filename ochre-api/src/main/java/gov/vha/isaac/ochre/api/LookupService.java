@@ -194,13 +194,16 @@ public class LookupService {
      * Stop all core isaac service, blocking until stopped (or failed)
      */
     public static void shutdownIsaac() {
-        setRunLevel(ISAAC_STOPPED_RUNLEVEL);
-        LOG.info("Service caches: " + looker.getAllServices(OchreCache.class));
-        looker.getAllServices(OchreCache.class)
-                .forEach((cache) -> {cache.reset();});
-        looker.shutdown();
-        ServiceLocatorFactory.getInstance().destroy(looker);
-        looker = null;
+        if (isInitialized())
+        {
+            setRunLevel(ISAAC_STOPPED_RUNLEVEL);
+            LOG.info("Service caches: " + looker.getAllServices(OchreCache.class));
+            looker.getAllServices(OchreCache.class)
+                    .forEach((cache) -> {cache.reset();});
+            looker.shutdown();
+            ServiceLocatorFactory.getInstance().destroy(looker);
+            looker = null;
+        }
     }
     
     /**
@@ -230,7 +233,7 @@ public class LookupService {
     }
     
     public static boolean isIsaacStarted() {
-        return getService(RunLevelController.class).getCurrentRunLevel() == ISAAC_STARTED_RUNLEVEL;
+        return isInitialized() ? getService(RunLevelController.class).getCurrentRunLevel() == ISAAC_STARTED_RUNLEVEL : false;
     }
     
     public static boolean isInitialized() {
@@ -243,14 +246,16 @@ public class LookupService {
      */
     public static void startupFxPlatform() {
         if (!fxPlatformUp) {
+            LOG.debug("FxPlatform is not yet up - obtaining lock");
             synchronized (STARTUP_LOCK) {
+                LOG.debug("Lock obtained, starting fxPlatform");
                 if (!fxPlatformUp) {
                     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
                     if (GraphicsEnvironment.isHeadless()) {
                         LOG.info("Installing headless toolkit");
                         HeadlessToolkit.installToolkit();
                     }
-
+                    LOG.debug("Starting JavaFX Platform");
                     PlatformImpl.startup(() -> {
                         // No need to do anything here
                     });

@@ -20,49 +20,57 @@ package gov.vha.isaac.ochre.workflow.provider;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailsWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
+import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.metacontent.workflow.UserWorkflowPermissionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.UserWorkflowPermission;
+import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowInitializerConcluder;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 
 /**
  * Abstract class for higher-level workflow routines
  * 
  * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
  * {@link Bpmn2FileImporter} {@link WorkflowInitializerConcluder}
- * {@link WorkflowInformationAccessor}
+ * {@link WorkflowActionsPermissionsAccessor} {@link WorkflowHistoryAccessor}
+ * {@line WorkflowUpdater}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowUtilities {
+	public static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
+
+	protected static String processStartState;
+	protected static String processCancelState;
+	protected static String processCancelAction;
+	protected static String processConcludeState;
+	protected static String processConcludeAction;
+
 	/** The Constant logger. */
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The user workflow permission store. */
-	protected UserWorkflowPermissionWorkflowContentStore userWorkflowPermissionStore;
+	protected static UserPermissionContentStore userPermissionStore;
 
 	/** The available action store. */
-	protected AvailableActionWorkflowContentStore availableActionStore;
+	protected static AvailableActionContentStore availableActionStore;
 
 	/** The definition detail store. */
-	protected DefinitionDetailWorkflowContentStore definitionDetailStore;
+	protected static DefinitionDetailContentStore definitionDetailStore;
 
 	/** The process detail store. */
-	protected ProcessDetailsWorkflowContentStore processDetailStore;
+	protected static ProcessDetailContentStore processDetailStore;
 
 	/** The process history store. */
-	protected ProcessHistoryContentStore processHistoryStore;
+	protected static ProcessHistoryContentStore processHistoryStore;
 
 	/** The store. */
 	protected static MVStoreMetaContentProvider store = null;
@@ -89,106 +97,45 @@ public abstract class AbstractWorkflowUtilities {
 		if (store == null) {
 			store = workflowStore;
 
-			userWorkflowPermissionStore = new UserWorkflowPermissionWorkflowContentStore(store);
-			availableActionStore = new AvailableActionWorkflowContentStore(store);
-			definitionDetailStore = new DefinitionDetailWorkflowContentStore(store);
-			processDetailStore = new ProcessDetailsWorkflowContentStore(store);
+			userPermissionStore = new UserPermissionContentStore(store);
+			availableActionStore = new AvailableActionContentStore(store);
+			definitionDetailStore = new DefinitionDetailContentStore(store);
+			processDetailStore = new ProcessDetailContentStore(store);
 			processHistoryStore = new ProcessHistoryContentStore(store);
 		}
 	}
 
-	/**
-	 * Gets the permissions for user.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param workflowUser
-	 *            the workflow user
-	 * @return the permissions for user
-	 */
-	protected UserWorkflowPermission getPermissionsForUser(UUID definitionId, int workflowUser) {
-		Set<UserWorkflowPermission> allPermissions = userWorkflowPermissionStore.getAllEntries();
-		for (UserWorkflowPermission permission : allPermissions) {
-			if (permission.getDefinitionId() == definitionId && permission.getUser() == workflowUser) {
-				return permission;
-			}
-		}
-		return null;
+	public static ProcessDetailContentStore getProcessDetailStore() {
+		return processDetailStore;
+	}
+	
+	public static String getProcessStartState() {
+		return processStartState;
+	}
+	
+	public static String getProcessCancelAction() {
+		return processCancelAction;
 	}
 
-	/**
-	 * Gets the valid actions for state.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param currentState
-	 *            the current state
-	 * @param workflowUser
-	 *            the workflow user
-	 * @return the valid actions for state
-	 */
-	protected Set<AvailableAction> getValidActionsForState(UUID processId, String currentState, int workflowUser) {
-		// Get Roles that may execute State/Action pair based on Process's
-		// Definition
-		UUID definitionId = getDefinitionForProcess(processId);
-
-		// Identify possible roles based on definition and current state
-		Set<AvailableAction> allAvailableActions = findAvailableRoles(definitionId, currentState);
-
-		// Verify that requested action is optional for user with that role
-		UserWorkflowPermission permission = getPermissionsForUser(definitionId, workflowUser);
-
-		Set<AvailableAction> permissableActions = new HashSet<>();
-
-		for (AvailableAction action : allAvailableActions) {
-			if (permission.getRoles().contains(action.getRole())) {
-				permissableActions.add(action);
-			}
-		}
-
-		return permissableActions;
+	public static String getProcessCancelState() {
+		return processCancelState;
 	}
 
-	/**
-	 * Gets the definition for process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @return the definition for process
-	 */
-	private UUID getDefinitionForProcess(UUID processId) {
-		ProcessDetail processDetail = processDetailStore.getEntry(processId);
-
-		Set<DefinitionDetail> definitionDetails = definitionDetailStore.getAllEntries();
-
-		for (DefinitionDetail definitionDetail : definitionDetails) {
-			if (definitionDetail.getId() == processDetail.getDefinitionId()) {
-				return definitionDetail.getId();
-			}
-		}
-
-		return null;
+	public static String getProcessConcludeAction() {
+		return processConcludeAction;
 	}
 
-	/**
-	 * Find available roles.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param currentState
-	 *            the current state
-	 * @return the sets the
-	 */
-	private Set<AvailableAction> findAvailableRoles(UUID definitionId, String currentState) {
-		Set<AvailableAction> availableActions = new HashSet<>();
-		Set<AvailableAction> allActions = availableActionStore.getAllEntries();
+	public static String getProcessConcludeState() {
+		return processConcludeState;
+	}
+	
+	public static void close() {
+		store = null;
 
-		for (AvailableAction entry : allActions) {
-			if (entry.getDefinitionId() == definitionId && entry.getCurrentState() == currentState) {
-				availableActions.add(entry);
-			}
-		}
-
-		return availableActions;
+		userPermissionStore.close();
+		availableActionStore.close();
+		definitionDetailStore.close();
+		processDetailStore.close();
+		processHistoryStore.close();
 	}
 }

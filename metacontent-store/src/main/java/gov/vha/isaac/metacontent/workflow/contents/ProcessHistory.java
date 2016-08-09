@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Comparator;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -84,8 +85,8 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 * @param comment
 	 *            the comment
 	 */
-	public ProcessHistory(UUID processId, int workflowUser, long timeAdvanced, String state, String action, String outcome,
-			String comment) {
+	public ProcessHistory(UUID processId, int workflowUser, long timeAdvanced, String state, String action,
+			String outcome, String comment) {
 		this.processId = processId;
 		this.workflowUser = workflowUser;
 		this.timeAdvanced = timeAdvanced;
@@ -247,5 +248,22 @@ public class ProcessHistory extends StorableWorkflowContents {
 	public int hashCode() {
 		return processId.hashCode() + workflowUser + new Long(timeAdvanced).hashCode() + state.hashCode()
 				+ action.hashCode() + outcome.hashCode() + comment.hashCode();
+	}
+
+	public static class ProcessHistoryComparator implements Comparator<ProcessHistory> {
+		public ProcessHistoryComparator() {
+
+		}
+
+		@Override
+		public int compare(ProcessHistory o1, ProcessHistory o2) {
+			long t1 = o1.getTimeAdvanced();
+			long t2 = o2.getTimeAdvanced();
+			if (t1 > t2)
+				return 1;
+			else if (t1 < t2)
+				return -1;
+			else return (o1.getProcessId().compareTo(o2.getProcessId())); 
+		}
 	}
 }

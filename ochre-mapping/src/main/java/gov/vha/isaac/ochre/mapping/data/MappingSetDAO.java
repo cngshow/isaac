@@ -16,7 +16,6 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
-import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
@@ -75,9 +74,9 @@ public class MappingSetDAO extends MappingDAO
 					new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getUUID(), 
 							DynamicSememeDataType.UUID, null, false, false),
 					new DynamicSememeColumnInfo(1, IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID(), DynamicSememeDataType.UUID, null, false, 
-							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID()), false),
-					new DynamicSememeColumnInfo(2, IsaacMappingConstants.get().MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
-							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
+							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID()), false)},
+//					new DynamicSememeColumnInfo(2, IsaacMappingConstants.get().MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+//							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
 				null, ObjectChronologyType.CONCEPT, null);
 		
 		Get.workExecutors().getExecutor().execute(() ->
@@ -107,7 +106,7 @@ public class MappingSetDAO extends MappingDAO
 		SememeChronology mappingAnnotation = Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
 				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getSequence(), 
 				new DynamicSememeData[] {
-						(editorStatus == null ? null : new DynamicSememeUUIDImpl(editorStatus)),
+//						(editorStatus == null ? null : new DynamicSememeUUIDImpl(editorStatus)),
 						(StringUtils.isBlank(purpose) ? null : new DynamicSememeStringImpl(purpose))}).build(
 				editCoord, ChangeCheckerMode.ACTIVE);
 
@@ -116,12 +115,9 @@ public class MappingSetDAO extends MappingDAO
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).build(
 				editCoord, ChangeCheckerMode.ACTIVE);
 		
-		@SuppressWarnings("deprecation")
-		Task<Optional<CommitRecord>> task = Get.commitService().commit("update mapping item");
-		
 		try
 		{
-			task.get();
+			Get.commitService().commit("update mapping item").get();
 		}
 		catch (Exception e)
 		{

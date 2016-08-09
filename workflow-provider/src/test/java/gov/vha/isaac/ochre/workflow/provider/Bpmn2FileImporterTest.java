@@ -26,14 +26,15 @@ import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionWorkflowContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailWorkflowContentStore;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
+import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
 /**
  * Test the WorkflowDefinitionUtility class
@@ -42,29 +43,27 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class Bpmn2FileImporterTest {
+public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
+	private static boolean setupCompleted = false;
 
-	/** The bpmn file path. */
-	static private final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
-
-	/** The store. */
-	static private MVStoreMetaContentProvider store;
+	private static MVStoreMetaContentProvider store;
 
 	/**
 	 * Sets the up.
 	 */
-	@BeforeClass
-	public static void setUpClass() {
-		store = new MVStoreMetaContentProvider(new File("target"), "test", true);
-		new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+	@Before
+	public void setUpClass() {
+		if (!setupCompleted) {
+			store = new MVStoreMetaContentProvider(new File("target"), "testBpmn2FileImport", true);
+			setupCompleted = true;
+		}
+
+		globalSetup(store);
 	}
 
-	/**
-	 * Tear down.
-	 */
 	@AfterClass
 	public static void tearDownClass() {
-		store.close();
+		AbstractWorkflowUtilities.close();
 	}
 
 	/**
@@ -75,7 +74,7 @@ public class Bpmn2FileImporterTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetDefinition() throws Exception {
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
 				store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
@@ -86,6 +85,7 @@ public class Bpmn2FileImporterTest {
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
+		expectedRoles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -102,22 +102,20 @@ public class Bpmn2FileImporterTest {
 	 */
 	@Test
 	public void testVetzWorkflowSetNodes() throws Exception {
-		System.out.println("**** AAAA");
-		DefinitionDetailWorkflowContentStore createdDefinitionDetailContentStore = new DefinitionDetailWorkflowContentStore(
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
 				store);
-		System.out.println("**** BBBB");
-		AvailableActionWorkflowContentStore createdAvailableActionContentStore = new AvailableActionWorkflowContentStore(
+		AvailableActionContentStore createdAvailableActionContentStore = new AvailableActionContentStore(
 				store);
-		System.out.println("**** CCCC");
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
-				createdAvailableActionContentStore.getNumberOfEntries(), 7);
+				createdAvailableActionContentStore.getNumberOfEntries(), 9);
 
 		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
 
-		List<String> possibleActions = Arrays.asList("Cancel Workflow", "QA Fails", "QA Passes", "Approve",
-				"Reject Edit", "Reject Review");
-		List<String> possibleStates = Arrays.asList("Canceled", "Ready for Edit", "Ready for Approve",
+		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
+				"Reject Edit", "Reject Review", "Begin Authoring Workflow");
+		
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {

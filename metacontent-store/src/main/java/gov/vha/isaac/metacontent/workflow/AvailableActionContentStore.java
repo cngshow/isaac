@@ -24,27 +24,27 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
- * Statically populated workflow details initialized from BPMN2 file during
- * reading of WF Definition only
+ * Statically populated available actions initialized during reading of WF
+ * Definition only
  * 
- * {@link DefinitionDetailWorkflowContentStore}
+ * {@link AvailableActionContentStore}
  * {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowContentStore {
+public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new Definition Details Workflow Content Store.
+	 * Instantiates a new static state action content store.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public DefinitionDetailWorkflowContentStore(MVStoreMetaContentProvider store) {
-		super(store, WorkflowContentStoreType.DEFINITION_DETAILS);
+	public AvailableActionContentStore(MVStoreMetaContentProvider store) {
+		super(store, WorkflowContentStoreType.AVAILABLE_ACTION);
 	}
 
 	/*
@@ -55,8 +55,8 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 	 * java.util.UUID)
 	 */
 	@Override
-	public DefinitionDetail getEntry(UUID key) {
-		return new DefinitionDetail(getGenericEntry(key));
+	public AvailableAction getEntry(UUID key) {
+		return new AvailableAction(getGenericEntry(key));
 	}
 
 	/*
@@ -66,34 +66,28 @@ public class DefinitionDetailWorkflowContentStore extends AbstractWorkflowConten
 	 * getAllEntries()
 	 */
 	@Override
-	public Set<DefinitionDetail> getAllEntries() {
-		Set<DefinitionDetail> retSet = new HashSet<>();
+	public Set<AvailableAction> getAllEntries() {
+		Set<AvailableAction> retSet = new HashSet<>();
 
 		Collection<byte[]> entries = getAllGenericEntries();
 
 		for (byte[] entry : entries) {
-			retSet.add(new DefinitionDetail(entry));
+			retSet.add(new AvailableAction(entry));
 		}
 
 		return retSet;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
 		int i = 1;
 		for (UUID key : keySet()) {
-			buf.append("\n\tKey #" + i++ + ": " + key.toString());
-			buf.append("\n\tDefinition Detail" + i++ + ": " + getEntry(key).toString());
+			buf.append("\n\tAvailable Action #" + i++ + ": " + getEntry(key).toString());
 			buf.append("\n\n");
 		}
 
-		return "DefinitionDetailWorkflowContentStore: " + buf.toString();
+		return "AvailableActionWorkflowContentStore: " + buf.toString();
 	}
 }

@@ -247,7 +247,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
 
     @Override
     public int getNidForUuids(Collection<UUID> uuids) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return getNidForUuids(uuids.toArray(new UUID[uuids.size()]));
     }
 
     @Override

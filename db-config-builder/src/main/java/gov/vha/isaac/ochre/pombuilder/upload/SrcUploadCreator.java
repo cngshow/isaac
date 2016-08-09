@@ -50,14 +50,6 @@ public class SrcUploadCreator
 	private static final Logger LOG = LogManager.getLogger();
 	
 	
-	public static void logCrap() {
-		LOG.debug("Hi Cris");
-		LOG.info("It is a nice day.");
-		LOG.warn("It is a rainy day");
-		LOG.error("It is a scary day");
-		LOG.fatal("Armegeddon is upon us.");//Some test logging to integrate with rails
-	}
-	
 	/**
 	 * @param uploadType - What type of content is being uploaded.
 	 * @param version - What version number does the passed in content represent
@@ -82,12 +74,6 @@ public class SrcUploadCreator
 			String gitRepositoryURL, String gitUsername, String gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
-		LOG.debug("Hi Cris");
-		LOG.info("It is a nice day.");
-		LOG.warn("It is a rainy day");
-		LOG.error("It is a scary day");
-		LOG.fatal("Armegeddon is upon us.");//Some test logging to integrate with rails
-		
 		LOG.info("Building the task to create a source upload configuration...");
 
 		if (filesToUpload == null || filesToUpload.size() == 0)
@@ -277,7 +263,7 @@ public class SrcUploadCreator
 						}
 					});
 					
-					WorkExecutors.safeExecute(pm);
+					WorkExecutors.get().getExecutor().execute(pm);
 					
 					//block till upload complete
 					pm.get();
@@ -308,6 +294,32 @@ public class SrcUploadCreator
 	}
 	
 	/**
+	 * A utility method to fetch a tasks result.  It assumes the task has been previously started.
+	 * @param task
+	 * @return the string returned by the task
+	 */
+	public static String fetchResult(Task<String> task) 
+	{
+		LOG.trace("In fetchResult");
+		
+		javafx.concurrent.Worker.State s = task.getState();
+		LOG.trace("Current state is " + s.toString());
+		if(s == javafx.concurrent.Worker.State.READY) {
+			//throw new IllegalStateException("The task has not been started.  Please start the task.");
+		}
+		String result = null;
+		try {
+			LOG.trace("Calling task.get");
+			result = task.get();
+			LOG.trace("task.get is done, result= " + result);
+		} catch (Exception e) {
+			result = e.getMessage();
+			LOG.error("Exception thrown during task.get", e);
+		} 
+		return result;
+	}
+	
+	/**
 	 * A utility method to execute a task and wait for it to complete.
 	 * @param task
 	 * @return the string returned by the task
@@ -316,7 +328,10 @@ public class SrcUploadCreator
 	 */
 	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
 	{
-		WorkExecutors.safeExecute(task);
-		return task.get();
+		LOG.trace("executeAndBlock with task " + task);
+		WorkExecutors.get().getExecutor().execute(task);
+		String result = task.get();
+		LOG.trace("result of task: " + result);
+		return result;
 	}
 }
