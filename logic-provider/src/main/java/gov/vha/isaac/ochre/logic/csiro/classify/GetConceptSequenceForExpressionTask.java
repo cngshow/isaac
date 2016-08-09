@@ -66,7 +66,7 @@ public class GetConceptSequenceForExpressionTask extends Task<Integer> {
             ClassifierProvider classifierProvider, EditCoordinate statedEditCoordinate) {
         GetConceptSequenceForExpressionTask task = new GetConceptSequenceForExpressionTask(expression, classifierProvider, statedEditCoordinate);
         LookupService.getService(ActiveTasks.class).get().add(task);
-        LookupService.getService(WorkExecutors.class).getForkJoinPoolExecutor().execute(task);
+        LookupService.getService(WorkExecutors.class).getExecutor().execute(task);
         return task;
     }
 
