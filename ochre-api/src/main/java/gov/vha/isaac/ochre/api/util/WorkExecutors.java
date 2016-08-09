@@ -54,21 +54,23 @@ import gov.vha.isaac.ochre.api.LookupService;
  * The {@link #getExecutor()} that this provides is a standard thread pool with (up to) the same number of threads
  * as there are cores present on the computer - with a minimum of 2 threads.  This executor has an unbounded queue 
  * depth, and FIFO behavior.
+ * 
+ * If you wish to use this code outside of an HK2 managed application (or in utility code that may operate in and out
+ * of an HK2 environment), please use the {@link #get()} method to get a handle to this class
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 
 @Service
 @RunLevel(value = -1)
-//KEC: I converted these to use runlevels, but at a runlevel prior to the rest of the 
-//ISAAC services. These workers where not shutting down when Isaac was shutdown, 
-//now they cleanly shutdown and restart. 
 public class WorkExecutors
 {
 	private ForkJoinPool forkJoinExecutor_;
 	private ThreadPoolExecutor blockingThreadPoolExecutor_;
 	private ThreadPoolExecutor threadPoolExecutor_;
 	private static final Logger log = LogManager.getLogger();
+	
+	private static WorkExecutors nonHK2Instance_ = null;
 
 	private WorkExecutors()
 	{
@@ -79,6 +81,10 @@ public class WorkExecutors
 	private void startMe()
 	{
 		log.info("Starting the WorkExecutors thread pools");
+		if (nonHK2Instance_ != null)
+		{
+			throw new RuntimeException("Two instances of WorkExectors started!  If HK2 will manage, startup HK2 properly first!");
+		}
 		//The java default ForkJoinPool.commmonPool starts with only 1 thread, on 1 and 2 core systems, which can get us deadlocked pretty easily.
 		int procCount = Runtime.getRuntime().availableProcessors();
 		int parallelism = ((procCount - 1) < 3 ? 3 : procCount - 1);  //set between 3 and 1 less than proc count (not less than 3)
@@ -137,6 +143,7 @@ public class WorkExecutors
 			threadPoolExecutor_.shutdownNow();
 			threadPoolExecutor_  = null;
 		}
+		nonHK2Instance_ = null;
 		log.debug("Stopped WorkExecutors thread pools");
 	}
 	
@@ -168,32 +175,55 @@ public class WorkExecutors
 		return threadPoolExecutor_;
 	}
 	
+
 	/**
-	 * A convenience method that executes tasks on the the {@link #getExecutor()} pool, if HK2 / this class is initialized.  Otherwise
-	 * it executes it on the Java8 ForkJoinPool
+	 * If HK2 has been properly started, this method safely returns the instance setup by HK2.
+	 * If HK2 has NOT been started, this method will create a static instance, and return a reference to that.
+	 * A JVM shutdown listener is registered to handle the thread pool shutdown in this case.
+	 * It is illegal (and will throw a runtime error) to ask for the static instance of this before 
+	 * starting HK2 and then start HK2 - if HK2 is in use in the system, that should manage the lifecycle.
+	 * 
+	 * This method is the preferred mechanism to get a handle to the WorkExecutors class in an enviornment where 
+	 * code may be executed both in and out of an HK2 managed instance.
+	 * 
+	 * If your usage is only run inside an HK2 management environment, then you should prefer the HK2 standard mechanisms
+	 * such as:
+	 * {@link Get#workExecutors()} or {@link LookupService#getService(WorkExecutors.class)} (however the end result is the same)
+	 * @return
 	 */
-	public static void safeExecute(Runnable r)
+	public static WorkExecutors get()
 	{
-		log.debug("In safeExecute");
-		try
+		log.debug("In WorkExectors.get()");
+		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
 		{
-			if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
-			{
-				log.debug("Executing in Work Executors thread pool");
-				Get.workExecutors().getExecutor().execute(r);
-			}
-			else
-			{
-				//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed.
-				LookupService.startupFxPlatform();
-				log.debug("Executing in ForkJoinPool because LookupService is not up");
-				ForkJoinPool.commonPool().execute(r);
-			}
+			log.debug("Handing back the HK2 managed instance");
+			return Get.workExecutors();
 		}
-		catch (Exception e)
+		else
 		{
-			log.debug("Threaded execution threw an unchecked error", e);
-			throw e;
+			log.debug("Returning static WorkExecutors instance");
+			if (nonHK2Instance_ == null)
+			{
+				synchronized (log)
+				{
+					if (nonHK2Instance_ == null)
+					{
+						log.debug("Setting up static WorkExecutors");
+						//if we aren't relying on the lookup service, we need to make sure the headless toolkit was installed (otherwise, the task APIs end up broken)
+						LookupService.startupFxPlatform();
+						WorkExecutors temp  = new WorkExecutors();
+						temp.startMe();
+						nonHK2Instance_ = temp;
+						Runtime.getRuntime().addShutdownHook(new Thread(() -> 
+						{
+							log.debug("Shutting down static instance of WorkExecutors");
+							nonHK2Instance_.stopMe();
+							log.debug("stopped static instance of WorkExecutors");
+						}));
+					}
+				}
+			}
+			return nonHK2Instance_;
 		}
 	}
 	

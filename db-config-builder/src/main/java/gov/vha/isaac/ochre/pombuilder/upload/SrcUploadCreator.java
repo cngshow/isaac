@@ -263,7 +263,7 @@ public class SrcUploadCreator
 						}
 					});
 					
-					WorkExecutors.safeExecute(pm);
+					WorkExecutors.get().getExecutor().execute(pm);
 					
 					//block till upload complete
 					pm.get();
@@ -328,7 +328,10 @@ public class SrcUploadCreator
 	 */
 	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
 	{
-		WorkExecutors.safeExecute(task);
-		return task.get();
+		LOG.trace("executeAndBlock with task " + task);
+		WorkExecutors.get().getExecutor().execute(task);
+		String result = task.get();
+		LOG.trace("result of task: " + result);
+		return result;
 	}
 }
