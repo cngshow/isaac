@@ -43,16 +43,16 @@ import gov.vha.isaac.ochre.api.LookupService;
  * Generally available thread pools for doing background processing in an ISAAC application.
  * 
  * The {@link #getForkJoinPoolExecutor()} that this provides is identical to the @{link {@link ForkJoinPool#commonPool()}
- * with the exception that it will bottom out at 3 processing threads, rather than 1, to help prevent
+ * with the exception that it will bottom out at 6 processing threads, rather than 1, to help prevent
  * deadlock situations in common ISAAC usage patterns.  This has an unbounded queue depth, and LIFO behavior.
  * 
  * The {@link #getPotentiallyBlockingExecutor()} that this provides is a standard thread pool with (up to) the same number of threads
- * as there are cores present on the computer - with a minimum of 2 threads.  This executor has no queue - internally
+ * as there are cores present on the computer - with a minimum of 6 threads.  This executor has no queue - internally
  * it uses a {@link SynchronousQueue} - so if no thread is available to accept the task being queued, it will block 
  * submission of the task until a thread is available to accept the job.
  * 
  * The {@link #getExecutor()} that this provides is a standard thread pool with (up to) the same number of threads
- * as there are cores present on the computer - with a minimum of 2 threads.  This executor has an unbounded queue 
+ * as there are cores present on the computer - with a minimum of 6 threads.  This executor has an unbounded queue 
  * depth, and FIFO behavior.
  * 
  * If you wish to use this code outside of an HK2 managed application (or in utility code that may operate in and out
@@ -87,7 +87,7 @@ public class WorkExecutors
 		}
 		//The java default ForkJoinPool.commmonPool starts with only 1 thread, on 1 and 2 core systems, which can get us deadlocked pretty easily.
 		int procCount = Runtime.getRuntime().availableProcessors();
-		int parallelism = ((procCount - 1) < 3 ? 3 : procCount - 1);  //set between 3 and 1 less than proc count (not less than 3)
+		int parallelism = ((procCount - 1) < 6 ? 6 : procCount - 1);  //set between 6 and 1 less than proc count (not less than 6)
 		forkJoinExecutor_ = new ForkJoinPool(parallelism);
 
 		int corePoolSize = 2;
