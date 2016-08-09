@@ -371,7 +371,7 @@ public class Get implements OchreCache {
      */
     public static Task<Void> startIndexTask(@SuppressWarnings("unchecked") Class<? extends IndexServiceBI> ... indexersToReindex) {
         GenerateIndexes indexingTask = new GenerateIndexes(indexersToReindex);
-        LookupService.getService(WorkExecutors.class).getForkJoinPoolExecutor().execute(indexingTask);
+        LookupService.getService(WorkExecutors.class).getExecutor().execute(indexingTask);
         return indexingTask;
     }
 

@@ -113,7 +113,7 @@ public class DownloadUnzipTask extends Task<File>
 					updateProgress(calculateTask.getProgress(), calculateTask.getTotalWork());
 				}
 			});
-			WorkExecutors.safeExecute(calculateTask);
+			WorkExecutors.get().getExecutor().execute(calculateTask);
 			calculatedSha1Value = calculateTask.get();
 			sha1File.delete();
 		}

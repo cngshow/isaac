@@ -95,7 +95,7 @@ public class ConverterOptionParam
 				artifact.getClassifier(), "pom");
 
 		DownloadUnzipTask dut = new DownloadUnzipTask(mavenUsername, mavenPassword, pomURL, false, true, tempFolder);
-		WorkExecutors.safeExecute(dut);
+		WorkExecutors.get().getExecutor().execute(dut);
 
 		File pomFile = dut.get();
 		if (!pomFile.exists())
@@ -114,7 +114,7 @@ public class ConverterOptionParam
 					artifact.getClassifier(), MAVEN_FILE_TYPE);
 
 			dut = new DownloadUnzipTask(mavenUsername, mavenPassword, config, false, true, tempFolder);
-			WorkExecutors.safeExecute(dut);
+			WorkExecutors.get().getExecutor().execute(dut);
 
 			File jsonFile = dut.get();
 			return fromFile(jsonFile);

@@ -20,7 +20,7 @@ public class TestConversionConfiguration
 		String gitUsername = "";
 		String gitPassword = "";
 		
-		String nexusUrl = "http://vadev.mantech.com:8081/nexus/content/groups/public/";
+		String nexusUrl = "https://vadev.mantech.com:8080/nexus/content/groups/public/";
 		String nexusUsername = "";
 		String nexusPassword = "";
 
