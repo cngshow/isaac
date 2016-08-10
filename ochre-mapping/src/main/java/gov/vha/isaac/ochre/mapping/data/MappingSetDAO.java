@@ -213,9 +213,9 @@ public class MappingSetDAO extends MappingDAO
 		DynamicSememe<?> latest = latestVersion.get().value();
 		
 		if (latest.getData()[0] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[0] != null
-				|| (latest.getData()[0] != null && ((DynamicSememeUUID)latest.getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
+				|| (latest.getData()[0] != null && latest.getData()[0] instanceof DynamicSememeUUID && ((DynamicSememeUUID)latest.getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
 				|| latest.getData()[1] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[1] != null
-				|| (latest.getData()[1] != null && ((DynamicSememeString)latest.getData()[1]).getDataString().equals(mappingSet.getPurpose())))
+				|| (latest.getData()[1] != null && latest.getData()[1] instanceof DynamicSememeString && ((DynamicSememeString)latest.getData()[1]).getDataString().equals(mappingSet.getPurpose())))
 		{
 			DynamicSememeImpl mutable = (DynamicSememeImpl) ((SememeChronology)mappingSememe.get()).createMutableVersion(MutableDynamicSememe.class, 
 					latest.getStampSequence());
