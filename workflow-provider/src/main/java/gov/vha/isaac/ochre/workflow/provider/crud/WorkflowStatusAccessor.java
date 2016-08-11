@@ -98,7 +98,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 *            the definition id
 	 * @return the process detail
 	 */
-	public Set<ProcessDetail> getActiveProcessesByDefinition(UUID definitionId) {
+	public Set<ProcessDetail> getActiveProcessesForDefinition(UUID definitionId) {
 		Set<ProcessDetail> activeProcesses = new HashSet<>();
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
