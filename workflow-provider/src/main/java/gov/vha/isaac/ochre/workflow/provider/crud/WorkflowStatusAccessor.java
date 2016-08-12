@@ -128,7 +128,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 *
 	 * @return true, if is concept in active workflow
 	 */
-	public boolean isConceptInActiveWorkflow(int conceptSeq) throws Exception {
+	public boolean isConceptInActiveWorkflow(int conceptSeq) {
 		// Assumes component is a concept
 		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
 			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
@@ -148,7 +148,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 * @return true, if is component in active workflow
 	 * @throws Exception 
 	 */
-	public boolean isComponentInActiveWorkflow(OchreExternalizableObjectType type, int componentSequence) throws Exception {
+	public boolean isComponentInActiveWorkflow(OchreExternalizableObjectType type, int componentSequence) {
 		if (type == OchreExternalizableObjectType.CONCEPT) {
 			return isConceptInActiveWorkflow(componentSequence);
 		} else if (type == OchreExternalizableObjectType.SEMEME) {
