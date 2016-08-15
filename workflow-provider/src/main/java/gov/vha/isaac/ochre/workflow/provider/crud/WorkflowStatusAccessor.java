@@ -152,6 +152,9 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 		if (type == OchreExternalizableObjectType.CONCEPT) {
 			return isConceptInActiveWorkflow(componentSequence);
 		} else if (type == OchreExternalizableObjectType.SEMEME) {
+			//TODO this isn't safe - referenced component may not be a concept.
+			//Also, Dan wants to know, are we only putting concepts into workflow?  Or do we put sememes into workflow??
+			//If only concepts go into workflow, how do we know what component of the concept is in workflow??
 			int conSeq = Get.conceptService().getConcept( Get.sememeService().getSememe(componentSequence).getReferencedComponentNid()).getConceptSequence();
 			return isConceptInActiveWorkflow(conSeq);
 		} else {
