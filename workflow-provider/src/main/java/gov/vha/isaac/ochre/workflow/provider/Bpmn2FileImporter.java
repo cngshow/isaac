@@ -44,11 +44,9 @@ import org.jbpm.bpmn2.xml.BPMNDISemanticModule;
 import org.jbpm.bpmn2.xml.BPMNSemanticModule;
 import org.jbpm.bpmn2.xml.ProcessHandler;
 import org.jbpm.compiler.xml.XmlProcessReader;
-import org.jbpm.kie.services.impl.bpmn2.BPMN2DataServiceImpl;
 import org.jbpm.kie.services.impl.bpmn2.ProcessDescriptor;
 import org.jbpm.kie.services.impl.model.ProcessAssetDesc;
 import org.jbpm.ruleflow.core.RuleFlowProcess;
-import org.jbpm.services.api.DefinitionService;
 import org.jbpm.workflow.core.node.EndNode;
 import org.jbpm.workflow.core.node.HumanTaskNode;
 import org.jbpm.workflow.core.node.Join;
@@ -75,9 +73,6 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
-
-	/** The bpmn2 service. */
-	protected DefinitionService bpmn2Service = new BPMN2DataServiceImpl();
 
 	/** The process nodes. */
 	// Handling of Nodes
