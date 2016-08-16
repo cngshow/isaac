@@ -5,10 +5,10 @@
 		<artifactId>isaac-parent</artifactId>
 		<version>3.10-SNAPSHOT</version>
 	</parent>
-    <groupId>gov.vha.isaac.ochre.modules</groupId>
+	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>workflow-provider</artifactId>
 	<packaging>jar</packaging>
-	<name>Workflow Provider</name>
+	<name>OCHRE: Workflow Provider</name>
 	<description>Provides the ISAAC application with modeling workflow capabilities</description>
 	
 	<dependencies>
@@ -17,16 +17,45 @@
 			<artifactId>ochre-api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.jbpm</groupId>
-			<artifactId>jbpm-kie-services</artifactId>
-			<version>${jbpm.version}</version>
-		</dependency>
+		
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>metacontent-store</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
+		<!-- KIE Stuff -->
+		
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-kie-services</artifactId>
+			<version>${jbpm.version}</version>
+			<exclusions>  <!-- This pulls in a mess of out of date / uneeded stuff -->
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.drools</groupId>
+			<artifactId>drools-core</artifactId>
+			<version>${jbpm.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-bpmn2</artifactId>
+			<version>${jbpm.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-services-api</artifactId>
+			<version>${jbpm.version}</version>
+		</dependency>
+
 	</dependencies>
 </project>
  
