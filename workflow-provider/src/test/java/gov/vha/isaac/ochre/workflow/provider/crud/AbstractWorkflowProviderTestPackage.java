@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -46,7 +47,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 
 	/** The store. */
-	protected WorkflowInitializerConcluder initConcluder;
+	protected WorkflowProcessInitializerConcluder initConcluder;
 
 	protected ProcessDetailContentStore processDetailStore;
 
@@ -65,7 +66,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static int mainUserId = 99;
 	protected static int secondaryUserId = 999;
 
-	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
+	protected static List<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
 
 	protected static Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56, 57));
 
@@ -119,7 +120,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			launchOutcome = startNodeAction.getOutcome();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
-		initConcluder = new WorkflowInitializerConcluder(store);
+		initConcluder = new WorkflowProcessInitializerConcluder(store);
 
 	}
 
@@ -173,7 +174,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void createMainWorkflowProcess(UUID requestedDefinitionId) {
 		// Create new process
 		try {
-			mainProcessId = initConcluder.defineWorkflow(requestedDefinitionId, conceptsForTesting,
+			mainProcessId = initConcluder.createWorkflowProcess(requestedDefinitionId, conceptsForTesting,
 					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -184,7 +185,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId, Set<Integer> concepts) {
 		// Create new process
 		try {
-			return initConcluder.defineWorkflow(requestedDefinitionId, concepts,
+			return initConcluder.createWorkflowProcess(requestedDefinitionId, concepts,
 					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -207,7 +208,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void concludeWorkflow(UUID processId, int workflowUser) {
 		try {
-			initConcluder.concludeWorkflow(processId, workflowUser);
+			initConcluder.concludeWorkflowProcess(processId, workflowUser);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();

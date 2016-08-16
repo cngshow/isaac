@@ -40,7 +40,7 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 /**
  * Test the WorkflowInitializerConcluder class
  * 
- * {@link WorkflowInitializerConcluder}.
+ * {@link WorkflowProcessInitializerConcluder}.
  * {@link AbstractWorkflowProviderTestPackage}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -107,7 +107,7 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 	 */
 	@Test
 	public void testBLaunchWorkflow() throws Exception {
-		initConcluder.launchWorkflow(mainProcessId);
+		initConcluder.launchWorkflowProcess(mainProcessId);
 
 		ProcessDetailContentStore processDetailStore = new ProcessDetailContentStore(store);
 

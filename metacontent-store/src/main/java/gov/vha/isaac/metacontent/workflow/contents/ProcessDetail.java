@@ -77,7 +77,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	private UUID definitionId;
 
 	/** The stamp sequences. */
-	private ArrayList<Integer> stampSequences;
+	private ArrayList<Integer> stampSequences = new ArrayList<>();
 
 	/** The concept Sequences. */
 	private Set<Integer> conceptSequences;
@@ -126,10 +126,10 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public ProcessDetail(UUID definitionId, Set<Integer> conceptSequences, ArrayList<Integer> stampSequences, int creator,
+	public ProcessDetail(UUID definitionId, Set<Integer> conceptSequences, List<Integer> stampSequences, int creator,
 			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
 		this.definitionId = definitionId;
-		this.stampSequences = stampSequences;
+		this.stampSequences.addAll(stampSequences);
 		this.conceptSequences = conceptSequences;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
@@ -150,8 +150,15 @@ public class ProcessDetail extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.stampSequences = (ArrayList<Integer>) in.readObject();
-			this.conceptSequences = (Set<Integer>) in.readObject();
+
+			@SuppressWarnings("unchecked")
+			ArrayList<Integer> stampSequencesReadObject = (ArrayList<Integer>) in.readObject();
+			this.stampSequences.addAll(stampSequencesReadObject);
+
+			@SuppressWarnings("unchecked")
+			Set<Integer> conceptSequencesReadObject = (Set<Integer>) in.readObject();
+			this.conceptSequences = conceptSequencesReadObject;
+
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
 			this.timeConcluded = (Long) in.readObject();
@@ -180,7 +187,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the stamp sequences
 	 */
-	public ArrayList<Integer> getStampSequences() {
+	public List<Integer> getStampSequences() {
 		return stampSequences;
 	}
 

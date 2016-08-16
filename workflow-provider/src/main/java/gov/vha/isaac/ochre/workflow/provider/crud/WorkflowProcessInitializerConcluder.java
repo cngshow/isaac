@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -33,40 +34,40 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 /**
  * Utility to start, complete, or conclude a workflow process
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowInitializerConcluder}.
+ * {@link AbstractWorkflowUtilities} {@link WorkflowProcessInitializerConcluder}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
+public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtilities {
 
 	/**
-	 * Instantiates a new workflow initializer concluder.
+	 * Instantiates a new workflow process initializer concluder.
 	 *
 	 * @throws Exception
 	 *             the exception
 	 */
-	public WorkflowInitializerConcluder() throws Exception {
+	public WorkflowProcessInitializerConcluder() throws Exception {
 		// Default Constructor fails if store not already set
 	}
 
 	/**
-	 * Instantiates a new workflow initializer concluder.
+	 * Instantiates a new workflow proces initializer concluder.
 	 *
 	 * @param store
 	 *            the store
 	 */
-	public WorkflowInitializerConcluder(MVStoreMetaContentProvider store) {
+	public WorkflowProcessInitializerConcluder(MVStoreMetaContentProvider store) {
 		super(store);
 	}
 
 	/**
-	 * Start workflow.
+	 * Start a new workflow process.
 	 *
 	 * @param definitionId
 	 *            the definition id
 	 * @param concepts
 	 *            the concepts
-	 * @param stampSequence
+	 * @param stampSequences
 	 *            the stamp sequence
 	 * @param user
 	 *            the user
@@ -75,7 +76,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID defineWorkflow(UUID definitionId, Set<Integer> concepts, ArrayList<Integer> stampSequence, int user,
+	public UUID createWorkflowProcess(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int user,
 			SubjectMatter subjectMatter) throws Exception {
 		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
 
@@ -84,7 +85,9 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 				throw new Exception("Concept to add in workflow exists in active workflow");
 			}
 		}
-		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequence, user, new Date().getTime(),
+		ArrayList<Integer> stampSequencesArrayList = new ArrayList<>();
+		stampSequencesArrayList.addAll(stampSequences);
+		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequencesArrayList, user, new Date().getTime(),
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
 
@@ -92,13 +95,13 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Launch workflow.
+	 * Launch a workflow process.
 	 *
 	 * @param processId
 	 *            the process id
 	 * @throws Exception
 	 */
-	public void launchWorkflow(UUID processId) throws Exception {
+	public void launchWorkflowProcess(UUID processId) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -124,7 +127,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the comment
 	 * @throws Exception
 	 */
-	public void cancelWorkflow(UUID processId, int workflowUser, String comment) throws Exception {
+	public void cancelWorkflowProcess(UUID processId, int workflowUser, String comment) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		WorkflowStatusAccessor statusAccessor = new WorkflowStatusAccessor(store);
 		ProcessHistory processLatest = null;
@@ -162,7 +165,7 @@ public class WorkflowInitializerConcluder extends AbstractWorkflowUtilities {
 	 *            the process id
 	 * @throws Exception
 	 */
-	public void concludeWorkflow(UUID processId, int workflowUser) throws Exception {
+	public void concludeWorkflowProcess(UUID processId, int workflowUser) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {

@@ -320,7 +320,7 @@ public class WorkflowActionsPermissionsAccessorTest extends AbstractWorkflowProv
 		Assert.assertEquals(firstOutcome, stateHistory.getOutcome());
 		Assert.assertEquals(firstComment, stateHistory.getComment());
 
-		UUID testingProcId = initConcluder.defineWorkflow(mainDefinitionId, new HashSet<>(Arrays.asList(9999)),
+		UUID testingProcId = initConcluder.createWorkflowProcess(mainDefinitionId, new HashSet<>(Arrays.asList(9999)),
 				stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
 		launchWorkflow(testingProcId);
 
