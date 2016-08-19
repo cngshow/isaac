@@ -720,7 +720,7 @@
                         <version>${fortify.version}</version>
                         <configuration>
                             <jre64>true</jre64>
-                            <buildId>isaac-rest</buildId>
+                            <buildId>isaac-fortify-build</buildId>
                             <toplevelArtifactId>isaac-parent</toplevelArtifactId>
                             <skipTests>true</skipTests>
                         </configuration>
@@ -751,7 +751,7 @@
                             <jreStack>8M</jreStack>
                             <maxHeap>13000M</maxHeap>
                             <verbose>true</verbose>
-                            <buildId>isaac-rest</buildId>
+                            <buildId>isaac-fortify-build</buildId>
                             <toplevelArtifactId>isaac-parent</toplevelArtifactId>
                             <skipTests>true</skipTests>
                             <failOnSCAError>true</failOnSCAError>
@@ -783,7 +783,7 @@
                             <jreStack>8M</jreStack>
                             <maxHeap>13000M</maxHeap>
                             <verbose>true</verbose>
-                            <buildId>isaac-rest</buildId>
+                            <buildId>isaac-fortify-build</buildId>
                             <toplevelArtifactId>isaac-parent</toplevelArtifactId>
                             <failOnSCAError>true</failOnSCAError>
                             <upload>false</upload>
