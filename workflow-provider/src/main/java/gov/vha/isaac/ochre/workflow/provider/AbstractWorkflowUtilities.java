@@ -32,14 +32,14 @@ import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowInitializerConcluder;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 
 /**
  * Abstract class for higher-level workflow routines
  * 
  * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
- * {@link Bpmn2FileImporter} {@link WorkflowInitializerConcluder}
+ * {@link Bpmn2FileImporter} {@link WorkflowProcessInitializerConcluder}
  * {@link WorkflowActionsPermissionsAccessor} {@link WorkflowHistoryAccessor}
  * {@line WorkflowUpdater}
  * 

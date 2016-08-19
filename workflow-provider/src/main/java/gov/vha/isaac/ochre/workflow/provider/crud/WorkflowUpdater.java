@@ -69,7 +69,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *            the stamp sequence
 	 * @throws Exception 
 	 */
-	public void addStampsToExistingProcess(UUID processId, int stamp) throws Exception {
+	public void addStampToExistingProcess(UUID processId, int stamp) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
 		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {

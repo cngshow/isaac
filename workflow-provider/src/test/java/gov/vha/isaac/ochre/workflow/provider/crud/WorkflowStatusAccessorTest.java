@@ -144,7 +144,7 @@ public class WorkflowStatusAccessorTest extends AbstractWorkflowProviderTestPack
 	 */
 	@Test
 	public void testCGetActiveProcessesByDefinition() throws Exception {
-		secondaryProcessId = initConcluder.defineWorkflow(mainDefinitionId, specialTestingConId, stampSequenceForTesting,
+		secondaryProcessId = initConcluder.createWorkflowProcess(mainDefinitionId, specialTestingConId, stampSequenceForTesting,
 				mainUserId, SubjectMatter.CONCEPT);
 		Assert.assertEquals(1, accessor.getProcessesForConcept(specialTestingConId.iterator().next()).size());
 		Assert.assertEquals(1, accessor.getProcessesForConcept(conceptsForTesting.iterator().next()).size());

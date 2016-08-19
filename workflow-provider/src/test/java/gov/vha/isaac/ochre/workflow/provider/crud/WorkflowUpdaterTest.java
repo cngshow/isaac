@@ -91,7 +91,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testAaddStampsToExistingProcess() throws Exception {
 		try {
-			updater.addStampsToExistingProcess(mainProcessId, 12345);
+			updater.addStampToExistingProcess(mainProcessId, 12345);
 			Assert.fail();
 		} catch (Exception e) {
 			ProcessDetail details = processDetailStore.getEntry(mainProcessId);
@@ -100,7 +100,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		}
 		
 		Assert.assertFalse(processDetailStore.getEntry(secondaryProcessId).getStampSequences().contains(12345));
-		updater.addStampsToExistingProcess(secondaryProcessId, 12345);
+		updater.addStampToExistingProcess(secondaryProcessId, 12345);
 		Assert.assertTrue(processDetailStore.getEntry(secondaryProcessId).getStampSequences().contains(12345));
 	}
 	
