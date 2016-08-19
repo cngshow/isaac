@@ -43,6 +43,7 @@
         <jersey.version>2.22.1</jersey.version>
         <maven-project-info-reports-plugin.version>2.9</maven-project-info-reports-plugin.version>  
         <jbpm.version>6.4.0.Final</jbpm.version>
+        <fortify.version>16.10</fortify.version>
 	</properties>
     
     <organization>
@@ -705,6 +706,93 @@
                     </plugin>
                 </plugins>
             </reporting>
+        </profile>
+        <profile>
+            <id>sca-clean</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <buildId>isaac-rest</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sca-translate</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <jreStack>8M</jreStack>
+                            <maxHeap>13000M</maxHeap>
+                            <verbose>true</verbose>
+                            <buildId>isaac-rest</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <skipTests>true</skipTests>
+                            <failOnSCAError>true</failOnSCAError>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>translate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sca-scan</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <jreStack>8M</jreStack>
+                            <maxHeap>13000M</maxHeap>
+                            <verbose>true</verbose>
+                            <buildId>isaac-rest</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <failOnSCAError>true</failOnSCAError>
+                            <upload>false</upload>
+                            <projectName>ISAAC REST</projectName>
+                            <projectVersion>${project.version}</projectVersion>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>
