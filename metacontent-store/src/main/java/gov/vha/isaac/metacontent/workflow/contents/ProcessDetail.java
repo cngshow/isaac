@@ -48,28 +48,6 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  */
 public class ProcessDetail extends StorableWorkflowContents {
 
-	/**
-	 * The Enum SubjectMatter.
-	 */
-	public enum SubjectMatter {
-
-		/** The mapping. */
-		MAPPING,
-		/** The concept. */
-		CONCEPT
-	};
-
-	/**
-	 * The Enum DefiningStatus.
-	 */
-	public enum ProcessStatus {
-
-		/** The enabled. */
-		READY_TO_LAUNCH,
-		/** The completed. */
-		LAUNCHED, CANCELED, CONCLUDED
-	};
-
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 

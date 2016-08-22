@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,10 +39,11 @@ import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 
 /**
  * Test both static and user based workflow content as defined in the
@@ -318,7 +318,7 @@ public class WorkflowContentStoreTest {
 		concepts1.add(98);
 		concepts1.add(99);
 
-		ProcessDetail createdEntry1 = new ProcessDetail(UUID.randomUUID(), concepts1, sequences1, 2,
+		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), concepts1, sequences1, 2,
 				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
 
 		// New scope to ensure closing store
@@ -331,7 +331,7 @@ public class WorkflowContentStoreTest {
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		processInstanceStore = new ProcessDetailContentStore(store);
-		ProcessDetail pulledEntry1 = processInstanceStore.getEntry(key1);
+		StorableWorkflowContents pulledEntry1 = processInstanceStore.getEntry(key1);
 
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
@@ -358,7 +358,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		ProcessDetail updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), concepts1, sequences2, 3,
+		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), concepts1, sequences2, 3,
 				createdEntry2.getTimeCreated(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
 		processInstanceStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);

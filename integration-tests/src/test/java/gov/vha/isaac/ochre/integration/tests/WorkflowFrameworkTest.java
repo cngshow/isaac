@@ -17,7 +17,6 @@ import org.testng.annotations.Test;
 
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
@@ -28,6 +27,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
@@ -169,7 +169,7 @@ public class WorkflowFrameworkTest {
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 			
-			ProcessDetail process = null;
+			StorableWorkflowContents process = null;
 			try {
 				process = statusAccessor.getProcessDetail(processId);
 			} catch (NullPointerException ee) {

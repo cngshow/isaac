@@ -26,9 +26,10 @@ import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -87,7 +88,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		}
 		ArrayList<Integer> stampSequencesArrayList = new ArrayList<>();
 		stampSequencesArrayList.addAll(stampSequences);
-		ProcessDetail details = new ProcessDetail(definitionId, concepts, stampSequencesArrayList, user, new Date().getTime(),
+		StorableWorkflowContents details = new ProcessDetail(definitionId, concepts, stampSequencesArrayList, user, new Date().getTime(),
 				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
 		UUID processId = processDetailStore.addEntry(details);
 
