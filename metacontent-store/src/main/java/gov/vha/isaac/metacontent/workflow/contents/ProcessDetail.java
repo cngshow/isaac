@@ -352,6 +352,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	public boolean isActive() {
-		return processStatus == ProcessStatus.LAUNCHED || processStatus == ProcessStatus.READY_TO_LAUNCH;
+		return processStatus == ProcessStatus.LAUNCHED || processStatus == ProcessStatus.DEFINED;
 	}
 }

@@ -132,7 +132,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 		// Assumes component is a concept
 		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
 			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
-				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
+				proc.getProcessStatus() == ProcessStatus.DEFINED) {
 				return true;
 			}
 		}
@@ -174,7 +174,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 
 		for (ProcessDetail proc : getProcessesForConcept(conceptSequence)) {
 			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
-				proc.getProcessStatus() == ProcessStatus.READY_TO_LAUNCH) {
+				proc.getProcessStatus() == ProcessStatus.DEFINED) {
 				return proc;
 			}
 		}

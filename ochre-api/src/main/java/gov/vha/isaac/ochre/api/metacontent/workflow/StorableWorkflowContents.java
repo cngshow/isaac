@@ -53,10 +53,7 @@ public abstract class StorableWorkflowContents {
 	 */
 	public enum ProcessStatus {
 	
-		/** The enabled. */
-		READY_TO_LAUNCH,
-		/** The completed. */
-		LAUNCHED, CANCELED, CONCLUDED
+		DEFINED, LAUNCHED, CANCELED, CONCLUDED
 	}
 
 	/** The id. */

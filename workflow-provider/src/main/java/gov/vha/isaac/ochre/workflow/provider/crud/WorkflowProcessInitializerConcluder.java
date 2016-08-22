@@ -89,7 +89,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		ArrayList<Integer> stampSequencesArrayList = new ArrayList<>();
 		stampSequencesArrayList.addAll(stampSequences);
 		StorableWorkflowContents details = new ProcessDetail(definitionId, concepts, stampSequencesArrayList, user, new Date().getTime(),
-				subjectMatter, ProcessStatus.READY_TO_LAUNCH);
+				subjectMatter, ProcessStatus.DEFINED);
 		UUID processId = processDetailStore.addEntry(details);
 
 		return processId;
@@ -107,7 +107,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		if (entry == null) {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
-		} else if (entry.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+		} else if (entry.getProcessStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Cannot launch workflow that has a process status of: " + entry.getProcessStatus());
 		}
 

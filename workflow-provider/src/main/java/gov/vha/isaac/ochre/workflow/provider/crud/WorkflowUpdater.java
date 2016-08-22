@@ -72,7 +72,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addStampToExistingProcess(UUID processId, int stamp) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
 		}
 	
@@ -92,7 +92,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addConceptsToExistingProcess(UUID processId, Set<Integer> stampSequence) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
 		}
 	
@@ -113,7 +113,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addConceptsToExistingProcess(UUID processId, List<Integer> stampSequence) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
+		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
 		}
 	

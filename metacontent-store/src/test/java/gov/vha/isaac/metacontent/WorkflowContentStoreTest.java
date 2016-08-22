@@ -319,7 +319,7 @@ public class WorkflowContentStoreTest {
 		concepts1.add(99);
 
 		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), concepts1, sequences1, 2,
-				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.DEFINED);
 
 		// New scope to ensure closing store
 		ProcessDetailContentStore processInstanceStore = new ProcessDetailContentStore(store);
@@ -344,7 +344,7 @@ public class WorkflowContentStoreTest {
 		concepts2.add(98);
 		concepts2.add(97);
 		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), concepts2, sequences2, 3,
-				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.DEFINED);
 
 		UUID key2 = processInstanceStore.addEntry(createdEntry2);
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 2);
@@ -359,7 +359,7 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), concepts1, sequences2, 3,
-				createdEntry2.getTimeCreated(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+				createdEntry2.getTimeCreated(), SubjectMatter.CONCEPT, ProcessStatus.DEFINED);
 		processInstanceStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 

@@ -89,7 +89,7 @@ public class WorkflowInitializerConcluderTest extends AbstractWorkflowProviderTe
 		Assert.assertTrue(entry.getConceptSequences().contains(55));
 
 		Assert.assertEquals(SubjectMatter.CONCEPT, entry.getSubjectMatter());
-		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, entry.getProcessStatus());
+		Assert.assertEquals(ProcessStatus.DEFINED, entry.getProcessStatus());
 		Assert.assertEquals(99, entry.getCreator());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertEquals(3, entry.getStampSequences().size());
