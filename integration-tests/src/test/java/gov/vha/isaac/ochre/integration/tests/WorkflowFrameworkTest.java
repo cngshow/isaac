@@ -8,17 +8,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitService;
@@ -28,6 +24,8 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
@@ -198,7 +196,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(true);
 		}
 		
-		Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, statusAccessor.getProcessDetail(processId).getProcessStatus());
+		Assert.assertEquals(ProcessStatus.DEFINED, statusAccessor.getProcessDetail(processId).getProcessStatus());
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -302,7 +300,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
 			
 			processId = initConcluder.createWorkflowProcess(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
-			Assert.assertEquals(ProcessStatus.READY_TO_LAUNCH, statusAccessor.getProcessDetail(processId).getProcessStatus());
+			Assert.assertEquals(ProcessStatus.DEFINED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		} catch (Exception e) {
 			Assert.fail();
 		}
