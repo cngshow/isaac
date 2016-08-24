@@ -83,7 +83,7 @@ public class MappingSetDAO extends MappingDAO
 		{
 			try
 			{
-				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1, 2}, true);
+				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1}, true);
 			}
 			catch (Exception e)
 			{
