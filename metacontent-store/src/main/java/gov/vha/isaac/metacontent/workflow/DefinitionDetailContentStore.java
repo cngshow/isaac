@@ -93,6 +93,6 @@ public class DefinitionDetailContentStore extends AbstractWorkflowContentStore {
 			buf.append("\n\n");
 		}
 
-		return "DefinitionDetailWorkflowContentStore: " + buf.toString();
+		return "DefinitionDetailContentStore: " + buf.toString();
 	}
 }

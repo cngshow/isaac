@@ -93,6 +93,6 @@ public class UserPermissionContentStore extends AbstractWorkflowContentStore {
 			buf.append("\n\n");
 		}
 
-		return "UserPermissionWorkflowContentStore: " + buf.toString();
+		return "UserPermissionContentStore: " + buf.toString();
 	}
 }
