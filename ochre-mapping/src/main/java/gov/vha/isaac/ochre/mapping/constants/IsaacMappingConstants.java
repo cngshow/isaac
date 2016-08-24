@@ -1,27 +1,35 @@
 package gov.vha.isaac.ochre.mapping.constants;
 
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstant;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstantGroup;
 import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
 import gov.vha.isaac.ochre.api.constants.ModuleProvidedConstants;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 
 /**
  * 
  * @author darmbrust
  * Unfortunately, due to the indirect use of the LookupService within this class - and the class itself being provided by a LookupService, 
- * we cannot create these constants as static - it leads to recusion in the LookupService init which breaks things.
+ * we cannot create these constants as static - it leads to recursion in the LookupService init which breaks things.
+ * 
+ * The 100' view of the mapset / map item setup in the system is:
+ * 
+ * A Dynamic Sememe is created to represent the Mapset.  This dynamic sememe will (probably) be a child of DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.
+ * The data columns on this sememe will at a minimum, carry a 'target concept' column in position 0, (making it a valid association) and carry a 'mapping qualifiers'
+ * column in position 1.  (Note, this sememe is describing the mapping items, not the map set) There will optionally be additional fields, which carry any other 
+ * types / values that the user specified at the creation of the map set.
+ * 
+ * A Dynamic Sememe that represents a mapset will carry at least 2, and possibly more sememe annotations.
+ *  - {@link DynamicSememeConstants#DYNAMIC_SEMEME_ASSOCIATION_SEMEME}
+ *  - {@link #DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE}
+ * 
+ * Map Items are instances of the map set sememe, with the columns populated as necessary.
  */
 @Service
 @Singleton
@@ -50,26 +58,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
-	
-	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS = new MetadataConceptConstant("map set extended fields", 
-		UUID.fromString("34d59a1d-880c-5aa2-a526-e53d2351019f"),
-		"Stores UUID that identifies the sememe assemblage that further describes the mapping set") 
-	{
-		{
-			//TODO this needs a column definition, that has an array of data
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
-	
-	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS = new MetadataConceptConstant("map item extended fields", 
-		UUID.fromString("9458de87-19b4-56ea-b0fc-05c2800e1a56"),
-		"Stores UUID that identifies the sememe assemblage that further describes the mapping item") 
-	{
-		{
-			//TODO this needs a column definition, that has an array of data
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+
 		
 	//These next 3 don't have to be public - just want the hierarchy created during the DB build
 	private static final MetadataConceptConstant broader = new MetadataConceptConstant("Broader Than", 
@@ -92,57 +81,65 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			}
 		};
 		
-	//These next two don't need to be public, just want them in the hierarchy
-//workflow status shouldn't be part of the mapset
-//	private static final MetadataConceptConstant pending = new MetadataConceptConstant("Pending", 
-//		UUID.fromString("d481125e-b8ca-537c-b688-d09d626e5ff9")) {};
-//		
-//	private static final MetadataConceptConstant reviewed = new MetadataConceptConstant("Reviewed", 
-//		UUID.fromString("45b49b0d-e2d2-5a27-a08d-8f79856b6307")) {};
-//		
-//	public final MetadataConceptConstantGroup MAPPING_STATUS = new MetadataConceptConstantGroup("mapping status type", 
-//		UUID.fromString("f4523b36-3714-5d0e-999b-edb8f21dc0fa"), 
-//		"Stores the editor selected status of the mapping set or mapping instance") 
-//		{
-//			{
-//				addChild(pending);
-//				addChild(reviewed);
-//			}
-//		};
 	public final MetadataConceptConstantGroup MAPPING_METADATA = new MetadataConceptConstantGroup("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7")) 
 	{
 		{
 			addChild(MAPPING_NAMESPACE);
 			addChild(MAPPING_QUALIFIERS);
-//			addChild(MAPPING_STATUS);
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
 		
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE = new MetadataDynamicSememeConstant("Mapping Sememe Type", 
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
-		"A Sememe used to specify how user-created mapping Sememes are structured", 
+		"A Sememe used annotate sememe definition concepts that represent a mapping definition.  Mapping sememes will contain a data column named 'target concept', "
+		+ "another named 'mapping qualifiers', and may contain additional extended columns.  This sememe carries additional information about the sememe definition.", 
 			new DynamicSememeColumnInfo[] {
-//				new DynamicSememeColumnInfo(0, MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
-//					new DynamicSememeValidatorType[] {DynamicSememeValidatorType.IS_KIND_OF},
-//					new DynamicSememeUUIDImpl[] {new DynamicSememeUUIDImpl(MAPPING_STATUS.getUUID())}, false),
 				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
-						null, false, true),
-				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
-					null, false, true),
-				new DynamicSememeColumnInfo(2, DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS.getUUID(), DynamicSememeDataType.UUID, 
-					null, false, true)},
+						null, false, true),},
 			null) 
 	{
 		{
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES);
 		}
 	};
+	
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION = new MetadataDynamicSememeConstant("Mapping String Extension", 
+			UUID.fromString("095f1fae-1fc0-5e5d-8d87-675d712522d5"),
+			"A Sememe used annotate sememe definition concepts that represent a mapping definition.  This annotation type carries pair data"
+			 + "of a concept used for a label, and a string value.", 
+				new DynamicSememeColumnInfo[] {
+					new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_NAME.getUUID(), DynamicSememeDataType.NID, 
+							null, true, true),
+					new DynamicSememeColumnInfo(1, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.STRING, 
+						null, false, true),},
+				null) 
+		{
+			{
+				setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES);
+			}
+		};
+		
+		public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_NID_EXTENSION = new MetadataDynamicSememeConstant("Mapping NID Extension", 
+				UUID.fromString("276bf07c-4aa7-5176-9853-5f4bd294f163"),
+				"A Sememe used annotate sememe definition concepts that represent a mapping definition.  This annotation type carries pair data"
+				 + "of a concept used for a label, and a nid value.", 
+					new DynamicSememeColumnInfo[] {
+						new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_NAME.getUUID(), DynamicSememeDataType.NID, 
+								null, true, true),
+						new DynamicSememeColumnInfo(1, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.NID, 
+							null, false, true),},
+					null) 
+			{
+				{
+					setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES);
+				}
+			};
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
-		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_COLUMN_MAPPING_SET_EXTENDED_FIELDS, 
-			DYNAMIC_SEMEME_COLUMN_MAPPING_ITEM_EXTENDED_FIELDS, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
+		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
+				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
 	} 
 }
