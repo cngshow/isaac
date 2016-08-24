@@ -141,7 +141,7 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 		SortedSet<ProcessHistory> allHistoryForConcept = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConceptSequences().contains(conceptSequence) && process.isActive()) {
+			if (process.getComponentToStampMap().containsKey(conceptSequence) && process.isActive()) {
 				allHistoryForConcept.addAll(getForProcess(process.getId()));
 				break;
 			}
@@ -203,7 +203,7 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 		SortedSet<ProcessHistory> allHistoryForConcept = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConceptSequences().contains(conceptSequence)) {
+			if (process.getComponentToStampMap().containsKey(conceptSequence)) {
 				allHistoryForConcept.addAll(getForProcess(process.getId()));
 			}
 		}

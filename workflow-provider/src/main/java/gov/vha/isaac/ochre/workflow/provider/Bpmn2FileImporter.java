@@ -97,8 +97,6 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 	private UUID currentDefinitionId;
 
-	private AvailableAction startNodeAction = null;
-
 	public Bpmn2FileImporter() throws Exception {
 		// Default Constructor fails if store not already set
 	}
@@ -165,7 +163,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 */
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		Set<String> roles = new HashSet<>();
-		roles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
+		roles.add(getAutomatedRole());
 
 		ProcessAssetDesc definition = descriptor.getProcess();
 
@@ -174,7 +172,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		}
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
-				definition.getNamespace(), definition.getVersion(), roles);
+				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
 
 		return definitionDetailStore.addEntry(entry);
 	}
@@ -188,18 +186,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *            the definition id
 	 */
 	public void setNodes(String bpmn2FilePath, UUID definitionId) {
-		processNodes.clear();
-		visitedNodes.clear();
-		nodeToOutgoingMap.clear();
-		nodeNameMap.clear();
-		humanNodesProcessed.clear();
-		processStartState = null;
-		startNodeAction = null;
-		processCancelAction = null;
-		processCancelState = null;
-		processConcludeAction = null;
-		processConcludeState = null;
-
+		clearImporterCollections();
+		
 		process = buildProcessFromFile(bpmn2FilePath);
 		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
 
@@ -260,55 +248,49 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		Set<AvailableAction> actions = new HashSet<>();
 		String currentState = null;
 		Set<String> roles = new HashSet<>();
-
+		Set<AvailableAction> startNodeActions = new HashSet<>();
+		String flagMetaDataStr = null;
+		Set<AvailableAction> availActions = new HashSet<>();
+		
 		for (Node node : processNodes) {
+			availActions.clear();
+			
 			if (node.getName() != null && !node.getName().isEmpty() && !(node instanceof HumanTaskNode)
 					&& !(node instanceof EndNode)) {
 				currentState = node.getName();
 			}
 
+			if (node.getMetaData() != null && node.getMetaData().get("Documentation") != null) {
+				flagMetaDataStr = (String)node.getMetaData().get("Documentation");
+			}
+			
 			if (node instanceof StartNode) {
-				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState,
-						roles, ((StartNode) node).getDefaultOutgoingConnections());
+				availActions.addAll(identifyNodeActions(node, connections, definitionId, currentState,
+						roles, ((StartNode) node).getDefaultOutgoingConnections()));
 				actions.addAll(availActions);
-				for (AvailableAction act : availActions) {
-					processStartState = act.getCurrentState();
-				}
+				startNodeActions.addAll(availActions);
 			} else if (node instanceof Split) {
-				Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId, currentState,
-						roles, ((Split) node).getDefaultOutgoingConnections());
+				availActions.addAll(identifyNodeActions(node, connections, definitionId, currentState,
+						roles, ((Split) node).getDefaultOutgoingConnections()));
 				actions.addAll(availActions);
 			} else if (node instanceof HumanTaskNode) {
 				roles = getActorFromHumanTask((HumanTaskNode) node);
 				if (!humanNodesProcessed.contains(node.getId())) {
-					Set<AvailableAction> availActions = identifyNodeActions(node, connections, definitionId,
-							currentState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections());
+					availActions.addAll(identifyNodeActions(node, connections, definitionId,
+							currentState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections()));
 					actions.addAll(availActions);
 					humanNodesProcessed.add(node.getId());
 				}
-			} else if (node instanceof EndNode) {
-				if (node.getName().equals("Canceled")) {
-					if (processCancelAction == null) {
-						// Requirement: Only one type of Cancel Action & Outcome per BPMN2
-    					for (AvailableAction act : actions) {
-    						if (act.getOutcome().equals(node.getName())) {
-    							processCancelAction = act.getAction();
-    							processCancelState = node.getName();
-    							break;
-    						}
-    					}
-					}
-				} else {
-					for (AvailableAction act : actions) {
-						if (act.getOutcome().equals(node.getName())) {
-							processConcludeState = node.getName();
-							processConcludeAction = act.getAction();
-							break;
-						}
-					}
-				}
+			}
+
+			if (flagMetaDataStr != null) {
+				processNodeFlags(availActions, actions, node, flagMetaDataStr);
+				flagMetaDataStr = null;
 			}
 		}
+		
+		processStartNodeStates(startNodeActions);
+		// R3: If Multiple, need to look at nodes further
 
 		return actions;
 	}
@@ -354,23 +336,17 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 
 			if (roles.size() == 0 && node.getId() == process.getStartNodes().iterator().next().getId()) {
-				roles.add(SYSTEM_AUTOMATED);
+				roles.add(getAutomatedRole());
 			}
 
 			// Verify that all requirements met
 			if (action != null && outcome != null && state != null && roles.size() > 0) {
 
+				
 				// Generate a new AvailableAction for each role
 				for (String role : roles) {
 					AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
 					availActions.add(newAction);
-					if (node instanceof StartNode) {
-						if (startNodeAction != null) {
-							throw new Exception("Only single Start Node Action permitted");
-						} else {
-							startNodeAction = newAction;
-						}
-					}
 				}
 			}
 		}
@@ -388,7 +364,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 */
 	private ProcessDescriptor processWorkflowDefinition(String xmlContents) {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-		kbuilder.add(new ByteArrayResource(xmlContents.getBytes()), ResourceType.BPMN2);
+		ByteArrayResource resr = new ByteArrayResource(xmlContents.getBytes());
+		kbuilder.add(resr, ResourceType.BPMN2);
 		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
 
 		Process process = pckg.getProcesses().iterator().next();
@@ -654,8 +631,67 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		return currentDefinitionId;
 	}
 
-	public AvailableAction getStartNodeAction() {
-		return startNodeAction;
+	private String getDescription(ProcessDescriptor descriptor) {
+		ProcessAssetDesc a = descriptor.getProcess();
+		Map<String, Collection<String>> b = a.getAssociatedEntities();
+		Map<String, String> c = a.getForms();
+		Map<String, String> d = a.getProcessVariables();
+		String s = a.getId();
+		
+		return "DESCRIPTION";
+	}
+	
+	private void processStartNodeStates(Set<AvailableAction> actions) throws Exception {
+		if (actions.size() == 0) {
+			throw new Exception("No Start Actions Found");
+		} else if (actions.size() == 1) {
+			// If single StartState... add SINGLE_CASE
+			getStartWorkflowTypeMap().put(StartWorkflowType.SINGLE_CASE, actions.iterator().next());
+		} else {
+			// For R3 where may have multiple Start Actions
+		}
+	}
+
+	private void processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
+		if (availActions.isEmpty()) {
+			for (AvailableAction action : allActions) {
+				if (node.getName().equalsIgnoreCase(action.getOutcome())) {
+					availActions.add(action);
+				}
+			}
+		}
+		
+		if (availActions.isEmpty()) {
+			throw new Exception("Have flag to add but no actions to associate with it");
+		}
+
+		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
+			if (!getEndNodeTypeMap().containsKey(EndWorkflowType.CANCELED)) {
+				getEndNodeTypeMap().put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
+			}
+			getEndNodeTypeMap().get(EndWorkflowType.CANCELED).addAll(availActions);
+		} else if (flag.equalsIgnoreCase(EndWorkflowType.CONCLUDED.toString())) {
+			if (!getEndNodeTypeMap().containsKey(EndWorkflowType.CONCLUDED)) {
+				getEndNodeTypeMap().put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
+			}
+			getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
+		} else if (flag.equalsIgnoreCase(getEditingAction())) {
+			for (AvailableAction action : availActions) {
+				getEditStates().add(action.getCurrentState());
+			}
+		} else {
+			throw new Exception("Have unexpected flag in processNodeFlags(): " + flag);
+		}
+	}
+	
+	private void clearImporterCollections() {
+		processNodes.clear();
+		visitedNodes.clear();
+		nodeToOutgoingMap.clear();
+		nodeNameMap.clear();
+		humanNodesProcessed.clear();
+		
+		clearDefinitionCollections();
 	}
 
 }

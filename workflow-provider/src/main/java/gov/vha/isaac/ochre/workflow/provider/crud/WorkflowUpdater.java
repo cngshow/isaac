@@ -72,11 +72,12 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addStampToExistingProcess(UUID processId, int stamp) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
+		if (details.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
 		}
 	
-		details.getStampSequences().add(stamp);
+		// TODO:
+		//details.getComponentToStampMap().add(stamp);
 		processDetailStore.updateEntry(processId, details);
 	}
 
@@ -92,11 +93,12 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addConceptsToExistingProcess(UUID processId, Set<Integer> stampSequence) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
+		if (details.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
 		}
 	
-		details.getConceptSequences().addAll(stampSequence);
+	// TODO:
+		//details.getComponentSequences().addAll(stampSequence);
 		processDetailStore.updateEntry(processId, details);
 	}
 
@@ -113,11 +115,12 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addConceptsToExistingProcess(UUID processId, List<Integer> stampSequence) throws Exception {
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		
-		if (details.getProcessStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
+		if (details.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
 		}
 	
-		details.getStampSequences().addAll(stampSequence);
+		// TODO:
+		//details.getComponentToStampMap().addAll(stampSequence);
 		processDetailStore.updateEntry(processId, details);
 	}
 
@@ -150,17 +153,36 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			logger.info("User does not have permission to advance workflow for this process: " + processId
 					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcome());
 		} else {
-			String outcome = null;
-
+			AvailableAction actionToProcess = null;
+			
 			// Advance Workflow
     		for (AvailableAction action : userPermissableActions) {
-    			if (action.getAction().equals(actionRequested)) {
-    				outcome = action.getOutcome();
+    			if (action.getCurrentState().equals(processLatest.getOutcome()) && action.getAction().equals(actionRequested)) {
+    				actionToProcess = action;
+    				break;
     			}
     		}
     		
-    		if (outcome != null) {
-    			ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), actionRequested, outcome, comment);
+    		if (actionToProcess != null) {
+    			ProcessDetail process = processDetailStore.getEntry(processId);
+    			if (process.getStatus().equals(ProcessStatus.DEFINED)) {
+        			WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+        			initConcluder.launchWorkflowProcess(processId);
+    			} else if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess) || 
+    					   getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
+    				WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+    				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
+            			initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment, EndWorkflowType.CANCELED);
+    				} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
+            			initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment, EndWorkflowType.CONCLUDED);
+    				}
+				}
+    			
+    			if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
+    				comment = getCanceledComment();
+    			}
+
+    			ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(), actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(), comment);
     			return processHistoryStore.addEntry(entry);
     		}
 		}

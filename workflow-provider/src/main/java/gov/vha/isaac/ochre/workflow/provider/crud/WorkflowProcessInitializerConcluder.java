@@ -20,22 +20,21 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
  * Utility to start, complete, or conclude a workflow process
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowProcessInitializerConcluder}.
+ * {@link AbstractWorkflowUtilities}
+ * {@link WorkflowProcessInitializerConcluder}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -66,7 +65,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param concepts
+	 * @param components
 	 *            the concepts
 	 * @param stampSequences
 	 *            the stamp sequence
@@ -77,22 +76,27 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, Set<Integer> concepts, List<Integer> stampSequences, int user,
-			SubjectMatter subjectMatter) throws Exception {
-		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
-
-		for (Integer conSeq : concepts) {
-			if (accessor.isConceptInActiveWorkflow(conSeq)) {
-				throw new Exception("Concept to add in workflow exists in active workflow");
-			}
-		}
-		ArrayList<Integer> stampSequencesArrayList = new ArrayList<>();
-		stampSequencesArrayList.addAll(stampSequences);
-		StorableWorkflowContents details = new ProcessDetail(definitionId, concepts, stampSequencesArrayList, user, new Date().getTime(),
-				subjectMatter, ProcessStatus.DEFINED);
-		UUID processId = processDetailStore.addEntry(details);
-
-		return processId;
+	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description) throws Exception {
+		return createWorkflowProcess(definitionId, user, name, description, StartWorkflowType.SINGLE_CASE);
+	}
+	
+	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description, StartWorkflowType type) throws Exception {
+    	if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
+    		throw new Exception("Name and Description must be filled out when creating a process");
+    	}
+    
+    	// Create Process Details with "DEFINED"
+    	StorableWorkflowContents details = new ProcessDetail(definitionId, user, new Date().getTime(),
+    			ProcessStatus.DEFINED, name, description);
+    	UUID processId = processDetailStore.addEntry(details);
+    
+    	// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
+    	AvailableAction startAction = getStartState(type);
+    	ProcessHistory advanceEntry = new ProcessHistory(processId, user, new Date().getTime(),
+    			startAction.getCurrentState(), getAutomatedRole(), startAction.getOutcome(), "");
+    	processHistoryStore.addEntry(advanceEntry);
+    
+    	return processId;
 	}
 
 	/**
@@ -102,21 +106,19 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *            the process id
 	 * @throws Exception
 	 */
-	public void launchWorkflowProcess(UUID processId) throws Exception {
+	protected void launchWorkflowProcess(UUID processId) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
-		} else if (entry.getProcessStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot launch workflow that has a process status of: " + entry.getProcessStatus());
+		} else if (entry.getComponentToStampMap().isEmpty()) {
+			throw new Exception("Workflow can only be launched when the workflow contains components to work on");
 		}
 
-		entry.setProcessStatus(ProcessStatus.LAUNCHED);
+    	// Update Process Details with "LAUNCHED"
+		entry.setStatus(ProcessStatus.LAUNCHED);
+		entry.setTimeLaunched(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);
-
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(), AbstractWorkflowUtilities.processStartState,
-				SYSTEM_AUTOMATED, "Ready for Edit", "");
-		processHistoryStore.addEntry(advanceEntry);
 	}
 
 	/**
@@ -124,75 +126,96 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *
 	 * @param processId
 	 *            the process id
+	 * @param actionToProcess 
 	 * @param comment
 	 *            the comment
 	 * @throws Exception
 	 */
-	public void cancelWorkflowProcess(UUID processId, int workflowUser, String comment) throws Exception {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		WorkflowStatusAccessor statusAccessor = new WorkflowStatusAccessor(store);
-		ProcessHistory processLatest = null;
-		
-		if (statusAccessor.getProcessDetail(processId).getProcessStatus().equals(ProcessStatus.LAUNCHED)) {
-			WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
-			processLatest = historyAccessor.getLatestForProcess(processId);
-		}
-		
-		if (entry == null) {
-			throw new Exception("Cannot cancel workflow that hasn't been defined first");
-		} else if (entry.getProcessStatus() == ProcessStatus.CANCELED || entry.getProcessStatus() == ProcessStatus.CONCLUDED) {
-			throw new Exception("Cannot cancel workflow that has a process status of: " + entry.getProcessStatus());
-		}
-
-		entry.setProcessStatus(ProcessStatus.CANCELED);
-		entry.setTimeConcluded(new Date().getTime());
-		processDetailStore.updateEntry(processId, entry);
-
-		// Only add Cancel state in Workflow if process has already been launched
-		if (processLatest != null) {
-			ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), AbstractWorkflowUtilities.getProcessCancelAction(),
-    				AbstractWorkflowUtilities.getProcessCancelState(), "");
-    		processHistoryStore.addEntry(advanceEntry);
-		}
-
-		
-		// TODO: Handle cancellation store and handle reverting automatically
-	}
-
-	/**
-	 * Conclude workflow.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @throws Exception
-	 */
-	public void concludeWorkflowProcess(UUID processId, int workflowUser) throws Exception {
+	protected void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
-			throw new Exception("Cannot conclude workflow that hasn't been defined first");
-		} else if (entry.getProcessStatus() != ProcessStatus.LAUNCHED) {
-			throw new Exception("Cannot conclude workflow that has a process status of: " + entry.getProcessStatus());
-		} else {
-			WorkflowHistoryAccessor accessor = new WorkflowHistoryAccessor();
-			ProcessHistory hx = accessor.getLatestForProcess(processId);
-			
-			if (!processConcludeState.equals(hx.getOutcome())) {
-				throw new Exception(
-						"Cannot conclude workflow that has a latest history with outcome: " + hx.getOutcome());
-			}
+			throw new Exception("Cannot cancel workflow that hasn't been defined and launched first");
+		} else if (entry.getStatus() != ProcessStatus.LAUNCHED) {
+			throw new Exception("Cannot cancel workflow that has a process status of: " + entry.getStatus());
 		}
 
-		entry.setProcessStatus(ProcessStatus.CONCLUDED);
-		entry.setTimeConcluded(new Date().getTime());
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			entry.setStatus(ProcessStatus.CANCELED);
+		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
+			entry.setStatus(ProcessStatus.CONCLUDED);
+		}
+		entry.setTimeCanceledOrConcluded(new Date().getTime());
 		processDetailStore.updateEntry(processId, entry);
-		
-		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
-		ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
 
-		ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), AbstractWorkflowUtilities.getProcessConcludeAction(),
-				AbstractWorkflowUtilities.getProcessConcludeState(), "");
+		// Only add Cancel state in Workflow if process has already been
+		// launched
+		ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
+				actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(), comment);
 		processHistoryStore.addEntry(advanceEntry);
 
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			// TODO: Handle cancelation store and handle reverting automatically
+		}
+	}
+
+	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
+		// Only can do if is in READY_TO_EDIT state
+		
+		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
+		if (accessor.isComponentInActiveWorkflow(compSeq)) {
+			throw new Exception("Component already exists in active workflow: " + compSeq);
+		}
+
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot add components to a workflow that hasn't been defined yet");
+		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot add components to a workflow after it has already been lauched");
+		}
+
+		if (entry.getComponentToStampMap().containsKey(compSeq)) {
+			entry.getComponentToStampMap().get(compSeq).add(stampSeq);
+		} else {
+			ArrayList<Integer> list = new ArrayList<>();
+			list.add(stampSeq);
+			entry.getComponentToStampMap().put(compSeq, list);
+		}
+
+		processDetailStore.updateEntry(processId, entry);
+
+	}
+
+	public void removeComponentFromWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
+		// Only can do if is in READY_TO_EDIT state
+
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot remove components from a workflow that hasn't been defined yet");
+		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot remove components from a workflow after it has already been lauched");
+		} else if (!entry.getComponentToStampMap().containsKey(compSeq)) {
+			throw new Exception("Workflow does not contain component that is attempted to be removed");
+		}
+
+		entry.getComponentToStampMap().remove(compSeq);
+
+		processDetailStore.updateEntry(processId, entry);
+
+		// TODO: Handle reverting automatically
+	}
+
+	private AvailableAction getStartState(StartWorkflowType type) throws Exception {
+		switch (type) {
+		
+		case SINGLE_CASE: 
+			 return getStartWorkflowTypeMap().get(type); 
+			 
+		default:
+				 throw new Exception("Unable to discren the Workflow Start State based on the StartWorkflowType: " + type);
+		 
+		}
 	}
 }

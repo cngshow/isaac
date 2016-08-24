@@ -28,6 +28,7 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
@@ -68,11 +69,11 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 *            the concept sequence
 	 * @return the processes for concept
 	 */
-	public SortedSet<ProcessDetail> getProcessesForConcept(int conceptSeq) {
+	public SortedSet<ProcessDetail> getProcessesForComponent(int componentSeq) {
 		SortedSet<ProcessDetail> allProcessesByConcept = new TreeSet<>(new ProcessDetail.ProcessDetailComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getConceptSequences().contains(conceptSeq)) {
+			if (process.getComponentToStampMap().containsKey(componentSeq)) {
 				allProcessesByConcept.add(process);
 			}
 		}
@@ -122,25 +123,6 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Checks if is concept in active workflow.
-	 * @param conceptSeq
-	 *            the concept sequence
-	 *
-	 * @return true, if is concept in active workflow
-	 */
-	public boolean isConceptInActiveWorkflow(int conceptSeq) {
-		// Assumes component is a concept
-		for (ProcessDetail proc : getProcessesForConcept(conceptSeq)) {
-			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
-				proc.getProcessStatus() == ProcessStatus.DEFINED) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
 	 * Checks if is component in active workflow.
 	 *
 	 * @param componentSequence
@@ -148,10 +130,29 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 * @return true, if is component in active workflow
 	 * @throws Exception 
 	 */
-	public boolean isComponentInActiveWorkflow(OchreExternalizableObjectType type, int componentSequence) {
-		if (type == OchreExternalizableObjectType.CONCEPT) {
+	public boolean isComponentInActiveWorkflow(int componentSequence) throws Exception {
+		if (componentSequence < 0) {
+			throw new Exception("Expecting Component Sequences, not Component Nids");
+		}
+		
+		for (ProcessDetail proc : getProcessesForComponent(componentSequence)) {
+			if (proc.getStatus() == ProcessStatus.LAUNCHED || 
+				proc.getStatus() == ProcessStatus.DEFINED) {
+				return true;
+			}
+		}
+		
+		return false;
+	
+		/*
+		int componentNid = Get.identifierService().getConceptNid(componentSequence);
+		ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(componentNid);
+		
+
+
+		if (type == ObjectChronologyType.CONCEPT) {
 			return isConceptInActiveWorkflow(componentSequence);
-		} else if (type == OchreExternalizableObjectType.SEMEME) {
+		} else if (type == ObjectChronologyType.SEMEME) {
 			//TODO this isn't safe - referenced component may not be a concept.
 			//Also, Dan wants to know, are we only putting concepts into workflow?  Or do we put sememes into workflow??
 			//If only concepts go into workflow, how do we know what component of the concept is in workflow??
@@ -160,6 +161,7 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 		} else {
 			throw new RuntimeException("Couldn't determine component type from componentId '" + componentSequence + "'");
 		}
+		*/
 	}
 
 
@@ -172,9 +174,9 @@ public class WorkflowStatusAccessor extends AbstractWorkflowUtilities {
 	 */
 	public ProcessDetail getActiveProcessForConcept(int conceptSequence) {
 
-		for (ProcessDetail proc : getProcessesForConcept(conceptSequence)) {
-			if (proc.getProcessStatus() == ProcessStatus.LAUNCHED || 
-				proc.getProcessStatus() == ProcessStatus.DEFINED) {
+		for (ProcessDetail proc : getProcessesForComponent(conceptSequence)) {
+			if (proc.getStatus() == ProcessStatus.LAUNCHED || 
+				proc.getStatus() == ProcessStatus.DEFINED) {
 				return proc;
 			}
 		}

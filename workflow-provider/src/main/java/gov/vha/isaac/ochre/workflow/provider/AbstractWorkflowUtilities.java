@@ -18,7 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
@@ -30,6 +32,7 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
+import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
@@ -46,16 +49,18 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowUtilities {
-	public static final String SYSTEM_AUTOMATED = "AUTOMATED_SYSTEM_ACTION";
-
-	protected static String processStartState;
-	protected static String processCancelState;
-	protected static String processCancelAction;
-	protected static String processConcludeState;
-	protected static String processConcludeAction;
-
+	private static final String AUTOMATED_ROLE = "Automated By System";
+	private static final String EDITING_ACTION = "EDITING";
+	private static Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
+	private static Map<StartWorkflowType, AvailableAction> startWorkflowTypeMap = new HashMap<>();
+	private static Set<String> editStates = new HashSet<>();
+	
+	public enum EndWorkflowType { CANCELED, CONCLUDED };
+	public enum StartWorkflowType { SINGLE_CASE };
+	
 	/** The Constant logger. */
 	protected static final Logger logger = LogManager.getLogger();
+	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 
 	/** The user workflow permission store. */
 	protected static UserPermissionContentStore userPermissionStore;
@@ -109,24 +114,34 @@ public abstract class AbstractWorkflowUtilities {
 		return processDetailStore;
 	}
 	
-	public static String getProcessStartState() {
-		return processStartState;
+	protected String getCanceledComment() {
+		return CANCELED_HISTORY_COMMENT;
+	}
+
+	public static String getEditingAction() {
+		return EDITING_ACTION;
+	}
+
+	public static String getAutomatedRole() {
+		return AUTOMATED_ROLE;
+	}
+
+	public static Map<EndWorkflowType, Set<AvailableAction>> getEndNodeTypeMap() {
+		return endNodeTypeMap;
+	}
+
+	public static Map<StartWorkflowType, AvailableAction> getStartWorkflowTypeMap() {
+		return startWorkflowTypeMap;
 	}
 	
-	public static String getProcessCancelAction() {
-		return processCancelAction;
+	public static Set<String> getEditStates() {
+		return editStates;
 	}
-
-	public static String getProcessCancelState() {
-		return processCancelState;
-	}
-
-	public static String getProcessConcludeAction() {
-		return processConcludeAction;
-	}
-
-	public static String getProcessConcludeState() {
-		return processConcludeState;
+	
+	public void clearDefinitionCollections() {
+		endNodeTypeMap.clear();
+		startWorkflowTypeMap.clear();
+		editStates.clear();
 	}
 	
 	public static void close() {
