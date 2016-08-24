@@ -31,28 +31,19 @@ package gov.vha.isaac.ochre.api.metacontent.workflow;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
  */
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.UUID;
 
 /**
  * The Interface StorableWorkflowContents.
  */
 public abstract class StorableWorkflowContents {
-	/**
-	 * The Enum SubjectMatter.
-	 */
-	public enum SubjectMatter {
-	
-		/** The mapping. */
-		MAPPING,
-		/** The concept. */
-		CONCEPT
-	}
+    public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("dd/MM/yy");
 
 	/**
 	 * The Enum DefiningStatus.
 	 */
 	public enum ProcessStatus {
-	
 		DEFINED, LAUNCHED, CANCELED, CONCLUDED
 	}
 

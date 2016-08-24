@@ -25,6 +25,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -219,8 +220,11 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
+	    Date date=new Date(timeAdvanced);
+	    String timeAdvancedString = workflowDateFormatrer.format(date);
+
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + workflowUser
-				+ "\n\t\tTime Advanced: " + timeAdvanced + "\n\t\tState: " + state + "\n\t\tAction: " + action
+				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tState: " + state + "\n\t\tAction: " + action
 				+ "\n\t\tOutcome: " + outcome + "\n\t\tComment: " + comment;
 	}
 
