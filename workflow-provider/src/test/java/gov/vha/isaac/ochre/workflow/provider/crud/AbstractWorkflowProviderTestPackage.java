@@ -6,8 +6,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,14 +25,15 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
  * 
- * {@link WorkflowInitializerConcluderTest}. {@link WorkflowStatusAccessorTest}.
+ * {@link WorkflowProcessInitializerConcluderTest}. {@link WorkflowStatusAccessorTest}.
  * {@link WorkflowHistoryAccessorTest}.
  * {@link WorkflowActionsPermissionsAccessorTest}.
  *
@@ -66,13 +67,11 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static int mainUserId = 99;
 	protected static int secondaryUserId = 999;
 
-	protected static List<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
+	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
 
-	protected static Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56, 57));
+	protected static Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56));
 
 	protected static UUID mainDefinitionId;
-
-	protected static UUID mainProcessId;
 
 	protected static UUID secondaryProcessId;
 
@@ -80,23 +79,23 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static UUID secondHistoryEntryId;
 
-	protected static final long launchHistoryTimestamp = new Date().getTime();
-	protected static String launchState;
-	protected static String launchAction;
-	protected static String launchOutcome;
-	protected static final String launchComment = "Automated Launch Advancement";
+	protected static final long TEST_START_TIME = new Date().getTime();
+	protected static String createState;
+	protected static String createAction;
+	protected static String createOutcome;
 
-	protected static final long firstHistoryTimestamp = launchHistoryTimestamp + 10000;
-	protected static final String firstState = "Ready for Edit";
-	protected static final String firstAction = "Edit";
-	protected static final String firstOutcome = "Ready for Review";
-	protected static final String firstComment = "Comment #1";
+	protected static final String LAUNCH_STATE = "Ready for Edit";
+	protected static final String LAUNCH_ACTION = "Edit";
+	protected static final String LAUNCH_OUTCOME = "Ready for Review";
+	protected static final String LAUNCH_COMMENT = "Launch Comment";
 
-	protected static long secondHistoryTimestamp = launchHistoryTimestamp + 20000;
-	protected static final String secondState = "Ready for Review";
-	protected static final String secondAction = "Review";
-	protected static final String secondOutcome = "Ready for Approve";
-	protected static final String secondComment = "Comment #2";
+	protected static final String CONCLUDED_WORKFLOW_COMMENT = "Concluded Workflow";
+	protected static final String CANCELED_WORKFLOW_COMMENT = "Canceled Workflow";
+
+	protected static final String SEND_TO_APPROVAL_STATE = "Ready for Review";
+	protected static final String SEND_TO_APPROVAL_ACTION = "Review";
+	protected static final String SEND_TO_APPROVAL_OUTCOME = "Ready for Approve";
+	protected static final String SEND_TO_APPROVAL_COMMENT = "Sending for Approval";
 	protected static UUID secondaryHistoryEntryId;
 
 	protected static File DATASTORE_PATH = new File(
@@ -111,13 +110,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		userPermissionStore = new UserPermissionContentStore(store);
 
-		// if (firstTimeCreatingStore) {
 		if (definitionDetailStore.getAllEntries().size() == 0) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			startNodeAction = importer.getStartNodeAction();
-			launchState = startNodeAction.getCurrentState();
-			launchAction = startNodeAction.getAction();
-			launchOutcome = startNodeAction.getOutcome();
+			startNodeAction = AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE);
+			createState = startNodeAction.getCurrentState();
+			createAction = startNodeAction.getAction();
+			createOutcome = startNodeAction.getOutcome();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
 		initConcluder = new WorkflowProcessInitializerConcluder(store);
@@ -151,13 +149,28 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		AbstractWorkflowUtilities.close();
 	}
 
-	protected void launchWorkflow(UUID processId) {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		entry.setProcessStatus(ProcessStatus.LAUNCHED);
-		processDetailStore.updateEntry(processId, entry);
+	protected UUID createWorkflowProcess(UUID requestedDefinitionId) {
+		// Create new process
+		try {
+			return initConcluder.createWorkflowProcess(requestedDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+			return null;
+		}
+	}
 
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), launchHistoryTimestamp,
-				launchState, launchAction, launchOutcome, launchComment);
+	protected void executeLaunchAdvancement(UUID processId, boolean updateProcessDetails) {
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		
+		if (updateProcessDetails) {
+    		entry.setStatus(ProcessStatus.LAUNCHED);
+    		entry.setTimeLaunched(new Date().getTime());
+    		processDetailStore.updateEntry(processId, entry);
+		}
+		
+		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(),
+		LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
 		processHistoryStore.addEntry(advanceEntry);
 	}
 
@@ -166,27 +179,24 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		roles.add("Editor");
 		roles.add("Reviewer");
 		roles.add("Approver");
-		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles);
+		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles, "Description of BPMN2 ID-X");
 		return definitionDetailStore.addEntry(createdEntry);
 
 	}
 
-	protected void createMainWorkflowProcess(UUID requestedDefinitionId) {
-		// Create new process
-		try {
-			mainProcessId = initConcluder.createWorkflowProcess(requestedDefinitionId, conceptsForTesting,
-					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
+	protected void addComponentsToProcess(UUID processId) {
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		for (Integer con : conceptsForTesting) {
+			entry.getComponentToStampMap().put(con, stampSequenceForTesting);
 		}
+		
+		processDetailStore.updateEntry(processId, entry);
 	}
 
 	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId, Set<Integer> concepts) {
 		// Create new process
 		try {
-			return initConcluder.createWorkflowProcess(requestedDefinitionId, concepts,
-					stampSequenceForTesting, mainUserId, SubjectMatter.CONCEPT);
+			return initConcluder.createWorkflowProcess(requestedDefinitionId, mainUserId, "Secondary Process Name", "Secondary Process Description", StartWorkflowType.SINGLE_CASE);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();
@@ -194,24 +204,108 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected UUID executeInitialAdvancement(UUID requestedProcessId) {
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, firstHistoryTimestamp, firstState,
-				firstAction, firstOutcome, firstComment);
+	protected UUID executeSendForApprovalAdvancement(UUID requestedProcessId) {
+		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, new Date().getTime(), SEND_TO_APPROVAL_STATE,
+				SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
 		return processHistoryStore.addEntry(entry);
 	}
 
-	protected UUID executeSecondAdvancement(UUID requestedProcessId) {
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, secondHistoryTimestamp, secondState,
-				secondAction, secondOutcome, secondComment);
-		return processHistoryStore.addEntry(entry);
-	}
-
-	protected void concludeWorkflow(UUID processId, int workflowUser) {
+	protected void concludeWorkflow(UUID processId) {
 		try {
-			initConcluder.concludeWorkflowProcess(processId, workflowUser);
+			initConcluder.finishWorkflowProcess(processId, 
+					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(), 
+					mainUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail();
 		}
+	}
+
+	protected void cancelWorkflow(UUID processId) {
+		try {
+			initConcluder.finishWorkflowProcess(processId, 
+					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next(), 
+					mainUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
+	}
+
+	protected void assertHistoryForProcess(SortedSet<ProcessHistory> allProcessHistory, UUID processId, int numberOfEntries) {
+		Assert.assertEquals(numberOfEntries, allProcessHistory.size());
+
+		int counter = 0;
+		for (ProcessHistory entry : allProcessHistory) {
+			if (counter == 0) {
+				assertCreationHistory(entry, processId);
+			} else if (counter == 1) {
+				assertLaunchHistory(entry, processId);
+			} else if (counter == 2) {
+				assertSendToApproverHistory(entry, processId);
+			}
+
+			counter++;
+			
+			if (counter > numberOfEntries) {
+				break;
+		}
+		}
+	}
+
+	private void assertSendToApproverHistory(ProcessHistory entry, UUID processId) {
+		Assert.assertEquals(processId, entry.getProcessId());
+		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+		Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getState());
+		Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
+		Assert.assertEquals(SEND_TO_APPROVAL_OUTCOME, entry.getOutcome());
+		Assert.assertEquals(SEND_TO_APPROVAL_COMMENT, entry.getComment());
+	}
+
+	protected void assertLaunchHistory(ProcessHistory entry, UUID processId) {
+		Assert.assertEquals(processId, entry.getProcessId());
+		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+		Assert.assertEquals(LAUNCH_STATE, entry.getState());
+		Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
+		Assert.assertEquals(LAUNCH_OUTCOME, entry.getOutcome());
+		Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
+	}
+
+	protected void assertCreationHistory(ProcessHistory entry, UUID processId) {
+		Assert.assertEquals(processId, entry.getProcessId());
+		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+		Assert.assertEquals(createState, entry.getState());
+		Assert.assertEquals(createAction, entry.getAction());
+		Assert.assertEquals(createOutcome, entry.getOutcome());
+		Assert.assertEquals("", entry.getComment());
+	}
+	
+	protected void assertCancelHistory(ProcessHistory entry, UUID processId) {
+		Assert.assertEquals(processId, entry.getProcessId());
+		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+		
+		AvailableAction cancelAction = 
+				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
+		Assert.assertEquals(cancelAction.getCurrentState(), entry.getState());
+		Assert.assertEquals(cancelAction.getAction(), entry.getAction());
+		Assert.assertEquals(cancelAction.getOutcome(), entry.getOutcome());
+		Assert.assertEquals(CANCELED_WORKFLOW_COMMENT, entry.getComment());
+	}
+
+	protected void assertConcludeHistory(ProcessHistory entry, UUID processId) {
+		Assert.assertEquals(processId, entry.getProcessId());
+		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+		
+		AvailableAction concludeAction = 
+				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+		Assert.assertEquals(concludeAction.getCurrentState(), entry.getState());
+		Assert.assertEquals(concludeAction.getAction(), entry.getAction());
+		Assert.assertEquals(concludeAction.getOutcome(), entry.getOutcome());
+		Assert.assertEquals(CONCLUDED_WORKFLOW_COMMENT, entry.getComment());
 	}
 }

@@ -20,13 +20,16 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -63,7 +66,7 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	 *
 	 * @return the active by process
 	 */
-	public Map<UUID, SortedSet<ProcessHistory>> getActiveByProcess() {
+	public Map<UUID, SortedSet<ProcessHistory>> getActiveHistoryByProcess() {
 		Map<UUID, SortedSet<ProcessHistory>> allHistoryByProcess = new HashMap<>();
 		Map<UUID, Boolean> processActivationMap = new HashMap<>();
 
@@ -94,40 +97,30 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Gets the active by definition.
+	 * For only Active Processes, identify the latest History by definition.
 	 *
 	 * @return the active by definition
 	 */
-	public Map<UUID, SortedSet<ProcessHistory>> getActiveByDefinition() {
-		Map<UUID, SortedSet<ProcessHistory>> allHistoryByDefinition = new HashMap<>();
-		Map<UUID, Boolean> processActivationMap = new HashMap<>();
-		Map<UUID, UUID> processDefinitionMap = new HashMap<>();
-
-		for (ProcessHistory hx : processHistoryStore.getAllEntries()) {
-			if (!processActivationMap.containsKey(hx.getProcessId())) {
-				// First time seeing processId so setup
-				ProcessDetail procDetails = processDetailStore.getEntry(hx.getProcessId());
-				processDefinitionMap.put(procDetails.getId(), procDetails.getDefinitionId());
-				
-				if (!procDetails.isActive()) {
-					processActivationMap.put(procDetails.getId(), false);
-				} else {
-					processActivationMap.put(procDetails.getId(), true);
-
-					// Active process. But since first time seeing it, setup the
-					// history set
-					SortedSet<ProcessHistory> processHistory = new TreeSet<>(
-							new ProcessHistory.ProcessHistoryComparator());
-					allHistoryByDefinition.put(procDetails.getDefinitionId(), processHistory);
-				}
-			}
-
-			if (processActivationMap.get(hx.getProcessId())) {
-				allHistoryByDefinition.get(processDefinitionMap.get(hx.getProcessId())).add(hx);
+	public Map<UUID, Set<ProcessHistory>> getActiveLatestHistoryByDefinition() {
+		Map<UUID, Set<ProcessHistory>> latestActiveHistoryByDefinition = new HashMap<>();
+		
+		// Setup Def Keys
+		for (DefinitionDetail def : definitionDetailStore.getAllEntries()) {
+			SortedSet<ProcessHistory> activeLatest = new TreeSet<>(
+					new ProcessHistory.ProcessHistoryComparator());
+			
+			latestActiveHistoryByDefinition.put(def.getId(), activeLatest);
+		}
+		
+		// Find and populate latest per active process
+		for (ProcessDetail process : processDetailStore.getAllEntries()) {
+			if (process.isActive()) {
+				ProcessHistory latestHx = getLatestForProcess(process.getId());
+				latestActiveHistoryByDefinition.get(process.getDefinitionId()).add(latestHx);
 			}
 		}
-
-		return allHistoryByDefinition;
+		
+		return latestActiveHistoryByDefinition;
 	}
 
 	/**
@@ -137,12 +130,14 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	 *            the concept sequence
 	 * @return the active for concept
 	 */
-	public SortedSet<ProcessHistory> getActiveForConcept(int conceptSequence) {
+	public SortedSet<ProcessHistory> getActiveHistoryForConcept(int conceptSequence) {
 		SortedSet<ProcessHistory> allHistoryForConcept = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
 
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
 			if (process.getComponentToStampMap().containsKey(conceptSequence) && process.isActive()) {
-				allHistoryForConcept.addAll(getForProcess(process.getId()));
+				if (process.getStatus() != ProcessStatus.CANCELED && process.getStatus() != ProcessStatus.CONCLUDED) {
+					allHistoryForConcept.addAll(getForProcess(process.getId()));
+				}
 				break;
 			}
 		}
@@ -154,8 +149,9 @@ public class WorkflowHistoryAccessor extends AbstractWorkflowUtilities {
 	 * Gets the by process map.
 	 *
 	 * @return the by process map
+	 * 
 	 */
-	public Map<UUID, SortedSet<ProcessHistory>> getByProcessMap() {
+	public Map<UUID, SortedSet<ProcessHistory>> getAllHistoryByProcessMap() {
 		Map<UUID, SortedSet<ProcessHistory>> allHistoryByProcess = new HashMap<>();
 
 		for (ProcessHistory hx : processHistoryStore.getAllEntries()) {

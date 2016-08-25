@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -58,70 +59,6 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 */
 	public WorkflowUpdater(MVStoreMetaContentProvider store) {
 		super(store);
-	}
-
-	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addStampToExistingProcess(UUID processId, int stamp) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
-		}
-	
-		// TODO:
-		//details.getComponentToStampMap().add(stamp);
-		processDetailStore.updateEntry(processId, details);
-	}
-
-	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addConceptsToExistingProcess(UUID processId, Set<Integer> stampSequence) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
-		}
-	
-	// TODO:
-		//details.getComponentSequences().addAll(stampSequence);
-		processDetailStore.updateEntry(processId, details);
-	}
-
-
-	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addConceptsToExistingProcess(UUID processId, List<Integer> stampSequence) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getStatus());	
-		}
-	
-		// TODO:
-		//details.getComponentToStampMap().addAll(stampSequence);
-		processDetailStore.updateEntry(processId, details);
 	}
 
 	/**
@@ -207,36 +144,53 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		return userPermissionStore.addEntry(new UserPermission(definitionId, user, role));
 	}
 
-	/**
-	 * Adds the new user role.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param user
-	 *            the user
-	 * @param domain
-	 *            the domain
-	 * @param role
-	 *            the role
-	 * @return the uuid
-	 * @throws Exception 
-	 */
-	public void removeUserRole(UUID definitionId, int user, String role) throws Exception {
-		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
-
-		Set<UserPermission> allUserPermissions = advancementAccessor.getAllPermissionsForUser(definitionId, user);
-
-		boolean roleFound = false;
-		// Remove all existing permissions for definition/user/domain triplet
-		for (UserPermission permission : allUserPermissions) {
-			if (permission.getDefinitionId().equals(definitionId) && permission.getUser() == user && permission.getRole().equals(role)) {
-				roleFound = true;
-				userPermissionStore.removeEntry(permission.getId());
-			}
-		}
+	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
+		// Only can do if is in READY_TO_EDIT state
 		
-		if (!roleFound) {
-			throw new Exception("User: " + user + " never had role: " + role);
+		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
+		if (accessor.isComponentInActiveWorkflow(compSeq)) {
+			throw new Exception("Component already exists in active workflow: " + compSeq);
 		}
+
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot add components to a workflow that hasn't been defined yet");
+		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot add components to a workflow after it has already been lauched");
+		}
+
+		if (entry.getComponentToStampMap().containsKey(compSeq)) {
+			entry.getComponentToStampMap().get(compSeq).add(stampSeq);
+		} else {
+			ArrayList<Integer> list = new ArrayList<>();
+			list.add(stampSeq);
+			entry.getComponentToStampMap().put(compSeq, list);
+		}
+
+		processDetailStore.updateEntry(processId, entry);
+
 	}
+
+	public void removeComponentFromWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
+		// Only can do if is in READY_TO_EDIT state
+
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (entry == null) {
+			throw new Exception("Cannot remove components from a workflow that hasn't been defined yet");
+		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
+			throw new Exception("Cannot remove components from a workflow after it has already been lauched");
+		} else if (!entry.getComponentToStampMap().containsKey(compSeq)) {
+			throw new Exception("Workflow does not contain component that is attempted to be removed");
+		}
+
+		entry.getComponentToStampMap().remove(compSeq);
+
+		processDetailStore.updateEntry(processId, entry);
+
+		// TODO: Handle reverting automatically
+	}
+
+
 }

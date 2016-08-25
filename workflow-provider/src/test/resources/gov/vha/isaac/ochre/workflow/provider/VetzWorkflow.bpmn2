@@ -333,7 +333,7 @@
         </bpmn2:resourceAssignmentExpression>
       </bpmn2:potentialOwner>
     </bpmn2:userTask>
-    <bpmn2:sequenceFlow id="SequenceFlow_1" drools:priority="1" name="Begin Authoring Workflow" sourceRef="StartEvent_1" targetRef="ExclusiveGateway_2"/>
+    <bpmn2:sequenceFlow id="SequenceFlow_1" drools:priority="1" name="Create Workflow Process" sourceRef="StartEvent_1" targetRef="ExclusiveGateway_2"/>
   </bpmn2:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1" name="Default Process Diagram">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="VetzWorkflow">
@@ -495,7 +495,7 @@
         <di:waypoint xsi:type="dc:Point" x="120.0" y="288.0"/>
         <di:waypoint xsi:type="dc:Point" x="130.0" y="288.0"/>
         <bpmndi:BPMNLabel id="BPMNLabel_2">
-          <dc:Bounds height="45.0" width="58.0" x="70.0" y="289.0"/>
+          <dc:Bounds height="45.0" width="56.0" x="56.0" y="289.0"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>

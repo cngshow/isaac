@@ -70,7 +70,6 @@ public class WorkflowActionsPermissionsAccessor extends AbstractWorkflowUtilitie
 	 *            the user id
 	 * @return the user roles by domain standard
 	 */
-	/* USER-BASED INFORMATION */
 	public Set<String> getUserRoles(UUID definitionId, int userId) {
 		Set<String> domainRoles = new HashSet<>();
 
@@ -174,7 +173,7 @@ public class WorkflowActionsPermissionsAccessor extends AbstractWorkflowUtilitie
 		WorkflowStatusAccessor statusAccessory = new WorkflowStatusAccessor(store);
 
 		// Only care about latest processes for Def
-		Map<UUID, SortedSet<ProcessHistory>> processHxMap = historyAccessory.getActiveByProcess();
+		Map<UUID, SortedSet<ProcessHistory>> processHxMap = historyAccessory.getActiveHistoryByProcess();
 
 		for (UUID processId : processHxMap.keySet()) {
 			ProcessDetail processDetails = statusAccessory.getProcessDetail(processId);

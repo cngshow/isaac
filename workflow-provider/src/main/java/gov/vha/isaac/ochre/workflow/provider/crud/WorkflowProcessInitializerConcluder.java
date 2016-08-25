@@ -76,10 +76,6 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description) throws Exception {
-		return createWorkflowProcess(definitionId, user, name, description, StartWorkflowType.SINGLE_CASE);
-	}
-	
 	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description, StartWorkflowType type) throws Exception {
     	if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
     		throw new Exception("Name and Description must be filled out when creating a process");
@@ -91,9 +87,9 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	UUID processId = processDetailStore.addEntry(details);
     
     	// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
-    	AvailableAction startAction = getStartState(type);
+    	AvailableAction startAdvancement = getStartState(type);
     	ProcessHistory advanceEntry = new ProcessHistory(processId, user, new Date().getTime(),
-    			startAction.getCurrentState(), getAutomatedRole(), startAction.getOutcome(), "");
+    			startAdvancement.getCurrentState(), startAdvancement.getAction(), startAdvancement.getOutcome(), "");
     	processHistoryStore.addEntry(advanceEntry);
     
     	return processId;
@@ -157,54 +153,6 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			// TODO: Handle cancelation store and handle reverting automatically
 		}
-	}
-
-	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
-		// Only can do if is in READY_TO_EDIT state
-		
-		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
-		if (accessor.isComponentInActiveWorkflow(compSeq)) {
-			throw new Exception("Component already exists in active workflow: " + compSeq);
-		}
-
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-
-		if (entry == null) {
-			throw new Exception("Cannot add components to a workflow that hasn't been defined yet");
-		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add components to a workflow after it has already been lauched");
-		}
-
-		if (entry.getComponentToStampMap().containsKey(compSeq)) {
-			entry.getComponentToStampMap().get(compSeq).add(stampSeq);
-		} else {
-			ArrayList<Integer> list = new ArrayList<>();
-			list.add(stampSeq);
-			entry.getComponentToStampMap().put(compSeq, list);
-		}
-
-		processDetailStore.updateEntry(processId, entry);
-
-	}
-
-	public void removeComponentFromWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
-		// Only can do if is in READY_TO_EDIT state
-
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-
-		if (entry == null) {
-			throw new Exception("Cannot remove components from a workflow that hasn't been defined yet");
-		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot remove components from a workflow after it has already been lauched");
-		} else if (!entry.getComponentToStampMap().containsKey(compSeq)) {
-			throw new Exception("Workflow does not contain component that is attempted to be removed");
-		}
-
-		entry.getComponentToStampMap().remove(compSeq);
-
-		processDetailStore.updateEntry(processId, entry);
-
-		// TODO: Handle reverting automatically
 	}
 
 	private AvailableAction getStartState(StartWorkflowType type) throws Exception {

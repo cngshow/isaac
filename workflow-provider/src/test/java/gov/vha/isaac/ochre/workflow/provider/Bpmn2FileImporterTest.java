@@ -22,6 +22,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.AfterClass;
@@ -34,6 +35,8 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
 /**
@@ -85,7 +88,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
-		expectedRoles.add(AbstractWorkflowUtilities.SYSTEM_AUTOMATED);
+		expectedRoles.add(AbstractWorkflowUtilities.getAutomatedRole());
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -113,17 +116,46 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
 
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
-				"Reject Edit", "Reject Review", "Begin Authoring Workflow");
+				"Reject Edit", "Reject Review", "Create Workflow Process");
 		
-		List<String> possibleStates = Arrays.asList("Assigned", "Canceled", "Ready for Edit", "Ready for Approve",
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Review", "Canceled During Approval", "Ready for Edit", "Ready for Approve",
 				"Ready for Publish", "Ready for Review");
 
+		int count = 0;
+		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
+		Set<AvailableAction> identifiedConcludedActions = new HashSet<>();
+		Set<AvailableAction> identifiedStartTypeActions = new HashSet<>();
+		Set<String> identifiedEditingActions = new HashSet<>();
+
 		for (AvailableAction entry : createdAvailableActionContentStore.getAllEntries()) {
+			if (entry.getAction().equals("Cancel Workflow")) {
+				identifiedCanceledActions.add(entry);
+			} else if (entry.getAction().equals("Approve")) {
+				identifiedConcludedActions.add(entry);
+			} else if (entry.getAction().equals("Edit")) {
+				identifiedEditingActions.add(entry.getCurrentState());
+			} else if (entry.getCurrentState().equals("Assigned")) {
+				identifiedStartTypeActions.add(entry);
+			}
+			
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
 			Assert.assertTrue(possibleStates.contains(entry.getCurrentState()));
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
+		
+		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED);
+		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED);
+		
+		Assert.assertEquals(canceledActions, identifiedCanceledActions);
+		Assert.assertEquals(concludedActions, identifiedConcludedActions);
+				
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().size(), 1);
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().size(), identifiedStartTypeActions.size());
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().iterator().next(), StartWorkflowType.SINGLE_CASE);
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE), identifiedStartTypeActions.iterator().next());
+
+		Assert.assertEquals(AbstractWorkflowUtilities.getEditStates(), identifiedEditingActions);
 	}
 }
