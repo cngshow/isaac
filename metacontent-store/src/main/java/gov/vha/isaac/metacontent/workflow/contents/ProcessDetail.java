@@ -296,8 +296,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	    date= new Date(timeCanceledOrConcluded);
 	    String timeCanceledOrConcludedString = workflowDateFormatrer.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
-				+ buf.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() 
+				+ "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
 				+ creator + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString
 				+ "\n\t\tTime Canceled or Concluded: " + timeCanceledOrConcludedString + "\n\t\tStatus: " + status
 				+ "\n\t\tName: " + name + "\n\t\tDescription: " + description;
