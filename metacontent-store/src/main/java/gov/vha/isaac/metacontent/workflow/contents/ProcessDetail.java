@@ -270,6 +270,10 @@ public class ProcessDetail extends StorableWorkflowContents {
 		return bos.toByteArray();
 	}
 
+	public boolean isActive() {
+		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -359,9 +363,5 @@ public class ProcessDetail extends StorableWorkflowContents {
 			else
 				return o1.getId().compareTo(o2.getId());
 		}
-	}
-
-	public boolean isActive() {
-		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
 	}
 }

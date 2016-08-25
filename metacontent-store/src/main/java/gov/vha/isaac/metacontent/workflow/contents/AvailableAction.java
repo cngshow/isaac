@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Definition of Actions to Outcomes based on Roles and Current State
+ * Definition of Actions to Outcome States based on Roles and Initial State
  * 
  * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
  * Store. Different actions are defined per workflow definitions.
@@ -49,14 +49,14 @@ public class AvailableAction extends StorableWorkflowContents {
 	/** The definition id. */
 	private UUID definitionId;
 
-	/** The current state. */
-	private String currentState;
+	/** The initial state. */
+	private String initialState;
 
 	/** The action. */
 	private String action;
 
-	/** The outcome. */
-	private String outcome;
+	/** The outcome state. */
+	private String outcomeState;
 
 	/** The role. */
 	private String role;
@@ -66,20 +66,20 @@ public class AvailableAction extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param currentState
-	 *            the current state
+	 * @param initialState
+	 *            the initial state
 	 * @param action
 	 *            the action
-	 * @param outcome
-	 *            the outcome
+	 * @param outcomeState
+	 *            the outcome state
 	 * @param role
 	 *            the role
 	 */
-	public AvailableAction(UUID definitionId, String currentState, String action, String outcome, String role) {
+	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, String role) {
 		this.definitionId = definitionId;
-		this.currentState = currentState;
+		this.initialState = initialState;
 		this.action = action;
-		this.outcome = outcome;
+		this.outcomeState = outcomeState;
 		this.role = role;
 	}
 
@@ -96,9 +96,9 @@ public class AvailableAction extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.currentState = (String) in.readObject();
+			this.initialState = (String) in.readObject();
 			this.action = (String) in.readObject();
-			this.outcome = (String) in.readObject();
+			this.outcomeState = (String) in.readObject();
 			this.role = (String) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into Available Action", e);
@@ -119,12 +119,12 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the current state.
+	 * Gets the initial state.
 	 *
-	 * @return the current state
+	 * @return the initial state
 	 */
-	public String getCurrentState() {
-		return currentState;
+	public String getInitialState() {
+		return initialState;
 	}
 
 	/**
@@ -137,12 +137,12 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the outcome.
+	 * Gets the outcome state.
 	 *
-	 * @return the outcome
+	 * @return the outcomeState
 	 */
-	public String getOutcome() {
-		return outcome;
+	public String getOutcomeState() {
+		return outcomeState;
 	}
 
 	/**
@@ -169,9 +169,9 @@ public class AvailableAction extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(definitionId);
-		out.writeObject(currentState);
+		out.writeObject(initialState);
 		out.writeObject(action);
-		out.writeObject(outcome);
+		out.writeObject(outcomeState);
 		out.writeObject(role);
 
 		return bos.toByteArray();
@@ -184,8 +184,8 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tCurrent State: "
-				+ currentState + "\n\t\tAction: " + action + "\n\t\tOutcome: " + outcome + "\n\t\tRole: " + role;
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tInitial State: "
+				+ initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: " + outcomeState + "\n\t\tRole: " + role;
 	}
 
 	/*
@@ -197,8 +197,8 @@ public class AvailableAction extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		AvailableAction other = (AvailableAction) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.currentState.equals(other.currentState)
-				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
+		return this.definitionId.equals(other.definitionId) && this.initialState.equals(other.initialState)
+				&& this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
 				&& this.role.equals(other.role);
 
 	}
@@ -210,7 +210,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + currentState.hashCode() + action.hashCode() + outcome.hashCode()
+		return definitionId.hashCode() + initialState.hashCode() + action.hashCode() + outcomeState.hashCode()
 				+ role.hashCode();
 	}
 }
