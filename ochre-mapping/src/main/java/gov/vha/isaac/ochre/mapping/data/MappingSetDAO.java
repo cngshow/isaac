@@ -40,8 +40,6 @@ import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
-import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerConfiguration;
-import javafx.concurrent.Task;
 
 /**
  * {@link MappingSet}
@@ -79,17 +77,18 @@ public class MappingSetDAO extends MappingDAO
 //							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
 				null, ObjectChronologyType.CONCEPT, null);
 		
-		Get.workExecutors().getExecutor().execute(() ->
-		{
-			try
-			{
-				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1}, true);
-			}
-			catch (Exception e)
-			{
-				LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
-			}
-		});
+		//TODO figure out if I need to be doing this for the indexer
+//		Get.workExecutors().getExecutor().execute(() ->
+//		{
+//			try
+//			{
+//				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1}, true);
+//			}
+//			catch (Exception e)
+//			{
+//				LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
+//			}
+//		});
 		
 		//Then, annotate the concept created above as a member of the MappingSet dynamic sememe, and add the inverse name, if present.
 		if (!StringUtils.isBlank(inverseName))
