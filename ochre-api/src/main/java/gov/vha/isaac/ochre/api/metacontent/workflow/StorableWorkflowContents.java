@@ -38,7 +38,7 @@ import java.util.UUID;
  * The Interface StorableWorkflowContents.
  */
 public abstract class StorableWorkflowContents {
-    public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("dd/MM/yy");
+    public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
 
 	/**
 	 * The Enum DefiningStatus.
