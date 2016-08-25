@@ -224,7 +224,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	    String timeAdvancedString = workflowDateFormatrer.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + workflowUser
-				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tState: " + state + "\n\t\tAction: " + action
+				+ "\n\t\tTime Advanced as Long: " + timeAdvanced+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tState: " + state + "\n\t\tAction: " + action
 				+ "\n\t\tOutcome: " + outcome + "\n\t\tComment: " + comment;
 	}
 
