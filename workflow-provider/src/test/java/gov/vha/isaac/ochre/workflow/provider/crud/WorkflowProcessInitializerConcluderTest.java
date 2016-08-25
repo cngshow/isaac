@@ -23,7 +23,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,13 +68,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		}
 
 		globalSetup(store);
-	}
-
-	@After
-	public void tearDown() {
-		processDetailStore.removeAllEntries();
-		processHistoryStore.removeAllEntries();
-	}
+	}	
 
 	@AfterClass
 	public static void tearDownClass() {
@@ -89,7 +82,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 *             the exception
 	 */
 	@Test
-	public void testA_createWorkflowProcess() throws Exception {
+	public void testCreateWorkflowProcess() throws Exception {
 		// Initialization
 		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
 		addComponentsToProcess(processId);
@@ -109,7 +102,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 *             the exception
 	 */
 	@Test
-	public void testB_launchWorkflow() throws Exception {
+	public void testLaunchWorkflow() throws Exception {
 		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 
@@ -131,7 +124,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 *             the exception
 	 */
 	@Test
-	public void testC_cancelWorkflowProcess() throws Exception {
+	public void testCancelWorkflowProcess() throws Exception {
 		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 
@@ -166,7 +159,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 *             the exception
 	 */
 	@Test
-	public void testD_concludeWorkflow() throws Exception {
+	public void testConcludeWorkflow() throws Exception {
 		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 

@@ -96,6 +96,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final String SEND_TO_APPROVAL_ACTION = "Review";
 	protected static final String SEND_TO_APPROVAL_OUTCOME = "Ready for Approve";
 	protected static final String SEND_TO_APPROVAL_COMMENT = "Sending for Approval";
+
+	protected static final String REJECT_REVIEW_STATE = "Ready for Review";
+	protected static final String REJECT_REVIEW_ACTION = "Reject QA";
+	protected static final String REJECT_REVIEW_OUTCOME = "Ready for Edit";
+	protected static final String REJECT_REVIEW_COMMENT = "Rejecting QA sending back to Edit";
+
 	protected static UUID secondaryHistoryEntryId;
 
 	protected static File DATASTORE_PATH = new File(
@@ -118,8 +124,11 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			createOutcome = startNodeAction.getOutcome();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
+
 		initConcluder = new WorkflowProcessInitializerConcluder(store);
 
+		processDetailStore.removeAllEntries();
+		processHistoryStore.removeAllEntries();
 	}
 
 	protected void setupUserRoles() {
@@ -207,6 +216,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UUID executeSendForApprovalAdvancement(UUID requestedProcessId) {
 		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, new Date().getTime(), SEND_TO_APPROVAL_STATE,
 				SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
+		return processHistoryStore.addEntry(entry);
+	}
+
+	protected UUID executeRejectReviewAdvancement(UUID requestedProcessId) {
+		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, new Date().getTime(), REJECT_REVIEW_STATE,
+				REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
 		return processHistoryStore.addEntry(entry);
 	}
 

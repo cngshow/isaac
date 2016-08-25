@@ -20,7 +20,6 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -76,7 +75,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment) throws Exception {
+	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment)
+			throws Exception {
 		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
 		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
 
@@ -91,42 +91,47 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcome());
 		} else {
 			AvailableAction actionToProcess = null;
-			
-			// Advance Workflow
-    		for (AvailableAction action : userPermissableActions) {
-    			if (action.getCurrentState().equals(processLatest.getOutcome()) && action.getAction().equals(actionRequested)) {
-    				actionToProcess = action;
-    				break;
-    			}
-    		}
-    		
-    		if (actionToProcess != null) {
-    			ProcessDetail process = processDetailStore.getEntry(processId);
-    			if (process.getStatus().equals(ProcessStatus.DEFINED)) {
-        			WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-        			initConcluder.launchWorkflowProcess(processId);
-    			} else if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess) || 
-    					   getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
-    				WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-    				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
-            			initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment, EndWorkflowType.CANCELED);
-    				} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
-            			initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment, EndWorkflowType.CONCLUDED);
-    				}
-				}
-    			
-    			if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
-    				comment = getCanceledComment();
-    			}
 
-    			ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(), actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(), comment);
-    			return processHistoryStore.addEntry(entry);
-    		}
+			// Advance Workflow
+			for (AvailableAction action : userPermissableActions) {
+				if (action.getCurrentState().equals(processLatest.getOutcome())
+						&& action.getAction().equals(actionRequested)) {
+					actionToProcess = action;
+					break;
+				}
+			}
+
+			if (actionToProcess != null) {
+				ProcessDetail process = processDetailStore.getEntry(processId);
+				if (process.getStatus().equals(ProcessStatus.DEFINED)) {
+					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+					initConcluder.launchWorkflowProcess(processId);
+				} else if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)
+						|| getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
+					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+					if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
+						initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment,
+								EndWorkflowType.CANCELED);
+					} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
+						initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment,
+								EndWorkflowType.CONCLUDED);
+					}
+				}
+
+				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
+					comment = getCanceledComment();
+				}
+
+				ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
+						actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(),
+						comment);
+				return processHistoryStore.addEntry(entry);
+			}
 		}
-		
+
 		return null;
 	}
-	
+
 	/**
 	 * Adds the new user role.
 	 *
@@ -144,53 +149,83 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		return userPermissionStore.addEntry(new UserPermission(definitionId, user, role));
 	}
 
-	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
-		// Only can do if is in READY_TO_EDIT state
-		
-		WorkflowStatusAccessor accessor = new WorkflowStatusAccessor();
-		if (accessor.isComponentInActiveWorkflow(compSeq)) {
-			throw new Exception("Component already exists in active workflow: " + compSeq);
+	public void removeComponentFromWorkflow(UUID processId, int compSeq) throws Exception {
+		ProcessDetail detail = processDetailStore.getEntry(processId);
+
+		if (processIsInAcceptableEditState(detail, compSeq, "remove")) {
+			if (!detail.getComponentToStampMap().containsKey(compSeq)) {
+				throw new Exception("Component " + compSeq + " is not already in Workflow");
+			}
+
+			detail.getComponentToStampMap().remove(compSeq);
+			processDetailStore.updateEntry(processId, detail);
 		}
-
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-
-		if (entry == null) {
-			throw new Exception("Cannot add components to a workflow that hasn't been defined yet");
-		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot add components to a workflow after it has already been lauched");
-		}
-
-		if (entry.getComponentToStampMap().containsKey(compSeq)) {
-			entry.getComponentToStampMap().get(compSeq).add(stampSeq);
-		} else {
-			ArrayList<Integer> list = new ArrayList<>();
-			list.add(stampSeq);
-			entry.getComponentToStampMap().put(compSeq, list);
-		}
-
-		processDetailStore.updateEntry(processId, entry);
-
-	}
-
-	public void removeComponentFromWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
-		// Only can do if is in READY_TO_EDIT state
-
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-
-		if (entry == null) {
-			throw new Exception("Cannot remove components from a workflow that hasn't been defined yet");
-		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
-			throw new Exception("Cannot remove components from a workflow after it has already been lauched");
-		} else if (!entry.getComponentToStampMap().containsKey(compSeq)) {
-			throw new Exception("Workflow does not contain component that is attempted to be removed");
-		}
-
-		entry.getComponentToStampMap().remove(compSeq);
-
-		processDetailStore.updateEntry(processId, entry);
 
 		// TODO: Handle reverting automatically
 	}
 
+	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
+		ProcessDetail detail = processDetailStore.getEntry(processId);
 
+		if (processIsInAcceptableEditState(detail, compSeq, "add")) {
+			if (detail.getComponentToStampMap().containsKey(compSeq)) {
+				detail.getComponentToStampMap().get(compSeq).add(stampSeq);
+			} else {
+				ArrayList<Integer> list = new ArrayList<>();
+				list.add(stampSeq);
+				detail.getComponentToStampMap().put(compSeq, list);
+			}
+
+			processDetailStore.updateEntry(processId, detail);
+		}
+	}
+
+	private boolean processIsInAcceptableEditState(ProcessDetail detail, int compSeq, String exceptionCase)
+			throws Exception {
+		// Only can do if
+		// CASE A: (Component is not in any workflow || Component is already in
+		// current process's workflow) AND one of the following:
+		// CASE B: Process is in DEFINED
+		// CASE C: Process is in LAUNCHED && latestHistory's Outcome is in
+		// Editing state
+		if (detail == null) {
+			throw new Exception("Cannot " + exceptionCase + " component to a workflow that hasn't been defined yet");
+		}
+
+		UUID processId = detail.getId();
+
+		WorkflowStatusAccessor statusAccessor = new WorkflowStatusAccessor(store);
+		// Check if in Case A. If not, throw exception
+		if (statusAccessor.isComponentInActiveWorkflow(compSeq)
+				&& !detail.getComponentToStampMap().containsKey(compSeq)) {
+			throw new Exception("Cannot " + exceptionCase
+					+ " component to workflow because component is already in another active workflow");
+		}
+
+		boolean canAddComponent = false;
+		// Test Case B
+		if (detail.getStatus() == ProcessStatus.DEFINED) {
+			canAddComponent = true;
+		} else {
+			// Test Case C
+			if (detail.getStatus() == ProcessStatus.LAUNCHED) {
+				WorkflowHistoryAccessor hxAccessor = new WorkflowHistoryAccessor(store);
+				ProcessHistory latestHx = hxAccessor.getLatestForProcess(processId);
+				if (getEditStates().contains(latestHx.getOutcome())) {
+					canAddComponent = true;
+				}
+			}
+		}
+
+		if (!canAddComponent) {
+			if (!detail.isActive()) {
+				throw new Exception("Cannot " + exceptionCase + " component to inactive workflow");
+			} else {
+				throw new Exception("Cannot " + exceptionCase
+						+ " component when process is in LAUNCHED state, workflow is not in an EDIT state");
+			}
+		}
+
+		return true;
+	}
 }
