@@ -497,7 +497,8 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
+            <!-- Isaac doesn't use inhabitant files -->
+            <!--plugin>
                 <groupId>org.glassfish.hk2</groupId>
                 <artifactId>hk2-inhabitant-generator</artifactId>
                 <executions>
@@ -507,7 +508,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin-->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
