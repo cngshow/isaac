@@ -123,7 +123,6 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		super(store);
 
 		currentDefinitionId = setDefinition(bpmn2FilePath);
-		setNodes(bpmn2FilePath, currentDefinitionId);
 	}
 
 	/**
@@ -135,23 +134,27 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 */
 	public UUID setDefinition(String bpmn2FilePath) {
 		String xmlContents;
-		UUID key = null;
 
 		try {
 			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
 			ProcessDescriptor descriptor = processWorkflowDefinition(xmlContents);
 
-			key = populateWorkflowDefinitionRecords(descriptor);
+			UUID definitionId = populateWorkflowDefinitionRecords(descriptor);
 
 			if (printForAnalysis) {
 				printProcessDefinition(descriptor);
 			}
+
+			setNodes(bpmn2FilePath, definitionId);
+			
+			return definitionId;
 		} catch (IOException e) {
 			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
 			e.printStackTrace();
 		}
+		
 
-		return key;
+		return null;
 	}
 
 	/**
@@ -185,7 +188,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 * @param definitionId
 	 *            the definition id
 	 */
-	public void setNodes(String bpmn2FilePath, UUID definitionId) {
+	private void setNodes(String bpmn2FilePath, UUID definitionId) {
 		clearImporterCollections();
 		
 		process = buildProcessFromFile(bpmn2FilePath);
@@ -450,7 +453,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *         This will return empty set for nodes preceded only by Start event
 	 *         (i.e. no preceding HumanTask)
 	 */
-	private static Set<String> getActorFromHumanTask(HumanTaskNode node) {
+	private Set<String> getActorFromHumanTask(HumanTaskNode node) {
 		Set<String> restrictions = new HashSet<>();
 
 		// Get HumanTaskNode's restrictions
@@ -470,7 +473,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		return restrictions;
 	}
 
-	private static String getHumanTaskName(HumanTaskNode node) {
+	private String getHumanTaskName(HumanTaskNode node) {
 		Work work = node.getWork();
 
 		if (work.getParameters() != null) {
