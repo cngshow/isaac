@@ -278,9 +278,9 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getProcessId(), pulledEntry2.getProcessId());
 		Assert.assertEquals(createdEntry2.getWorkflowUser(), pulledEntry2.getWorkflowUser());
 		Assert.assertEquals(createdEntry2.getTimeAdvanced(), pulledEntry2.getTimeAdvanced());
-		Assert.assertEquals(createdEntry2.getState(), pulledEntry2.getState());
+		Assert.assertEquals(createdEntry2.getInitialState(), pulledEntry2.getInitialState());
 		Assert.assertEquals(createdEntry2.getAction(), pulledEntry2.getAction());
-		Assert.assertEquals(createdEntry2.getOutcome(), pulledEntry2.getOutcome());
+		Assert.assertEquals(createdEntry2.getOutcomeState(), pulledEntry2.getOutcomeState());
 		Assert.assertNotEquals(createdEntry2.getComment(), pulledEntry2.getComment());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
