@@ -16,11 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.oia.terminology.converters.sharedUtils.gson;
+package gov.vha.isaac.ochre.api.externalizable.json;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import com.cedarsoftware.util.io.JsonWriter;
@@ -35,6 +36,18 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 public class JsonDataWriterService implements BinaryDataWriterService
 {
 	private JsonWriter json_;
+	
+	public JsonDataWriterService(Path path) throws IOException
+	{
+		Map<String, Object> args = new HashMap<>();
+		args.put(JsonWriter.PRETTY_PRINT, true);
+		json_ = new JsonWriter(new FileOutputStream(path.toFile()), args);
+		//TODO enable this class after 4.5.1 is released with these patches:
+		//https://github.com/jdereg/json-io/issues/95
+		//https://github.com/jdereg/json-io/issues/96
+//		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
+//		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
+	}
 
 	public JsonDataWriterService(File path) throws IOException
 	{
@@ -47,6 +60,15 @@ public class JsonDataWriterService implements BinaryDataWriterService
 	public void put(OchreExternalizable ochreObject)
 	{
 		json_.write(ochreObject);
+	}
+	
+	/**
+	 * Write out a string object to the json file - this will encode all illegal characters within the string.
+	 * Useful for writing debugging files
+	 */
+	public void put(String string)
+	{
+		json_.write(string);
 	}
 
 	@Override

@@ -39,7 +39,7 @@
 		</dependency>
 		<dependency>
 			<groupId>gov.vha.isaac.ochre.modules</groupId>
-			<artifactId>metadata</artifactId>
+			<artifactId>ochre-metadata</artifactId>
 			<version>${project.version}</version>
 			</dependency>
 		<dependency>
@@ -101,10 +101,6 @@
 			<groupId>gov.vha.isaac.ochre.modules</groupId>
 			<artifactId>db-config-builder</artifactId>
 			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.cedarsoftware</groupId>
-			<artifactId>json-io</artifactId>
 		</dependency>
 	</dependencies>
 </project>

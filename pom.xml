@@ -238,7 +238,7 @@
             <dependency>
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
-                <version>4.3.0</version>
+                <version>4.5.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -640,7 +640,8 @@
         <module>path-provider</module>
         <module>sememe-provider</module>
         <module>metadata-source</module>
-        <module>metadata</module>
+        <module>ochre-metadata</module>
+        <module>ochre-util</module>
         <module>observable-provider</module>
         <module>logic-provider</module>
         <module>query-provider</module>
@@ -654,6 +655,7 @@
         <module>db-builder</module>
         <module>db-config-builder</module>
         <module>ochre-mojo-log-config</module>
+        <module>ochre-mapping-constants</module>
         <module>ochre-mapping</module>
         <module>sync-git</module>
         <module>metacontent-store</module>
