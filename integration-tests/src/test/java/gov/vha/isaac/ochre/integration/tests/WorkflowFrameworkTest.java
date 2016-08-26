@@ -50,7 +50,7 @@ public class WorkflowFrameworkTest {
 	private static Bpmn2FileImporter importer;
 	
 	/** The bpmn file path. */
-	private static final String BPMN_FILE_PATH = "src/test/resources/VetzWorkflow.bpmn2";
+	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
 	private static UUID definitionId;
 	private static int userId = 99;

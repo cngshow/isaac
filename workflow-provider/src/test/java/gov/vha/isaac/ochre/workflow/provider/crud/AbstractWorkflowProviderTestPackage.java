@@ -46,7 +46,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The bpmn file path. */
-	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/StaticTestingDefinition.bpmn2";
+	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/StaticUnitTestingDefinition.bpmn2";
 
 	/** The store. */
 	protected ProcessDetailContentStore processDetailStore;
