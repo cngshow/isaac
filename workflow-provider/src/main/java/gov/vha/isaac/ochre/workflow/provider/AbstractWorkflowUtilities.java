@@ -33,8 +33,6 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 
@@ -43,7 +41,7 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
  * 
  * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
  * {@link Bpmn2FileImporter} {@link WorkflowProcessInitializerConcluder}
- * {@link WorkflowActionsPermissionsAccessor} {@link WorkflowHistoryAccessor}
+ * {@link WorkflowAdvancementAccessor} {@link WorkflowHistoryAccessor}
  * {@line WorkflowUpdater}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>

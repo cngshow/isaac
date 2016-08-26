@@ -77,24 +77,23 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 */
 	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment)
 			throws Exception {
-		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
-		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
+		WorkflowProcessAccessor wfAccessor = new WorkflowProcessAccessor(store);
 
 		// Get User Permissible actions
-		Set<AvailableAction> userPermissableActions = advancementAccessor.getUserPermissibleActionsForProcess(processId,
+		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
 				workflowUser);
 
-		ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
+		ProcessHistory processLatest = wfAccessor.getProcessHistory(processId).last();
 
 		if (userPermissableActions.isEmpty()) {
 			logger.info("User does not have permission to advance workflow for this process: " + processId
-					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcome());
+					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcomeState());
 		} else {
 			AvailableAction actionToProcess = null;
 
 			// Advance Workflow
 			for (AvailableAction action : userPermissableActions) {
-				if (action.getCurrentState().equals(processLatest.getOutcome())
+				if (action.getInitialState().equals(processLatest.getOutcomeState())
 						&& action.getAction().equals(actionRequested)) {
 					actionToProcess = action;
 					break;
@@ -123,7 +122,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				}
 
 				ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
-						actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(),
+						actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
 						comment);
 				return processHistoryStore.addEntry(entry);
 			}
@@ -194,9 +193,9 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 
 		UUID processId = detail.getId();
 
-		WorkflowStatusAccessor statusAccessor = new WorkflowStatusAccessor(store);
+		WorkflowProcessAccessor wfAccessor = new WorkflowProcessAccessor(store);
 		// Check if in Case A. If not, throw exception
-		if (statusAccessor.isComponentInActiveWorkflow(compSeq)
+		if (wfAccessor.isComponentInActiveWorkflow(compSeq)
 				&& !detail.getComponentToStampMap().containsKey(compSeq)) {
 			throw new Exception("Cannot " + exceptionCase
 					+ " component to workflow because component is already in another active workflow");
@@ -209,9 +208,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		} else {
 			// Test Case C
 			if (detail.getStatus() == ProcessStatus.LAUNCHED) {
-				WorkflowHistoryAccessor hxAccessor = new WorkflowHistoryAccessor(store);
-				ProcessHistory latestHx = hxAccessor.getLatestForProcess(processId);
-				if (getEditStates().contains(latestHx.getOutcome())) {
+				ProcessHistory latestHx = wfAccessor.getProcessHistory(processId).last();
+				if (getEditStates().contains(latestHx.getOutcomeState())) {
 					canAddComponent = true;
 				}
 			}

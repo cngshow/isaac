@@ -18,7 +18,6 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
 
@@ -89,7 +88,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
     	AvailableAction startAdvancement = getStartState(type);
     	ProcessHistory advanceEntry = new ProcessHistory(processId, user, new Date().getTime(),
-    			startAdvancement.getCurrentState(), startAdvancement.getAction(), startAdvancement.getOutcome(), "");
+    			startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(), "");
     	processHistoryStore.addEntry(advanceEntry);
     
     	return processId;
@@ -147,7 +146,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		// Only add Cancel state in Workflow if process has already been
 		// launched
 		ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
-				actionToProcess.getCurrentState(), actionToProcess.getAction(), actionToProcess.getOutcome(), comment);
+				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(), comment);
 		processHistoryStore.addEntry(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {

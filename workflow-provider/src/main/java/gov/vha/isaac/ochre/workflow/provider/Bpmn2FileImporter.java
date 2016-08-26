@@ -249,7 +249,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	private Set<AvailableAction> generateAvailableActions(UUID definitionId, List<SequenceFlow> connections)
 			throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
-		String currentState = null;
+		String initialState = null;
 		Set<String> roles = new HashSet<>();
 		Set<AvailableAction> startNodeActions = new HashSet<>();
 		String flagMetaDataStr = null;
@@ -260,7 +260,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			
 			if (node.getName() != null && !node.getName().isEmpty() && !(node instanceof HumanTaskNode)
 					&& !(node instanceof EndNode)) {
-				currentState = node.getName();
+				initialState = node.getName();
 			}
 
 			if (node.getMetaData() != null && node.getMetaData().get("Documentation") != null) {
@@ -268,19 +268,19 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 			
 			if (node instanceof StartNode) {
-				availActions.addAll(identifyNodeActions(node, connections, definitionId, currentState,
+				availActions.addAll(identifyNodeActions(node, connections, definitionId, initialState,
 						roles, ((StartNode) node).getDefaultOutgoingConnections()));
 				actions.addAll(availActions);
 				startNodeActions.addAll(availActions);
 			} else if (node instanceof Split) {
-				availActions.addAll(identifyNodeActions(node, connections, definitionId, currentState,
+				availActions.addAll(identifyNodeActions(node, connections, definitionId, initialState,
 						roles, ((Split) node).getDefaultOutgoingConnections()));
 				actions.addAll(availActions);
 			} else if (node instanceof HumanTaskNode) {
 				roles = getActorFromHumanTask((HumanTaskNode) node);
 				if (!humanNodesProcessed.contains(node.getId())) {
 					availActions.addAll(identifyNodeActions(node, connections, definitionId,
-							currentState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections()));
+							initialState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections()));
 					actions.addAll(availActions);
 					humanNodesProcessed.add(node.getId());
 				}
@@ -299,13 +299,13 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	private Set<AvailableAction> identifyNodeActions(Node node, List<SequenceFlow> connections, UUID definitionId,
-			String currentState, Set<String> roles, List<Connection> defaultOutgoingConnections) throws Exception {
+			String initialState, Set<String> roles, List<Connection> defaultOutgoingConnections) throws Exception {
 		Set<AvailableAction> availActions = new HashSet<>();
 
 		for (Long id : nodeToOutgoingMap.get(node.getId())) {
 			String action = null;
 			String outcome = null;
-			String state = currentState;
+			String state = initialState;
 
 			for (Connection connection : defaultOutgoingConnections) {
 				if (connection.getTo().getId() == id) {
@@ -658,7 +658,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	private void processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
 		if (availActions.isEmpty()) {
 			for (AvailableAction action : allActions) {
-				if (node.getName().equalsIgnoreCase(action.getOutcome())) {
+				if (node.getName().equalsIgnoreCase(action.getOutcomeState())) {
 					availActions.add(action);
 				}
 			}
@@ -680,7 +680,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
 		} else if (flag.equalsIgnoreCase(getEditingAction())) {
 			for (AvailableAction action : availActions) {
-				getEditStates().add(action.getCurrentState());
+				getEditStates().add(action.getInitialState());
 			}
 		} else {
 			throw new Exception("Have unexpected flag in processNodeFlags(): " + flag);
