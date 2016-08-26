@@ -20,8 +20,10 @@ package gov.vha.isaac.ochre.workflow.provider;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.AfterClass;
@@ -75,9 +77,8 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testVetzWorkflowSetDefinition() throws Exception {
-		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
-				store);
+	public void testStaticBpmnSetDefinition() throws Exception {
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdDefinitionDetailContentStore.getNumberOfEntries(), 1);
@@ -103,11 +104,9 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testVetzWorkflowSetNodes() throws Exception {
-		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(
-				store);
-		AvailableActionContentStore createdAvailableActionContentStore = new AvailableActionContentStore(
-				store);
+	public void testStaticBpmnSetNodes() throws Exception {
+		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(store);
+		AvailableActionContentStore createdAvailableActionContentStore = new AvailableActionContentStore(store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
 				createdAvailableActionContentStore.getNumberOfEntries(), 9);
@@ -116,11 +115,10 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review", "Create Workflow Process");
-		
-		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Review", "Canceled During Approval", "Ready for Edit", "Ready for Approve",
-				"Ready for Publish", "Ready for Review");
 
-		int count = 0;
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Review", "Canceled During Approval",
+				"Ready for Edit", "Ready for Approve", "Ready for Publish", "Ready for Review");
+
 		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
 		Set<AvailableAction> identifiedConcludedActions = new HashSet<>();
 		Set<AvailableAction> identifiedStartTypeActions = new HashSet<>();
@@ -136,25 +134,108 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			} else if (entry.getInitialState().equals("Assigned")) {
 				identifiedStartTypeActions.add(entry);
 			}
-			
+
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
 			Assert.assertTrue(possibleStates.contains(entry.getOutcomeState()));
 			Assert.assertTrue(possibleStates.contains(entry.getInitialState()));
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
-		
-		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED);
-		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED);
-		
+
+		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndNodeTypeMap()
+				.get(EndWorkflowType.CONCLUDED);
+		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndNodeTypeMap()
+				.get(EndWorkflowType.CANCELED);
+
 		Assert.assertEquals(canceledActions, identifiedCanceledActions);
 		Assert.assertEquals(concludedActions, identifiedConcludedActions);
-				
+
 		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().size(), 1);
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().size(), identifiedStartTypeActions.size());
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().iterator().next(), StartWorkflowType.SINGLE_CASE);
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE), identifiedStartTypeActions.iterator().next());
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().size(),
+				identifiedStartTypeActions.size());
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().iterator().next(),
+				StartWorkflowType.SINGLE_CASE);
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE),
+				identifiedStartTypeActions.iterator().next());
 
 		Assert.assertEquals(AbstractWorkflowUtilities.getEditStates(), identifiedEditingActions);
+	}
+
+	@Test
+	public void testStaticBpmnAvailableActions() throws Exception {
+		Map<String, Set<AvailableAction>> actionMap = new HashMap<>();
+		
+		for (AvailableAction action : availableActionStore.getAllEntries()) {
+			if (!actionMap.containsKey(action.getInitialState())) {
+				actionMap.put(action.getInitialState(), new HashSet<AvailableAction>());
+			}
+			
+			actionMap.get(action.getInitialState()).add(action);
+		}
+		
+		for (String initState : actionMap.keySet()) {
+			if (initState.equals("Assigned")) {
+				assertAssignedActions(actionMap.get(initState));
+			} else if (initState.equals("Ready for Edit")) {
+				assertReadyForEditActions(actionMap.get(initState));
+			} else if (initState.equals("Ready for Review")) {
+				assertReadyForReviewActions(actionMap.get(initState));
+			} else if (initState.equals("Ready for Approval")) {
+				assertReadyForApprovalActions(actionMap.get(initState));
+			}
+		}
+	}
+
+	private void assertAssignedActions(Set<AvailableAction> actions) {
+		Assert.assertEquals(1, actions.size());
+		Assert.assertEquals("Create Workflow Process", actions.iterator().next().getAction());
+		Assert.assertEquals("Ready for Edit", actions.iterator().next().getOutcomeState());
+		Assert.assertEquals("Automated By System", actions.iterator().next().getRole());
+	}
+
+	private void assertReadyForEditActions(Set<AvailableAction> actions) {
+		Assert.assertEquals(1, actions.size());
+		Assert.assertEquals("Edit", actions.iterator().next().getAction());
+		Assert.assertEquals("Ready for Review", actions.iterator().next().getOutcomeState());
+		Assert.assertEquals("Editor", actions.iterator().next().getRole());
+	}
+
+	private void assertReadyForReviewActions(Set<AvailableAction> actions) {
+		Assert.assertEquals(3, actions.size());
+		
+		for (AvailableAction act : actions) {
+			Assert.assertEquals("Reviewer", act.getRole());
+
+			if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertEquals("Canceled During Review", act.getOutcomeState());
+			} else if (act.getAction().equals("QA Fails")) {
+				Assert.assertEquals("Ready for Edit", act.getOutcomeState());
+			} else if (act.getAction().equals("QA Passes")) {
+				Assert.assertEquals("Ready for Approve", act.getOutcomeState());
+			} else {
+				Assert.fail();
+			}
+		}
+	}
+
+	private void assertReadyForApprovalActions(Set<AvailableAction> actions) {
+		Assert.assertEquals(4, actions.size());
+		
+		for (AvailableAction act : actions) {
+			Assert.assertEquals("Approver", act.getRole());
+
+			if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertEquals("Canceled During Approval", act.getOutcomeState());
+			} else if (act.getAction().equals("Reject Edit")) {
+				Assert.assertEquals("Ready for Edit", act.getOutcomeState());
+			} else if (act.getAction().equals("Reject Review")) {
+				Assert.assertEquals("Reject Review", act.getOutcomeState());
+			} else if (act.getAction().equals("Approve")) {
+				Assert.assertEquals("Ready for Publish", act.getOutcomeState());
+			} else {
+				Assert.fail();
+			}
+		}
+		
 	}
 }

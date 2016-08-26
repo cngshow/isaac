@@ -66,10 +66,10 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		}
 
 		globalSetup(store);
+		setupUserRoles();
 
 		if (!setupCompleted) {
 			wfAccessor = new WorkflowAccessor(store);
-			setupUserRoles();
 
 			setupCompleted = true;
 		}

@@ -83,53 +83,45 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
 				workflowUser);
 
-		ProcessHistory processLatest = wfAccessor.getProcessHistory(processId).last();
-
-		if (userPermissableActions.isEmpty()) {
-			logger.info("User does not have permission to advance workflow for this process: " + processId
-					+ " for this user: " + workflowUser + " based on current state: "
-					+ processLatest.getOutcomeState());
-		} else {
-			AvailableAction actionToProcess = null;
-
-			// Advance Workflow
-			for (AvailableAction action : userPermissableActions) {
-				if (action.getInitialState().equals(processLatest.getOutcomeState())
-						&& action.getAction().equals(actionRequested)) {
-					actionToProcess = action;
-					break;
-				}
-			}
-
-			if (actionToProcess != null) {
+		// Advance Workflow
+		for (AvailableAction action : userPermissableActions) {
+			if (action.getAction().equals(actionRequested)) {
 				ProcessDetail process = processDetailStore.getEntry(processId);
-				if (process.getStatus().equals(ProcessStatus.DEFINED)) {
+				
+				// Update Process Details for launch, cancel, or conclude
+				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
+					// Request to cancel workflow
+					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
+							EndWorkflowType.CANCELED);
+				} else if (process.getStatus().equals(ProcessStatus.DEFINED)
+						&& getStartWorkflowTypeMap().containsKey(action.getInitialState())) {
+					// Advancing request is to launch workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
 					initConcluder.launchWorkflowProcess(processId);
-				} else if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)
-						|| getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
+				} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
+					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
-						initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment,
-								EndWorkflowType.CANCELED);
-					} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(actionToProcess)) {
-						initConcluder.finishWorkflowProcess(processId, actionToProcess, workflowUser, comment,
-								EndWorkflowType.CONCLUDED);
-					}
+					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
+							EndWorkflowType.CONCLUDED);
 				}
 
-				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionToProcess)) {
+				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
+					// Special case where comment added to cancel screen and cancel store
+					// TODO: Better approach?
 					comment = getCanceledComment();
 				}
 
+				// Add to process history
 				ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
-						actionToProcess.getInitialState(), actionToProcess.getAction(),
-						actionToProcess.getOutcomeState(), comment);
+						action.getInitialState(), action.getAction(),
+						action.getOutcomeState(), comment);
 				return processHistoryStore.addEntry(entry);
 			}
 		}
 
-		return null;
+	return null;
+
 	}
 
 	/**

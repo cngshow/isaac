@@ -63,10 +63,10 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		}
 
 		globalSetup(store);
+		setupUserRoles();
 
 		if (!setupCompleted) {
 			updater = new WorkflowUpdater(store);
-			setupUserRoles();
 
 			for (Integer seq : conceptsForTesting) {
 				if (firstConceptSeq == -1) {
