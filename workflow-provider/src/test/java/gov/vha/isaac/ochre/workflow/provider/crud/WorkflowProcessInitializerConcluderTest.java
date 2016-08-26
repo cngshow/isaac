@@ -136,7 +136,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		executeSendForApprovalAdvancement(processId);
 		Thread.sleep(1);
 
-		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistory.ProcessHistoryComparator());
+		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistoryComparator());
 		hxEntries.addAll(processHistoryStore.getAllEntries());
 		
 		assertHistoryForProcess(hxEntries, processId, 3);

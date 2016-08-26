@@ -132,15 +132,15 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			} else if (entry.getAction().equals("Approve")) {
 				identifiedConcludedActions.add(entry);
 			} else if (entry.getAction().equals("Edit")) {
-				identifiedEditingActions.add(entry.getCurrentState());
-			} else if (entry.getCurrentState().equals("Assigned")) {
+				identifiedEditingActions.add(entry.getInitialState());
+			} else if (entry.getInitialState().equals("Assigned")) {
 				identifiedStartTypeActions.add(entry);
 			}
 			
 			Assert.assertEquals(definitionDetails.getId(), entry.getDefinitionId());
 			Assert.assertTrue(definitionDetails.getRoles().contains(entry.getRole()));
-			Assert.assertTrue(possibleStates.contains(entry.getOutcome()));
-			Assert.assertTrue(possibleStates.contains(entry.getCurrentState()));
+			Assert.assertTrue(possibleStates.contains(entry.getOutcomeState()));
+			Assert.assertTrue(possibleStates.contains(entry.getInitialState()));
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
 		

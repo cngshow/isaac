@@ -119,9 +119,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		if (definitionDetailStore.getAllEntries().size() == 0) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			startNodeAction = AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE);
-			createState = startNodeAction.getCurrentState();
+			createState = startNodeAction.getInitialState();
 			createAction = startNodeAction.getAction();
-			createOutcome = startNodeAction.getOutcome();
+			createOutcome = startNodeAction.getOutcomeState();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
 
@@ -272,9 +272,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(processId, entry.getProcessId());
 		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getState());
+		Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
 		Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
-		Assert.assertEquals(SEND_TO_APPROVAL_OUTCOME, entry.getOutcome());
+		Assert.assertEquals(SEND_TO_APPROVAL_OUTCOME, entry.getOutcomeState());
 		Assert.assertEquals(SEND_TO_APPROVAL_COMMENT, entry.getComment());
 	}
 
@@ -282,9 +282,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(processId, entry.getProcessId());
 		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(LAUNCH_STATE, entry.getState());
+		Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
 		Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
-		Assert.assertEquals(LAUNCH_OUTCOME, entry.getOutcome());
+		Assert.assertEquals(LAUNCH_OUTCOME, entry.getOutcomeState());
 		Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
 	}
 
@@ -292,9 +292,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(processId, entry.getProcessId());
 		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(createState, entry.getState());
+		Assert.assertEquals(createState, entry.getInitialState());
 		Assert.assertEquals(createAction, entry.getAction());
-		Assert.assertEquals(createOutcome, entry.getOutcome());
+		Assert.assertEquals(createOutcome, entry.getOutcomeState());
 		Assert.assertEquals("", entry.getComment());
 	}
 	
@@ -305,9 +305,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		
 		AvailableAction cancelAction = 
 				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
-		Assert.assertEquals(cancelAction.getCurrentState(), entry.getState());
+		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(cancelAction.getAction(), entry.getAction());
-		Assert.assertEquals(cancelAction.getOutcome(), entry.getOutcome());
+		Assert.assertEquals(cancelAction.getOutcomeState(), entry.getOutcomeState());
 		Assert.assertEquals(CANCELED_WORKFLOW_COMMENT, entry.getComment());
 	}
 
@@ -318,9 +318,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		
 		AvailableAction concludeAction = 
 				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
-		Assert.assertEquals(concludeAction.getCurrentState(), entry.getState());
+		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(concludeAction.getAction(), entry.getAction());
-		Assert.assertEquals(concludeAction.getOutcome(), entry.getOutcome());
+		Assert.assertEquals(concludeAction.getOutcomeState(), entry.getOutcomeState());
 		Assert.assertEquals(CONCLUDED_WORKFLOW_COMMENT, entry.getComment());
 	}
 }
