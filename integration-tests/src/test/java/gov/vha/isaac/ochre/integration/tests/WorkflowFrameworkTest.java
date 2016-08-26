@@ -8,11 +8,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
@@ -25,10 +27,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.SubjectMatter;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowActionsPermissionsAccessor;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAdvancementAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowHistoryAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowStatusAccessor;
@@ -43,13 +44,13 @@ public class WorkflowFrameworkTest {
 	private static MVStoreMetaContentProvider store;
 	private static WorkflowHistoryAccessor historyAccessor;
 	private static WorkflowStatusAccessor statusAccessor;
-	private static WorkflowActionsPermissionsAccessor permissionAccessor;
+	private static WorkflowAdvancementAccessor permissionAccessor;
 	private static WorkflowProcessInitializerConcluder initConcluder;
 	private static WorkflowUpdater updater;
 	private static Bpmn2FileImporter importer;
 	
 	/** The bpmn file path. */
-	protected static final String BPMN_FILE_PATH = "src/test/resources/VetzWorkflow.bpmn2";
+	private static final String BPMN_FILE_PATH = "src/test/resources/VetzWorkflow.bpmn2";
 
 	private static UUID definitionId;
 	private static int userId = 99;
@@ -70,7 +71,7 @@ public class WorkflowFrameworkTest {
 			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowIntegration", true);
             historyAccessor = new WorkflowHistoryAccessor(store);
 			statusAccessor = new WorkflowStatusAccessor(store);
-			permissionAccessor = new WorkflowActionsPermissionsAccessor(store);
+			permissionAccessor = new WorkflowAdvancementAccessor(store);
 			initConcluder = new WorkflowProcessInitializerConcluder(store);
 			updater = new WorkflowUpdater(store);
 			
@@ -153,7 +154,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.CANCELED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCancelState().contains(hx.getOutcome()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessCancelState().contains(hx.getOutcomeState()));
    }
     
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -234,7 +235,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.LAUNCHED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessStartState().contains(hx.getState()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessStartState().contains(hx.getInitialState()));
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -255,7 +256,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcomeState()));
     }
     
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -278,7 +279,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcomeState()));
     }
 
     @Test (groups = {"wf"}, dependsOnMethods = {"testLoadMetaData"})
@@ -297,7 +298,7 @@ public class WorkflowFrameworkTest {
 	    	
 			Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 			ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-			Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+			Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcomeState()));
 			
 			processId = initConcluder.createWorkflowProcess(definitionId, localConcepts, stampSequenceForTesting, userId, SubjectMatter.CONCEPT);
 			Assert.assertEquals(ProcessStatus.DEFINED, statusAccessor.getProcessDetail(processId).getProcessStatus());
@@ -334,7 +335,7 @@ public class WorkflowFrameworkTest {
 		
 		Assert.assertEquals(ProcessStatus.CONCLUDED, statusAccessor.getProcessDetail(processId).getProcessStatus());
 		ProcessHistory hx = historyAccessor.getLatestForProcess(processId);
-		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcome()));
+		Assert.assertTrue(AbstractWorkflowUtilities.getProcessConcludeState().contains(hx.getOutcomeState()));
  }
 
 	private void setupUserRoles() {

@@ -286,13 +286,20 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		// Create Process (Is in Ready_To_Edit State)
 		Set<AvailableAction> firstProcessFirstUserActions = wfAccessor
 				.getUserPermissibleActionsForProcess(firstProcessId, firstUserId);
-		Assert.assertEquals(1, firstProcessFirstUserActions.size());
-		Assert.assertEquals(mainDefinitionId, firstProcessFirstUserActions.iterator().next().getDefinitionId());
-		Assert.assertEquals("Ready for Edit", firstProcessFirstUserActions.iterator().next().getInitialState());
-		Assert.assertEquals("Edit", firstProcessFirstUserActions.iterator().next().getAction());
-		Assert.assertTrue(firstProcessFirstUserActions.iterator().next().getOutcomeState().equals("Ready for Review"));
-		Assert.assertEquals("Editor", firstProcessFirstUserActions.iterator().next().getRole());
+		Assert.assertEquals(2, firstProcessFirstUserActions.size());
+		for (AvailableAction act : firstProcessFirstUserActions) {
+			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
+			Assert.assertEquals("Ready for Edit", act.getInitialState());
+			Assert.assertEquals("Editor", act.getRole());
 
+			if (act.getAction().equals("Edit")) {
+				Assert.assertTrue(act.getOutcomeState().equals("Ready for Review"));
+			} else if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertTrue(act.getOutcomeState().equals("Canceled During Edit"));
+			} else {
+				Assert.fail();
+			}
+		}
 		Set<AvailableAction> firstProcessSecondUserActions = wfAccessor
 				.getUserPermissibleActionsForProcess(firstProcessId, secondUserId);
 		Assert.assertEquals(0, firstProcessSecondUserActions.size());
@@ -324,12 +331,20 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		UUID secondProcessId = createFirstWorkflowProcess(mainDefinitionId);
 		Set<AvailableAction> secondProcessFirstUserActions = wfAccessor
 				.getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
-		Assert.assertEquals(1, secondProcessFirstUserActions.size());
-		Assert.assertEquals(mainDefinitionId, secondProcessFirstUserActions.iterator().next().getDefinitionId());
-		Assert.assertEquals("Ready for Edit", secondProcessFirstUserActions.iterator().next().getInitialState());
-		Assert.assertEquals("Edit", secondProcessFirstUserActions.iterator().next().getAction());
-		Assert.assertTrue(secondProcessFirstUserActions.iterator().next().getOutcomeState().equals("Ready for Review"));
-		Assert.assertEquals("Editor", secondProcessFirstUserActions.iterator().next().getRole());
+		Assert.assertEquals(2, secondProcessFirstUserActions.size());
+		for (AvailableAction act : secondProcessFirstUserActions) {
+			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
+			Assert.assertEquals("Ready for Edit", act.getInitialState());
+			Assert.assertEquals("Editor", act.getRole());
+
+			if (act.getAction().equals("Edit")) {
+				Assert.assertTrue(act.getOutcomeState().equals("Ready for Review"));
+			} else if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertTrue(act.getOutcomeState().equals("Canceled During Edit"));
+			} else {
+				Assert.fail();
+			}
+		}
 		Set<AvailableAction> secondProcessSecondUserActions = wfAccessor
 				.getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
 		Assert.assertEquals(0, secondProcessSecondUserActions.size());

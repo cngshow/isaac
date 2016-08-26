@@ -122,7 +122,12 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
 		super(store);
 
-		currentDefinitionId = setDefinition(bpmn2FilePath);
+		try {
+			currentDefinitionId = setDefinition(bpmn2FilePath);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -131,8 +136,9 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 * @param bpmn2FilePath
 	 *            the new definition
 	 * @return the uuid
+	 * @throws Exception 
 	 */
-	public UUID setDefinition(String bpmn2FilePath) {
+	public UUID setDefinition(String bpmn2FilePath) throws Exception {
 		String xmlContents;
 
 		try {
@@ -287,8 +293,10 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 
 			if (flagMetaDataStr != null) {
-				processNodeFlags(availActions, actions, node, flagMetaDataStr);
-				flagMetaDataStr = null;
+				boolean flagProcessed = processNodeFlags(availActions, actions, node, flagMetaDataStr);
+				if (flagProcessed) {
+					flagMetaDataStr = null;
+				}
 			}
 		}
 		
@@ -364,16 +372,21 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *            the xml contents
 	 *
 	 * @return the process descriptor
+	 * @throws Exception 
 	 */
-	private ProcessDescriptor processWorkflowDefinition(String xmlContents) {
+	private ProcessDescriptor processWorkflowDefinition(String xmlContents) throws Exception {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 		ByteArrayResource resr = new ByteArrayResource(xmlContents.getBytes());
 		kbuilder.add(resr, ResourceType.BPMN2);
-		KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
+		try {
+			KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
+			Process process = pckg.getProcesses().iterator().next();
 
-		Process process = pckg.getProcesses().iterator().next();
-
-		return (ProcessDescriptor) process.getMetaData().get("ProcessDescriptor");
+			return (ProcessDescriptor) process.getMetaData().get("ProcessDescriptor");
+		} catch (Exception e) {
+			throw new Exception("Failed importing the BPMN2 file due to the following errors:\n" + kbuilder.getErrors());
+		}
+		
 	}
 
 	/**
@@ -655,7 +668,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		}
 	}
 
-	private void processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
+	private boolean processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
 		if (availActions.isEmpty()) {
 			for (AvailableAction action : allActions) {
 				if (node.getName().equalsIgnoreCase(action.getOutcomeState())) {
@@ -665,7 +678,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		}
 		
 		if (availActions.isEmpty()) {
-			throw new Exception("Have flag to add but no actions to associate with it");
+			return false;
 		}
 
 		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
@@ -685,6 +698,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		} else {
 			throw new Exception("Have unexpected flag in processNodeFlags(): " + flag);
 		}
+		
+		return true;
 	}
 	
 	private void clearImporterCollections() {

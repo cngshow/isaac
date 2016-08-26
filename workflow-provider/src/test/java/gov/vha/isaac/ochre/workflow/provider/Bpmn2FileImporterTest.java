@@ -109,14 +109,14 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		AvailableActionContentStore createdAvailableActionContentStore = new AvailableActionContentStore(store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
-				createdAvailableActionContentStore.getNumberOfEntries(), 9);
+				createdAvailableActionContentStore.getNumberOfEntries(), 10);
 
 		DefinitionDetail definitionDetails = createdDefinitionDetailContentStore.getAllEntries().iterator().next();
 
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review", "Create Workflow Process");
 
-		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Review", "Canceled During Approval",
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Edit", "Canceled During Review", "Canceled During Approval",
 				"Ready for Edit", "Ready for Approve", "Ready for Publish", "Ready for Review");
 
 		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
@@ -166,6 +166,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Map<String, Set<AvailableAction>> actionMap = new HashMap<>();
 		
 		for (AvailableAction action : availableActionStore.getAllEntries()) {
+			System.out.println(action + "\n\n");
 			if (!actionMap.containsKey(action.getInitialState())) {
 				actionMap.put(action.getInitialState(), new HashSet<AvailableAction>());
 			}
@@ -194,10 +195,19 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 	}
 
 	private void assertReadyForEditActions(Set<AvailableAction> actions) {
-		Assert.assertEquals(1, actions.size());
-		Assert.assertEquals("Edit", actions.iterator().next().getAction());
-		Assert.assertEquals("Ready for Review", actions.iterator().next().getOutcomeState());
-		Assert.assertEquals("Editor", actions.iterator().next().getRole());
+		Assert.assertEquals(2, actions.size());
+
+		for (AvailableAction act : actions) {
+			Assert.assertEquals("Editor", act.getRole());
+
+			if (act.getAction().equals("Cancel Workflow")) {
+				Assert.assertEquals("Canceled During Edit", act.getOutcomeState());
+			} else if (act.getAction().equals("Edit")) {
+				Assert.assertEquals("Ready for Review", act.getOutcomeState());
+			} else {
+				Assert.fail();
+			}
+		}
 	}
 
 	private void assertReadyForReviewActions(Set<AvailableAction> actions) {
