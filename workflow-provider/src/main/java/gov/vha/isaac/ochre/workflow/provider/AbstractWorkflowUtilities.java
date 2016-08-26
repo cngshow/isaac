@@ -33,50 +33,45 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 
 /**
  * Abstract class for higher-level workflow routines
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}
- * {@link Bpmn2FileImporter} {@link WorkflowProcessInitializerConcluder}
- * {@link WorkflowAdvancementAccessor} {@link WorkflowHistoryAccessor}
+ * {@link AbstractWorkflowUtilities} {@link Bpmn2FileImporter}
+ * {@link WorkflowProcessInitializerConcluder} {@link WorkflowAccessor}
  * {@line WorkflowUpdater}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowUtilities {
+	/** The Constant logger. */
+	protected static final Logger logger = LogManager.getLogger();
+
+	public enum EndWorkflowType {
+		CANCELED, CONCLUDED
+	};
+
+	public enum StartWorkflowType {
+		SINGLE_CASE
+	};
+
+	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 	private static final String AUTOMATED_ROLE = "Automated By System";
 	private static final String EDITING_ACTION = "EDITING";
+
 	private static Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
 	private static Map<StartWorkflowType, AvailableAction> startWorkflowTypeMap = new HashMap<>();
 	private static Set<String> editStates = new HashSet<>();
-	
-	public enum EndWorkflowType { CANCELED, CONCLUDED };
-	public enum StartWorkflowType { SINGLE_CASE };
-	
-	/** The Constant logger. */
-	protected static final Logger logger = LogManager.getLogger();
-	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 
-	/** The user workflow permission store. */
-	protected static UserPermissionContentStore userPermissionStore;
-
-	/** The available action store. */
-	protected static AvailableActionContentStore availableActionStore;
-
-	/** The definition detail store. */
-	protected static DefinitionDetailContentStore definitionDetailStore;
-
-	/** The process detail store. */
-	protected static ProcessDetailContentStore processDetailStore;
-
-	/** The process history store. */
-	protected static ProcessHistoryContentStore processHistoryStore;
-
-	/** The store. */
+	/** The workflow stores. */
 	protected static MVStoreMetaContentProvider store = null;
+	protected static UserPermissionContentStore userPermissionStore;
+	protected static AvailableActionContentStore availableActionStore;
+	protected static DefinitionDetailContentStore definitionDetailStore;
+	protected static ProcessDetailContentStore processDetailStore;
+	protected static ProcessHistoryContentStore processHistoryStore;
 
 	/**
 	 * Instantiates a new abstract workflow utilities.
@@ -111,7 +106,7 @@ public abstract class AbstractWorkflowUtilities {
 	public static ProcessDetailContentStore getProcessDetailStore() {
 		return processDetailStore;
 	}
-	
+
 	protected String getCanceledComment() {
 		return CANCELED_HISTORY_COMMENT;
 	}
@@ -131,17 +126,17 @@ public abstract class AbstractWorkflowUtilities {
 	public static Map<StartWorkflowType, AvailableAction> getStartWorkflowTypeMap() {
 		return startWorkflowTypeMap;
 	}
-	
+
 	public static Set<String> getEditStates() {
 		return editStates;
 	}
-	
+
 	public void clearDefinitionCollections() {
 		endNodeTypeMap.clear();
 		startWorkflowTypeMap.clear();
 		editStates.clear();
 	}
-	
+
 	public static void close() {
 		store = null;
 

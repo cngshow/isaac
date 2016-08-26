@@ -65,78 +65,13 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		super(store);
 	}
 
-	public Set<ProcessDetail> getActiveProcessesForDefinition(UUID definitionId) {
-		Set<ProcessDetail> activeProcesses = new HashSet<>();
-
-		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.isActive() && process.getDefinitionId().equals(definitionId)) {
-				activeProcesses.add(process);
-			}
-		}
-
-		return activeProcesses;
-	}
-
-	/**
-	 * Gets the processes for concept.
-	 *
-	 * @param conceptSeq
-	 *            the concept sequence
-	 * @return the processes for concept
-	 */
-	public SortedSet<ProcessDetail> getAllProcessesForComponent(int componentSeq) {
-		SortedSet<ProcessDetail> allProcessesByConcept = new TreeSet<>(new ProcessDetailComparator());
-
-		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.getComponentToStampMap().containsKey(componentSeq)) {
-				allProcessesByConcept.add(process);
-			}
-		}
-
-		return allProcessesByConcept;
-	}
-
-	/**
-	 * Gets the process detail.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @return the process detail
-	 */
-	public ProcessDetail getProcessDetail(UUID processId) {
-		return processDetailStore.getEntry(processId);
-	}
-
-
-	/**
-	 * Gets the definition.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @return the definition
-	 */
-	public DefinitionDetail getDefinition(UUID definitionId) {
+	public DefinitionDetail getDefinitionDetails(UUID definitionId) {
 		return definitionDetailStore.getEntry(definitionId);
 	}
 
-	/**
-	 * Checks if is component in active workflow.
-	 *
-	 * @param componentSequence
-	 *            the component sequence
-	 * @return true, if is component in active workflow
-	 * @throws Exception 
-	 */
-	public boolean isComponentInActiveWorkflow(int compSeq) throws Exception {
-		for (ProcessDetail proc : processDetailStore.getAllEntries()) {
-			if (proc.isActive() && proc.getComponentToStampMap().containsKey(compSeq)) {
-				return true;
-			}
-		} 
-		
-		return false;
+	public ProcessDetail getProcessDetails(UUID processId) {
+		return processDetailStore.getEntry(processId);
 	}
-
 
 	public SortedSet<ProcessHistory> getProcessHistory(UUID processId) {
 		SortedSet<ProcessHistory> allHistoryForProcess = new TreeSet<>(new ProcessHistoryComparator());
@@ -148,6 +83,18 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		}
 
 		return allHistoryForProcess;
+	}
+
+	public boolean isComponentInActiveWorkflow(UUID definitionId, int compSeq) throws Exception {
+		for (ProcessDetail proc : processDetailStore.getAllEntries()) {
+			if (proc.getDefinitionId().equals(definitionId) && 
+				proc.isActive() && 
+				proc.getComponentToStampMap().containsKey(compSeq)) {
+				return true;
+			}
+		} 
+		
+		return false;
 	}
 
 	public Set<UserPermission> getUserPermissions(UUID definitionId, int userId) {
@@ -170,10 +117,10 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		
 		// For each active Processes, see if its current state is "applicable current state"
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.isActive()) {
+			if (process.isActive() && process.getDefinitionId().equals(definitionId)) {
 				SortedSet<ProcessHistory> hx = getProcessHistory(process.getId());
 				
-				if (actionsByInitialState.containsKey(hx.last().getInitialState())) {
+				if (actionsByInitialState.containsKey(hx.last().getOutcomeState())) {
 					processInformation.put(process, hx);
 				}
 			}
@@ -183,12 +130,16 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	}
 	
 	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userId) {
-		ProcessDetail processDetail = getProcessDetail(processId);
+		ProcessDetail processDetail = getProcessDetails(processId);
 		ProcessHistory processLatest = getProcessHistory(processId).last();
 		
 		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(processDetail.getDefinitionId(), userId);
 
-		return actionsByInitialState.get(processLatest.getInitialState());
+		if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
+			return actionsByInitialState.get(processLatest.getOutcomeState());
+		} 
+		
+		return new HashSet<AvailableAction>();
 	}
 	
 	private Map<String, Set<AvailableAction>> getUserAvailableActionsByInitiailState(UUID definitionId, int userId) {
@@ -213,4 +164,19 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		
 		return applicableActions;
 	}
-}
+
+
+
+/*	private Set<ProcessDetail> getActiveProcessesForDefinition(UUID definitionId) {
+		Set<ProcessDetail> activeProcesses = new HashSet<>();
+
+		for (ProcessDetail process : processDetailStore.getAllEntries()) {
+			if (process.isActive() && process.getDefinitionId().equals(definitionId)) {
+				activeProcesses.add(process);
+			}
+		}
+
+		return activeProcesses;
+	}
+
+*/	}

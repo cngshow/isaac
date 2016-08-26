@@ -1,6 +1,5 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -15,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
+import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
@@ -24,6 +24,7 @@ import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
@@ -33,8 +34,8 @@ import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 /**
  * Test the AbstractWorkflowProviderTestPackage class
  * 
- * {@link WorkflowProcessInitializerConcluderTest}. {@link WorkflowStatusAccessorTest}.
- * {@link WorkflowHistoryAccessorTest}.
+ * {@link WorkflowProcessInitializerConcluderTest}.
+ * {@link WorkflowStatusAccessorTest}. {@link WorkflowHistoryAccessorTest}.
  * {@link WorkflowActionsPermissionsAccessorTest}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -45,101 +46,178 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The bpmn file path. */
-	protected static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
+	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/VetzWorkflow.bpmn2";
 
 	/** The store. */
-	protected WorkflowProcessInitializerConcluder initConcluder;
-
 	protected ProcessDetailContentStore processDetailStore;
-
 	protected ProcessHistoryContentStore processHistoryStore;
-
 	protected DefinitionDetailContentStore definitionDetailStore;
-
 	protected UserPermissionContentStore userPermissionStore;
+	protected AvailableActionContentStore availableActionStore;
 
-	protected Bpmn2FileImporter importer;
-
-	protected AvailableAction startNodeAction;
-
-	protected static Set<Integer> secondaryConceptsForTesting = new HashSet<>(Arrays.asList(199, 299));
-
-	protected static int mainUserId = 99;
-	protected static int secondaryUserId = 999;
-
-	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
-
-	protected static Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56));
-
+	/*
+	 * Defined by importing definition and static throughout testclasses to
+	 * simplify process
+	 */
 	protected static UUID mainDefinitionId;
+	private static String createState;
+	private static String createAction;
+	private static String createOutcome;
+	private static String createRole = "Automated By System";
 
-	protected static UUID secondaryProcessId;
+	/* Constants throughout testclasses to simplify process */
+	private static final long TEST_START_TIME = new Date().getTime();
 
-	protected static UUID firstHistoryEntryId;
+	protected static final int firstUserId = 99;
+	protected static final int secondUserId = 999;
+	protected static final ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
+	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56));
 
-	protected static UUID secondHistoryEntryId;
+	private static final String LAUNCH_STATE = "Ready for Edit";
+	private static final String LAUNCH_ACTION = "Edit";
+	private static final String LAUNCH_OUTCOME = "Ready for Review";
+	private static final String LAUNCH_COMMENT = "Launch Comment";
 
-	protected static final long TEST_START_TIME = new Date().getTime();
-	protected static String createState;
-	protected static String createAction;
-	protected static String createOutcome;
+	private static final String SEND_TO_APPROVAL_STATE = "Ready for Review";
+	private static final String SEND_TO_APPROVAL_ACTION = "Review";
+	private static final String SEND_TO_APPROVAL_OUTCOME = "Ready for Approve";
+	private static final String SEND_TO_APPROVAL_COMMENT = "Sending for Approval";
 
-	protected static final String LAUNCH_STATE = "Ready for Edit";
-	protected static final String LAUNCH_ACTION = "Edit";
-	protected static final String LAUNCH_OUTCOME = "Ready for Review";
-	protected static final String LAUNCH_COMMENT = "Launch Comment";
+	private static final String REJECT_REVIEW_STATE = "Ready for Review";
+	private static final String REJECT_REVIEW_ACTION = "Reject QA";
+	private static final String REJECT_REVIEW_OUTCOME = "Ready for Edit";
+	private static final String REJECT_REVIEW_COMMENT = "Rejecting QA sending back to Edit";
 
 	protected static final String CONCLUDED_WORKFLOW_COMMENT = "Concluded Workflow";
 	protected static final String CANCELED_WORKFLOW_COMMENT = "Canceled Workflow";
 
-	protected static final String SEND_TO_APPROVAL_STATE = "Ready for Review";
-	protected static final String SEND_TO_APPROVAL_ACTION = "Review";
-	protected static final String SEND_TO_APPROVAL_OUTCOME = "Ready for Approve";
-	protected static final String SEND_TO_APPROVAL_COMMENT = "Sending for Approval";
-
-	protected static final String REJECT_REVIEW_STATE = "Ready for Review";
-	protected static final String REJECT_REVIEW_ACTION = "Reject QA";
-	protected static final String REJECT_REVIEW_OUTCOME = "Ready for Edit";
-	protected static final String REJECT_REVIEW_COMMENT = "Rejecting QA sending back to Edit";
-
-	protected static UUID secondaryHistoryEntryId;
-
-	protected static File DATASTORE_PATH = new File(
-			"C:/SW/WCI/Mantech/Workspace/ISAAC/testDB/vets-1.2-SNAPSHOT-all.data/");
-
 	protected void globalSetup(MVStoreMetaContentProvider store) {
 		definitionDetailStore = new DefinitionDetailContentStore(store);
-
 		processDetailStore = new ProcessDetailContentStore(store);
-
 		processHistoryStore = new ProcessHistoryContentStore(store);
-
 		userPermissionStore = new UserPermissionContentStore(store);
-
+		availableActionStore = new AvailableActionContentStore(store);
+		
 		if (definitionDetailStore.getAllEntries().size() == 0) {
-			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			startNodeAction = AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE);
+			Bpmn2FileImporter importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+			AvailableAction startNodeAction = AbstractWorkflowUtilities.getStartWorkflowTypeMap()
+					.get(StartWorkflowType.SINGLE_CASE);
 			createState = startNodeAction.getInitialState();
 			createAction = startNodeAction.getAction();
 			createOutcome = startNodeAction.getOutcomeState();
 			mainDefinitionId = importer.getCurrentDefinitionId();
 		}
 
-		initConcluder = new WorkflowProcessInitializerConcluder(store);
-
 		processDetailStore.removeAllEntries();
 		processHistoryStore.removeAllEntries();
 	}
 
 	protected void setupUserRoles() {
-		UserPermission perm = new UserPermission(mainDefinitionId, mainUserId, "Editor");
+		UserPermission perm = new UserPermission(mainDefinitionId, firstUserId, "Editor");
 		userPermissionStore.addEntry(perm);
 
-		perm = new UserPermission(mainDefinitionId, secondaryUserId, "Reviewer");
+		perm = new UserPermission(mainDefinitionId, secondUserId, "Reviewer");
 		userPermissionStore.addEntry(perm);
 
-		perm = new UserPermission(mainDefinitionId, mainUserId, "Approver");
+		perm = new UserPermission(mainDefinitionId, firstUserId, "Approver");
 		userPermissionStore.addEntry(perm);
+	}
+
+	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
+		return createWorkflowProcess(requestedDefinitionId, "Main Process Name", "Main Process Description");
+	}
+
+	protected UUID createSecondWorkflowProcess(UUID requestedDefinitionId) {
+		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description");
+	}
+	
+	protected void executeLaunchWorkflow(UUID processId) {
+		try {
+			Thread.sleep(1);
+			ProcessDetail entry = processDetailStore.getEntry(processId);
+			
+			entry.setStatus(ProcessStatus.LAUNCHED);
+			entry.setTimeLaunched(new Date().getTime());
+			processDetailStore.updateEntry(processId, entry);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	protected void executeSendForReviewAdvancement(UUID processId) {
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(),
+					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
+			processHistoryStore.addEntry(advanceEntry);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	protected void executeSendForApprovalAdvancement(UUID requestedProcessId) {
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
+					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
+			
+			processHistoryStore.addEntry(entry);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	protected void  executeRejectReviewAdvancement(UUID requestedProcessId) {
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
+					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
+			
+			processHistoryStore.addEntry(entry);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	protected void concludeWorkflow(UUID processId) {
+		try {
+			Thread.sleep(1);
+			
+			finishWorkflowProcess(processId,
+					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(),
+					firstUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	protected void cancelWorkflow(UUID processId) {
+		try {
+			Thread.sleep(1);
+			
+			finishWorkflowProcess(processId,
+					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next(),
+					firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	protected void addComponentsToProcess(UUID processId) {
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+		for (Integer con : conceptsForTesting) {
+			entry.getComponentToStampMap().put(con, stampSequenceForTesting);
+		}
+		
+		processDetailStore.updateEntry(processId, entry);
 	}
 
 	protected boolean timeSinceYesterdayBeforeTomorrow(long time) {
@@ -154,157 +232,46 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		return time >= yesterdayTimestamp && time <= tomorrowTimestamp;
 	}
 
-	protected void close() {
-		AbstractWorkflowUtilities.close();
-	}
-
-	protected UUID createWorkflowProcess(UUID requestedDefinitionId) {
-		// Create new process
-		try {
-			return initConcluder.createWorkflowProcess(requestedDefinitionId, mainUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
-			return null;
-		}
-	}
-
-	protected void executeLaunchAdvancement(UUID processId, boolean updateProcessDetails) {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		
-		if (updateProcessDetails) {
-    		entry.setStatus(ProcessStatus.LAUNCHED);
-    		entry.setTimeLaunched(new Date().getTime());
-    		processDetailStore.updateEntry(processId, entry);
-		}
-		
-		ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(),
-		LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
-		processHistoryStore.addEntry(advanceEntry);
-	}
-
-	protected UUID createSecondaryDefinition() {
-		Set<String> roles = new HashSet<>();
-		roles.add("Editor");
-		roles.add("Reviewer");
-		roles.add("Approver");
-		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles, "Description of BPMN2 ID-X");
-		return definitionDetailStore.addEntry(createdEntry);
-
-	}
-
-	protected void addComponentsToProcess(UUID processId) {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
-		for (Integer con : conceptsForTesting) {
-			entry.getComponentToStampMap().put(con, stampSequenceForTesting);
-		}
-		
-		processDetailStore.updateEntry(processId, entry);
-	}
-
-	protected UUID createSecondaryWorkflowProcess(UUID requestedDefinitionId, Set<Integer> concepts) {
-		// Create new process
-		try {
-			return initConcluder.createWorkflowProcess(requestedDefinitionId, mainUserId, "Secondary Process Name", "Secondary Process Description", StartWorkflowType.SINGLE_CASE);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
-			return null;
-		}
-	}
-
-	protected UUID executeSendForApprovalAdvancement(UUID requestedProcessId) {
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, new Date().getTime(), SEND_TO_APPROVAL_STATE,
-				SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
-		return processHistoryStore.addEntry(entry);
-	}
-
-	protected UUID executeRejectReviewAdvancement(UUID requestedProcessId) {
-		ProcessHistory entry = new ProcessHistory(requestedProcessId, mainUserId, new Date().getTime(), REJECT_REVIEW_STATE,
-				REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
-		return processHistoryStore.addEntry(entry);
-	}
-
-	protected void concludeWorkflow(UUID processId) {
-		try {
-			initConcluder.finishWorkflowProcess(processId, 
-					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(), 
-					mainUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
-		}
-	}
-
-	protected void cancelWorkflow(UUID processId) {
-		try {
-			initConcluder.finishWorkflowProcess(processId, 
-					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next(), 
-					mainUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Assert.fail();
-		}
-	}
-
-	protected void assertHistoryForProcess(SortedSet<ProcessHistory> allProcessHistory, UUID processId, int numberOfEntries) {
-		Assert.assertEquals(numberOfEntries, allProcessHistory.size());
-
+	protected void assertHistoryForProcess(SortedSet<ProcessHistory> allProcessHistory, UUID processId) {
 		int counter = 0;
 		for (ProcessHistory entry : allProcessHistory) {
 			if (counter == 0) {
-				assertCreationHistory(entry, processId);
+				Assert.assertEquals(processId, entry.getProcessId());
+				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+				Assert.assertEquals(createState, entry.getInitialState());
+				Assert.assertEquals(createAction, entry.getAction());
+				Assert.assertEquals(createOutcome, entry.getOutcomeState());
+				Assert.assertEquals("", entry.getComment());
 			} else if (counter == 1) {
-				assertLaunchHistory(entry, processId);
+				Assert.assertEquals(processId, entry.getProcessId());
+				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+				Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
+				Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
+				Assert.assertEquals(LAUNCH_OUTCOME, entry.getOutcomeState());
+				Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
 			} else if (counter == 2) {
-				assertSendToApproverHistory(entry, processId);
+				Assert.assertEquals(processId, entry.getProcessId());
+				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
+				Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
+				Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
+				Assert.assertEquals(SEND_TO_APPROVAL_OUTCOME, entry.getOutcomeState());
+				Assert.assertEquals(SEND_TO_APPROVAL_COMMENT, entry.getComment());
 			}
 
 			counter++;
-			
-			if (counter > numberOfEntries) {
-				break;
-		}
 		}
 	}
 
-	private void assertSendToApproverHistory(ProcessHistory entry, UUID processId) {
-		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
-		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
-		Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
-		Assert.assertEquals(SEND_TO_APPROVAL_OUTCOME, entry.getOutcomeState());
-		Assert.assertEquals(SEND_TO_APPROVAL_COMMENT, entry.getComment());
-	}
-
-	protected void assertLaunchHistory(ProcessHistory entry, UUID processId) {
-		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
-		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
-		Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
-		Assert.assertEquals(LAUNCH_OUTCOME, entry.getOutcomeState());
-		Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
-	}
-
-	protected void assertCreationHistory(ProcessHistory entry, UUID processId) {
-		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
-		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		Assert.assertEquals(createState, entry.getInitialState());
-		Assert.assertEquals(createAction, entry.getAction());
-		Assert.assertEquals(createOutcome, entry.getOutcomeState());
-		Assert.assertEquals("", entry.getComment());
-	}
-	
 	protected void assertCancelHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		
-		AvailableAction cancelAction = 
-				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
+
+		AvailableAction cancelAction = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED)
+				.iterator().next();
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(cancelAction.getAction(), entry.getAction());
 		Assert.assertEquals(cancelAction.getOutcomeState(), entry.getOutcomeState());
@@ -313,14 +280,89 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertConcludeHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(mainUserId, entry.getWorkflowUser());
+		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
-		
-		AvailableAction concludeAction = 
-				AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+
+		AvailableAction concludeAction = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED)
+				.iterator().next();
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(concludeAction.getAction(), entry.getAction());
 		Assert.assertEquals(concludeAction.getOutcomeState(), entry.getOutcomeState());
 		Assert.assertEquals(CONCLUDED_WORKFLOW_COMMENT, entry.getComment());
+	}
+
+	private void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userId, String comment,
+			EndWorkflowType endType) throws Exception {
+		// Mimick the initConcluder's finish workflow process
+		ProcessDetail entry = processDetailStore.getEntry(processId);
+
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			entry.setStatus(ProcessStatus.CANCELED);
+		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
+			entry.setStatus(ProcessStatus.CONCLUDED);
+		}
+		entry.setTimeCanceledOrConcluded(new Date().getTime());
+		processDetailStore.updateEntry(processId, entry);
+
+		// Only add Cancel state in Workflow if process has already been
+		// launched
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
+				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
+				comment);
+		processHistoryStore.addEntry(advanceEntry);
+
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			// TODO: Handle cancelation store and handle reverting automatically
+		}
+	}
+
+	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
+		// Mimick the initConcluder's create new process
+		StorableWorkflowContents details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
+				ProcessStatus.DEFINED, name, description);
+		UUID processId = processDetailStore.addEntry(details);
+
+		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
+		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, createState, createAction,
+				createOutcome, createRole);
+		ProcessHistory advanceEntry = new ProcessHistory(processId, firstUserId, new Date().getTime(),
+				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
+				"");
+		processHistoryStore.addEntry(advanceEntry);
+
+		return processId;
+	}
+
+
+	protected UUID createSecondaryDefinition() {
+		Set<String> roles = new HashSet<>();
+		roles.add("Editor");
+		roles.add("Reviewer");
+		roles.add("Approver");
+		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
+				"Description of BPMN2 ID-X");
+		UUID defId = definitionDetailStore.addEntry(createdEntry);
+		
+		// Duplicate Permissions
+		Set<UserPermission> permsToAdd = new HashSet<>();
+		for (UserPermission perm : userPermissionStore.getAllEntries()) {
+			permsToAdd.add(new UserPermission(defId, perm.getUser(), perm.getRole()));
+		}
+		
+		for (UserPermission perm : permsToAdd) {
+			userPermissionStore.addEntry(perm);
+		}
+		
+		// Duplicate AvailableActions
+		Set<AvailableAction> actionsToAdd = new HashSet<>();
+		for (AvailableAction action : availableActionStore.getAllEntries()) {
+			actionsToAdd.add(new AvailableAction(defId, action.getInitialState(), action.getAction(), action.getOutcomeState(), action.getRole()));
+		}
+		
+		for (AvailableAction action : actionsToAdd) {
+			availableActionStore.addEntry(action);
+		}
+
+		return defId;
 	}
 }

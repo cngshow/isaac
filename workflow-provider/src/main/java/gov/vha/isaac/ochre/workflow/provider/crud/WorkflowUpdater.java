@@ -77,7 +77,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 */
 	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment)
 			throws Exception {
-		WorkflowProcessAccessor wfAccessor = new WorkflowProcessAccessor(store);
+		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 
 		// Get User Permissible actions
 		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
@@ -87,7 +87,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 
 		if (userPermissableActions.isEmpty()) {
 			logger.info("User does not have permission to advance workflow for this process: " + processId
-					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcomeState());
+					+ " for this user: " + workflowUser + " based on current state: "
+					+ processLatest.getOutcomeState());
 		} else {
 			AvailableAction actionToProcess = null;
 
@@ -122,8 +123,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				}
 
 				ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
-						actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
-						comment);
+						actionToProcess.getInitialState(), actionToProcess.getAction(),
+						actionToProcess.getOutcomeState(), comment);
 				return processHistoryStore.addEntry(entry);
 			}
 		}
@@ -193,9 +194,9 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 
 		UUID processId = detail.getId();
 
-		WorkflowProcessAccessor wfAccessor = new WorkflowProcessAccessor(store);
+		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 		// Check if in Case A. If not, throw exception
-		if (wfAccessor.isComponentInActiveWorkflow(compSeq)
+		if (wfAccessor.isComponentInActiveWorkflow(detail.getDefinitionId(), compSeq)
 				&& !detail.getComponentToStampMap().containsKey(compSeq)) {
 			throw new Exception("Cannot " + exceptionCase
 					+ " component to workflow because component is already in another active workflow");

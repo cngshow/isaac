@@ -102,7 +102,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testAddComponentsToProcess() throws Exception {
-		UUID processId = createWorkflowProcess(mainDefinitionId);
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		Assert.assertFalse(details.getComponentToStampMap().containsKey(firstConceptSeq));
 
@@ -143,8 +143,8 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 
 		}
 
-		UUID firstProcessId = createWorkflowProcess(mainDefinitionId);
-		UUID secondProcessId = createWorkflowProcess(mainDefinitionId);
+		UUID firstProcessId = createFirstWorkflowProcess(mainDefinitionId);
+		UUID secondProcessId = createFirstWorkflowProcess(mainDefinitionId);
 		updater.addComponentToWorkflow(secondProcessId, firstConceptSeq, firstStampSeq);
 		try {
 			updater.addComponentToWorkflow(firstProcessId, firstConceptSeq, firstStampSeq);
@@ -155,7 +155,8 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		}
 
 		// Testing LAUNCHED-NON-EDIT Case
-		executeLaunchAdvancement(firstProcessId, true);
+		executeLaunchWorkflow(firstProcessId);
+		executeSendForReviewAdvancement(firstProcessId);
 		try {
 			updater.addComponentToWorkflow(firstProcessId, firstConceptSeq, firstStampSeq);
 			Assert.fail();
@@ -193,7 +194,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testRemoveComponentsFromProcess() throws Exception {
-		UUID processId = createWorkflowProcess(mainDefinitionId);
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = processDetailStore.getEntry(processId);
 		Assert.assertEquals(0, details.getComponentToStampMap().size());
 
@@ -229,20 +230,85 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testAdvanceWorkflow() throws Exception {
-		UUID processId = createWorkflowProcess(mainDefinitionId);
-		secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId, secondaryConceptsForTesting);
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
+		addComponentsToProcess(processId);
+		executeLaunchWorkflow(processId);
 
-		executeLaunchAdvancement(processId, true);
-		firstHistoryEntryId = executeSendForApprovalAdvancement(processId);
-
-		UUID entryId = updater.advanceWorkflow(processId, mainUserId, "Approve", "Comment #1");
+		// Process in Ready to Edit state: Can execute action "Edit" by firstUser
+		UUID entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
 		Assert.assertNull(entryId);
 
-		entryId = updater.advanceWorkflow(processId, secondaryUserId, "Approve", "Comment #1");
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
 		Assert.assertNull(entryId);
 
-		entryId = updater.advanceWorkflow(processId, secondaryUserId, "QA Passes", "Comment #1");
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
 		Assert.assertNotNull(entryId);
+
+		// Process in Ready for Review state: Can execute action "QA Passes" by secondUser
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNotNull(entryId);
+		
+		// Process in Ready for Approve state: Can execute action "Approve" by firstUser
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+		
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNotNull(entryId);
+		
+		// Process in Publish state: no one can advance
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+		
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
 	}
 
 	/**
@@ -253,16 +319,16 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testAddNewUserRole() throws Exception {
-		WorkflowActionsPermissionsAccessor accessor = new WorkflowActionsPermissionsAccessor();
-		Set<UserPermission> permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
+		WorkflowAccessor wfAccessor = new WorkflowAccessor();
+		Set<UserPermission> permissions = wfAccessor.getUserPermissions(mainDefinitionId, firstUserId);
 
 		for (UserPermission perm : permissions) {
 			Assert.assertFalse(perm.getRole().equals("Reviewer"));
 		}
 
-		updater.addNewUserRole(mainDefinitionId, mainUserId, "Reviewer");
+		updater.addNewUserRole(mainDefinitionId, firstUserId, "Reviewer");
 
-		permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
+		permissions = wfAccessor.getUserPermissions(mainDefinitionId, firstUserId);
 		boolean newRoleFound = false;
 		for (UserPermission perm : permissions) {
 			if (perm.getRole().equals("Reviewer")) {
