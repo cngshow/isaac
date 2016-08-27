@@ -29,6 +29,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
+import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeTypeToClassUtility;
@@ -103,8 +104,6 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
         return SememeType.DYNAMIC;
     }
 
-    ;
-
     /**
      * @see gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe#getData()
      */
@@ -130,8 +129,7 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
 
     @Override
     public DynamicSememeUsageDescription getDynamicSememeUsageDescription() {
-        // TODO Auto-generated method stub
-        return null;
+        return DynamicSememeUsageDescriptionImpl.read(this.getAssemblageSequence());
     }
 
     @Override
@@ -174,51 +172,4 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
         sb.append("]");
         return sb.toString();
     }
-
-    //TODO dan remove if we don't actually need equals
-    //    @Override
-    //    public boolean equals(Object obj) {
-    //        if (obj == null) {
-    //            return false;
-    //        }
-    //
-    //        if (RefexDynamicMember.class.isAssignableFrom(obj.getClass())) {
-    //            RefexDynamicMember another = (RefexDynamicMember) obj;
-    //            if (this.getAssemblageNid() == another.getAssemblageNid() && this.getReferencedComponentNid() == another.getReferencedComponentNid() 
-    //                    && Arrays.deepEquals(this.getData(), another.getData())) {
-    //                return true;
-    //            }
-    //        }
-    //
-    //        return false;
-    //    }
-    //
-    //    @Override
-    //    public boolean fieldsEqual(ConceptComponent<RefexDynamicRevision, RefexDynamicMember> obj) {
-    //        if (ConceptAttributes.class.isAssignableFrom(obj.getClass())) {
-    //            RefexDynamicMember another = (RefexDynamicMember) obj;
-    //
-    //            if (this.getAssemblageNid() != another.getAssemblageNid()) {
-    //                return false;
-    //            }
-    //
-    //            if (refexFieldsEqual(obj)) {
-    //                return conceptComponentFieldsEqual(another);
-    //            }
-    //        }
-    //
-    //        return false;
-    //    }
-//     protected boolean refexFieldsEqual(ConceptComponent<RefexDynamicRevision, RefexDynamicMember> obj) {
-//           if (RefexDynamicMember.class.isAssignableFrom(obj.getClass())) {
-//              RefexDynamicMember another = (RefexDynamicMember) obj;
-//              return refexDataFieldsEqual(another.getData());
-//           }
-//           return false;
-//        }
-//        
-//        @Override
-//        public boolean refexDataFieldsEqual(RefexDynamicDataBI[] another) {
-//            return Arrays.deepEquals(getData(), another);
-//        }
 }
