@@ -250,7 +250,6 @@ public class WorkExecutors
 					}
 					catch (InterruptedException e)
 					{
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					System.out.println(id + " finished");
@@ -277,7 +276,6 @@ public class WorkExecutors
 					}
 					catch (InterruptedException e)
 					{
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					System.out.println(id + " finished");

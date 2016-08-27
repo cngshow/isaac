@@ -82,13 +82,13 @@ public enum SememeType {
             case MEMBER:
                 return (Class<? extends ObservableSememeVersion>)ObservableSememeVersion.class;
             case DYNAMIC:
-            //TODO
+            //TODO implement Observable pattern
             case LOGIC_GRAPH:
-            //TODO
+            //TODO implement Observable pattern
             case LONG:
-            //TODO
+            //TODO implement Observable pattern
             case STRING:
-            //TODO
+            //TODO implement Observable pattern
             default:
                 throw new RuntimeException("Can't handle: " + this);
         }

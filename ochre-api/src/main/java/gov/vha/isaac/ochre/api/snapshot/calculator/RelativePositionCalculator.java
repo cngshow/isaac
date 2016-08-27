@@ -102,8 +102,8 @@ public class RelativePositionCalculator implements OchreCache {
 
 		/**
 		 * Each segment gets it's own sequence which gets greater the further
-		 * prior to the position of the relative position computer. TODO if we
-		 * have a path sequence, may not need segment sequence.
+		 * prior to the position of the relative position computer. 
+		 * TODO if we have a path sequence, may not need segment sequence.
 		 */
 		int segmentSequence;
 

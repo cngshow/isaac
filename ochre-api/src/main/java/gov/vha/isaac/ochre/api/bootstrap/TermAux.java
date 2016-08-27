@@ -290,7 +290,6 @@ public class TermAux {
         if (languageConceptSequence == SWEDISH_LANGUAGE.getConceptSequence()) {
             return SWEDISH_DESCRIPTION_ASSEMBLAGE.getConceptSequence();
         }
-        //TODO make an assemblage to link langauge to description assemblage, or an unspecified assemblage
         throw new RuntimeException("No description assemblage for: " + 
                 Get.conceptDescriptionText(languageConceptSequence));
     }

@@ -41,79 +41,79 @@ public class SememeTypeProvider<V extends SememeVersion<?>> implements SememeSer
     
     @Override
     public SememeChronology<V> getSememe(int sememeSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Stream<SememeChronology<V>> getSememesFromAssemblage(int assemblageSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesFromAssemblage(int assemblageSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesFromAssemblageModifiedAfterPosition(int assemblageSequence, StampPosition position) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesForComponentsFromAssemblageModifiedAfterPosition(NidSet componentNidSet, int assemblageSequence, StampPosition position) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Stream<SememeChronology<V>> getSememesForComponent(int componentNid) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesForComponent(int componentNid) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Stream<SememeChronology<V>> getSememesForComponentFromAssemblage(int componentNid, int assemblageSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesForComponentFromAssemblage(int componentNid, int assemblageSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public SememeSequenceSet getSememeSequencesForComponentsFromAssemblage(NidSet componentNidSet, int assemblageSequence) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void writeSememe(SememeChronology<?> sememeChronicle) {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Stream<SememeChronology<V>> getSememeStream() {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public Stream<SememeChronology<V>> getParallelSememeStream() {
-        //TODO
+        //TODO Implement the Sememe Type provider class
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
