@@ -772,15 +772,12 @@ public abstract class ObjectChronologyImpl<V extends ObjectVersionImpl>
 
     @Override
     public boolean isLatestVersionActive(StampCoordinate coordinate) {
-        RelativePositionCalculator calc = RelativePositionCalculator.getCalculator(coordinate);
+        RelativePositionCalculator calc = RelativePositionCalculator.getCalculator(coordinate.makeAnalog(State.ACTIVE, State.INACTIVE, State.CANCELED, State.PRIMORDIAL));
         StampSequenceSet latestStampSequences = calc.getLatestStampSequencesAsSet(this.getVersionStampSequences());
         if (latestStampSequences.isEmpty()) {
             return false;
         }
-        if (latestStampSequences.size() >1) {
-            throw new RuntimeException("Latest version is in conflict!");  //TODO should this contract be changed?
-        }
-        return Get.stampService().getStatusForStamp(latestStampSequences.findFirst().getAsInt()) == State.ACTIVE;
+        return latestStampSequences.stream().anyMatch(stampSequence -> Get.stampService().getStatusForStamp(stampSequence) == State.ACTIVE);
     }
 
     @Override
