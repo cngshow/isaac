@@ -33,12 +33,6 @@ public class ComponentReference
 		typeLabelSupplier_ = typeLabelSupplier;
 	}
 	
-//TODO do I need this?  It is unsafe, without knowing the type.
-//	public int getSequence()
-//	{
-//		return sequenceProvider_.getAsInt();
-//	}
-	
 	public UUID getPrimordialUuid()
 	{
 		return uuidProvider_.get();
