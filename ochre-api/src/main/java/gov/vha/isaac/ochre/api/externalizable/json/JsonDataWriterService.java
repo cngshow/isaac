@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import com.cedarsoftware.util.io.JsonWriter;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 
@@ -42,11 +44,8 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 		json_ = new JsonWriter(new FileOutputStream(path.toFile()), args);
-		//TODO enable this class after 4.5.1 is released with these patches:
-		//https://github.com/jdereg/json-io/issues/95
-		//https://github.com/jdereg/json-io/issues/96
-//		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
-//		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
+		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
+		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
 	}
 
 	public JsonDataWriterService(File path) throws IOException

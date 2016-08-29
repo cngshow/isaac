@@ -238,7 +238,7 @@
             <dependency>
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
-                <version>4.5.0</version>
+                <version>4.6.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -341,11 +341,13 @@
                     <artifactId>docbkx-maven-plugin</artifactId>
                     <version>2.0.16</version>
                 </plugin>
+                <!--
                 <plugin>
                     <groupId>org.glassfish.hk2</groupId>
                     <artifactId>hk2-inhabitant-generator</artifactId>
                     <version>${hk2.version}</version>
                 </plugin>
+                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
