@@ -682,15 +682,15 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		}
 
 		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
-			if (!getEndNodeTypeMap().containsKey(EndWorkflowType.CANCELED)) {
-				getEndNodeTypeMap().put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
+			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CANCELED)) {
+				getEndWorkflowTypeMap().put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
 			}
-			getEndNodeTypeMap().get(EndWorkflowType.CANCELED).addAll(availActions);
+			getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).addAll(availActions);
 		} else if (flag.equalsIgnoreCase(EndWorkflowType.CONCLUDED.toString())) {
-			if (!getEndNodeTypeMap().containsKey(EndWorkflowType.CONCLUDED)) {
-				getEndNodeTypeMap().put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
+			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CONCLUDED)) {
+				getEndWorkflowTypeMap().put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
 			}
-			getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
+			getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
 		} else if (flag.equalsIgnoreCase(getEditingAction())) {
 			for (AvailableAction action : availActions) {
 				getEditStates().add(action.getInitialState());

@@ -101,7 +101,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *            the process id
 	 * @throws Exception
 	 */
-	protected void launchWorkflowProcess(UUID processId) throws Exception {
+	public void launchWorkflowProcess(UUID processId) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -126,7 +126,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *            the comment
 	 * @throws Exception
 	 */
-	protected void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
+	public void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {

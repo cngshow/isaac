@@ -89,7 +89,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				ProcessDetail process = processDetailStore.getEntry(processId);
 				
 				// Update Process Details for launch, cancel, or conclude
-				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
+				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
 					// Request to cancel workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
 					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
@@ -99,14 +99,14 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					// Advancing request is to launch workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
 					initConcluder.launchWorkflowProcess(processId);
-				} else if (getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
+				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
 					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
 							EndWorkflowType.CONCLUDED);
 				}
 
-				if (getEndNodeTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
+				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
 					// Special case where comment added to cancel screen and cancel store
 					// TODO: Better approach?
 					comment = getCanceledComment();

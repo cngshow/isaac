@@ -145,7 +145,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 		
-		AvailableAction actionToProcess = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
+		AvailableAction actionToProcess = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
 		initConcluder.finishWorkflowProcess(processId, actionToProcess, firstUserId, CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
 
 		assertProcessDefinition(ProcessStatus.CANCELED, mainDefinitionId, processId);
@@ -181,7 +181,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 		
-		AvailableAction actionToProcess = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+		AvailableAction actionToProcess = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 		initConcluder.finishWorkflowProcess(processId, actionToProcess, firstUserId, CONCLUDED_WORKFLOW_COMMENT, EndWorkflowType.CONCLUDED);
 
 		assertProcessDefinition(ProcessStatus.CONCLUDED, mainDefinitionId, processId);

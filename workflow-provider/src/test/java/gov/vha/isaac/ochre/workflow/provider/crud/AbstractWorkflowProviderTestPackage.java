@@ -193,7 +193,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			Thread.sleep(1);
 			
 			finishWorkflowProcess(processId,
-					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(),
+					AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(),
 					firstUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -205,7 +205,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			Thread.sleep(1);
 			
 			finishWorkflowProcess(processId,
-					AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED).iterator().next(),
+					AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next(),
 					firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -271,7 +271,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
-		AvailableAction cancelAction = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CANCELED)
+		AvailableAction cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
 				.iterator().next();
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(cancelAction.getAction(), entry.getAction());
@@ -284,7 +284,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
-		AvailableAction concludeAction = AbstractWorkflowUtilities.getEndNodeTypeMap().get(EndWorkflowType.CONCLUDED)
+		AvailableAction concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED)
 				.iterator().next();
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(concludeAction.getAction(), entry.getAction());

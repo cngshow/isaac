@@ -142,9 +142,9 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
 
-		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndNodeTypeMap()
+		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndWorkflowTypeMap()
 				.get(EndWorkflowType.CONCLUDED);
-		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndNodeTypeMap()
+		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndWorkflowTypeMap()
 				.get(EndWorkflowType.CANCELED);
 
 		Assert.assertEquals(canceledActions, identifiedCanceledActions);

@@ -119,7 +119,7 @@ public abstract class AbstractWorkflowUtilities {
 		return AUTOMATED_ROLE;
 	}
 
-	public static Map<EndWorkflowType, Set<AvailableAction>> getEndNodeTypeMap() {
+	public static Map<EndWorkflowType, Set<AvailableAction>> getEndWorkflowTypeMap() {
 		return endNodeTypeMap;
 	}
 
