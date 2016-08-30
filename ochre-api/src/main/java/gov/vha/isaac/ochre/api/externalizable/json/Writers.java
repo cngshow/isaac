@@ -97,6 +97,7 @@ public class Writers
 		@Override
 		public void write(Object obj, boolean showType, Writer output, Map<String, Object> args) throws IOException
 		{
+			@SuppressWarnings("unchecked")
 			SememeChronology<SememeVersion<?>> sc = (SememeChronology<SememeVersion<?>>) obj;
 			JsonWriter mainWriter = Support.getWriter(args);
 			
@@ -136,6 +137,7 @@ public class Writers
 			output.write(sc.getReferencedComponentNid() + "");
 			output.write("\",");
 			
+			@SuppressWarnings("unchecked")
 			List<SememeVersion<?>> versions =  (List<SememeVersion<?>>) sc.getVersionList();
 			mainWriter.newLine();
 			output.write("\"versions\":[");
