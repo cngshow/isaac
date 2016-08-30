@@ -144,7 +144,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void removeComponentFromWorkflow(UUID processId, int compSeq) throws Exception {
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
-		if (processIsInAcceptableEditState(detail, compSeq, "remove")) {
+		if (isProcessInAcceptableEditState(detail, compSeq, "remove")) {
 			if (!detail.getComponentToStampMap().containsKey(compSeq)) {
 				throw new Exception("Component " + compSeq + " is not already in Workflow");
 			}
@@ -159,7 +159,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	public void addComponentToWorkflow(UUID processId, int compSeq, int stampSeq) throws Exception {
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
-		if (processIsInAcceptableEditState(detail, compSeq, "add")) {
+		if (isProcessInAcceptableEditState(detail, compSeq, "add")) {
 			if (detail.getComponentToStampMap().containsKey(compSeq)) {
 				detail.getComponentToStampMap().get(compSeq).add(stampSeq);
 			} else {
@@ -172,7 +172,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		}
 	}
 
-	private boolean processIsInAcceptableEditState(ProcessDetail detail, int compSeq, String exceptionCase)
+	private boolean isProcessInAcceptableEditState(ProcessDetail detail, int compSeq, String exceptionCase)
 			throws Exception {
 		// Only can do if
 		// CASE A: (Component is not in any workflow || Component is already in

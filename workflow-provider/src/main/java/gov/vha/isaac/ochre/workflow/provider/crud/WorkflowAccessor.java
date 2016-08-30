@@ -164,19 +164,4 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		
 		return applicableActions;
 	}
-
-
-
-/*	private Set<ProcessDetail> getActiveProcessesForDefinition(UUID definitionId) {
-		Set<ProcessDetail> activeProcesses = new HashSet<>();
-
-		for (ProcessDetail process : processDetailStore.getAllEntries()) {
-			if (process.isActive() && process.getDefinitionId().equals(definitionId)) {
-				activeProcesses.add(process);
-			}
-		}
-
-		return activeProcesses;
-	}
-
-*/	}
+}
