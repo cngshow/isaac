@@ -55,6 +55,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UserPermissionContentStore userPermissionStore;
 	protected AvailableActionContentStore availableActionStore;
 
+	protected static AvailableAction concludeAction;
+	protected static AvailableAction cancelAction;
+
+
 	/*
 	 * Defined by importing definition and static throughout testclasses to
 	 * simplify process
@@ -106,6 +110,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			createAction = startNodeAction.getAction();
 			createOutcome = startNodeAction.getOutcomeState();
 			mainDefinitionId = importer.getCurrentDefinitionId();
+			cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+			concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 		}
 
 		processDetailStore.removeAllEntries();
@@ -192,8 +198,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 			
-			finishWorkflowProcess(processId,
-					AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next(),
+			finishWorkflowProcess(processId, concludeAction,
 					firstUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -204,8 +209,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 			
-			finishWorkflowProcess(processId,
-					AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next(),
+			finishWorkflowProcess(processId, cancelAction,
 					firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -271,8 +275,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
-		AvailableAction cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
-				.iterator().next();
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(cancelAction.getAction(), entry.getAction());
 		Assert.assertEquals(cancelAction.getOutcomeState(), entry.getOutcomeState());
@@ -284,8 +286,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
-		AvailableAction concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED)
-				.iterator().next();
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
 		Assert.assertEquals(concludeAction.getAction(), entry.getAction());
 		Assert.assertEquals(concludeAction.getOutcomeState(), entry.getOutcomeState());

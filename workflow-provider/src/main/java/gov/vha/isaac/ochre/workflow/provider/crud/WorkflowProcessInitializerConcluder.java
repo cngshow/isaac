@@ -80,6 +80,12 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     		throw new Exception("Name and Description must be filled out when creating a process");
     	}
     
+    	for (ProcessDetail detail : processDetailStore.getAllEntries()) {
+    		if (detail.getName().equalsIgnoreCase(name)) {
+    			throw new Exception("Process names must be unique");
+    		}
+    	}
+    	
     	// Create Process Details with "DEFINED"
     	StorableWorkflowContents details = new ProcessDetail(definitionId, user, new Date().getTime(),
     			ProcessStatus.DEFINED, name, description);
@@ -130,11 +136,21 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
-			throw new Exception("Cannot cancel workflow that hasn't been defined and launched first");
-		} else if (entry.getStatus() != ProcessStatus.LAUNCHED) {
-			throw new Exception("Cannot cancel workflow that has a process status of: " + entry.getStatus());
+			throw new Exception("Cannot cancel nor conclude a workflow that hasn't been defined yet");
+		} else if (endType == EndWorkflowType.CONCLUDED) {
+			if (entry.getStatus() != ProcessStatus.LAUNCHED) {
+				throw new Exception("Cannot conclude workflow that is in the following state: " + entry.getStatus());
+			} else {
+				WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
+				ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+				if (!AbstractWorkflowUtilities.isFinishStates(hx.getOutcomeState())) {
+					throw new Exception ("Cannot perform Conclude action on a workflow state of: " + hx.getOutcomeState());
+				}
+			}
+		} else if (endType == EndWorkflowType.CANCELED && entry.getStatus() != ProcessStatus.DEFINED && entry.getStatus() != ProcessStatus.LAUNCHED) {
+			throw new Exception("Cannot cancel workflow that is in the following state: " + entry.getStatus());
 		}
-
+		
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			entry.setStatus(ProcessStatus.CANCELED);
 		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {

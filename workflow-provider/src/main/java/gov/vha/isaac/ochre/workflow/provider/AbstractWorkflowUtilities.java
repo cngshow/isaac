@@ -130,6 +130,15 @@ public abstract class AbstractWorkflowUtilities {
 	public static Set<String> getEditStates() {
 		return editStates;
 	}
+	
+	public static boolean isFinishStates(String state) {
+		for (AvailableAction action : endNodeTypeMap.get(EndWorkflowType.CONCLUDED)) {
+			if (action.getInitialState().equals(state)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	public void clearDefinitionCollections() {
 		endNodeTypeMap.clear();
