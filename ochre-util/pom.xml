@@ -1,23 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
         <version>3.10-SNAPSHOT</version>
     </parent>
-    
     <groupId>gov.vha.isaac.ochre.modules</groupId>
-    <artifactId>ochre-mapping</artifactId>
+    <artifactId>ochre-util</artifactId>
     <packaging>jar</packaging>
-    <name>OCHRE: Mapping</name>
+    <name>OCHRE: Util</name>
+    
+    <description>
+        Shared code built on top of the low-level ISAAC APIs that is useful for users of ISAAC, but doesn't rise to the level 
+        of being part of the core APIs.
+    </description>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-mapping-constants</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>ochre-model</artifactId>
@@ -25,8 +24,9 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-util</artifactId>
+            <artifactId>ochre-metadata</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
+
 </project>

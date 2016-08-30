@@ -41,7 +41,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
  * @author darmbrust
  * 
  * Unfortunately, due to the use of the LookupService within this class - and the class itself being provided by a LookupService, 
- * we cannot create these constants as static - it leads to recusion in the LookupService init which breaks things.
+ * we cannot create these constants as static - it leads to recursion in the LookupService init which breaks things.
  */
 
 @Service

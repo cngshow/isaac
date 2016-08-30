@@ -328,15 +328,12 @@ public class BinaryDataDifferProviderUtility {
 			builder = sememeBuilderService_.getStringSememeBuilder(stringSememe.getString(),
 					stringSememe.getReferencedComponentNid(), stringSememe.getAssemblageSequence());
 			break;
-		case RELATIONSHIP_ADAPTOR:
-			// TODO: Handle This Case
-			break;
 		case LOGIC_GRAPH:
 			LogicGraphSememe<?> logicGraphSememe = (LogicGraphSememe<?>) version;
 			builder = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicGraphSememe.getLogicalExpression(),
 					logicGraphSememe.getReferencedComponentNid(), logicGraphSememe.getAssemblageSequence());
 			break;
-		case UNKNOWN:
+		case UNKNOWN: case RELATIONSHIP_ADAPTOR:  //Dan doesn't believe rel adapaters are ever created / written to ibdf
 		default:
 			throw new UnsupportedOperationException();
 		}

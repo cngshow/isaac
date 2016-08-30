@@ -16,7 +16,7 @@
     <dependencies>
         <dependency>
             <groupId>gov.vha.isaac.ochre.modules</groupId>
-            <artifactId>metadata</artifactId>
+            <artifactId>ochre-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

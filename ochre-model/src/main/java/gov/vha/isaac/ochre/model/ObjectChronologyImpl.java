@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.model;
 
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.CommitStates;
@@ -771,9 +772,12 @@ public abstract class ObjectChronologyImpl<V extends ObjectVersionImpl>
 
     @Override
     public boolean isLatestVersionActive(StampCoordinate coordinate) {
-        RelativePositionCalculator calc = RelativePositionCalculator.getCalculator(coordinate);
+        RelativePositionCalculator calc = RelativePositionCalculator.getCalculator(coordinate.makeAnalog(State.ACTIVE, State.INACTIVE, State.CANCELED, State.PRIMORDIAL));
         StampSequenceSet latestStampSequences = calc.getLatestStampSequencesAsSet(this.getVersionStampSequences());
-        return !latestStampSequences.isEmpty();
+        if (latestStampSequences.isEmpty()) {
+            return false;
+        }
+        return latestStampSequences.stream().anyMatch(stampSequence -> Get.stampService().getStatusForStamp(stampSequence) == State.ACTIVE);
     }
 
     @Override

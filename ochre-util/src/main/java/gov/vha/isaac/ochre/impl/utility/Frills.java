@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
@@ -790,77 +791,84 @@ public class Frills implements DynamicSememeColumnUtility {
 			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
 			SememeType referencedComponentSubRestriction)
 	{
-
-		ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
-		conceptBuilderService.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
-		conceptBuilderService.setDefaultDialectAssemblageForDescriptions(MetaData.US_ENGLISH_DIALECT);
-		conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
-
-		DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
-		LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
-
-		ConceptChronology<?> parentConcept =  Get.conceptService().getConcept(parentConceptNidOrSequence == null ? 
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES.getNid() 
-				: parentConceptNidOrSequence);
-		
-		NecessarySet(And(ConceptAssertion(parentConcept, defBuilder)));
-
-		LogicalExpression parentDef = defBuilder.build();
-
-		ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(sememeFSN, null, parentDef);
-
-		DescriptionBuilder<?, ?> definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememePreferredTerm, builder,
-						MetaData.SYNONYM,
-						MetaData.ENGLISH_LANGUAGE);
-		definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
-		builder.addDescription(definitionBuilder);
-		
-		ConceptChronology<? extends ConceptVersion<?>> newCon = builder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
-		Get.commitService().addUncommitted(newCon);
-		
+		try
 		{
-			//Set up the dynamic sememe 'special' definition
-			definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememeDescription, builder, MetaData.DEFINITION_DESCRIPTION_TYPE,
-					MetaData.ENGLISH_LANGUAGE);
+			ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
+			conceptBuilderService.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
+			conceptBuilderService.setDefaultDialectAssemblageForDescriptions(MetaData.US_ENGLISH_DIALECT);
+			conceptBuilderService.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
+
+			DescriptionBuilderService descriptionBuilderService = LookupService.getService(DescriptionBuilderService.class);
+			LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
+
+			ConceptChronology<?> parentConcept =  Get.conceptService().getConcept(parentConceptNidOrSequence == null ? 
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES.getNid() 
+					: parentConceptNidOrSequence);
+			
+			NecessarySet(And(ConceptAssertion(parentConcept, defBuilder)));
+
+			LogicalExpression parentDef = defBuilder.build();
+
+			ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(sememeFSN, null, parentDef);
+
+			DescriptionBuilder<?, ?> definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememePreferredTerm, builder,
+							MetaData.SYNONYM,
+							MetaData.ENGLISH_LANGUAGE);
 			definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
-			@SuppressWarnings("rawtypes")
-			SememeChronology definitonSememe = (SememeChronology) definitionBuilder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
-			Get.commitService().addUncommitted(definitonSememe);
+			builder.addDescription(definitionBuilder);
 			
-			SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitonSememe.getNid(), 
-					DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
-			Get.commitService().addUncommitted(sememe);
-		}
-
-		if (columns != null)
-		{
-			//Ensure that we process in column order - we don't always keep track of that later - we depend on the data being stored in the right order.
-			TreeSet<DynamicSememeColumnInfo> sortedColumns = new TreeSet<>(Arrays.asList(columns));
+			ConceptChronology<? extends ConceptVersion<?>> newCon = builder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE, new ArrayList<>());
+			Get.commitService().addUncommitted(newCon);
 			
-			for (DynamicSememeColumnInfo ci : sortedColumns)
 			{
-				DynamicSememeData[] data = LookupService.getService(DynamicSememeUtility.class).configureDynamicSememeDefinitionDataForColumn(ci);
+				//Set up the dynamic sememe 'special' definition
+				definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememeDescription, builder, MetaData.DEFINITION_DESCRIPTION_TYPE,
+						MetaData.ENGLISH_LANGUAGE);
+				definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
+				@SuppressWarnings("rawtypes")
+				SememeChronology definitonSememe = (SememeChronology) definitionBuilder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+				Get.commitService().addUncommitted(definitonSememe);
+				
+				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitonSememe.getNid(), 
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+				Get.commitService().addUncommitted(sememe);
+			}
 
+			if (columns != null)
+			{
+				//Ensure that we process in column order - we don't always keep track of that later - we depend on the data being stored in the right order.
+				TreeSet<DynamicSememeColumnInfo> sortedColumns = new TreeSet<>(Arrays.asList(columns));
+				
+				for (DynamicSememeColumnInfo ci : sortedColumns)
+				{
+					DynamicSememeData[] data = LookupService.getService(DynamicSememeUtility.class).configureDynamicSememeDefinitionDataForColumn(ci);
+
+					SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
+							DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getSequence(), data)
+						.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+					Get.commitService().addUncommitted(sememe);
+				}
+			}
+			
+			DynamicSememeData[] data = LookupService.getService(DynamicSememeUtility.class).
+					configureDynamicSememeRestrictionData(referencedComponentRestriction, referencedComponentSubRestriction);
+			
+			if (data != null)
+			{
 				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
-						DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getSequence(), data)
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getSequence(), data)
 					.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
 				Get.commitService().addUncommitted(sememe);
 			}
-		}
-		
-		DynamicSememeData[] data = LookupService.getService(DynamicSememeUtility.class).
-				configureDynamicSememeRestrictionData(referencedComponentRestriction, referencedComponentSubRestriction);
-		
-		if (data != null)
-		{
-			SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
-					DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getSequence(), data)
-				.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
-			Get.commitService().addUncommitted(sememe);
-		}
 
-		Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN + ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription);
-		return new DynamicSememeUsageDescriptionImpl(newCon.getNid());
+			Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN 
+					+ ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription).get();
+			return new DynamicSememeUsageDescriptionImpl(newCon.getNid());
+		}
+		catch (IllegalStateException | InterruptedException | ExecutionException e)
+		{
+			throw new RuntimeException("Creation of Dynamic Sememe Failed!", e);
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -16,16 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.oia.terminology.converters.sharedUtils.gson;
+package gov.vha.isaac.ochre.api.externalizable;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
 
 /**
  * Simple wrapper class to allow us to serialize to multiple formats at once
@@ -37,11 +35,11 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 {
 	ArrayList<BinaryDataWriterService> writers_ = new ArrayList<>();
 	
-	public MultipleDataWriterService(Optional<File> gsonPath, Optional<Path> ibdfPath) throws IOException
+	public MultipleDataWriterService(Optional<Path> jsonPath, Optional<Path> ibdfPath) throws IOException
 	{
-		if (gsonPath.isPresent())
+		if (jsonPath.isPresent())
 		{
-			writers_.add(new JsonDataWriterService(gsonPath.get()));
+			writers_.add(new JsonDataWriterService(jsonPath.get()));
 		}
 		if (ibdfPath.isPresent())
 		{

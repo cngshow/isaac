@@ -31,6 +31,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
@@ -196,9 +197,7 @@ public class MappingSet extends MappingObject
 				setPurpose(((DynamicSememeString) refex.getData()[0]).getDataString());
 			}
 
-			Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.get().getNid(), 
-					MetaData.DESCRIPTION_ASSEMBLAGE.getConceptSequence())
-				.forEach(descriptionC ->
+			Get.sememeService().getSememesForComponent(mappingConcept.get().getNid()).filter(s -> s.getSememeType() == SememeType.DESCRIPTION).forEach(descriptionC ->
 				{
 					if (getName() != null && getDescription() != null && getInverseName() != null)
 					{

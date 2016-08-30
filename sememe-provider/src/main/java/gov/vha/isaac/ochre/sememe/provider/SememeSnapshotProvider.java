@@ -16,21 +16,21 @@
 package gov.vha.isaac.ochre.sememe.provider;
 
 
-import gov.vha.isaac.ochre.api.ProgressTracker;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.component.sememe.SememeService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.snapshot.calculator.RelativePositionCalculator;
-import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
-import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
-import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import gov.vha.isaac.ochre.api.ProgressTracker;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
+import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.api.component.sememe.SememeService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.snapshot.calculator.RelativePositionCalculator;
+import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 
 /**
  *
@@ -38,16 +38,6 @@ import java.util.stream.Stream;
  * @param <V>
  */
 public class SememeSnapshotProvider<V extends SememeVersion<?>> implements SememeSnapshotService<V> {
-
-    private static int descriptionAssemblageSequence = -1;
-
-    private static int getDescriptionAssemblageSequence() {
-        if (descriptionAssemblageSequence == -1) {
-            //TODO support descriptions for langauges other than english
-            descriptionAssemblageSequence = TermAux.ENGLISH_DESCRIPTION_ASSEMBLAGE.getConceptSequence();
-        }
-        return descriptionAssemblageSequence;
-    }
 
     Class<V> versionType;
     StampCoordinate stampCoordinate;
@@ -81,12 +71,16 @@ public class SememeSnapshotProvider<V extends SememeVersion<?>> implements Semem
     public Stream<LatestVersion<V>> getLatestSememeVersionsFromAssemblage(int assemblageConceptSequence, ProgressTracker... progressTrackers) {
         return getLatestSememeVersions(sememeProvider.getSememeSequencesFromAssemblage(assemblageConceptSequence), progressTrackers);
     }
-
+    
     private Stream<LatestVersion<V>> getLatestSememeVersions(SememeSequenceSet sememeSequenceSet, ProgressTracker... progressTrackers) {
         Arrays.stream(progressTrackers).forEach((tracker) -> {
             tracker.addToTotalWork(sememeSequenceSet.size());
         });
-        return sememeSequenceSet.parallelStream()
+        return getLatestSememeVersions(sememeSequenceSet.parallelStream(), progressTrackers);
+    }
+
+    private Stream<LatestVersion<V>> getLatestSememeVersions(IntStream sememeSequenceStream, ProgressTracker... progressTrackers) {
+        return sememeSequenceStream
                 .mapToObj((int sememeSequence) -> {
                     try {
                         SememeChronologyImpl<?> sc = (SememeChronologyImpl<?>) sememeProvider.getSememe(sememeSequence);
@@ -109,7 +103,6 @@ public class SememeSnapshotProvider<V extends SememeVersion<?>> implements Semem
                 ).filter((optional) -> {
                     return optional.isPresent();
                 }).map((optional) -> (LatestVersion<V>) optional.get());
-
     }
 
     @Override
@@ -124,6 +117,7 @@ public class SememeSnapshotProvider<V extends SememeVersion<?>> implements Semem
 
     @Override
     public Stream<LatestVersion<V>> getLatestDescriptionVersionsForComponent(int componentNid) {
-        return getLatestSememeVersions(sememeProvider.getSememeSequencesForComponentFromAssemblage(componentNid, getDescriptionAssemblageSequence()));
+        return getLatestSememeVersions(sememeProvider.getSememeSequencesForComponent(componentNid).parallelStream()
+                .filter(sememeSequence -> (sememeProvider.getSememe(sememeSequence).getSememeType() == SememeType.DESCRIPTION)));
     }
 }

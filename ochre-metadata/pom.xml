@@ -7,9 +7,13 @@
         <version>3.10-SNAPSHOT</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
-    <artifactId>metadata</artifactId>
+    <artifactId>ochre-metadata</artifactId>
     <packaging>jar</packaging>
     <name>OCHRE: Metadata</name>
+    
+    <description>
+        A module that reads various metadata source files, and generates the ISAAC metadata for an instance in multiple formats - java, xml, etc
+    </description>
 
     <dependencies>
         <dependency>
@@ -86,6 +90,11 @@
                         <artifactId>ochre-mojo-log-config</artifactId>
                         <version>${project.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>gov.vha.isaac.ochre.modules</groupId>
+                        <artifactId>ochre-mapping-constants</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>
@@ -133,6 +142,11 @@
                                     <file>${project.build.directory}/${project.build.finalName}-ibdf.zip</file>
                                 </artifact>
                                 <artifact>
+                                    <type>json.zip</type>
+                                    <classifier>all</classifier>
+                                    <file>${project.build.directory}/${project.build.finalName}-json.zip</file>
+                                </artifact>
+                                <artifact>
                                     <type>xml.zip</type>
                                     <classifier>all</classifier>
                                     <file>${project.build.directory}/${project.build.finalName}-xml-all.zip</file>
@@ -164,6 +178,7 @@
                 <configuration>
                     <descriptors>
                         <descriptor>src/main/assembly/ibdf.xml</descriptor>
+                        <descriptor>src/main/assembly/json.xml</descriptor>
                         <descriptor>src/main/assembly/xml-all.xml</descriptor>
                         <descriptor>src/main/assembly/yaml.xml</descriptor>
                     </descriptors>
