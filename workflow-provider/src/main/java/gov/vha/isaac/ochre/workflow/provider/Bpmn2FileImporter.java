@@ -604,37 +604,42 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 			System.out.println("ID: " + node.getId());
 
+			List<Connection> outgoingConnections = null;
+			
 			if (node instanceof StartNode) {
 				System.out.println("Type: StartNode");
+				outgoingConnections  = ((StartNode) node).getDefaultOutgoingConnections();
 			} else if (node instanceof EndNode) {
 				System.out.println("Type: EndNode");
 			} else if (node instanceof HumanTaskNode) {
 				System.out.println("Type: HumanTaskNode");
+				outgoingConnections  = ((HumanTaskNode) node).getDefaultOutgoingConnections();
 			} else if (node instanceof Join) {
 				System.out.println("Type: Join");
 			} else if (node instanceof Split) {
 				System.out.println("Type: Split");
+				outgoingConnections  = ((Split) node).getDefaultOutgoingConnections();
 			}
 
-			if (!nodeToOutgoingMap.get(node.getId()).isEmpty()) {
+			if (!nodeToOutgoingMap.get(node.getId()).isEmpty() && outgoingConnections != null) {;
 				System.out.println("This node has the following outgoing connections:");
 
 				for (Long id : nodeToOutgoingMap.get(node.getId())) {
-					String splitOption = "NOT FOUND";
-					for (Connection connection : ((Split) node).getDefaultOutgoingConnections()) {
+					String divergeOption = "NOT FOUND";
+					for (Connection connection : outgoingConnections) {
 						if (connection.getTo().getId() == id) {
 							String connectionId = (String) connection.getMetaData().get("UniqueId");
 
 							for (SequenceFlow sequence : connections) {
 								if (sequence.getId().equals(connectionId)) {
-									splitOption = sequence.getName();
+									divergeOption = sequence.getName();
 								}
 							}
 						}
 					}
 
-					if (node instanceof Split) {
-						System.out.println("\t" + id + " that is associated to action: " + splitOption);
+					if (node instanceof Split || node instanceof StartNode || node instanceof HumanTaskNode) {
+						System.out.println("\t" + id + " that is associated to action: " + divergeOption);
 					} else {
 						System.out.println("\t" + id);
 					}

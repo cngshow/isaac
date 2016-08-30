@@ -166,7 +166,6 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Map<String, Set<AvailableAction>> actionMap = new HashMap<>();
 		
 		for (AvailableAction action : availableActionStore.getAllEntries()) {
-			System.out.println(action + "\n\n");
 			if (!actionMap.containsKey(action.getInitialState())) {
 				actionMap.put(action.getInitialState(), new HashSet<AvailableAction>());
 			}
