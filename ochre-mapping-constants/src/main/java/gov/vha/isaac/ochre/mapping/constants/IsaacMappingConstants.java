@@ -58,6 +58,42 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
 		}
 	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER = new MetadataConceptConstant("mapping qualifier", 
+			UUID.fromString("8e84c657-5f47-51b8-8ebf-89a9d025a9ef"),
+			"Stores the editor selected mapping qualifier") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
+		
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE = new MetadataConceptConstant("mapping sequence", 
+			UUID.fromString("83e8e74e-596e-5622-b945-17dbe8e9c05c"),
+			"The sequence value attached to the mapping") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING = new MetadataConceptConstant("mapping grouping", 
+			UUID.fromString("8d76ead7-6c75-5d25-84d4-ca76d928f8a6"),
+			"The grouping attached to the mapping") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE = new MetadataConceptConstant("mapping effective date", 
+			UUID.fromString("a332f7bc-f7c1-58cd-a834-cd2660b984da"),
+			"The effective date attached to the mapping") 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
+		}
+	};
 
 		
 	//These next 3 don't have to be public - just want the hierarchy created during the DB build
@@ -72,7 +108,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		
 	public final MetadataConceptConstantGroup MAPPING_QUALIFIERS = new MetadataConceptConstantGroup("mapping qualifiers", 
 		UUID.fromString("83204ca8-bd51-530c-af04-5edbec04a7c6"), 
-		"Stores the editor selected mapping qualifier") 
+		"A grouping of different types types of allowed mapping qualifiers") 
 		{
 			{
 				addChild(broader);
@@ -81,12 +117,32 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			}
 		};
 		
+	public final MetadataConceptConstant MAPPING_SOURCE_CODE_SYSTEM = new MetadataConceptConstant("mapping source code system", 
+				UUID.fromString("32e30e80-3fac-5317-80cf-d85eab22fa9e"),
+				"A concept used to annotate the source code system of a map set") {};
+	
+	public final MetadataConceptConstant MAPPING_SOURCE_CODE_SYSTEM_VERSION = new MetadataConceptConstant("mapping source code system version", 
+			UUID.fromString("5b3479cb-25b2-5965-a031-54238588218f"),
+			"A concept used to annotate the source code system version of a map set") {};
+				
+	public final MetadataConceptConstant MAPPING_TARGET_CODE_SYSTEM = new MetadataConceptConstant("mapping target code system", 
+			UUID.fromString("6b31a67a-7e6d-57c0-8609-52912076fce8"),
+			"A concept used to annotate the target code system of a map set") {};
+			
+	public final MetadataConceptConstant MAPPING_TARGET_CODE_SYSTEM_VERSION = new MetadataConceptConstant("mapping target code system version", 
+			UUID.fromString("b5165f68-b934-5c79-ac71-bd5375f7c809"),
+			"A concept used to annotate the target code system version of a map set") {};
+		
 	public final MetadataConceptConstantGroup MAPPING_METADATA = new MetadataConceptConstantGroup("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7")) 
 	{
 		{
 			addChild(MAPPING_NAMESPACE);
 			addChild(MAPPING_QUALIFIERS);
+			addChild(MAPPING_SOURCE_CODE_SYSTEM);
+			addChild(MAPPING_SOURCE_CODE_SYSTEM_VERSION);
+			addChild(MAPPING_TARGET_CODE_SYSTEM);
+			addChild(MAPPING_TARGET_CODE_SYSTEM_VERSION);
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
@@ -140,6 +196,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
 		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
-				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE};
+				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER,
+				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE};
 	} 
 }
