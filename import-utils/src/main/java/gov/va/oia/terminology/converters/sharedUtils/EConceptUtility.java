@@ -696,6 +696,16 @@ public class EConceptUtility
 		return addAnnotation(referencedComponent, null, (DynamicSememeData[])null, refexDynamicTypeUuid, status, time, null);
 	}
 	
+	/**
+	 * @param referencedComponent The component to attach this annotation to
+	 * @param uuidForCreatedAnnotation  - the UUID to use for the created annotation.  If null, generated from uuidForCreatedAnnotation, value, refexDynamicTypeUuid
+	 * @param value - the value to attach (may be null if the annotation only serves to mark 'membership') - columns must align with values specified in the definition
+	 * of the sememe represented by refexDynamicTypeUuid
+	 * @param refexDynamicTypeUuid - the uuid of the dynamic sememe type - 
+	 * @param status
+	 * @param time - if null, uses the component time
+	 * @return
+	 */
 	public SememeChronology<DynamicSememe<?>> addAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, DynamicSememeData value, 
 			UUID refexDynamicTypeUuid, State status, Long time)
 	{
