@@ -52,48 +52,33 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE = new MetadataConceptConstant("mapping purpose", 
 		UUID.fromString("e5de9548-35b9-5e3b-9968-fd9c0a665b51"),
-		"Stores the editor stated purpose of the mapping set") 
-	{
-		{
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+		"Stores the editor stated purpose of the mapping set",
+		DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 	
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER = new MetadataConceptConstant("mapping qualifier", 
 			UUID.fromString("8e84c657-5f47-51b8-8ebf-89a9d025a9ef"),
-			"Stores the editor selected mapping qualifier") 
-	{
-		{
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+			"Stores the editor selected mapping qualifier",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 		
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE = new MetadataConceptConstant("mapping sequence", 
 			UUID.fromString("83e8e74e-596e-5622-b945-17dbe8e9c05c"),
-			"The sequence value attached to the mapping") 
-	{
-		{
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+			"The sequence value attached to the mapping",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 	
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING = new MetadataConceptConstant("mapping grouping", 
 			UUID.fromString("8d76ead7-6c75-5d25-84d4-ca76d928f8a6"),
-			"The grouping attached to the mapping") 
-	{
-		{
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+			"The grouping attached to the mapping",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 	
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE = new MetadataConceptConstant("mapping effective date", 
 			UUID.fromString("a332f7bc-f7c1-58cd-a834-cd2660b984da"),
-			"The effective date attached to the mapping") 
-	{
-		{
-			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS);
-		}
-	};
+			"The effective date attached to the mapping",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS = new MetadataConceptConstant("mapping GEM Flags", 
+			UUID.fromString("21bab5a4-18a5-5848-905d-2d99305090d9"),
+			"The General Equivalence Mappings value",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 
 		
 	//These next 3 don't have to be public - just want the hierarchy created during the DB build
@@ -197,6 +182,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public MetadataConceptConstant[] getConstantsToCreate() {
 		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
 				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER,
-				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE};
+				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE, 
+				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS};
 	} 
 }
