@@ -75,7 +75,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description, StartWorkflowType type) throws Exception {
+	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description, ProcessDetail.StartWorkflowType type) throws Exception {
     	if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
     		throw new Exception("Name and Description must be filled out when creating a process");
     	}
@@ -88,7 +88,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	
     	// Create Process Details with "DEFINED"
     	StorableWorkflowContents details = new ProcessDetail(definitionId, user, new Date().getTime(),
-    			ProcessStatus.DEFINED, name, description);
+    			ProcessStatus.DEFINED, name, description, type);
     	UUID processId = processDetailStore.addEntry(details);
     
     	// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
@@ -132,7 +132,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *            the comment
 	 * @throws Exception
 	 */
-	public void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
+	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -170,7 +170,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		}
 	}
 
-	private AvailableAction getStartState(StartWorkflowType type) throws Exception {
+	private AvailableAction getStartState(ProcessDetail.StartWorkflowType type) throws Exception {
 		switch (type) {
 		
 		case SINGLE_CASE: 

@@ -33,6 +33,7 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 
@@ -53,16 +54,12 @@ public abstract class AbstractWorkflowUtilities {
 		CANCELED, CONCLUDED
 	};
 
-	public enum StartWorkflowType {
-		SINGLE_CASE
-	};
-
 	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 	private static final String AUTOMATED_ROLE = "Automated By System";
 	private static final String EDITING_ACTION = "EDITING";
 
 	private static Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
-	private static Map<StartWorkflowType, AvailableAction> startWorkflowTypeMap = new HashMap<>();
+	private static Map<ProcessDetail.StartWorkflowType, AvailableAction> startWorkflowTypeMap = new HashMap<>();
 	private static Set<String> editStates = new HashSet<>();
 
 	/** The workflow stores. */
@@ -123,7 +120,7 @@ public abstract class AbstractWorkflowUtilities {
 		return endNodeTypeMap;
 	}
 
-	public static Map<StartWorkflowType, AvailableAction> getStartWorkflowTypeMap() {
+	public static Map<ProcessDetail.StartWorkflowType, AvailableAction> getStartWorkflowTypeMap() {
 		return startWorkflowTypeMap;
 	}
 

@@ -64,6 +64,7 @@ import org.xml.sax.SAXException;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
@@ -667,7 +668,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			throw new Exception("No Start Actions Found");
 		} else if (actions.size() == 1) {
 			// If single StartState... add SINGLE_CASE
-			getStartWorkflowTypeMap().put(StartWorkflowType.SINGLE_CASE, actions.iterator().next());
+			getStartWorkflowTypeMap().put(ProcessDetail.StartWorkflowType.SINGLE_CASE, actions.iterator().next());
 		} else {
 			// For R3 where may have multiple Start Actions
 		}

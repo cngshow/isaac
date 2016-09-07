@@ -36,8 +36,9 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
 /**
@@ -154,8 +155,8 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().size(),
 				identifiedStartTypeActions.size());
 		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().iterator().next(),
-				StartWorkflowType.SINGLE_CASE);
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(StartWorkflowType.SINGLE_CASE),
+				ProcessDetail.StartWorkflowType.SINGLE_CASE);
+		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(ProcessDetail.StartWorkflowType.SINGLE_CASE),
 				identifiedStartTypeActions.iterator().next());
 
 		Assert.assertEquals(AbstractWorkflowUtilities.getEditStates(), identifiedEditingActions);

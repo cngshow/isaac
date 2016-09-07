@@ -22,9 +22,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,6 +39,7 @@ import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
@@ -316,7 +315,7 @@ public class WorkflowContentStoreTest {
 		String description = "Process Description";
 		
 		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2,
-				new Date().getTime(), ProcessStatus.DEFINED, name, description);
+				new Date().getTime(), ProcessStatus.DEFINED, name, description, StartWorkflowType.SINGLE_CASE);
 
 		// New scope to ensure closing store
 		ProcessDetailContentStore processInstanceStore = new ProcessDetailContentStore(store);
@@ -341,7 +340,7 @@ public class WorkflowContentStoreTest {
 		concepts2.add(98);
 		concepts2.add(97);
 		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3,
-				new Date().getTime(),ProcessStatus.DEFINED, name, description);
+				new Date().getTime(),ProcessStatus.DEFINED, name, description, StartWorkflowType.SINGLE_CASE);
 
 		UUID key2 = processInstanceStore.addEntry(createdEntry2);
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 2);
@@ -356,7 +355,7 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), 3,
-				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(), "This is a second Description");
+				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(), "This is a second Description", StartWorkflowType.SINGLE_CASE);
 		processInstanceStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 

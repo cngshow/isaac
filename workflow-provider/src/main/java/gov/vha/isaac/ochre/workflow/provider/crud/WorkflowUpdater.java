@@ -92,7 +92,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
 					// Request to cancel workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
+					initConcluder.endWorkflowProcess(processId, action, workflowUser, comment,
 							EndWorkflowType.CANCELED);
 				} else if (process.getStatus().equals(ProcessStatus.DEFINED)
 						&& getStartWorkflowTypeMap().containsKey(action.getInitialState())) {
@@ -102,7 +102,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.finishWorkflowProcess(processId, action, workflowUser, comment,
+					initConcluder.endWorkflowProcess(processId, action, workflowUser, comment,
 							EndWorkflowType.CONCLUDED);
 				}
 

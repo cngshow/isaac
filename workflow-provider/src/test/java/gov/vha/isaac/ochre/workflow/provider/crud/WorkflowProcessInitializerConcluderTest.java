@@ -34,12 +34,12 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessDetailComparator;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory.ProcessHistoryComparator;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.StartWorkflowType;
 
 /**
  * Test the WorkflowInitializerConcluder class
@@ -85,7 +85,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	@Test
 	public void testCreateWorkflowProcess() throws Exception {
 		// Initialization
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
 		addComponentsToProcess(processId);
 
 		// verify content in workflow is as expected
@@ -105,7 +105,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testLaunchWorkflow() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
@@ -128,7 +128,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testCancelWorkflowProcess() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
@@ -145,7 +145,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 		
-		initConcluder.finishWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
+		initConcluder.endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
 
 		assertProcessDefinition(ProcessStatus.CANCELED, mainDefinitionId, processId);
 		hxEntries.clear();
@@ -163,7 +163,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testConcludeWorkflow() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
@@ -180,7 +180,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 		
-		initConcluder.finishWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT, EndWorkflowType.CONCLUDED);
+		initConcluder.endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT, EndWorkflowType.CONCLUDED);
 
 		assertProcessDefinition(ProcessStatus.CONCLUDED, mainDefinitionId, processId);
 		hxEntries.clear();
