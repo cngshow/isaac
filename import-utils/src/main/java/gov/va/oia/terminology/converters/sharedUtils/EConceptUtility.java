@@ -375,7 +375,7 @@ public class EConceptUtility
 	
 	/**
 	 * Utility method to build and store a concept.
-	 * @param primordial
+	 * @param primordial - optional
 	 * @param fsnName
 	 * @param preferredName - optional
 	 * @param altName - optional
@@ -387,7 +387,8 @@ public class EConceptUtility
 	public ConceptChronology<? extends ConceptVersion<?>> createConcept(UUID primordial, String fsnName, String preferredName, String altName, 
 			String definition, UUID relParentPrimordial, UUID secondParent)
 	{
-		ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(primordial, fsnName, false);
+		ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(primordial == null ? ConverterUUID.createNamespaceUUIDFromString(fsnName) : primordial,
+				fsnName, StringUtils.isEmpty(preferredName) ? true : false);
 		
 		LogicalExpressionBuilder leb = expressionBuilderService_.getLogicalExpressionBuilder();
 
@@ -691,9 +692,9 @@ public class EConceptUtility
 			refsetUuid, status, null, null);
 	}
 	
-	public SememeChronology<DynamicSememe<?>> addRefsetMembership(ComponentReference referencedComponent, UUID refexDynamicTypeUuid, State status, Long time)
+	public SememeChronology<DynamicSememe<?>> addRefsetMembership(ComponentReference referencedComponent, UUID refexDynamicTypeUuid, State state, Long time)
 	{
-		return addAnnotation(referencedComponent, null, (DynamicSememeData[])null, refexDynamicTypeUuid, status, time, null);
+		return addAnnotation(referencedComponent, null, (DynamicSememeData[])null, refexDynamicTypeUuid, state, time, null);
 	}
 	
 	/**
