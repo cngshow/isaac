@@ -74,7 +74,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final int firstUserId = 99;
 	protected static final int secondUserId = 999;
 	protected static final ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
-	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(55, 56));
+	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
 	private static final String LAUNCH_ACTION = "Edit";
@@ -158,7 +158,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
-			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreator(), new Date().getTime(),
+			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
 					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
 			processHistoryStore.addEntry(advanceEntry);
 		} catch (InterruptedException e) {
@@ -220,7 +220,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void addComponentsToProcess(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentToStampsMap().put(con, stampSequenceForTesting);
+			entry.getComponentNidToStampsMap().put(con, stampSequenceForTesting);
 		}
 		
 		processDetailStore.updateEntry(processId, entry);
@@ -243,7 +243,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		for (ProcessHistory entry : allProcessHistory) {
 			if (counter == 0) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertEquals(firstUserId, entry.getUserNid());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(createState, entry.getInitialState());
 				Assert.assertEquals(createAction, entry.getAction());
@@ -251,7 +251,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals("", entry.getComment());
 			} else if (counter == 1) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertEquals(firstUserId, entry.getUserNid());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
 				Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
@@ -259,7 +259,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
 			} else if (counter == 2) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+				Assert.assertEquals(firstUserId, entry.getUserNid());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
 				Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
@@ -273,7 +273,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertCancelHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+		Assert.assertEquals(firstUserId, entry.getUserNid());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
@@ -284,7 +284,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertConcludeHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getWorkflowUser());
+		Assert.assertEquals(firstUserId, entry.getUserNid());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
@@ -348,7 +348,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		// Duplicate Permissions
 		Set<UserPermission> permsToAdd = new HashSet<>();
 		for (UserPermission perm : userPermissionStore.getAllEntries()) {
-			permsToAdd.add(new UserPermission(defId, perm.getUser(), perm.getRole()));
+			permsToAdd.add(new UserPermission(defId, perm.getUserNid(), perm.getRole()));
 		}
 		
 		for (UserPermission perm : permsToAdd) {

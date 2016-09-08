@@ -65,8 +65,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param workflowUser
-	 *            the user id
+	 * @param userNid
+	 *            the user nid
 	 * @param actionRequested
 	 *            the action requested
 	 * @param comment
@@ -75,13 +75,13 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment)
+	public UUID advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
 			throws Exception {
 		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 
 		// Get User Permissible actions
 		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
-				workflowUser);
+				userNid);
 
 		// Advance Workflow
 		for (AvailableAction action : userPermissableActions) {
@@ -92,7 +92,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
 					// Request to cancel workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, workflowUser, comment,
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment,
 							EndWorkflowType.CANCELED);
 				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
 					for (AvailableAction startAction : getDefinitionStartActionMap().get(process.getDefinitionId())) {
@@ -107,7 +107,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, workflowUser, comment,
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment,
 							EndWorkflowType.CONCLUDED);
 				}
 
@@ -118,7 +118,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				}
 
 				// Add to process history
-				ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
+				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
 						action.getInitialState(), action.getAction(),
 						action.getOutcomeState(), comment);
 				return processHistoryStore.addEntry(entry);
@@ -134,27 +134,27 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param user
-	 *            the user
+	 * @param userNid
+	 *            the user nid
 	 * @param domain
 	 *            the domain
 	 * @param role
 	 *            the role
 	 * @return the uuid
 	 */
-	public UUID addNewUserRole(UUID definitionId, int user, String role) {
-		return userPermissionStore.addEntry(new UserPermission(definitionId, user, role));
+	public UUID addNewUserRole(UUID definitionId, int userNid, String role) {
+		return userPermissionStore.addEntry(new UserPermission(definitionId, userNid, role));
 	}
 
 	public void removeComponentFromWorkflow(UUID processId, int compNid) throws Exception {
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
 		if (isProcessInAcceptableEditState(detail, compNid, "remove")) {
-			if (!detail.getComponentToStampsMap().containsKey(compNid)) {
+			if (!detail.getComponentNidToStampsMap().containsKey(compNid)) {
 				throw new Exception("Component " + compNid + " is not already in Workflow");
 			}
 
-			detail.getComponentToStampsMap().remove(compNid);
+			detail.getComponentNidToStampsMap().remove(compNid);
 			processDetailStore.updateEntry(processId, detail);
 		}
 
@@ -162,15 +162,20 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	}
 
 	public void addComponentToWorkflow(UUID processId, int compNid, int stampSeq) throws Exception {
+		if (compNid >= 0) {
+			// Ensure a Nid is passed in
+			throw new Exception("Component added must be a nid.  Nids must be negative.  Component added is not: " + compNid);
+		}
+
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
 		if (isProcessInAcceptableEditState(detail, compNid, "add")) {
-			if (detail.getComponentToStampsMap().containsKey(compNid)) {
-				detail.getComponentToStampsMap().get(compNid).add(stampSeq);
+			if (detail.getComponentNidToStampsMap().containsKey(compNid)) {
+				detail.getComponentNidToStampsMap().get(compNid).add(stampSeq);
 			} else {
 				ArrayList<Integer> list = new ArrayList<>();
 				list.add(stampSeq);
-				detail.getComponentToStampsMap().put(compNid, list);
+				detail.getComponentNidToStampsMap().put(compNid, list);
 			}
 
 			processDetailStore.updateEntry(processId, detail);
@@ -194,7 +199,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 		// Check if in Case A. If not, throw exception
 		if (wfAccessor.isComponentInActiveWorkflow(detail.getDefinitionId(), compNid)
-				&& !detail.getComponentToStampsMap().containsKey(compNid)) {
+				&& !detail.getComponentNidToStampsMap().containsKey(compNid)) {
 			throw new Exception("Cannot " + exceptionCase
 					+ " component to workflow because component is already in another active workflow");
 		}

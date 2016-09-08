@@ -65,14 +65,14 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param user
-	 *            the user
+	 * @param userNid
+	 *            the user mod
 	 * @param subjectMatter
 	 *            the subject matter
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description) throws Exception {
+	public UUID createWorkflowProcess(UUID definitionId, int userNid, String name, String description) throws Exception {
     	if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
     		throw new Exception("Name and Description must be filled out when creating a process");
     	}
@@ -84,7 +84,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	}
     	
     	// Create Process Details with "DEFINED"
-    	StorableWorkflowContents details = new ProcessDetail(definitionId, user, new Date().getTime(),
+    	StorableWorkflowContents details = new ProcessDetail(definitionId, userNid, new Date().getTime(),
     			ProcessStatus.DEFINED, name, description);
     	UUID processId = processDetailStore.addEntry(details);
     
@@ -96,7 +96,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	}
     	
     	AvailableAction startAdvancement = getDefinitionStartActionMap().get(definitionId).iterator().next();
-    	ProcessHistory advanceEntry = new ProcessHistory(processId, user, new Date().getTime(),
+    	ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
     			startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(), "");
     	processHistoryStore.addEntry(advanceEntry);
     
@@ -115,7 +115,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		if (entry == null) {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
-		} else if (entry.getComponentToStampsMap().isEmpty()) {
+		} else if (entry.getComponentNidToStampsMap().isEmpty()) {
 			throw new Exception("Workflow can only be launched when the workflow contains components to work on");
 		}
 
@@ -135,7 +135,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *            the comment
 	 * @throws Exception
 	 */
-	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int workflowUser, String comment, EndWorkflowType endType) throws Exception {
+	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment, EndWorkflowType endType) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -164,7 +164,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		// Only add Cancel state in Workflow if process has already been
 		// launched
-		ProcessHistory advanceEntry = new ProcessHistory(processId, workflowUser, new Date().getTime(),
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
 				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(), comment);
 		processHistoryStore.addEntry(advanceEntry);
 

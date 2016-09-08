@@ -104,17 +104,17 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		ProcessDetail entry = wfAccessor.getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentToStampsMap().size());
+		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
-		Assert.assertEquals(99, entry.getCreator());
+		Assert.assertEquals(99, entry.getCreatorNid());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
-		Assert.assertEquals(2, entry.getComponentToStampsMap().size());
-		Assert.assertTrue(entry.getComponentToStampsMap().containsKey(55));
-		Assert.assertTrue(entry.getComponentToStampsMap().containsKey(56));
-		Assert.assertTrue(entry.getComponentToStampsMap().get(55).contains(11));
-		Assert.assertTrue(entry.getComponentToStampsMap().get(55).contains(12));
-		Assert.assertTrue(entry.getComponentToStampsMap().get(56).contains(11));
-		Assert.assertTrue(entry.getComponentToStampsMap().get(56).contains(12));
+		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
+		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-55));
+		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-56));
+		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(11));
+		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(12));
+		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(11));
+		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(12));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
 	}
@@ -160,7 +160,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		for (UserPermission perm : permissions) {
 			Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
-			Assert.assertEquals(firstUserId, perm.getUser());
+			Assert.assertEquals(firstUserId, perm.getUserNid());
 			Assert.assertTrue(perm.getRole().equals("Editor") || perm.getRole().equals("Approver"));
 		}
 
@@ -169,7 +169,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		UserPermission perm = permissions.iterator().next();
 		Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
-		Assert.assertEquals(secondUserId, perm.getUser());
+		Assert.assertEquals(secondUserId, perm.getUserNid());
 		Assert.assertEquals("Reviewer", perm.getRole());
 	}
 

@@ -88,7 +88,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		for (ProcessDetail proc : processDetailStore.getAllEntries()) {
 			if (proc.getDefinitionId().equals(definitionId) && 
 				proc.isActive() && 
-				proc.getComponentToStampsMap().containsKey(compNid)) {
+				proc.getComponentNidToStampsMap().containsKey(compNid)) {
 				return true;
 			}
 		} 
@@ -100,7 +100,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		Set<UserPermission> allUserPermissions = new HashSet<>();
 
 		for (UserPermission permission : userPermissionStore.getAllEntries()) {
-			if (permission.getUser() == userId && permission.getDefinitionId().equals(definitionId)) {
+			if (permission.getUserNid() == userId && permission.getDefinitionId().equals(definitionId)) {
 				allUserPermissions.add(permission);
 			}
 		}
@@ -108,11 +108,11 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		return allUserPermissions;
 	}
 
-	public Map<ProcessDetail, SortedSet<ProcessHistory>> getAdvanceableProcessInformation(UUID definitionId, int userId) {
+	public Map<ProcessDetail, SortedSet<ProcessHistory>> getAdvanceableProcessInformation(UUID definitionId, int userNid) {
 		Map<ProcessDetail, SortedSet<ProcessHistory>> processInformation = new HashMap<>();
 
 		// Get User Roles
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(definitionId, userId);
+		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(definitionId, userNid);
 		
 		// For each active Processes, see if its current state is "applicable current state"
 		for (ProcessDetail process : processDetailStore.getAllEntries()) {
@@ -128,11 +128,11 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		return processInformation;
 	}
 	
-	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userId) {
+	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userNid) {
 		ProcessDetail processDetail = getProcessDetails(processId);
 		ProcessHistory processLatest = getProcessHistory(processId).last();
 		
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(processDetail.getDefinitionId(), userId);
+		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(processDetail.getDefinitionId(), userNid);
 
 		if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
 			return actionsByInitialState.get(processLatest.getOutcomeState());

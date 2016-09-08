@@ -53,8 +53,8 @@ public class UserPermission extends StorableWorkflowContents {
 	/** The definition id. */
 	private UUID definitionId;
 
-	/** The user. */
-	private int user;
+	/** The user nid. */
+	private int userNid;
 
 	/** The role. */
 	private String role;
@@ -64,16 +64,16 @@ public class UserPermission extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param user
-	 *            the user
+	 * @param userNid
+	 *            the user nid
 	 * @param role
 	 *            the role
 	 * @param domainStandard
 	 *            the domain standard
 	 */
-	public UserPermission(UUID definitionId, int user, String role) {
+	public UserPermission(UUID definitionId, int userNid, String role) {
 		this.definitionId = definitionId;
-		this.user = user;
+		this.userNid = userNid;
 		this.role = role;
 	}
 
@@ -90,7 +90,7 @@ public class UserPermission extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.user = (Integer) in.readObject();
+			this.userNid = (Integer) in.readObject();
 			this.role = (String) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into UserPermission", e);
@@ -115,8 +115,8 @@ public class UserPermission extends StorableWorkflowContents {
 	 *
 	 * @return the user
 	 */
-	public int getUser() {
-		return user;
+	public int getUserNid() {
+		return userNid;
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class UserPermission extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(definitionId);
-		out.writeObject(user);
+		out.writeObject(userNid);
 		out.writeObject(role);
 
 		return bos.toByteArray();
@@ -156,7 +156,7 @@ public class UserPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + user
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userNid
 				+ "\n\t\tRole: " + role;
 	}
 
@@ -169,7 +169,7 @@ public class UserPermission extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.user == other.user && this.role.equals(other.role);
+		return this.definitionId.equals(other.definitionId) && this.userNid == other.userNid && this.role.equals(other.role);
 
 	}
 
@@ -180,6 +180,6 @@ public class UserPermission extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + user + role.hashCode();
+		return definitionId.hashCode() + userNid + role.hashCode();
 	}
 }

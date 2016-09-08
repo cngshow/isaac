@@ -181,7 +181,7 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 222, 2220);
+			updater.addComponentToWorkflow(processId, -222, 2220);
 			initConcluder.launchWorkflowProcess(processId);
 			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
 					EndWorkflowType.CANCELED);
@@ -255,9 +255,9 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 333, 3330);
+			updater.addComponentToWorkflow(processId, -333, 3330);
 			try {
-				updater.addComponentToWorkflow(processId, 333, 3331);
+				updater.addComponentToWorkflow(processId, -333, 3331);
 				Assert.assertTrue(true);
 			} catch (Exception e) {
 				Assert.fail();
@@ -265,7 +265,7 @@ public class WorkflowFrameworkTest {
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 			try {
-				updater.addComponentToWorkflow(processId, 333, 3332);
+				updater.addComponentToWorkflow(processId, -333, 3332);
 				Assert.fail();
 			} catch (Exception e) {
 				Assert.assertTrue(true);
@@ -275,12 +275,12 @@ public class WorkflowFrameworkTest {
 			UUID processId2 = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name2",
 					" Framework Workflow Description");
 			try {
-				updater.addComponentToWorkflow(processId2, 333, 3333);
+				updater.addComponentToWorkflow(processId2, -333, 3333);
 				Assert.fail();
 			} catch (Exception e) {
 				Assert.assertTrue(true);
 			}
-			updater.addComponentToWorkflow(processId, 333, 3334);
+			updater.addComponentToWorkflow(processId, -333, 3334);
 
 			Assert.assertEquals(ProcessStatus.LAUNCHED, wfAccessor.getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
@@ -298,7 +298,7 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 444, 4440);
+			updater.addComponentToWorkflow(processId, -444, 4440);
 			initConcluder.launchWorkflowProcess(processId);
 			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Conclude Workflow for Testing",
 					EndWorkflowType.CONCLUDED);
@@ -323,7 +323,7 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 555, 5550);
+			updater.addComponentToWorkflow(processId, -555, 5550);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
@@ -347,7 +347,7 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 666, 6660);
+			updater.addComponentToWorkflow(processId, -666, 6660);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
@@ -373,7 +373,7 @@ public class WorkflowFrameworkTest {
 		try {
 			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 777, 7770);
+			updater.addComponentToWorkflow(processId, -777, 7770);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
@@ -402,7 +402,7 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, 888, 8880);
+			updater.addComponentToWorkflow(processId, -888, 8880);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
 			updater.advanceWorkflow(processId, userId, "QA Fails", "Fail Review Comment");

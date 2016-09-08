@@ -51,7 +51,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	private UUID processId;
 
 	/** The workflowUser. */
-	private int workflowUser;
+	private int userNid;
 
 	/** The time advanced. */
 	private long timeAdvanced;
@@ -73,7 +73,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param workflowUser
+	 * @param userNid
 	 *            the workflowUser
 	 * @param timeAdvanced
 	 *            the time advanced
@@ -86,10 +86,10 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 * @param comment
 	 *            the comment
 	 */
-	public ProcessHistory(UUID processId, int workflowUser, long timeAdvanced, String initialState, String action,
+	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action,
 			String outcomeState, String comment) {
 		this.processId = processId;
-		this.workflowUser = workflowUser;
+		this.userNid = userNid;
 		this.timeAdvanced = timeAdvanced;
 		this.initialState = initialState;
 		this.action = action;
@@ -110,7 +110,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.processId = (UUID) in.readObject();
-			this.workflowUser = (Integer) in.readObject();
+			this.userNid = (Integer) in.readObject();
 			this.timeAdvanced = (Long) in.readObject();
 			this.initialState = (String) in.readObject();
 			this.action = (String) in.readObject();
@@ -139,8 +139,8 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 *
 	 * @return the workflowUser
 	 */
-	public int getWorkflowUser() {
-		return workflowUser;
+	public int getUserNid() {
+		return userNid;
 	}
 
 	/**
@@ -203,7 +203,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(processId);
-		out.writeObject(workflowUser);
+		out.writeObject(userNid);
 		out.writeObject(timeAdvanced);
 		out.writeObject(initialState);
 		out.writeObject(action);
@@ -223,7 +223,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	    Date date=new Date(timeAdvanced);
 	    String timeAdvancedString = workflowDateFormatrer.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + workflowUser
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid
 				+ "\n\t\tTime Advanced as Long: " + timeAdvanced+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action
 				+ "\n\t\tOutcome State: " + outcomeState + "\n\t\tComment: " + comment;
 	}
@@ -237,7 +237,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessHistory other = (ProcessHistory) obj;
 
-		return this.processId.equals(other.processId) && this.workflowUser == other.workflowUser
+		return this.processId.equals(other.processId) && this.userNid == other.userNid
 				&& this.timeAdvanced == other.timeAdvanced && this.initialState.equals(other.initialState)
 				&& this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
 				&& this.comment.equals(other.comment);
@@ -250,7 +250,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + workflowUser + new Long(timeAdvanced).hashCode() + initialState.hashCode()
+		return processId.hashCode() + userNid + new Long(timeAdvanced).hashCode() + initialState.hashCode()
 				+ action.hashCode() + outcomeState.hashCode() + comment.hashCode();
 	}
 

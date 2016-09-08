@@ -124,7 +124,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getUser(), pulledEntry2.getUser());
+		Assert.assertEquals(createdEntry2.getUserNid(), pulledEntry2.getUserNid());
 		Assert.assertNotEquals(createdEntry2.getRole(), pulledEntry2.getRole());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
@@ -274,7 +274,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getProcessId(), pulledEntry2.getProcessId());
-		Assert.assertEquals(createdEntry2.getWorkflowUser(), pulledEntry2.getWorkflowUser());
+		Assert.assertEquals(createdEntry2.getUserNid(), pulledEntry2.getUserNid());
 		Assert.assertEquals(createdEntry2.getTimeAdvanced(), pulledEntry2.getTimeAdvanced());
 		Assert.assertEquals(createdEntry2.getInitialState(), pulledEntry2.getInitialState());
 		Assert.assertEquals(createdEntry2.getAction(), pulledEntry2.getAction());
@@ -356,7 +356,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getCreator(), pulledEntry2.getCreator());
+		Assert.assertEquals(createdEntry2.getCreatorNid(), pulledEntry2.getCreatorNid());
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
 		Assert.assertEquals(createdEntry2.getStatus(), pulledEntry2.getStatus());
 		Assert.assertEquals(createdEntry2.getName(), pulledEntry2.getName());
