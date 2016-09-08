@@ -64,7 +64,7 @@ import org.xml.sax.SAXException;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
@@ -97,7 +97,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	private Set<Long> humanNodesProcessed = new HashSet<>();
 
 	private UUID currentDefinitionId;
-
+	
 	public Bpmn2FileImporter() throws Exception {
 		// Default Constructor fails if store not already set
 	}
@@ -176,13 +176,14 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		roles.add(getAutomatedRole());
 
 		ProcessAssetDesc definition = descriptor.getProcess();
-
+		identifyWorkflowStartType(descriptor);
+		
 		for (String key : descriptor.getTaskAssignments().keySet()) {
 			roles.addAll(descriptor.getTaskAssignments().get(key));
 		}
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
-				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
+				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor), identifyWorkflowStartType(descriptor));
 
 		return definitionDetailStore.addEntry(entry);
 	}
@@ -301,8 +302,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 		}
 		
-		processStartNodeStates(startNodeActions);
 		// R3: If Multiple, need to look at nodes further
+		processStartNodeStates(definitionId, startNodeActions);
 
 		return actions;
 	}
@@ -663,15 +664,17 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		return "DESCRIPTION";
 	}
 	
-	private void processStartNodeStates(Set<AvailableAction> actions) throws Exception {
+	private void processStartNodeStates(UUID definitionId, Set<AvailableAction> actions) throws Exception {
 		if (actions.size() == 0) {
 			throw new Exception("No Start Actions Found");
-		} else if (actions.size() == 1) {
+		} else if (actions.size() != 1) {
 			// If single StartState... add SINGLE_CASE
-			getStartWorkflowTypeMap().put(ProcessDetail.StartWorkflowType.SINGLE_CASE, actions.iterator().next());
+			throw new Exception("For R2, there may only be a single case.  If mutliple actions found an error occurred");
 		} else {
 			// For R3 where may have multiple Start Actions
 		}
+		
+		getDefinitionStartActionMap().put(definitionId, actions);
 	}
 
 	private boolean processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
@@ -718,4 +721,8 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		clearDefinitionCollections();
 	}
 
+	private StartWorkflowType identifyWorkflowStartType(ProcessDescriptor descriptor) {
+		// Hard Code StartWorkflowType now b/c only have single case.  Will need to update StartWorkflowType's definition in the BPMN2 file once we mature the BPMN2 creation mechanism
+		return StartWorkflowType.SINGLE_CASE;
+	}
 }

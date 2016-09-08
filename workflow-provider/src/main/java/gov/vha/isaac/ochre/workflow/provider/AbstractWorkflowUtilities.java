@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +34,6 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 
@@ -59,7 +59,7 @@ public abstract class AbstractWorkflowUtilities {
 	private static final String EDITING_ACTION = "EDITING";
 
 	private static Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
-	private static Map<ProcessDetail.StartWorkflowType, AvailableAction> startWorkflowTypeMap = new HashMap<>();
+	private static Map<UUID, Set<AvailableAction>> definitionStartActionMap = new HashMap<>();
 	private static Set<String> editStates = new HashSet<>();
 
 	/** The workflow stores. */
@@ -120,8 +120,8 @@ public abstract class AbstractWorkflowUtilities {
 		return endNodeTypeMap;
 	}
 
-	public static Map<ProcessDetail.StartWorkflowType, AvailableAction> getStartWorkflowTypeMap() {
-		return startWorkflowTypeMap;
+	public static Map<UUID, Set<AvailableAction>> getDefinitionStartActionMap() {
+		return definitionStartActionMap;
 	}
 
 	public static Set<String> getEditStates() {
@@ -139,7 +139,7 @@ public abstract class AbstractWorkflowUtilities {
 
 	public void clearDefinitionCollections() {
 		endNodeTypeMap.clear();
-		startWorkflowTypeMap.clear();
+		definitionStartActionMap.clear();
 		editStates.clear();
 	}
 

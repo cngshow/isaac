@@ -94,11 +94,16 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
 					initConcluder.endWorkflowProcess(processId, action, workflowUser, comment,
 							EndWorkflowType.CANCELED);
-				} else if (process.getStatus().equals(ProcessStatus.DEFINED)
-						&& getStartWorkflowTypeMap().containsKey(action.getInitialState())) {
-					// Advancing request is to launch workflow
-					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.launchWorkflowProcess(processId);
+				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
+					for (AvailableAction startAction : getDefinitionStartActionMap().get(process.getDefinitionId())) {
+						if (startAction.getOutcomeState().equals(action.getInitialState())) {
+        					// Advancing request is to launch workflow
+        					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+        					initConcluder.launchWorkflowProcess(processId);
+        					
+        					break;
+						}						
+					}
 				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);

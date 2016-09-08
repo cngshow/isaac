@@ -44,6 +44,9 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class DefinitionDetail extends StorableWorkflowContents {
+	public enum StartWorkflowType {
+		SINGLE_CASE
+	}
 
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
@@ -68,7 +71,10 @@ public class DefinitionDetail extends StorableWorkflowContents {
 
 	/** Automated date when BPMN2 imported into bundle. */
 	private long importDate;
-	
+
+	/** The start type. */
+	private StartWorkflowType startType;
+
 	/**
 	 * Instantiates a new definition details.
 	 *
@@ -85,7 +91,8 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 * @param description
 	 *            the description
 	 */
-	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles, String description) {
+	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles,
+			String description, StartWorkflowType startType) {
 		this.bpmn2Id = bpmn2Id;
 		this.name = name;
 		this.namespace = namespace;
@@ -93,6 +100,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		this.roles = roles;
 		this.description = description;
 		this.importDate = new Date().getTime();
+		this.startType = startType;
 	}
 
 	/**
@@ -114,6 +122,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 			this.roles = (Set<String>) in.readObject();
 			this.description = (String) in.readObject();
 			this.importDate = (long) in.readObject();
+			this.startType = (StartWorkflowType) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into Definition Detail", e);
 			e.printStackTrace();
@@ -151,6 +160,10 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		return importDate;
 	}
 
+	public StartWorkflowType getWorkflowStartType() {
+		return startType;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -172,6 +185,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		out.writeObject(roles);
 		out.writeObject(description);
 		out.writeObject(importDate);
+		out.writeObject(startType);
 
 		return bos.toByteArray();
 	}
@@ -189,12 +203,12 @@ public class DefinitionDetail extends StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-	    Date date=new Date(importDate);
-	    String importDateString = workflowDateFormatrer.format(date);
-				
+		Date date = new Date(importDate);
+		String importDateString = workflowDateFormatrer.format(date);
+
 		return "\n\t\tId: " + id + "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name + "\n\t\tNamespace: "
-		+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString()
-		+ "\n\t\tDescription: " + description + "\n\t\tImport Date: " + importDateString;
+				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString() + "\n\t\tDescription: "
+				+ description + "\n\t\tImport Date: " + importDateString + "\n\t\tStart Type: " + startType;
 	}
 
 	/*
@@ -209,7 +223,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		return this.bpmn2Id.equals(other.bpmn2Id) && this.name.equals(other.name)
 				&& this.namespace.equals(other.namespace) && this.version.equals(other.version)
 				&& this.roles.equals(other.roles) && this.description.equals(other.description)
-				&& this.importDate == other.importDate;
+				&& this.importDate == other.importDate && this.startType.equals(other.startType);
 
 	}
 
@@ -220,6 +234,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode() + roles.hashCode() + description.hashCode() + new Long(importDate).hashCode();
+		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode() + roles.hashCode()
+				+ description.hashCode() + new Long(importDate).hashCode() + startType.hashCode();
 	}
 }

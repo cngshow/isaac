@@ -36,8 +36,7 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
@@ -151,13 +150,13 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(canceledActions, identifiedCanceledActions);
 		Assert.assertEquals(concludedActions, identifiedConcludedActions);
 
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().size(), 1);
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().size(),
+		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().keySet().size(), 1);
+		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().size(),
 				identifiedStartTypeActions.size());
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet().iterator().next(),
-				ProcessDetail.StartWorkflowType.SINGLE_CASE);
-		Assert.assertEquals(AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(ProcessDetail.StartWorkflowType.SINGLE_CASE),
-				identifiedStartTypeActions.iterator().next());
+		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().keySet().iterator().next(),
+				definitionDetails.getId());
+		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().get(definitionDetails.getId()),
+				identifiedStartTypeActions);
 
 		Assert.assertEquals(AbstractWorkflowUtilities.getEditStates(), identifiedEditingActions);
 	}

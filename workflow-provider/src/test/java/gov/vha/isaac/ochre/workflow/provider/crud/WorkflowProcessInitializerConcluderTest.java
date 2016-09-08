@@ -31,10 +31,8 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessDetailComparator;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory.ProcessHistoryComparator;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
@@ -85,7 +83,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	@Test
 	public void testCreateWorkflowProcess() throws Exception {
 		// Initialization
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description");
 		addComponentsToProcess(processId);
 
 		// verify content in workflow is as expected
@@ -105,7 +103,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testLaunchWorkflow() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
@@ -128,7 +126,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testCancelWorkflowProcess() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
@@ -163,7 +161,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	 */
 	@Test
 	public void testConcludeWorkflow() throws Exception {
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);

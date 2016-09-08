@@ -21,8 +21,8 @@ import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
@@ -104,12 +104,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		
 		if (definitionDetailStore.getAllEntries().size() == 0) {
 			Bpmn2FileImporter importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			AvailableAction startNodeAction = AbstractWorkflowUtilities.getStartWorkflowTypeMap()
-					.get(ProcessDetail.StartWorkflowType.SINGLE_CASE);
+			mainDefinitionId = importer.getCurrentDefinitionId();
+
+			AvailableAction startNodeAction = AbstractWorkflowUtilities.getDefinitionStartActionMap()
+					.get(mainDefinitionId).iterator().next();
 			createState = startNodeAction.getInitialState();
 			createAction = startNodeAction.getAction();
 			createOutcome = startNodeAction.getOutcomeState();
-			mainDefinitionId = importer.getCurrentDefinitionId();
+			
 			cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 			concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 		}
@@ -131,11 +133,11 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	}
 
 	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
-		return createWorkflowProcess(requestedDefinitionId, "Main Process Name", "Main Process Description", StartWorkflowType.SINGLE_CASE);
+		return createWorkflowProcess(requestedDefinitionId, "Main Process Name", "Main Process Description");
 	}
 
 	protected UUID createSecondWorkflowProcess(UUID requestedDefinitionId) {
-		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description", StartWorkflowType.SINGLE_CASE);
+		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description");
 	}
 	
 	protected void executeLaunchWorkflow(UUID processId) {
@@ -317,10 +319,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description, StartWorkflowType startType) {
+	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
 		// Mimick the initConcluder's create new process
 		StorableWorkflowContents details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
-				ProcessStatus.DEFINED, name, description, startType);
+				ProcessStatus.DEFINED, name, description);
 		UUID processId = processDetailStore.addEntry(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
@@ -341,7 +343,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		roles.add("Reviewer");
 		roles.add("Approver");
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
-				"Description of BPMN2 ID-X");
+				"Description of BPMN2 ID-X", StartWorkflowType.SINGLE_CASE);
 		UUID defId = definitionDetailStore.addEntry(createdEntry);
 		
 		// Duplicate Permissions

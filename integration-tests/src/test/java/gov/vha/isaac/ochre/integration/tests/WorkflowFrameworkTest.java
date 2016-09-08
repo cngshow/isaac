@@ -20,8 +20,7 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.StartWorkflowType;
+import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitService;
@@ -108,7 +107,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
 
 			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 
 			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
 			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
@@ -143,7 +142,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
 					EndWorkflowType.CANCELED);
 
@@ -162,7 +161,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Concluding Workflow for Testing",
 					EndWorkflowType.CONCLUDED);
 
@@ -182,7 +181,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 222, 2220);
 			initConcluder.launchWorkflowProcess(processId);
 			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
@@ -237,9 +236,9 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -256,7 +255,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 333, 3330);
 			try {
 				updater.addComponentToWorkflow(processId, 333, 3331);
@@ -275,7 +274,7 @@ public class WorkflowFrameworkTest {
 
 			updater.advanceWorkflow(processId, userId, "QA Fails", "QA Fail");
 			UUID processId2 = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name2",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			try {
 				updater.addComponentToWorkflow(processId2, 333, 3333);
 				Assert.fail();
@@ -299,7 +298,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 444, 4440);
 			initConcluder.launchWorkflowProcess(processId);
 			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Conclude Workflow for Testing",
@@ -311,7 +310,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertEquals(ProcessStatus.LAUNCHED, wfAccessor.getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
 			Assert.assertTrue(AbstractWorkflowUtilities.getEditStates().contains(hx.getOutcomeState()));
-			Assert.assertTrue(isStartState(hx.getInitialState()));
+			Assert.assertTrue(isStartState(definitionId, hx.getInitialState()));
 		}
 
 		clearStores();
@@ -324,7 +323,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 555, 5550);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -348,7 +347,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 666, 6660);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -374,7 +373,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 777, 7770);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -386,7 +385,7 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
 
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name2",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			Assert.assertEquals(ProcessStatus.DEFINED, wfAccessor.getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
 			Assert.fail();
@@ -403,7 +402,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description", ProcessDetail.StartWorkflowType.SINGLE_CASE);
+					" Framework Workflow Description");
 			updater.addComponentToWorkflow(processId, 888, 8880);
 			initConcluder.launchWorkflowProcess(processId);
 			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
@@ -444,9 +443,9 @@ public class WorkflowFrameworkTest {
 		updater.addNewUserRole(definitionId, userId, "Approver");
 	}
 
-	private boolean isStartState(String state) {
-		for (ProcessDetail.StartWorkflowType type : AbstractWorkflowUtilities.getStartWorkflowTypeMap().keySet()) {
-			if (AbstractWorkflowUtilities.getStartWorkflowTypeMap().get(type).getInitialState().equals(state)) {
+	private boolean isStartState(UUID defId, String state) {
+		for (AvailableAction action : AbstractWorkflowUtilities.getDefinitionStartActionMap().get(defId)) {
+			if (action.getInitialState().equals(state)) {
 				return true;
 			}
 		}

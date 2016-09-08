@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
@@ -75,7 +76,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 * @return the uuid
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description, ProcessDetail.StartWorkflowType type) throws Exception {
+	public UUID createWorkflowProcess(UUID definitionId, int user, String name, String description) throws Exception {
     	if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
     		throw new Exception("Name and Description must be filled out when creating a process");
     	}
@@ -88,11 +89,17 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
     	
     	// Create Process Details with "DEFINED"
     	StorableWorkflowContents details = new ProcessDetail(definitionId, user, new Date().getTime(),
-    			ProcessStatus.DEFINED, name, description, type);
+    			ProcessStatus.DEFINED, name, description);
     	UUID processId = processDetailStore.addEntry(details);
     
     	// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
-    	AvailableAction startAdvancement = getStartState(type);
+    	
+    	// At some point, need to handle the case where multiple startActions may be defined for single DefinitionId.  For now, verify only one and use it
+    	if (getDefinitionStartActionMap().get(definitionId).size() != 1) {
+    		throw new Exception ("Currently only able to handle single startAction within a definition. This definition found: " + getDefinitionStartActionMap().get(definitionId).size());
+    	}
+    	
+    	AvailableAction startAdvancement = getDefinitionStartActionMap().get(definitionId).iterator().next();
     	ProcessHistory advanceEntry = new ProcessHistory(processId, user, new Date().getTime(),
     			startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(), "");
     	processHistoryStore.addEntry(advanceEntry);
@@ -167,18 +174,6 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			// TODO: Handle cancelation store and handle reverting automatically
-		}
-	}
-
-	private AvailableAction getStartState(ProcessDetail.StartWorkflowType type) throws Exception {
-		switch (type) {
-		
-		case SINGLE_CASE: 
-			 return getStartWorkflowTypeMap().get(type); 
-			 
-		default:
-				 throw new Exception("Unable to discren the Workflow Start State based on the StartWorkflowType: " + type);
-		 
 		}
 	}
 }

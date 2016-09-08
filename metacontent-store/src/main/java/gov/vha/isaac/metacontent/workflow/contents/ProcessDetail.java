@@ -48,10 +48,6 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessDetail extends StorableWorkflowContents {
-	public enum StartWorkflowType {
-		SINGLE_CASE
-	}
-
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
@@ -82,9 +78,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The description. */
 	private String description;
 
-	/** The start type. */
-	private StartWorkflowType startType;
-
 	/**
 	 * Instantiates a new process detail.
 	 */
@@ -114,21 +107,14 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param description
 	 *            the description
 	 */
-	public ProcessDetail(
-			UUID definitionId,
-			int creator,
-			long timeCreated,
-			ProcessStatus status,
-			String name,
-			String description,
-			StartWorkflowType startType) {
+	public ProcessDetail(UUID definitionId, int creator, long timeCreated, ProcessStatus status, String name,
+			String description) {
 		this.definitionId = definitionId;
 		this.creator = creator;
 		this.timeCreated = timeCreated;
 		this.status = status;
 		this.name = name;
 		this.description = description;
-		this.startType = startType;
 	}
 
 	/**
@@ -146,8 +132,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.definitionId = (UUID) in.readObject();
 
 			@SuppressWarnings("unchecked")
-			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in
-					.readObject();
+			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
 			this.componentToStampMap = componentToStampMapReadObject;
 
 			this.creator = (Integer) in.readObject();
@@ -157,7 +142,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.status = (ProcessStatus) in.readObject();
 			this.name = (String) in.readObject();
 			this.description = (String) in.readObject();
-			this.startType = (StartWorkflowType) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into ProcessDetail", e);
 			e.printStackTrace();
@@ -257,10 +241,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 		return description;
 	}
 
-	public StartWorkflowType getStartType() {
-		return startType;
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -284,7 +264,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 		out.writeObject(status);
 		out.writeObject(name);
 		out.writeObject(description);
-		out.writeObject(startType);
 
 		return bos.toByteArray();
 	}
@@ -310,22 +289,20 @@ public class ProcessDetail extends StorableWorkflowContents {
 			}
 		}
 
-	    Date date=new Date(timeCreated);
-	    String timeCreatedString = workflowDateFormatrer.format(date);
+		Date date = new Date(timeCreated);
+		String timeCreatedString = workflowDateFormatrer.format(date);
 
-	    date= new Date(timeLaunched);
-	    String timeLaunchedString = workflowDateFormatrer.format(date);
+		date = new Date(timeLaunched);
+		String timeLaunchedString = workflowDateFormatrer.format(date);
 
-	    date= new Date(timeCanceledOrConcluded);
-	    String timeCanceledOrConcludedString = workflowDateFormatrer.format(date);
+		date = new Date(timeCanceledOrConcluded);
+		String timeCanceledOrConcludedString = workflowDateFormatrer.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() 
-				+ "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
-				+ creator + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString()
+				+ "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: " + creator
+				+ "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString
 				+ "\n\t\tTime Canceled or Concluded: " + timeCanceledOrConcludedString + "\n\t\tStatus: " + status
-				+ "\n\t\tName: " + name
-				+ "\n\t\tDescription: " + description
-				+ "\n\t\tStart Type: " + startType;
+				+ "\n\t\tName: " + name + "\n\t\tDescription: " + description;
 	}
 
 	/*
@@ -341,9 +318,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 				&& this.componentToStampMap.equals(other.componentToStampMap) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched
 				&& this.timeCanceledOrConcluded == other.timeCanceledOrConcluded && this.status == other.status
-				&& this.name.equals(other.name)
-				&& this.description.equals(other.description)
-				&& this.startType.equals(other.startType);
+				&& this.name.equals(other.name) && this.description.equals(other.description);
 	}
 
 	/*
@@ -355,9 +330,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	public int hashCode() {
 		return definitionId.hashCode() + componentToStampMap.hashCode() + creator + new Long(timeCreated).hashCode()
 				+ new Long(timeLaunched).hashCode() + new Long(timeCanceledOrConcluded).hashCode() + status.hashCode()
-				+ name.hashCode()
-				+ description.hashCode()
-				+ startType.hashCode();
+				+ name.hashCode() + description.hashCode();
 	}
 
 	/**
