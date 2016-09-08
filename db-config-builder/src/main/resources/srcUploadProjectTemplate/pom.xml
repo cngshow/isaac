@@ -28,6 +28,19 @@
 		<url>www.va.gov</url>
 	</organization>
 	
+	<developers>
+		<developer>
+			<properties>
+				<info>For a listing of developers, clone the project and execute 'git shortlog -sn'</info>
+			</properties>
+		</developer>
+	</developers>
+	
+	<issueManagement>
+		<system>Jazz</system>
+		<url>https://clm.rational.oit.va.gov/ccm/web/projects/CTT (CM)</url>
+	</issueManagement>
+	
 	<scm>
 		<url>#SCM_URL#</url>
 		<tag>#SCM_TAG#</tag>
