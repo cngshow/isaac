@@ -54,8 +54,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	/** The definition id. */
 	private UUID definitionId;
 
-	/** The component Sequences. */
-	private Map<Integer, List<Integer>> componentToStampMap = new HashMap<>();
+	/** The map from component nids to all stamps associated with component. */
+	private Map<Integer, List<Integer>> componentToStampsMap = new HashMap<>();
 
 	/** The creator. */
 	private int creator;
@@ -90,10 +90,6 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param componentSequences
-	 *            the components
-	 * @param stampSequences
-	 *            the stamp sequences
 	 * @param creator
 	 *            the creator
 	 * @param timeCreated
@@ -133,7 +129,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 
 			@SuppressWarnings("unchecked")
 			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
-			this.componentToStampMap = componentToStampMapReadObject;
+			this.componentToStampsMap = componentToStampMapReadObject;
 
 			this.creator = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
@@ -161,12 +157,12 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the stamp sequences.
+	 * Gets the component to statmps map.
 	 *
 	 * @return the stamp sequences
 	 */
-	public Map<Integer, List<Integer>> getComponentToStampMap() {
-		return componentToStampMap;
+	public Map<Integer, List<Integer>> getComponentToStampsMap() {
+		return componentToStampsMap;
 	}
 
 	/**
@@ -256,7 +252,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(definitionId);
-		out.writeObject(componentToStampMap);
+		out.writeObject(componentToStampsMap);
 		out.writeObject(creator);
 		out.writeObject(timeCreated);
 		out.writeObject(timeLaunched);
@@ -281,11 +277,11 @@ public class ProcessDetail extends StorableWorkflowContents {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (Integer compSeq : componentToStampMap.keySet()) {
-			buf.append(compSeq + "\n\t\t\tFor Component: " + compSeq + " have following stamps:");
+		for (Integer compNid : componentToStampsMap.keySet()) {
+			buf.append("\n\t\t\tFor Component: " + compNid + " have following stamp sequences:");
 
-			for (Integer conId : componentToStampMap.get(compSeq)) {
-				buf.append(conId + ", ");
+			for (Integer stampSeq : componentToStampsMap.get(compNid)) {
+				buf.append(stampSeq + ", ");
 			}
 		}
 
@@ -315,7 +311,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 		ProcessDetail other = (ProcessDetail) obj;
 
 		return this.definitionId.equals(other.definitionId)
-				&& this.componentToStampMap.equals(other.componentToStampMap) && this.creator == other.creator
+				&& this.componentToStampsMap.equals(other.componentToStampsMap) && this.creator == other.creator
 				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched
 				&& this.timeCanceledOrConcluded == other.timeCanceledOrConcluded && this.status == other.status
 				&& this.name.equals(other.name) && this.description.equals(other.description);
@@ -328,7 +324,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + componentToStampMap.hashCode() + creator + new Long(timeCreated).hashCode()
+		return definitionId.hashCode() + componentToStampsMap.hashCode() + creator + new Long(timeCreated).hashCode()
 				+ new Long(timeLaunched).hashCode() + new Long(timeCanceledOrConcluded).hashCode() + status.hashCode()
 				+ name.hashCode() + description.hashCode();
 	}

@@ -55,7 +55,7 @@ public class WorkflowFrameworkTest {
 	private static UUID definitionId;
 	private static int userId = 99;
 	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
-	private static int testConceptSeq;
+	private static int testConceptNid;
 	private static Set<Integer> testConcepts = new HashSet<>();
 	private ProcessDetailContentStore processDetailStore;
 	private ProcessHistoryContentStore processHistoryStore;
@@ -78,8 +78,8 @@ public class WorkflowFrameworkTest {
 			processDetailStore = new ProcessDetailContentStore(store);
 			processHistoryStore = new ProcessHistoryContentStore(store);
 
-			testConceptSeq = MetaData.ISAAC_METADATA.getConceptSequence();
-			testConcepts.add(testConceptSeq);
+			testConceptNid = MetaData.ISAAC_METADATA.getNid();
+			testConcepts.add(testConceptNid);
 
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			definitionId = importer.getCurrentDefinitionId();
@@ -95,38 +95,38 @@ public class WorkflowFrameworkTest {
 	public void testStatusAccessorComponentInActiveWorkflow() {
 		LOG.info("Testing Workflow History Accessor isComponentInActiveWorkflow()");
 
-		ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(testConceptSeq);
+		ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(testConceptNid);
 		SememeChronology<? extends DescriptionSememe<?>> descSem = con.getConceptDescriptionList().iterator().next();
 
-		int conSeq = con.getConceptSequence();
-		int semSeq = descSem.getSememeSequence();
+		int conNid = con.getNid();
+		int semNid = descSem.getNid();
 
 		try {
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 
 			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 
-			updater.addComponentToWorkflow(processId, conSeq, 1110);
-			updater.addComponentToWorkflow(processId, semSeq, 1111);
+			updater.addComponentToWorkflow(processId, conNid, 1110);
+			updater.addComponentToWorkflow(processId, semNid, 1111);
 
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));			
+			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
+			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));			
 			
 			initConcluder.launchWorkflowProcess(processId);
 
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
+			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
+			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 
 			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
 					EndWorkflowType.CANCELED);
 
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conSeq));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semSeq));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
+			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 		} catch (Exception e) {
 			Assert.fail(e.getMessage());
 		}

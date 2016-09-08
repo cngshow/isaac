@@ -104,17 +104,17 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		ProcessDetail entry = wfAccessor.getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentToStampMap().size());
+		Assert.assertEquals(2, entry.getComponentToStampsMap().size());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
 		Assert.assertEquals(99, entry.getCreator());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
-		Assert.assertEquals(2, entry.getComponentToStampMap().size());
-		Assert.assertTrue(entry.getComponentToStampMap().containsKey(55));
-		Assert.assertTrue(entry.getComponentToStampMap().containsKey(56));
-		Assert.assertTrue(entry.getComponentToStampMap().get(55).contains(11));
-		Assert.assertTrue(entry.getComponentToStampMap().get(55).contains(12));
-		Assert.assertTrue(entry.getComponentToStampMap().get(56).contains(11));
-		Assert.assertTrue(entry.getComponentToStampMap().get(56).contains(12));
+		Assert.assertEquals(2, entry.getComponentToStampsMap().size());
+		Assert.assertTrue(entry.getComponentToStampsMap().containsKey(55));
+		Assert.assertTrue(entry.getComponentToStampsMap().containsKey(56));
+		Assert.assertTrue(entry.getComponentToStampsMap().get(55).contains(11));
+		Assert.assertTrue(entry.getComponentToStampsMap().get(55).contains(12));
+		Assert.assertTrue(entry.getComponentToStampsMap().get(56).contains(11));
+		Assert.assertTrue(entry.getComponentToStampsMap().get(56).contains(12));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
 	}

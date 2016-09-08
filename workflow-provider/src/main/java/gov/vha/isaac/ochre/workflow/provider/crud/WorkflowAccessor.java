@@ -84,11 +84,11 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		return allHistoryForProcess;
 	}
 
-	public boolean isComponentInActiveWorkflow(UUID definitionId, int compSeq) throws Exception {
+	public boolean isComponentInActiveWorkflow(UUID definitionId, int compNid) throws Exception {
 		for (ProcessDetail proc : processDetailStore.getAllEntries()) {
 			if (proc.getDefinitionId().equals(definitionId) && 
 				proc.isActive() && 
-				proc.getComponentToStampMap().containsKey(compSeq)) {
+				proc.getComponentToStampsMap().containsKey(compNid)) {
 				return true;
 			}
 		} 

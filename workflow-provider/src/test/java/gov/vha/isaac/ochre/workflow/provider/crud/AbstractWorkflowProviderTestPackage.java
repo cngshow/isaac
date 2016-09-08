@@ -220,7 +220,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void addComponentsToProcess(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentToStampMap().put(con, stampSequenceForTesting);
+			entry.getComponentToStampsMap().put(con, stampSequenceForTesting);
 		}
 		
 		processDetailStore.updateEntry(processId, entry);

@@ -65,10 +65,6 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param components
-	 *            the concepts
-	 * @param stampSequences
-	 *            the stamp sequence
 	 * @param user
 	 *            the user
 	 * @param subjectMatter
@@ -119,7 +115,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		if (entry == null) {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
-		} else if (entry.getComponentToStampMap().isEmpty()) {
+		} else if (entry.getComponentToStampsMap().isEmpty()) {
 			throw new Exception("Workflow can only be launched when the workflow contains components to work on");
 		}
 

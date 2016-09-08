@@ -332,12 +332,6 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		ArrayList<Integer> sequences2 = new ArrayList<>();
-		sequences2.add(90);
-		sequences2.add(91);
-		Set<Integer> concepts2 = new HashSet<>();
-		concepts2.add(98);
-		concepts2.add(97);
 		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3,
 				new Date().getTime(),ProcessStatus.DEFINED, name, description);
 
