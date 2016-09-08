@@ -140,8 +140,8 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
      *
      * @param query The query to apply
      * @param extendedDescriptionType - The UUID of an extended description type
-     * - should be a child of the concept "Description name in source
-     * terminology (foundation metadata concept)" If this is passed in as null,
+     * - should be a child of the concept "Description type in source
+     * terminology (ISAAC)" If this is passed in as null,
      * this falls back to a standard description search that searches all
      * description types
      * @param sizeLimit The maximum size of the result list.
