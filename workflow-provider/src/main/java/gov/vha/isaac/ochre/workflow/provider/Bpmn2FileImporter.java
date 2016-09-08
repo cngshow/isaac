@@ -64,7 +64,6 @@ import org.xml.sax.SAXException;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
@@ -176,14 +175,13 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		roles.add(getAutomatedRole());
 
 		ProcessAssetDesc definition = descriptor.getProcess();
-		identifyWorkflowStartType(descriptor);
 		
 		for (String key : descriptor.getTaskAssignments().keySet()) {
 			roles.addAll(descriptor.getTaskAssignments().get(key));
 		}
 
 		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
-				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor), identifyWorkflowStartType(descriptor));
+				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
 
 		return definitionDetailStore.addEntry(entry);
 	}
@@ -719,10 +717,5 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		humanNodesProcessed.clear();
 		
 		clearDefinitionCollections();
-	}
-
-	private StartWorkflowType identifyWorkflowStartType(ProcessDescriptor descriptor) {
-		// Hard Code StartWorkflowType now b/c only have single case.  Will need to update StartWorkflowType's definition in the BPMN2 file once we mature the BPMN2 creation mechanism
-		return StartWorkflowType.SINGLE_CASE;
 	}
 }

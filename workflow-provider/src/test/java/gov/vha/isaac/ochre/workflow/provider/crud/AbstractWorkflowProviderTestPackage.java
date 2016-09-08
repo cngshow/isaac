@@ -21,7 +21,6 @@ import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
@@ -343,7 +342,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		roles.add("Reviewer");
 		roles.add("Approver");
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
-				"Description of BPMN2 ID-X", StartWorkflowType.SINGLE_CASE);
+				"Description of BPMN2 ID-X");
 		UUID defId = definitionDetailStore.addEntry(createdEntry);
 		
 		// Duplicate Permissions

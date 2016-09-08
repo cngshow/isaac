@@ -20,7 +20,6 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitService;

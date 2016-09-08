@@ -36,7 +36,6 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 

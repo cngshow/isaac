@@ -38,7 +38,6 @@ import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail.StartWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
@@ -403,7 +402,7 @@ public class WorkflowContentStoreTest {
 		roles1.add("Reviewer");
 		String description = "This is the description for this unit test";
 		
-		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1, description, StartWorkflowType.SINGLE_CASE);
+		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1, description);
 
 		// New scope to ensure closing store
 		DefinitionDetailContentStore definitionDetailStore = new DefinitionDetailContentStore(store);
@@ -424,7 +423,7 @@ public class WorkflowContentStoreTest {
 		Set<String> roles2 = new HashSet<>();
 		roles2.add("Editor");
 		roles2.add("Approver");
-		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2, description, StartWorkflowType.SINGLE_CASE);
+		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2, description);
 
 		UUID key2 = definitionDetailStore.addEntry(createdEntry2);
 		Assert.assertEquals(definitionDetailStore.getNumberOfEntries(), 2);
@@ -439,7 +438,7 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		DefinitionDetail updatedEntry2 = new DefinitionDetail(createdEntry2.getBpmn2Id(), createdEntry2.getName(),
-				createdEntry2.getNamespace(), "2.0", createdEntry2.getRoles(), createdEntry2.getDescription(), createdEntry2.getWorkflowStartType());
+				createdEntry2.getNamespace(), "2.0", createdEntry2.getRoles(), createdEntry2.getDescription());
 		definitionDetailStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -453,7 +452,6 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2.getVersion(), pulledEntry2.getVersion());
 		Assert.assertEquals(createdEntry2.getDescription(), pulledEntry2.getDescription());
 		Assert.assertNotEquals(createdEntry2.getImportDate(), pulledEntry2.getImportDate());
-		Assert.assertEquals(createdEntry2.getWorkflowStartType(), pulledEntry2.getWorkflowStartType());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
