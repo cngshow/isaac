@@ -22,11 +22,11 @@ import java.util.UUID;
  */
 
 import org.jvnet.hk2.annotations.Contract;
-
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArray;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
 
 /**
  * {@link DynamicSememeUtility}
@@ -59,5 +59,6 @@ public interface DynamicSememeUtility {
 	public DynamicSememeArray<DynamicSememeData> configureColumnIndexInfo(DynamicSememeColumnInfo[] columns);
 	
 	public DynamicSememeString createDynamicStringData(String value);
-
+	
+	public DynamicSememeUUID createDynamicUUIDData(UUID value);
 }

@@ -92,6 +92,14 @@ public class TermAux {
             = new ConceptProxy("Definition (core metadata concept)",
                     UUID.fromString("700546a3-09c7-3fc2-9eb9-53d318659a09"));
     
+    public static ConceptSpecification DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY
+            = new ConceptProxy("description type in source terminology",
+                    UUID.fromString("ef7d9808-a839-5119-a604-b777268eb719"));
+    
+    public static ConceptSpecification RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY
+            = new ConceptProxy("relationship type in source terminology",
+                    UUID.fromString("46bc0e6b-0e64-5aa6-af27-a823e9156dfc"));
+    
     //ConceptSpecs for language refsets
     public static ConceptSpecification US_DIALECT_ASSEMBLAGE
             = new ConceptProxy("United States of America English language reference set",

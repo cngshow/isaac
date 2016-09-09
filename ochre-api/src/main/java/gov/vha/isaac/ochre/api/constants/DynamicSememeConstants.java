@@ -20,11 +20,8 @@ package gov.vha.isaac.ochre.api.constants;
  */
 
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -328,6 +325,27 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			ObjectChronologyType.SEMEME,
 			SememeType.DESCRIPTION) {
 	};
+	
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE = new MetadataDynamicSememeConstant("extended description type",
+			UUID.fromString("5a2e7786-3e41-11dc-8314-0800200c9a66"),
+			"A Sememe used to store non-snomed description types when other terminologies are imported",
+			new DynamicSememeColumnInfo[]{
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.UUID, null, true, 
+						DynamicSememeValidatorType.IS_CHILD_OF, 
+						LookupService.getService(DynamicSememeUtility.class).createDynamicUUIDData(TermAux.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid()), 
+						true)}) {
+	}; 
+	
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE = new MetadataDynamicSememeConstant("extended relationship type",
+			UUID.fromString("d41d928f-8a97-55c1-aa6c-a289b413fbfd"),
+			"A Sememe used to store non-snomed relationship types when other terminologies are imported - especially when a relationship is mapped onto a "
+			+ "snomed relationship type (such as isa)",
+			new DynamicSememeColumnInfo[]{
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.UUID, null, true, 
+						DynamicSememeValidatorType.IS_CHILD_OF, 
+						LookupService.getService(DynamicSememeUtility.class).createDynamicUUIDData(TermAux.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid()), 
+						true)}) {
+	}; 
 
 	//An organizational concept which serves as a parent concept for dynamic sememes defined in the system
 	//(unless they choose to put them some where else, this isn't required, is only for convenience)
@@ -340,6 +358,8 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			addChild(DYNAMIC_SEMEME_COMMENT_ATTRIBUTE);
 			addChild(DYNAMIC_SEMEME_ASSOCIATION_SEMEME);
 			addChild(DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME);
+			addChild(DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE);
+			addChild(DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE);
 			setParent(TermAux.ASSEMBLAGE);
 		}
 	};

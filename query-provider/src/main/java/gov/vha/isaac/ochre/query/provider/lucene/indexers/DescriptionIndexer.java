@@ -21,6 +21,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.query.provider.lucene.LuceneDescriptionType;
@@ -56,7 +57,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     private static final AtomicBoolean sequencesSetup = new AtomicBoolean(false);
 
     private final HashMap<Integer, String> sequenceTypeMap = new HashMap<>();
-    private int descSourceTypeSequence;
+    private int descExtendedTypeSequence;
     
     private static final String FIELD_INDEXED_STRING_VALUE = "_string_content_";
 
@@ -90,9 +91,11 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         }
     }
 
-    private void addField(Document doc, String fieldName, String value) {
+    private void addField(Document doc, String fieldName, String value, boolean tokenize) {
         //index twice per field - once with the standard analyzer, once with the whitespace analyzer.
-        doc.add(new TextField(fieldName, value, Field.Store.NO));
+        if (tokenize) {
+            doc.add(new TextField(fieldName, value, Field.Store.NO));
+        }
         doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
     }
     
@@ -137,6 +140,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
 
     /**
      * Search the specified description type.
+     *
      *
      * @param query The query to apply
      * @param extendedDescriptionType - The UUID of an extended description type
@@ -199,7 +203,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
                     sequenceTypeMap.put(MetaData.FULLY_SPECIFIED_NAME.getConceptSequence(), LuceneDescriptionType.FSN.name());
                     sequenceTypeMap.put(MetaData.DEFINITION_DESCRIPTION_TYPE.getConceptSequence(), LuceneDescriptionType.DEFINITION.name());
                     sequenceTypeMap.put(MetaData.SYNONYM.getConceptSequence(), LuceneDescriptionType.SYNONYM.name());
-                    descSourceTypeSequence = MetaData.DESCRIPTION_SOURCE_TYPE_REFERENCE_SETS.getConceptSequence();
+                    descExtendedTypeSequence = DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence();
                 }
                 sequencesSetup.set(true);
             } finally {
@@ -223,10 +227,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
                     || !lastDescText.equals(descriptionVersion.getText())
                     || !lastDescType.equals(descType)) {
                 //Add to the field that carries all text
-                addField(doc, FIELD_INDEXED_STRING_VALUE, descriptionVersion.getText());
+                addField(doc, FIELD_INDEXED_STRING_VALUE, descriptionVersion.getText(), true);
 
                 //Add to the field that carries type-only text
-                addField(doc, FIELD_INDEXED_STRING_VALUE + "_" + descType, descriptionVersion.getText());
+                addField(doc, FIELD_INDEXED_STRING_VALUE + "_" + descType, descriptionVersion.getText(), true);
 
                 uniqueTextValues.put(descriptionVersion.getTime(), descriptionVersion.getText());
                 lastDescText = descriptionVersion.getText();
@@ -242,7 +246,8 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
                 @SuppressWarnings("unchecked")
                 SememeChronology<DynamicSememe<?>> sememeDynamicChronicle = (SememeChronology<DynamicSememe<?>>) sememeChronicle;
                 for (DynamicSememe<?> sememeDynamic : sememeDynamicChronicle.getVersionList()) {
-                    if (Get.taxonomyService().wasEverKindOf(sememeDynamic.getAssemblageSequence(), descSourceTypeSequence)) {
+                    //If this sememe is the sememe recording a dynamic sememe extended type....
+                    if (sememeDynamic.getAssemblageSequence() == descExtendedTypeSequence) {
                         //this is a UUID, but we want to treat it as a string anyway
                         String extendedDescType = sememeDynamic.getData()[0].getDataObject().toString();
                         String value = null;
@@ -263,7 +268,8 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
                             if (extendedDescType == null || value == null) {
                                 throw new RuntimeException("design failure");
                             }
-                            addField(doc, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescType, value);
+                            //This is a UUID, but we only do exact matches - indexing ints as strings is faster when doing exact-match only
+                            addField(doc, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescType, value, false);  //Don't tokenize this
                             lastValue = value;
                             lastExtendedDescType = extendedDescType;
                         }
