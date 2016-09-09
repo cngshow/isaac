@@ -795,7 +795,7 @@ public class EConceptUtility
 	private void validateDataTypes(UUID refexDynamicTypeUuid, DynamicSememeData[] values)
 	{
 		//TODO this should be a much better validator - checking all of the various things in RefexDynamicCAB.validateData - or in 
-		//generateMetadataEConcepts
+		//generateMetadataEConcepts - need to enforce the restrictions defined in the columns in the validators
 		
 		if (!refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid))
 		{
