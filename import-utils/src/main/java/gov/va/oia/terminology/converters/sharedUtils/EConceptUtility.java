@@ -1020,7 +1020,7 @@ public class EConceptUtility
 
 		// Create UUID from seed and assign SesemeBuilder the value
 		UUID generatedGraphPrimordialUuid = ConverterUUID
-				.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), byteString.toString());
+				.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "" +stated, byteString.toString());
 		sb.setPrimordialUuid(graphPrimordialUuid != null ? graphPrimordialUuid : generatedGraphPrimordialUuid);
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
