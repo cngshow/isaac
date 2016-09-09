@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.10-SNAPSHOT</version>
+    <version>3.11-SNAPSHOT</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -56,7 +56,7 @@
             <properties>
                 <info>For a listing of developers, clone the project and execute 'git shortlog -sn'</info>
             </properties>
-            <name></name>
+            <name />
         </developer>
     </developers>
     
