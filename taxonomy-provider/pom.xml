@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>3.10</version>
+        <version>3.11-SNAPSHOT</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
     <artifactId>taxonomy-provider</artifactId>
