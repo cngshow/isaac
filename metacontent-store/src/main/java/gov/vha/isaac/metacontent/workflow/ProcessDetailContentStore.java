@@ -86,7 +86,7 @@ public class ProcessDetailContentStore extends AbstractWorkflowContentStore {
 			buf.append("\n\n");
 		}
 
-		return "ProcessDetailsWorkflowContentStore: " + buf.toString();
+		return "ProcessDetailContentStore: " + buf.toString();
 	}
 
 }

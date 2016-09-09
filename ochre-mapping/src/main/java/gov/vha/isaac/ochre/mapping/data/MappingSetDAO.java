@@ -20,6 +20,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
@@ -40,8 +41,6 @@ import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
-import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerConfiguration;
-import javafx.concurrent.Task;
 
 /**
  * {@link MappingSet}
@@ -73,23 +72,24 @@ public class MappingSetDAO extends MappingDAO
 				new DynamicSememeColumnInfo[] {
 					new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getUUID(), 
 							DynamicSememeDataType.UUID, null, false, false),
-					new DynamicSememeColumnInfo(1, IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID(), DynamicSememeDataType.UUID, null, false, 
+					new DynamicSememeColumnInfo(1, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER.getUUID(), DynamicSememeDataType.UUID, null, false, 
 							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getUUID()), false)},
 //					new DynamicSememeColumnInfo(2, IsaacMappingConstants.get().MAPPING_STATUS.getUUID(), DynamicSememeDataType.UUID, null, false, 
 //							DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_STATUS.getUUID()), false)}, 
 				null, ObjectChronologyType.CONCEPT, null);
 		
-		Get.workExecutors().getExecutor().execute(() ->
-		{
-			try
-			{
-				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1, 2}, true);
-			}
-			catch (Exception e)
-			{
-				LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
-			}
-		});
+		//TODO figure out if I need to be doing this for the indexer
+//		Get.workExecutors().getExecutor().execute(() ->
+//		{
+//			try
+//			{
+//				SememeIndexerConfiguration.configureColumnsToIndex(rdud.getDynamicSememeUsageDescriptorSequence(), new Integer[] {0, 1}, true);
+//			}
+//			catch (Exception e)
+//			{
+//				LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
+//			}
+//		});
 		
 		//Then, annotate the concept created above as a member of the MappingSet dynamic sememe, and add the inverse name, if present.
 		if (!StringUtils.isBlank(inverseName))
@@ -142,9 +142,7 @@ public class MappingSetDAO extends MappingDAO
 	{
 		ConceptChronology mappingConcept = Get.conceptService().getConcept(mappingSet.getPrimordialUUID());
 		
-		Get.sememeService().getSememesForComponentFromAssemblage(mappingConcept.getNid(), 
-				MetaData.DESCRIPTION_ASSEMBLAGE.getConceptSequence())
-			.forEach(descriptionC ->
+		Get.sememeService().getSememesForComponent(mappingConcept.getNid()).filter(s -> s.getSememeType() == SememeType.DESCRIPTION).forEach(descriptionC ->
 			{
 				Optional<LatestVersion<DescriptionSememe<?>>> latest = ((SememeChronology)descriptionC).getLatestVersion(DescriptionSememe.class, 
 						stampCoord);
@@ -157,10 +155,13 @@ public class MappingSetDAO extends MappingDAO
 						{
 							if (!ds.getText().equals(mappingSet.getName()))
 							{
-								MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+								MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds.getChronology())
 										.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+								mutable.setCaseSignificanceConceptSequence(ds.getCaseSignificanceConceptSequence());
+								mutable.setDescriptionTypeConceptSequence(ds.getDescriptionTypeConceptSequence());
+								mutable.setLanguageConceptSequence(ds.getLanguageConceptSequence());
 								mutable.setText(mappingSet.getName());
-								Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+								Get.commitService().addUncommitted(ds.getChronology());
 							}
 						}
 						else
@@ -174,10 +175,13 @@ public class MappingSetDAO extends MappingDAO
 							{
 								if (!ds.getText().equals(mappingSet.getInverseName()))
 								{
-									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds)
+									MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds.getChronology())
 											.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+									mutable.setCaseSignificanceConceptSequence(ds.getCaseSignificanceConceptSequence());
+									mutable.setDescriptionTypeConceptSequence(ds.getDescriptionTypeConceptSequence());
+									mutable.setLanguageConceptSequence(ds.getLanguageConceptSequence());
 									mutable.setText(mappingSet.getInverseName());
-									Get.commitService().addUncommitted((SememeChronology<DescriptionSememe>)ds);
+									Get.commitService().addUncommitted(ds.getChronology());
 								}
 							}
 						}
@@ -190,6 +194,9 @@ public class MappingSetDAO extends MappingDAO
 							{
 								MutableDescriptionSememe mutable = ((SememeChronology<DescriptionSememe>)ds.getChronology())
 										.createMutableVersion(MutableDescriptionSememe.class, ds.getStampSequence());
+								mutable.setCaseSignificanceConceptSequence(ds.getCaseSignificanceConceptSequence());
+								mutable.setDescriptionTypeConceptSequence(ds.getDescriptionTypeConceptSequence());
+								mutable.setLanguageConceptSequence(ds.getLanguageConceptSequence());
 								mutable.setText(mappingSet.getDescription());
 								Get.commitService().addUncommitted(ds.getChronology());
 							}
@@ -213,9 +220,9 @@ public class MappingSetDAO extends MappingDAO
 		DynamicSememe<?> latest = latestVersion.get().value();
 		
 		if (latest.getData()[0] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[0] != null
-				|| (latest.getData()[0] != null && ((DynamicSememeUUID)latest.getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
+				|| (latest.getData()[0] != null && latest.getData()[0] instanceof DynamicSememeUUID && ((DynamicSememeUUID)latest.getData()[0]).getDataUUID().equals(mappingSet.getEditorStatusConcept())) 
 				|| latest.getData()[1] == null && mappingSet.getPurpose() != null || mappingSet.getPurpose() == null && latest.getData()[1] != null
-				|| (latest.getData()[1] != null && ((DynamicSememeString)latest.getData()[1]).getDataString().equals(mappingSet.getPurpose())))
+				|| (latest.getData()[1] != null && latest.getData()[1] instanceof DynamicSememeString && ((DynamicSememeString)latest.getData()[1]).getDataString().equals(mappingSet.getPurpose())))
 		{
 			DynamicSememeImpl mutable = (DynamicSememeImpl) ((SememeChronology)mappingSememe.get()).createMutableVersion(MutableDynamicSememe.class, 
 					latest.getStampSequence());

@@ -119,7 +119,7 @@ public abstract class MetadataConceptConstant implements ConceptSpecification {
     }
 
     /**
-     * @return The concept sequqnce for the concept.
+     * @return The concept sequence for the concept.
      */
     public int getSequence() {
         return Get.conceptService().getConcept(getUUID()).getConceptSequence();

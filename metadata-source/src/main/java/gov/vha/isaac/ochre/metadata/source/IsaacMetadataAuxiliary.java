@@ -124,7 +124,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         ConceptBuilder developmentPath = createConcept("development path");
                         developmentPath.setPrimordialUuid("1f200ca6-960e-11e5-8994-feff819cdc9f");
                         ConceptBuilder masterPath = createConcept("master path");
-                        masterPath.setPrimordialUuid("1f20134a-960e-11e5-8994-feff819cdc9f"); //TODO Keith - why do master and dev have the same UUIDs?
+                        masterPath.setPrimordialUuid("1f20134a-960e-11e5-8994-feff819cdc9f");
                         masterPath.addUuids(UUID.fromString("2faa9260-8fb2-11db-b606-0800200c9a66")); // UUID from WB_AUX_PATH
                     popParent();
                     createConcept("set operator");
@@ -175,8 +175,6 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                             createConcept("Japanese description assemblage").setPrimordialUuid("450226cc-9567-11e5-8994-feff819cdc9f");
                             createConcept("Swedish description assemblage").setPrimordialUuid("45022848-9567-11e5-8994-feff819cdc9f");
                         popParent();
-                        createConcept("description source type reference sets");//Dynamic Sememes are created under this node for LOINC and RxNorm description types
-                        createConcept("relationship source type reference sets"); //Dynamic Sememes are created under this node for LOINC and RxNorm relationship types
                         createConcept("dialect assemblage");
                         pushParent(current());
                             createConcept("US English dialect").setPrimordialUuid(TermAux.US_DIALECT_ASSEMBLAGE.getPrimordialUuid());
@@ -230,8 +228,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         syn.addUuids(UUID.fromString("d6fad981-7df6-3388-94d8-238cc0465a79"));
                         createConcept("definition description type").setPrimordialUuid(TermAux.DEFINITION_DESCRIPTION_TYPE.getPrimordialUuid());
                     popParent();
-                    createConcept("description type in source terminology");//LOINC and RxNorm description types are created under this node
-                    createConcept("relationship type in source terminology");//RxNorm relationship types are created under this node
+                    createConcept(TermAux.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY);//LOINC and RxNorm description types are created under this node
+                    createConcept(TermAux.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY);//RxNorm relationship types are created under this node
                     createConcept("description case significance");
                     pushParent(current());
                         createConcept("description case sensitive").setPrimordialUuid("0def37bc-7e1b-384b-a6a3-3e3ceee9c52e");

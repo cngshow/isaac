@@ -30,17 +30,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import com.cedarsoftware.util.io.JsonWriter;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -56,6 +52,7 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
+import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
 
 /**
  * Routines enabling the examination of two ibdf files containing two distinct
@@ -84,7 +81,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private String analysisFilesOutputDir;
 
 	private final String textInputFileName = "bothVersions.txt";
-	private final String jsonOutputFileName = "allChangedComponents.gson";
+	private final String jsonOutputFileName = "allChangedComponents.json";
 	private final String textOutputFileName = "allChangedComponents.txt";
 
 	// Changeset File Writer
@@ -215,13 +212,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			String analysisFilesOutputDir) {
 		try {
 			if (oldContentMap != null) {
-				writeInputFilesForAnalysis(oldContentMap, "OLD", "oldVersion.gson");
+				writeInputFilesForAnalysis(oldContentMap, "OLD", "oldVersion.json");
 			} else {
 				log.info("oldContentMap empty so not writing json/text Input files for old content");
 			}
 
 			if (newContentMap != null) {
-				writeInputFilesForAnalysis(newContentMap, "New", "newVersion.gson");
+				writeInputFilesForAnalysis(newContentMap, "New", "newVersion.json");
 			} else {
 				log.info("newContentMap empty so not writing json/text Input files for new content");
 			}
@@ -243,8 +240,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			throws IOException {
 		int counter = 1;
 		FileWriter textOutputWriter = new FileWriter(analysisFilesOutputDir + "output/" + textOutputFileName);
-		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(
-				analysisFilesOutputDir + "output/" + jsonOutputFileName);
+		JsonDataWriterService jsonOutputWriter = new JsonDataWriterService(new File(analysisFilesOutputDir + "output/" + jsonOutputFileName));
 
 		for (ChangeType key : changedComponents.keySet()) {
 			FileWriter changeWriter = new FileWriter(analysisFilesOutputDir + "output/" + key + "File.txt");
@@ -252,10 +248,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			try {
 				List<OchreExternalizable> components = changedComponents.get(key);
 
-				String modificationToWrite = "\n\n\n\t\t\t**** Modification: " + key.toString() + " ****";
-
-				jsonOutputWriter.write(modificationToWrite);
-				textOutputWriter.write(modificationToWrite);
+				jsonOutputWriter.put("# **** Modification: " + key.toString() + " ****");
+				textOutputWriter.write("\n\n\n\t\t\t**** Modification: " + key.toString() + " ****");
 
 				for (OchreExternalizable c : components) {
 					String componentType;
@@ -265,12 +259,12 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						componentType = "Sememe";
 					}
 
-					String componentToWrite = "\n\n\t\t\t---- " + key.toString() + " " + componentType + " #"
+					String componentToWrite = "# ---- " + key.toString() + " " + componentType + " #"
 							+ counter++ + "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----";
 
-					jsonOutputWriter.write(componentToWrite);
+					jsonOutputWriter.put(componentToWrite);
 
-					textOutputWriter.write(componentToWrite);
+					textOutputWriter.write("\n\n\t\t\t" + componentToWrite);
 					jsonOutputWriter.put(c);
 					changeWriter.write(c.toString());
 					changeWriter.write("\n\n\n");
@@ -420,7 +414,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 		JsonWriter verificationWriter = new JsonWriter(
-				new FileOutputStream(new File(analysisFilesOutputDir + "verificationChanges.gson")), args);
+				new FileOutputStream(new File(analysisFilesOutputDir + "verificationChanges.json")), args);
 
 		try {
 
@@ -480,20 +474,17 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private void writeInputFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
 			String version, String jsonInputFileName) throws IOException {
 		FileWriter textInputWriter = new FileWriter(analysisFilesOutputDir + "input/" + textInputFileName, true);
-		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(
-				analysisFilesOutputDir + "input/" + jsonInputFileName);
+		JsonDataWriterService jsonInputWriter = new JsonDataWriterService(new File(analysisFilesOutputDir + "input/" + jsonInputFileName));
 
 		try {
 			textInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
-			jsonInputWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+			jsonInputWriter.put("# **** " + version + " LIST ****");
 			int i = 1;
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
 				ConceptChronology<?> cc = (ConceptChronology<?>) component;
-				jsonInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
+				jsonInputWriter.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
 				jsonInputWriter.put(cc);
-				textInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
+				textInputWriter.write("\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
 				textInputWriter.write(cc.toString());
 				i++;
 			}
@@ -502,10 +493,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
 				SememeChronology<?> se = (SememeChronology<?>) component;
 				jsonInputWriter.put(se);
-				jsonInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
-				textInputWriter.write(
-						"\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
+				jsonInputWriter.put("# --- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
+				textInputWriter.write("\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
 				textInputWriter.write(se.toString());
 				i++;
 			}
@@ -514,30 +503,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		} finally {
 			textInputWriter.close();
 			jsonInputWriter.close();
-		}
-	}
-
-	private class JsonDataWriterService implements BinaryDataWriterService {
-		private JsonWriter json_;
-
-		public JsonDataWriterService(String filePath) throws IOException {
-			Map<String, Object> args = new HashMap<>();
-			args.put(JsonWriter.PRETTY_PRINT, true);
-			json_ = new JsonWriter(new FileOutputStream(new File(filePath)), args);
-		}
-
-		@Override
-		public void put(OchreExternalizable ochreObject) {
-			json_.write(ochreObject);
-		}
-
-		@Override
-		public void close() {
-			json_.close();
-		}
-
-		public void write(String s) {
-			json_.write(s);
 		}
 	}
 }

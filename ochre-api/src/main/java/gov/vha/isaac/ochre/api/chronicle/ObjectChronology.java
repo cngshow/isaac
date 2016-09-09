@@ -5,6 +5,7 @@
  */
 package gov.vha.isaac.ochre.api.chronicle;
 
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -31,7 +32,14 @@ public interface ObjectChronology<V extends StampedVersion>
     
     Optional<LatestVersion<V>> 
         getLatestVersion(Class<V> type, StampCoordinate coordinate);    
-        
+    
+    /**
+     * Determe if the latest version is active, on a given stamp coordinate.  This method ignores the 
+     * state attribute of the provided StampCoordinate - allowing all State types - 
+     * it returns true if the latest version is {@link State#ACTIVE}
+     * @param coordinate
+     * @return
+     */
     boolean isLatestVersionActive(StampCoordinate coordinate);
     /**
      * 

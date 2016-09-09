@@ -39,6 +39,19 @@
 		<name>U.S. Department of Veterans Affairs</name>
 		<url>www.va.gov</url>
 	</organization>
+	
+	<developers>
+		<developer>
+			<properties>
+				<info>For a listing of developers, clone the project and execute 'git shortlog -sn'</info>
+			</properties>
+		</developer>
+	</developers>
+	
+	<issueManagement>
+		<system>Jazz</system>
+		<url>https://clm.rational.oit.va.gov/ccm/web/projects/CTT (CM)</url>
+	</issueManagement>
 
 	<dependencies>
 		<dependency>

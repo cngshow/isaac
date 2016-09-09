@@ -1,33 +1,12 @@
 package gov.vha.isaac.ochre.model.sememe;
 
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
-import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.TreeSet;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
-import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
-import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
-import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
-import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
-import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
-import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -44,12 +23,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeSequence;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
-import gov.vha.isaac.ochre.api.logic.LogicalExpression;
-import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
-import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
-import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
-import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeArrayImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeBooleanImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeIntegerImpl;
@@ -94,8 +67,6 @@ public class DynamicSememeUtilityImpl implements DynamicSememeUtility
 	{
 		return DynamicSememeUsageDescriptionImpl.read(assemblageNidOrSequence);
 	}
-
-
 	
 	@Override
 	public DynamicSememeData[] configureDynamicSememeRestrictionData(ObjectChronologyType referencedComponentRestriction,
@@ -241,6 +212,11 @@ public class DynamicSememeUtilityImpl implements DynamicSememeUtility
 	@Override
 	public DynamicSememeString createDynamicStringData(String value) {
 		return new DynamicSememeStringImpl(value);
+	}
+	
+	@Override
+	public DynamicSememeUUID createDynamicUUIDData(UUID value) {
+		return new DynamicSememeUUIDImpl(value);
 	}
 
 	@Override

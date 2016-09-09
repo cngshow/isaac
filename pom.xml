@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.09</version>
+    <version>3.10</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -43,12 +43,27 @@
         <jersey.version>2.22.1</jersey.version>
         <maven-project-info-reports-plugin.version>2.9</maven-project-info-reports-plugin.version>  
         <jbpm.version>6.4.0.Final</jbpm.version>
+        <fortify.version>16.10</fortify.version>
 	</properties>
     
     <organization>
         <name>U.S. Department of Veterans Affairs</name>
         <url>www.va.gov</url>
     </organization>
+    
+    <developers>
+        <developer>
+            <properties>
+                <info>For a listing of developers, clone the project and execute 'git shortlog -sn'</info>
+            </properties>
+            <name />
+        </developer>
+    </developers>
+    
+    <issueManagement>
+        <system>Jazz</system>
+        <url>https://clm.rational.oit.va.gov/ccm/web/projects/CTT (CM)</url>
+    </issueManagement>
     
     <dependencyManagement>
         <dependencies>
@@ -237,7 +252,7 @@
             <dependency>
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
-                <version>4.3.0</version>
+                <version>4.6.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -340,11 +355,13 @@
                     <artifactId>docbkx-maven-plugin</artifactId>
                     <version>2.0.16</version>
                 </plugin>
+                <!--
                 <plugin>
                     <groupId>org.glassfish.hk2</groupId>
                     <artifactId>hk2-inhabitant-generator</artifactId>
                     <version>${hk2.version}</version>
                 </plugin>
+                -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
@@ -496,7 +513,8 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
+            <!-- Isaac doesn't use inhabitant files -->
+            <!--plugin>
                 <groupId>org.glassfish.hk2</groupId>
                 <artifactId>hk2-inhabitant-generator</artifactId>
                 <executions>
@@ -506,7 +524,7 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+            </plugin-->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -638,7 +656,8 @@
         <module>path-provider</module>
         <module>sememe-provider</module>
         <module>metadata-source</module>
-        <module>metadata</module>
+        <module>ochre-metadata</module>
+        <module>ochre-util</module>
         <module>observable-provider</module>
         <module>logic-provider</module>
         <module>query-provider</module>
@@ -652,6 +671,7 @@
         <module>db-builder</module>
         <module>db-config-builder</module>
         <module>ochre-mojo-log-config</module>
+        <module>ochre-mapping-constants</module>
         <module>ochre-mapping</module>
         <module>sync-git</module>
         <module>metacontent-store</module>
@@ -705,6 +725,93 @@
                     </plugin>
                 </plugins>
             </reporting>
+        </profile>
+        <profile>
+            <id>sca-clean</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <buildId>isaac-fortify-build</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sca-translate</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <jreStack>8M</jreStack>
+                            <maxHeap>13000M</maxHeap>
+                            <verbose>true</verbose>
+                            <buildId>isaac-fortify-build</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <skipTests>true</skipTests>
+                            <failOnSCAError>true</failOnSCAError>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>translate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sca-scan</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.hpe.security.fortify.maven.plugin</groupId>
+                        <artifactId>sca-maven-plugin</artifactId>
+                        <version>${fortify.version}</version>
+                        <configuration>
+                            <jre64>true</jre64>
+                            <jreStack>8M</jreStack>
+                            <maxHeap>13000M</maxHeap>
+                            <verbose>true</verbose>
+                            <buildId>isaac-fortify-build</buildId>
+                            <toplevelArtifactId>isaac-parent</toplevelArtifactId>
+                            <failOnSCAError>true</failOnSCAError>
+                            <upload>false</upload>
+                            <projectName>ISAAC REST</projectName>
+                            <projectVersion>${project.version}</projectVersion>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

@@ -19,8 +19,6 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -39,8 +37,7 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 /**
  * Test the WorkflowInitializerConcluder class
  * 
- * {@link WorkflowUpdater}.
- * {@link AbstractWorkflowProviderTestPackage}.
+ * {@link WorkflowUpdater}. {@link AbstractWorkflowProviderTestPackage}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -50,6 +47,11 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 
 	private static MVStoreMetaContentProvider store;
 	private static WorkflowUpdater updater;
+
+	private static int firstConceptNid = 0;
+	private static int secondConceptNid = 0;
+	private static int firstStampSeq = -1;
+	private static int secondStampSeq = -1;
 
 	/**
 	 * Sets the up.
@@ -61,16 +63,26 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		}
 
 		globalSetup(store);
+		setupUserRoles();
 
 		if (!setupCompleted) {
 			updater = new WorkflowUpdater(store);
-			setupUserRoles();
 
-			createMainWorkflowProcess(mainDefinitionId);
-			secondaryProcessId = createSecondaryWorkflowProcess(mainDefinitionId, secondaryConceptsForTesting);
+			for (Integer nid : conceptsForTesting) {
+				if (firstConceptNid == 0) {
+					firstConceptNid = nid;
+				} else {
+					secondConceptNid = nid;
+				}
+			}
 
-			launchWorkflow(mainProcessId);
-			firstHistoryEntryId = executeInitialAdvancement(mainProcessId);
+			for (Integer seq : stampSequenceForTesting) {
+				if (firstStampSeq == -1) {
+					firstStampSeq = seq;
+				} else {
+					secondStampSeq = seq;
+				}
+			}
 
 			setupCompleted = true;
 		}
@@ -89,21 +101,91 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testAaddStampsToExistingProcess() throws Exception {
+	public void testAddComponentsToProcess() throws Exception {
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
+		ProcessDetail details = processDetailStore.getEntry(processId);
+		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+
+		updater.addComponentToWorkflow(processId, firstConceptNid, firstStampSeq);
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
+
+		updater.addComponentToWorkflow(processId, firstConceptNid, secondStampSeq);
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(secondStampSeq));
+
+		updater.addComponentToWorkflow(processId, secondConceptNid, firstStampSeq);
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(secondStampSeq));
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(secondConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
+	}
+
+	@Test
+	public void testFailuresWithAddRemoveComponentsToProcess() throws Exception {
+		UUID processId = UUID.randomUUID();
 		try {
-			updater.addStampsToExistingProcess(mainProcessId, 12345);
+			updater.removeComponentFromWorkflow(processId, firstConceptNid);
 			Assert.fail();
 		} catch (Exception e) {
-			ProcessDetail details = processDetailStore.getEntry(mainProcessId);
 
-			Assert.assertFalse(details.getStampSequences().contains(12345));
 		}
-		
-		Assert.assertFalse(processDetailStore.getEntry(secondaryProcessId).getStampSequences().contains(12345));
-		updater.addStampsToExistingProcess(secondaryProcessId, 12345);
-		Assert.assertTrue(processDetailStore.getEntry(secondaryProcessId).getStampSequences().contains(12345));
+
+		UUID firstProcessId = createFirstWorkflowProcess(mainDefinitionId);
+		UUID secondProcessId = createFirstWorkflowProcess(mainDefinitionId);
+		updater.addComponentToWorkflow(secondProcessId, firstConceptNid, firstStampSeq);
+		try {
+			updater.addComponentToWorkflow(firstProcessId, firstConceptNid, firstStampSeq);
+			Assert.fail();
+		} catch (Exception e) {
+			// Go back to no components in any workflow
+			updater.removeComponentFromWorkflow(secondProcessId, firstConceptNid);
+		}
+
+		// Testing LAUNCHED-NON-EDIT Case
+		executeLaunchWorkflow(firstProcessId);
+		executeSendForReviewAdvancement(firstProcessId);
+		try {
+			updater.addComponentToWorkflow(firstProcessId, firstConceptNid, firstStampSeq);
+			Assert.fail();
+		} catch (Exception e) {
+
+		}
+
+		// Rejecting QA to get back to edit state
+		executeRejectReviewAdvancement(firstProcessId);
+
+		// Testing LAUNCHED-EDIT Case
+		updater.addComponentToWorkflow(firstProcessId, firstConceptNid, firstStampSeq);
+		ProcessDetail details = processDetailStore.getEntry(firstProcessId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
+
+		// Testing INACTIVE Case
+		cancelWorkflow(firstProcessId);
+		try {
+			updater.removeComponentFromWorkflow(firstProcessId, firstConceptNid);
+			Assert.fail();
+		} catch (Exception e) {
+
+		}
+
 	}
-	
+
 	/**
 	 * Test vetz workflow set nodes.
 	 *
@@ -111,19 +193,33 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testBaddConceptsToExistingProcess() throws Exception {
-		try {
-			updater.addConceptsToExistingProcess(mainProcessId, new HashSet<>(Arrays.asList(12345)));
-			Assert.fail();
-		} catch (Exception e) {
-			ProcessDetail details = processDetailStore.getEntry(mainProcessId);
+	public void testRemoveComponentsFromProcess() throws Exception {
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
+		ProcessDetail details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 
-			Assert.assertFalse(details.getConceptSequences().contains(12345));
-		}
-		
-		Assert.assertFalse(processDetailStore.getEntry(secondaryProcessId).getConceptSequences().contains(12345));
-		updater.addConceptsToExistingProcess(secondaryProcessId, new HashSet<> (Arrays.asList(12345)));
-		Assert.assertTrue(processDetailStore.getEntry(secondaryProcessId).getConceptSequences().contains(12345));
+		updater.addComponentToWorkflow(processId, firstConceptNid, firstStampSeq);
+		updater.addComponentToWorkflow(processId, firstConceptNid, secondStampSeq);
+		updater.addComponentToWorkflow(processId, secondConceptNid, firstStampSeq);
+		updater.addComponentToWorkflow(processId, secondConceptNid, secondStampSeq);
+
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
+
+		updater.removeComponentFromWorkflow(processId, firstConceptNid);
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(secondStampSeq));
+
+		updater.removeComponentFromWorkflow(processId, secondConceptNid);
+		details = processDetailStore.getEntry(processId);
+		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 	}
 
 	/**
@@ -133,16 +229,86 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testCAdvanceWorkflow() throws Exception {
+	public void testAdvanceWorkflow() throws Exception {
+		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
+		addComponentsToProcess(processId);
+		executeLaunchWorkflow(processId);
 
-		UUID entryId = updater.advanceWorkflow(mainProcessId, mainUserId, "Approve", "Comment #1");
-		Assert.assertNull(entryId);
-	
-		entryId = updater.advanceWorkflow(mainProcessId, secondaryUserId, "Approve", "Comment #1");
+		// Process in Ready to Edit state: Can execute action "Edit" by firstUser
+		UUID entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
 		Assert.assertNull(entryId);
 
-		entryId = updater.advanceWorkflow(mainProcessId, secondaryUserId, "QA Passes", "Comment #1");
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
 		Assert.assertNotNull(entryId);
+
+		// Process in Ready for Review state: Can execute action "QA Passes" by secondUser
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNotNull(entryId);
+		
+		// Process in Ready for Approve state: Can execute action "Approve" by firstUser
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+		
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNotNull(entryId);
+		
+		// Process in Publish state: no one can advance
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+		
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1");
+		Assert.assertNull(entryId);
+
+		entryId = updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1");
+		Assert.assertNull(entryId);
 	}
 
 	/**
@@ -152,17 +318,17 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 *             the exception
 	 */
 	@Test
-	public void testDAddNewUserRole() throws Exception {
-		WorkflowActionsPermissionsAccessor accessor = new WorkflowActionsPermissionsAccessor();
-		Set<UserPermission> permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
-		
+	public void testAddNewUserRole() throws Exception {
+		WorkflowAccessor wfAccessor = new WorkflowAccessor();
+		Set<UserPermission> permissions = wfAccessor.getUserPermissions(mainDefinitionId, firstUserId);
+
 		for (UserPermission perm : permissions) {
 			Assert.assertFalse(perm.getRole().equals("Reviewer"));
 		}
-		
-		updater.addNewUserRole(mainDefinitionId, mainUserId, "Reviewer");
-		
-		permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
+
+		updater.addNewUserRole(mainDefinitionId, firstUserId, "Reviewer");
+
+		permissions = wfAccessor.getUserPermissions(mainDefinitionId, firstUserId);
 		boolean newRoleFound = false;
 		for (UserPermission perm : permissions) {
 			if (perm.getRole().equals("Reviewer")) {
@@ -170,36 +336,5 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 			}
 		}
 		Assert.assertTrue(newRoleFound);
-	}
-
-	/**
-	 * Test vetz workflow set nodes.
-	 *
-	 * @throws Exception
-	 *             the exception
-	 */
-	@Test
-	public void testDremoveUserRole() throws Exception {
-		WorkflowActionsPermissionsAccessor accessor = new WorkflowActionsPermissionsAccessor();
-		Set<UserPermission> permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
-		
-		boolean newRoleFound = false;
-		for (UserPermission perm : permissions) {
-			if (perm.getRole().equals("Reviewer")) {
-				newRoleFound = true;
-			}
-		}
-		Assert.assertTrue(newRoleFound);
-
-		updater.removeUserRole(mainDefinitionId, mainUserId, "Reviewer");
-		
-		permissions = accessor.getAllPermissionsForUser(mainDefinitionId, mainUserId);
-		newRoleFound = false;
-		for (UserPermission perm : permissions) {
-			if (perm.getRole().equals("Reviewer")) {
-				newRoleFound = true;
-			}
-		}
-		Assert.assertFalse(newRoleFound);
 	}
 }

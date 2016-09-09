@@ -24,10 +24,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,55 +48,35 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessDetail extends StorableWorkflowContents {
-
-	/**
-	 * The Enum SubjectMatter.
-	 */
-	public enum SubjectMatter {
-
-		/** The mapping. */
-		MAPPING,
-		/** The concept. */
-		CONCEPT
-	};
-
-	/**
-	 * The Enum DefiningStatus.
-	 */
-	public enum ProcessStatus {
-
-		/** The enabled. */
-		READY_TO_LAUNCH,
-		/** The completed. */
-		LAUNCHED, CANCELED, CONCLUDED
-	};
-
 	/** The Constant logger. */
 	private static final Logger logger = LogManager.getLogger();
 
 	/** The definition id. */
 	private UUID definitionId;
 
-	/** The stamp sequences. */
-	private ArrayList<Integer> stampSequences;
-
-	/** The concept Sequences. */
-	private Set<Integer> conceptSequences;
+	/** The map from component nids to all stamps associated with component. */
+	private Map<Integer, List<Integer>> componentNidToStampsMap = new HashMap<>();
 
 	/** The creator. */
-	private int creator;
+	private int creatorNid;
 
 	/** The time created. */
 	private long timeCreated;
 
-	/** The time created. */
-	private long timeConcluded = -1L;
+	/** The time launched. */
+	private long timeLaunched = -1L;
 
-	/** The subject matter. */
-	private SubjectMatter subjectMatter;
+	/** The time canceled Or Concluded. */
+	private long timeCanceledOrConcluded = -1L;
 
-	/** The defining status. */
-	private ProcessStatus processStatus;
+	/** The status. */
+	private ProcessStatus status;
+
+	/** The name. */
+	private String name;
+
+	/** The description. */
+	private String description;
 
 	/**
 	 * Instantiates a new process detail.
@@ -109,32 +90,27 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @param definitionId
 	 *            the definition id
-	 * @param conceptSequences
-	 *            the concepts
-	 * @param stampSequences
-	 *            the stamp sequences
-	 * @param creator
+	 * @param creatorNid
 	 *            the creator
 	 * @param timeCreated
 	 *            the time created
 	 * @param active
 	 *            the active flag
-	 * @param subjectMatter
-	 *            the subject matter
-	 * @param definingStatus
-	 *            the defining status
-	 * @param domainStandard
-	 *            the domain standard
+	 * @param ProcessStatus
+	 *            the process status
+	 * @param name
+	 *            the name
+	 * @param description
+	 *            the description
 	 */
-	public ProcessDetail(UUID definitionId, Set<Integer> conceptSequences, ArrayList<Integer> stampSequences, int creator,
-			long timeCreated, SubjectMatter subjectMatter, ProcessStatus definingStatus) {
+	public ProcessDetail(UUID definitionId, int creatorNid, long timeCreated, ProcessStatus status, String name,
+			String description) {
 		this.definitionId = definitionId;
-		this.stampSequences = stampSequences;
-		this.conceptSequences = conceptSequences;
-		this.creator = creator;
+		this.creatorNid = creatorNid;
 		this.timeCreated = timeCreated;
-		this.subjectMatter = subjectMatter;
-		this.processStatus = definingStatus;
+		this.status = status;
+		this.name = name;
+		this.description = description;
 	}
 
 	/**
@@ -150,13 +126,18 @@ public class ProcessDetail extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.stampSequences = (ArrayList<Integer>) in.readObject();
-			this.conceptSequences = (Set<Integer>) in.readObject();
-			this.creator = (Integer) in.readObject();
+
+			@SuppressWarnings("unchecked")
+			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
+			this.componentNidToStampsMap = componentToStampMapReadObject;
+
+			this.creatorNid = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
-			this.timeConcluded = (Long) in.readObject();
-			this.subjectMatter = (SubjectMatter) in.readObject();
-			this.processStatus = (ProcessStatus) in.readObject();
+			this.timeLaunched = (Long) in.readObject();
+			this.timeCanceledOrConcluded = (Long) in.readObject();
+			this.status = (ProcessStatus) in.readObject();
+			this.name = (String) in.readObject();
+			this.description = (String) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into ProcessDetail", e);
 			e.printStackTrace();
@@ -176,21 +157,12 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the stamp sequences.
+	 * Gets the component to statmps map.
 	 *
 	 * @return the stamp sequences
 	 */
-	public ArrayList<Integer> getStampSequences() {
-		return stampSequences;
-	}
-
-	/**
-	 * Gets the conceptSequences.
-	 *
-	 * @return the concept sequences
-	 */
-	public Set<Integer> getConceptSequences() {
-		return conceptSequences;
+	public Map<Integer, List<Integer>> getComponentNidToStampsMap() {
+		return componentNidToStampsMap;
 	}
 
 	/**
@@ -198,8 +170,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the creator
 	 */
-	public int getCreator() {
-		return creator;
+	public int getCreatorNid() {
+		return creatorNid;
 	}
 
 	/**
@@ -216,8 +188,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the time concluded
 	 */
-	public long getTimeConcluded() {
-		return timeConcluded;
+	public long getTimeCanceledOrConcluded() {
+		return timeCanceledOrConcluded;
 	}
 
 	/**
@@ -226,17 +198,16 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param time
 	 *            the new time concluded
 	 */
-	public void setTimeConcluded(long time) {
-		timeConcluded = time;
+	public void setTimeCanceledOrConcluded(long time) {
+		timeCanceledOrConcluded = time;
 	}
 
-	/**
-	 * Gets the subjectMatter.
-	 *
-	 * @return the workflow subject matter
-	 */
-	public SubjectMatter getSubjectMatter() {
-		return subjectMatter;
+	public long getTimeLaunched() {
+		return timeLaunched;
+	}
+
+	public void setTimeLaunched(long time) {
+		timeLaunched = time;
 	}
 
 	/**
@@ -244,8 +215,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 *
 	 * @return the defining status
 	 */
-	public ProcessStatus getProcessStatus() {
-		return processStatus;
+	public ProcessStatus getStatus() {
+		return status;
 	}
 
 	/**
@@ -254,8 +225,16 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * @param definingStatus
 	 *            the new defining status
 	 */
-	public void setProcessStatus(ProcessStatus definingStatus) {
-		this.processStatus = definingStatus;
+	public void setStatus(ProcessStatus status) {
+		this.status = status;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getDescription() {
+		return description;
 	}
 
 	/*
@@ -273,15 +252,20 @@ public class ProcessDetail extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(definitionId);
-		out.writeObject(stampSequences);
-		out.writeObject(conceptSequences);
-		out.writeObject(creator);
+		out.writeObject(componentNidToStampsMap);
+		out.writeObject(creatorNid);
 		out.writeObject(timeCreated);
-		out.writeObject(timeConcluded);
-		out.writeObject(subjectMatter);
-		out.writeObject(processStatus);
+		out.writeObject(timeLaunched);
+		out.writeObject(timeCanceledOrConcluded);
+		out.writeObject(status);
+		out.writeObject(name);
+		out.writeObject(description);
 
 		return bos.toByteArray();
+	}
+
+	public boolean isActive() {
+		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
 	}
 
 	/*
@@ -293,20 +277,28 @@ public class ProcessDetail extends StorableWorkflowContents {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (Integer stampSeq : stampSequences) {
-			buf.append(stampSeq + ", ");
+		for (Integer compNid : componentNidToStampsMap.keySet()) {
+			buf.append("\n\t\t\tFor Component Nid: " + compNid + " have following stamp sequences:");
+
+			for (Integer stampSeq : componentNidToStampsMap.get(compNid)) {
+				buf.append(stampSeq + ", ");
+			}
 		}
 
-		StringBuffer buf2 = new StringBuffer();
+		Date date = new Date(timeCreated);
+		String timeCreatedString = workflowDateFormatrer.format(date);
 
-		for (Integer conId : conceptSequences) {
-			buf2.append(conId + ", ");
-		}
+		date = new Date(timeLaunched);
+		String timeLaunchedString = workflowDateFormatrer.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tStamp Sequence: "
-				+ buf.toString() + "\n\t\tConcept: " + buf2.toString() + "\n\t\tCreator Id: " + creator
-				+ "\n\t\tTime Created: " + timeCreated + "\n\t\tTime Concluded: " + timeConcluded
-				+ "\n\t\tSubject Matter: " + subjectMatter + "\n\t\tProcess Status: " + processStatus;
+		date = new Date(timeCanceledOrConcluded);
+		String timeCanceledOrConcludedString = workflowDateFormatrer.format(date);
+
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString()
+				+ "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: " + creatorNid
+				+ "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString
+				+ "\n\t\tTime Canceled or Concluded: " + timeCanceledOrConcludedString + "\n\t\tStatus: " + status
+				+ "\n\t\tName: " + name + "\n\t\tDescription: " + description;
 	}
 
 	/*
@@ -318,10 +310,11 @@ public class ProcessDetail extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessDetail other = (ProcessDetail) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.stampSequences.equals(other.stampSequences)
-				&& this.conceptSequences.equals(other.conceptSequences) && this.creator == other.creator
-				&& this.timeCreated == other.timeCreated && this.timeConcluded == other.timeConcluded
-				&& this.subjectMatter == other.subjectMatter && this.processStatus == other.processStatus;
+		return this.definitionId.equals(other.definitionId)
+				&& this.componentNidToStampsMap.equals(other.componentNidToStampsMap) && this.creatorNid == other.creatorNid
+				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched
+				&& this.timeCanceledOrConcluded == other.timeCanceledOrConcluded && this.status == other.status
+				&& this.name.equals(other.name) && this.description.equals(other.description);
 	}
 
 	/*
@@ -331,9 +324,9 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + stampSequences.hashCode() + conceptSequences.hashCode() + creator
-				+ new Long(timeCreated).hashCode() + new Long(timeConcluded).hashCode() + subjectMatter.hashCode()
-				+ processStatus.hashCode();
+		return definitionId.hashCode() + componentNidToStampsMap.hashCode() + creatorNid + new Long(timeCreated).hashCode()
+				+ new Long(timeLaunched).hashCode() + new Long(timeCanceledOrConcluded).hashCode() + status.hashCode()
+				+ name.hashCode() + description.hashCode();
 	}
 
 	/**
@@ -364,9 +357,5 @@ public class ProcessDetail extends StorableWorkflowContents {
 			else
 				return o1.getId().compareTo(o2.getId());
 		}
-	}
-
-	public boolean isActive() {
-		return processStatus == ProcessStatus.LAUNCHED || processStatus == ProcessStatus.READY_TO_LAUNCH;
 	}
 }

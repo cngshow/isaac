@@ -25,6 +25,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -50,19 +51,19 @@ public class ProcessHistory extends StorableWorkflowContents {
 	private UUID processId;
 
 	/** The workflowUser. */
-	private int workflowUser;
+	private int userNid;
 
 	/** The time advanced. */
 	private long timeAdvanced;
 
-	/** The state. */
-	private String state;
+	/** The initial state. */
+	private String initialState;
 
 	/** The action. */
 	private String action;
 
-	/** The outcome. */
-	private String outcome;
+	/** The outcome state. */
+	private String outcomeState;
 
 	/** The comment. */
 	private String comment;
@@ -72,27 +73,27 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param workflowUser
+	 * @param userNid
 	 *            the workflowUser
 	 * @param timeAdvanced
 	 *            the time advanced
-	 * @param state
-	 *            the state
+	 * @param initialState
+	 *            the initial state
 	 * @param action
 	 *            the action
-	 * @param outcome
-	 *            the outcome
+	 * @param outcomeState
+	 *            the outcome state
 	 * @param comment
 	 *            the comment
 	 */
-	public ProcessHistory(UUID processId, int workflowUser, long timeAdvanced, String state, String action,
-			String outcome, String comment) {
+	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action,
+			String outcomeState, String comment) {
 		this.processId = processId;
-		this.workflowUser = workflowUser;
+		this.userNid = userNid;
 		this.timeAdvanced = timeAdvanced;
-		this.state = state;
+		this.initialState = initialState;
 		this.action = action;
-		this.outcome = outcome;
+		this.outcomeState = outcomeState;
 		this.comment = comment;
 	}
 
@@ -109,11 +110,11 @@ public class ProcessHistory extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.processId = (UUID) in.readObject();
-			this.workflowUser = (Integer) in.readObject();
+			this.userNid = (Integer) in.readObject();
 			this.timeAdvanced = (Long) in.readObject();
-			this.state = (String) in.readObject();
+			this.initialState = (String) in.readObject();
 			this.action = (String) in.readObject();
-			this.outcome = (String) in.readObject();
+			this.outcomeState = (String) in.readObject();
 			this.comment = (String) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into ProcessHistory", e);
@@ -138,8 +139,8 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 *
 	 * @return the workflowUser
 	 */
-	public int getWorkflowUser() {
-		return workflowUser;
+	public int getUserNid() {
+		return userNid;
 	}
 
 	/**
@@ -152,12 +153,12 @@ public class ProcessHistory extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the state.
+	 * Gets the initial state.
 	 *
-	 * @return the state
+	 * @return the initialState
 	 */
-	public String getState() {
-		return state;
+	public String getInitialState() {
+		return initialState;
 	}
 
 	/**
@@ -170,12 +171,12 @@ public class ProcessHistory extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the outcome.
+	 * Gets the outcome state.
 	 *
-	 * @return the outcome
+	 * @return the outcomeState
 	 */
-	public String getOutcome() {
-		return outcome;
+	public String getOutcomeState() {
+		return outcomeState;
 	}
 
 	/**
@@ -202,11 +203,11 @@ public class ProcessHistory extends StorableWorkflowContents {
 		// write the object
 		out.writeObject(id);
 		out.writeObject(processId);
-		out.writeObject(workflowUser);
+		out.writeObject(userNid);
 		out.writeObject(timeAdvanced);
-		out.writeObject(state);
+		out.writeObject(initialState);
 		out.writeObject(action);
-		out.writeObject(outcome);
+		out.writeObject(outcomeState);
 		out.writeObject(comment);
 
 		return bos.toByteArray();
@@ -219,9 +220,12 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + workflowUser
-				+ "\n\t\tTime Advanced: " + timeAdvanced + "\n\t\tState: " + state + "\n\t\tAction: " + action
-				+ "\n\t\tOutcome: " + outcome + "\n\t\tComment: " + comment;
+	    Date date=new Date(timeAdvanced);
+	    String timeAdvancedString = workflowDateFormatrer.format(date);
+
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid
+				+ "\n\t\tTime Advanced as Long: " + timeAdvanced+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action
+				+ "\n\t\tOutcome State: " + outcomeState + "\n\t\tComment: " + comment;
 	}
 
 	/*
@@ -233,9 +237,9 @@ public class ProcessHistory extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessHistory other = (ProcessHistory) obj;
 
-		return this.processId.equals(other.processId) && this.workflowUser == other.workflowUser
-				&& this.timeAdvanced == other.timeAdvanced && this.state.equals(other.state)
-				&& this.action.equals(other.action) && this.outcome.equals(other.outcome)
+		return this.processId.equals(other.processId) && this.userNid == other.userNid
+				&& this.timeAdvanced == other.timeAdvanced && this.initialState.equals(other.initialState)
+				&& this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
 				&& this.comment.equals(other.comment);
 	}
 
@@ -246,8 +250,8 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + workflowUser + new Long(timeAdvanced).hashCode() + state.hashCode()
-				+ action.hashCode() + outcome.hashCode() + comment.hashCode();
+		return processId.hashCode() + userNid + new Long(timeAdvanced).hashCode() + initialState.hashCode()
+				+ action.hashCode() + outcomeState.hashCode() + comment.hashCode();
 	}
 
 	public static class ProcessHistoryComparator implements Comparator<ProcessHistory> {

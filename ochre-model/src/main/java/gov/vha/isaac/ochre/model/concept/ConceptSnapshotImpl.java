@@ -141,15 +141,18 @@ public class ConceptSnapshotImpl implements ConceptSnapshot {
         return languageCoordinate;
     }
 
+    @Override
     public Optional<LatestVersion<DescriptionSememe<?>>> getFullySpecifiedDescription() {
         return languageCoordinate.getFullySpecifiedDescription(Get.sememeService().getDescriptionsForComponent(getNid()).collect(Collectors.toList()), stampCoordinate);
     }
 
+    @Override
     public Optional<LatestVersion<DescriptionSememe<?>>> getPreferredDescription() {
         return languageCoordinate.getPreferredDescription(
             Get.sememeService().getDescriptionsForComponent(getNid()).collect(Collectors.toList()), stampCoordinate);
     }
 
+    @Override
     public DescriptionSememe<?> getDescription() {
         Optional<LatestVersion<DescriptionSememe<?>>> fsd = getFullySpecifiedDescription();
         if (fsd.isPresent()) {

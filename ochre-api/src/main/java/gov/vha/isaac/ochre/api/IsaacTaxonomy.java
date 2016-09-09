@@ -19,13 +19,16 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -53,6 +56,7 @@ import gov.vha.isaac.ochre.api.constants.MetadataConceptConstant;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstantGroup;
 import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -313,7 +317,7 @@ public class IsaacTaxonomy {
         out.close();
     }
 
-    public void exportIBDF(Path exportFilePath) throws FileNotFoundException {
+    public void export(Optional<Path> jsonPath, Optional<Path> ibdfPath) throws IOException {
         long exportTime = System.currentTimeMillis();
         int stampSequence = Get.stampService().getStampSequence(State.ACTIVE, exportTime,
                 authorSpec.getConceptSequence(),
@@ -338,7 +342,8 @@ public class IsaacTaxonomy {
                 pathSpec.getConceptSequence());
         
         commitService.addAlias(stampSequence, stampAliasForPromotion, "promoted by maven");
-        try (BinaryDataWriterService writer = Get.binaryDataWriter(exportFilePath)) {
+        
+        try (BinaryDataWriterService writer = new MultipleDataWriterService(jsonPath, ibdfPath)) {
             Get.ochreExternalizableStream().forEach((ochreExternalizable) -> writer.put(ochreExternalizable));
         }
     }

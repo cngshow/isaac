@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>3.09</version>
+        <version>3.10</version>
     </parent>
     
     <groupId>gov.vha.isaac.ochre.modules</groupId>
@@ -15,12 +15,17 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>ochre-mapping-constants</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>ochre-model</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>query-provider</artifactId>
+            <artifactId>ochre-util</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

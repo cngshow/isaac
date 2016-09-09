@@ -27,8 +27,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * TODO implement class 
- * that combines latest and optional to reduce API complexity...
+ * TODO implement class that combines latest and optional to reduce API complexity...
  * 
  * Maybe a bad idea as collections and streams return the other Optional...
  * And if we create a new class, can't take advantage of those features, 

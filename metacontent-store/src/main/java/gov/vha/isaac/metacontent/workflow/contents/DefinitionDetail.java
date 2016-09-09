@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -62,6 +63,12 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	/** The roles. */
 	private Set<String> roles;
 
+	/** A description of the purpose of the Definition pulled by BPMN2. */
+	private String description;
+
+	/** Automated date when BPMN2 imported into bundle. */
+	private long importDate;
+
 	/**
 	 * Instantiates a new definition details.
 	 *
@@ -75,13 +82,18 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 *            the version
 	 * @param roles
 	 *            the roles
+	 * @param description
+	 *            the description
 	 */
-	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles) {
+	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles,
+			String description) {
 		this.bpmn2Id = bpmn2Id;
 		this.name = name;
 		this.namespace = namespace;
 		this.version = version;
 		this.roles = roles;
+		this.description = description;
+		this.importDate = new Date().getTime();
 	}
 
 	/**
@@ -101,6 +113,8 @@ public class DefinitionDetail extends StorableWorkflowContents {
 			this.namespace = (String) in.readObject();
 			this.version = (String) in.readObject();
 			this.roles = (Set<String>) in.readObject();
+			this.description = (String) in.readObject();
+			this.importDate = (long) in.readObject();
 		} catch (IOException e) {
 			logger.error("Failure to deserialize data into Definition Detail", e);
 			e.printStackTrace();
@@ -130,6 +144,14 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		return roles;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public long getImportDate() {
+		return importDate;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -149,6 +171,8 @@ public class DefinitionDetail extends StorableWorkflowContents {
 		out.writeObject(namespace);
 		out.writeObject(version);
 		out.writeObject(roles);
+		out.writeObject(description);
+		out.writeObject(importDate);
 
 		return bos.toByteArray();
 	}
@@ -166,8 +190,12 @@ public class DefinitionDetail extends StorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
+		Date date = new Date(importDate);
+		String importDateString = workflowDateFormatrer.format(date);
+
 		return "\n\t\tId: " + id + "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name + "\n\t\tNamespace: "
-				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString();
+				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString() + "\n\t\tDescription: "
+				+ description + "\n\t\tImport Date: " + importDateString;
 	}
 
 	/*
@@ -181,7 +209,8 @@ public class DefinitionDetail extends StorableWorkflowContents {
 
 		return this.bpmn2Id.equals(other.bpmn2Id) && this.name.equals(other.name)
 				&& this.namespace.equals(other.namespace) && this.version.equals(other.version)
-				&& this.roles.equals(other.roles);
+				&& this.roles.equals(other.roles) && this.description.equals(other.description)
+				&& this.importDate == other.importDate;
 
 	}
 
@@ -192,6 +221,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode() + roles.hashCode();
+		return bpmn2Id.hashCode() + name.hashCode() + namespace.hashCode() + version.hashCode() + roles.hashCode()
+				+ description.hashCode() + new Long(importDate).hashCode();
 	}
 }

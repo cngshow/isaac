@@ -88,6 +88,6 @@ public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 			buf.append("\n\n");
 		}
 
-		return "AvailableActionWorkflowContentStore: " + buf.toString();
+		return "AvailableActionContentStore: " + buf.toString();
 	}
 }

@@ -18,17 +18,17 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -61,73 +61,12 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addStampsToExistingProcess(UUID processId, int stamp) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
-		}
-	
-		details.getStampSequences().add(stamp);
-		processDetailStore.updateEntry(processId, details);
-	}
-
-	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addConceptsToExistingProcess(UUID processId, Set<Integer> stampSequence) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
-		}
-	
-		details.getConceptSequences().addAll(stampSequence);
-		processDetailStore.updateEntry(processId, details);
-	}
-
-
-	/**
-	 * Adds the stamps to existing process.
-	 *
-	 * @param processId
-	 *            the process id
-	 * @param stampSequence
-	 *            the stamp sequence
-	 * @throws Exception 
-	 */
-	public void addCocneptsToExistingProcess(UUID processId, List<Integer> stampSequence) throws Exception {
-		ProcessDetail details = processDetailStore.getEntry(processId);
-		
-		if (details.getProcessStatus() != ProcessStatus.READY_TO_LAUNCH) {
-			throw new Exception("Cannot add stamps to process that has ProcessStatus: " + details.getProcessStatus());	
-		}
-	
-		details.getStampSequences().addAll(stampSequence);
-		processDetailStore.updateEntry(processId, details);
-	}
-
-	/**
 	 * Advance workflow.
 	 *
 	 * @param processId
 	 *            the process id
-	 * @param workflowUser
-	 *            the user id
+	 * @param userNid
+	 *            the user nid
 	 * @param actionRequested
 	 *            the action requested
 	 * @param comment
@@ -136,85 +75,158 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 * @throws Exception
 	 *             the exception
 	 */
-	public UUID advanceWorkflow(UUID processId, int workflowUser, String actionRequested, String comment) throws Exception {
-		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
-		WorkflowHistoryAccessor historyAccessor = new WorkflowHistoryAccessor(store);
+	public UUID advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
+			throws Exception {
+		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 
 		// Get User Permissible actions
-		Set<AvailableAction> userPermissableActions = advancementAccessor.getUserPermissibleActionsForProcess(processId,
-				workflowUser);
+		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
+				userNid);
 
-		ProcessHistory processLatest = historyAccessor.getLatestForProcess(processId);
+		// Advance Workflow
+		for (AvailableAction action : userPermissableActions) {
+			if (action.getAction().equals(actionRequested)) {
+				ProcessDetail process = processDetailStore.getEntry(processId);
+				
+				// Update Process Details for launch, cancel, or conclude
+				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
+					// Request to cancel workflow
+					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment,
+							EndWorkflowType.CANCELED);
+				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
+					for (AvailableAction startAction : getDefinitionStartActionMap().get(process.getDefinitionId())) {
+						if (startAction.getOutcomeState().equals(action.getInitialState())) {
+        					// Advancing request is to launch workflow
+        					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+        					initConcluder.launchWorkflowProcess(processId);
+        					
+        					break;
+						}						
+					}
+				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
+					// Conclude Request made
+					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment,
+							EndWorkflowType.CONCLUDED);
+				}
 
-		if (userPermissableActions.isEmpty()) {
-			logger.info("User does not have permission to advance workflow for this process: " + processId
-					+ " for this user: " + workflowUser + " based on current state: " + processLatest.getOutcome());
-		} else {
-			String outcome = null;
+				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
+					// Special case where comment added to cancel screen and cancel store
+					// TODO: Better approach?
+					comment = getCanceledComment();
+				}
 
-			// Advance Workflow
-    		for (AvailableAction action : userPermissableActions) {
-    			if (action.getAction().equals(actionRequested)) {
-    				outcome = action.getOutcome();
-    			}
-    		}
-    		
-    		if (outcome != null) {
-    			ProcessHistory entry = new ProcessHistory(processId, workflowUser, new Date().getTime(), processLatest.getOutcome(), actionRequested, outcome, comment);
-    			return processHistoryStore.addEntry(entry);
-    		}
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Adds the new user role.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param user
-	 *            the user
-	 * @param domain
-	 *            the domain
-	 * @param role
-	 *            the role
-	 * @return the uuid
-	 */
-	public UUID addNewUserRole(UUID definitionId, int user, String role) {
-		return userPermissionStore.addEntry(new UserPermission(definitionId, user, role));
-	}
-
-	/**
-	 * Adds the new user role.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param user
-	 *            the user
-	 * @param domain
-	 *            the domain
-	 * @param role
-	 *            the role
-	 * @return the uuid
-	 * @throws Exception 
-	 */
-	public void removeUserRole(UUID definitionId, int user, String role) throws Exception {
-		WorkflowActionsPermissionsAccessor advancementAccessor = new WorkflowActionsPermissionsAccessor(store);
-
-		Set<UserPermission> allUserPermissions = advancementAccessor.getAllPermissionsForUser(definitionId, user);
-
-		boolean roleFound = false;
-		// Remove all existing permissions for definition/user/domain triplet
-		for (UserPermission permission : allUserPermissions) {
-			if (permission.getDefinitionId().equals(definitionId) && permission.getUser() == user && permission.getRole().equals(role)) {
-				roleFound = true;
-				userPermissionStore.removeEntry(permission.getId());
+				// Add to process history
+				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
+						action.getInitialState(), action.getAction(),
+						action.getOutcomeState(), comment);
+				return processHistoryStore.addEntry(entry);
 			}
 		}
-		
-		if (!roleFound) {
-			throw new Exception("User: " + user + " never had role: " + role);
+
+	return null;
+
+	}
+
+	/**
+	 * Adds the new user role.
+	 *
+	 * @param definitionId
+	 *            the definition id
+	 * @param userNid
+	 *            the user nid
+	 * @param domain
+	 *            the domain
+	 * @param role
+	 *            the role
+	 * @return the uuid
+	 */
+	public UUID addNewUserRole(UUID definitionId, int userNid, String role) {
+		return userPermissionStore.addEntry(new UserPermission(definitionId, userNid, role));
+	}
+
+	public void removeComponentFromWorkflow(UUID processId, int compNid) throws Exception {
+		ProcessDetail detail = processDetailStore.getEntry(processId);
+
+		if (isProcessInAcceptableEditState(detail, compNid, "remove")) {
+			if (!detail.getComponentNidToStampsMap().containsKey(compNid)) {
+				throw new Exception("Component " + compNid + " is not already in Workflow");
+			}
+
+			detail.getComponentNidToStampsMap().remove(compNid);
+			processDetailStore.updateEntry(processId, detail);
 		}
+
+		// TODO: Handle reverting automatically
+	}
+
+	public void addComponentToWorkflow(UUID processId, int compNid, int stampSeq) throws Exception {
+		if (compNid >= 0) {
+			// Ensure a Nid is passed in
+			throw new Exception("Component added must be a nid.  Nids must be negative.  Component added is not: " + compNid);
+		}
+
+		ProcessDetail detail = processDetailStore.getEntry(processId);
+
+		if (isProcessInAcceptableEditState(detail, compNid, "add")) {
+			if (detail.getComponentNidToStampsMap().containsKey(compNid)) {
+				detail.getComponentNidToStampsMap().get(compNid).add(stampSeq);
+			} else {
+				ArrayList<Integer> list = new ArrayList<>();
+				list.add(stampSeq);
+				detail.getComponentNidToStampsMap().put(compNid, list);
+			}
+
+			processDetailStore.updateEntry(processId, detail);
+		}
+	}
+
+	private boolean isProcessInAcceptableEditState(ProcessDetail detail, int compNid, String exceptionCase)
+			throws Exception {
+		// Only can do if
+		// CASE A: (Component is not in any workflow || Component is already in
+		// current process's workflow) AND one of the following:
+		// CASE B: Process is in DEFINED
+		// CASE C: Process is in LAUNCHED && latestHistory's Outcome is in
+		// Editing state
+		if (detail == null) {
+			throw new Exception("Cannot " + exceptionCase + " component to a workflow that hasn't been defined yet");
+		}
+
+		UUID processId = detail.getId();
+
+		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
+		// Check if in Case A. If not, throw exception
+		if (wfAccessor.isComponentInActiveWorkflow(detail.getDefinitionId(), compNid)
+				&& !detail.getComponentNidToStampsMap().containsKey(compNid)) {
+			throw new Exception("Cannot " + exceptionCase
+					+ " component to workflow because component is already in another active workflow");
+		}
+
+		boolean canAddComponent = false;
+		// Test Case B
+		if (detail.getStatus() == ProcessStatus.DEFINED) {
+			canAddComponent = true;
+		} else {
+			// Test Case C
+			if (detail.getStatus() == ProcessStatus.LAUNCHED) {
+				ProcessHistory latestHx = wfAccessor.getProcessHistory(processId).last();
+				if (getEditStates().contains(latestHx.getOutcomeState())) {
+					canAddComponent = true;
+				}
+			}
+		}
+
+		if (!canAddComponent) {
+			if (!detail.isActive()) {
+				throw new Exception("Cannot " + exceptionCase + " component to inactive workflow");
+			} else {
+				throw new Exception("Cannot " + exceptionCase
+						+ " component when process is in LAUNCHED state, workflow is not in an EDIT state");
+			}
+		}
+
+		return true;
 	}
 }

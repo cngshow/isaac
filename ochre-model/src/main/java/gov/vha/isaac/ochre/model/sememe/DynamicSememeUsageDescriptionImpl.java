@@ -161,7 +161,7 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
      */
     @SuppressWarnings("unchecked")
     public DynamicSememeUsageDescriptionImpl(int refexUsageDescriptorId) {
-    	ConceptChronology<?> assemblageConcept = Get.conceptService().getConcept(refexUsageDescriptorId);
+        ConceptChronology<?> assemblageConcept = Get.conceptService().getConcept(refexUsageDescriptorId);
         refexUsageDescriptorSequence_ = assemblageConcept.getConceptSequence();
         TreeMap<Integer, DynamicSememeColumnInfo> allowedColumnInfo = new TreeMap<>();
 

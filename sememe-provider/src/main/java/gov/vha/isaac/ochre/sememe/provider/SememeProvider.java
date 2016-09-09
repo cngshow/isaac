@@ -53,6 +53,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeConstraints;
 import gov.vha.isaac.ochre.api.component.sememe.SememeService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeServiceTyped;
 import gov.vha.isaac.ochre.api.component.sememe.SememeSnapshotService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -348,18 +349,21 @@ public class SememeProvider implements SememeService {
             (int sememeSequence) -> sememeMap.hasData(sememeSequence)).mapToObj(
                 (int sememeSequence)  -> sememeMap.getQuick(sememeSequence));
     }
-    int descriptionAssemblageSequence = Integer.MIN_VALUE;
 
     @Override
     public Stream<SememeChronology<? extends DescriptionSememe<?>>> getDescriptionsForComponent(int componentNid) {
-        if (descriptionAssemblageSequence == Integer.MIN_VALUE) {
-            //TODO support descriptions assemblage for languages other than english. 
-            descriptionAssemblageSequence = Get.identifierService().getConceptSequenceForUuids(TermAux.ENGLISH_DESCRIPTION_ASSEMBLAGE.getUuids());
-        }
-        SememeSequenceSet sequences = getSememeSequencesForComponentFromAssemblage(componentNid, descriptionAssemblageSequence);
+        SememeSequenceSet sequences = getSememeSequencesForComponent(componentNid);
         IntFunction<SememeChronology<? extends DescriptionSememe<?>>> mapper = (int sememeSequence)
             -> (SememeChronology<? extends DescriptionSememe<?>>) getSememe(sememeSequence);
-        return sequences.stream().filter((int sememeSequence) -> getOptionalSememe(sememeSequence).isPresent()).mapToObj(mapper);
+        return sequences.stream().filter((int sememeSequence) -> 
+        {
+            Optional<? extends SememeChronology<?>> sememe = getOptionalSememe(sememeSequence);
+            if (sememe.isPresent() && sememe.get().getSememeType() == SememeType.DESCRIPTION) {
+            	return true;
+            }
+            return false;
+        }).mapToObj(mapper);
+        
     }
 
     @Override

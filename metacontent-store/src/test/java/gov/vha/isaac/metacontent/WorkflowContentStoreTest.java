@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,10 +39,10 @@ import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.SubjectMatter;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 
 /**
  * Test both static and user based workflow content as defined in the
@@ -125,7 +124,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getUser(), pulledEntry2.getUser());
+		Assert.assertEquals(createdEntry2.getUserNid(), pulledEntry2.getUserNid());
 		Assert.assertNotEquals(createdEntry2.getRole(), pulledEntry2.getRole());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
@@ -198,8 +197,8 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getCurrentState(), pulledEntry2.getCurrentState());
-		Assert.assertEquals(createdEntry2.getOutcome(), pulledEntry2.getOutcome());
+		Assert.assertEquals(createdEntry2.getInitialState(), pulledEntry2.getInitialState());
+		Assert.assertEquals(createdEntry2.getOutcomeState(), pulledEntry2.getOutcomeState());
 		Assert.assertEquals(createdEntry2.getRole(), pulledEntry2.getRole());
 		Assert.assertNotEquals(createdEntry2.getAction(), pulledEntry2.getAction());
 
@@ -275,11 +274,11 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getProcessId(), pulledEntry2.getProcessId());
-		Assert.assertEquals(createdEntry2.getWorkflowUser(), pulledEntry2.getWorkflowUser());
+		Assert.assertEquals(createdEntry2.getUserNid(), pulledEntry2.getUserNid());
 		Assert.assertEquals(createdEntry2.getTimeAdvanced(), pulledEntry2.getTimeAdvanced());
-		Assert.assertEquals(createdEntry2.getState(), pulledEntry2.getState());
+		Assert.assertEquals(createdEntry2.getInitialState(), pulledEntry2.getInitialState());
 		Assert.assertEquals(createdEntry2.getAction(), pulledEntry2.getAction());
-		Assert.assertEquals(createdEntry2.getOutcome(), pulledEntry2.getOutcome());
+		Assert.assertEquals(createdEntry2.getOutcomeState(), pulledEntry2.getOutcomeState());
 		Assert.assertNotEquals(createdEntry2.getComment(), pulledEntry2.getComment());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
@@ -311,15 +310,11 @@ public class WorkflowContentStoreTest {
 	 */
 	@Test
 	public void testProcessInstanceStore() throws Exception {
-		ArrayList<Integer> sequences1 = new ArrayList<>();
-		sequences1.add(90);
-		sequences1.add(91);
-		Set<Integer> concepts1 = new HashSet<>();
-		concepts1.add(98);
-		concepts1.add(99);
-
-		ProcessDetail createdEntry1 = new ProcessDetail(UUID.randomUUID(), concepts1, sequences1, 2,
-				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+		String name = "Process Name";
+		String description = "Process Description";
+		
+		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2,
+				new Date().getTime(), ProcessStatus.DEFINED, name, description);
 
 		// New scope to ensure closing store
 		ProcessDetailContentStore processInstanceStore = new ProcessDetailContentStore(store);
@@ -331,20 +326,14 @@ public class WorkflowContentStoreTest {
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		processInstanceStore = new ProcessDetailContentStore(store);
-		ProcessDetail pulledEntry1 = processInstanceStore.getEntry(key1);
+		StorableWorkflowContents pulledEntry1 = processInstanceStore.getEntry(key1);
 
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		ArrayList<Integer> sequences2 = new ArrayList<>();
-		sequences2.add(90);
-		sequences2.add(91);
-		Set<Integer> concepts2 = new HashSet<>();
-		concepts2.add(98);
-		concepts2.add(97);
-		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), concepts2, sequences2, 3,
-				new Date().getTime(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3,
+				new Date().getTime(),ProcessStatus.DEFINED, name, description);
 
 		UUID key2 = processInstanceStore.addEntry(createdEntry2);
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 2);
@@ -358,8 +347,8 @@ public class WorkflowContentStoreTest {
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		ProcessDetail updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), concepts1, sequences2, 3,
-				createdEntry2.getTimeCreated(), SubjectMatter.CONCEPT, ProcessStatus.READY_TO_LAUNCH);
+		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), 3,
+				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(), "This is a second Description");
 		processInstanceStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -367,12 +356,11 @@ public class WorkflowContentStoreTest {
 		Assert.assertNotEquals(createdEntry2, pulledEntry2);
 
 		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getStampSequences(), pulledEntry2.getStampSequences());
-		Assert.assertEquals(createdEntry2.getCreator(), pulledEntry2.getCreator());
+		Assert.assertEquals(createdEntry2.getCreatorNid(), pulledEntry2.getCreatorNid());
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
-		Assert.assertEquals(createdEntry2.getSubjectMatter(), pulledEntry2.getSubjectMatter());
-		Assert.assertEquals(createdEntry2.getProcessStatus(), pulledEntry2.getProcessStatus());
-		Assert.assertNotEquals(createdEntry2.getConceptSequences(), pulledEntry2.getConceptSequences());
+		Assert.assertEquals(createdEntry2.getStatus(), pulledEntry2.getStatus());
+		Assert.assertEquals(createdEntry2.getName(), pulledEntry2.getName());
+		Assert.assertNotEquals(createdEntry2.getDescription(), pulledEntry2.getDescription());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
@@ -406,7 +394,9 @@ public class WorkflowContentStoreTest {
 		Set<String> roles1 = new HashSet<>();
 		roles1.add("Editor");
 		roles1.add("Reviewer");
-		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1);
+		String description = "This is the description for this unit test";
+		
+		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1, description);
 
 		// New scope to ensure closing store
 		DefinitionDetailContentStore definitionDetailStore = new DefinitionDetailContentStore(store);
@@ -427,7 +417,7 @@ public class WorkflowContentStoreTest {
 		Set<String> roles2 = new HashSet<>();
 		roles2.add("Editor");
 		roles2.add("Approver");
-		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2);
+		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2, description);
 
 		UUID key2 = definitionDetailStore.addEntry(createdEntry2);
 		Assert.assertEquals(definitionDetailStore.getNumberOfEntries(), 2);
@@ -442,7 +432,7 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		DefinitionDetail updatedEntry2 = new DefinitionDetail(createdEntry2.getBpmn2Id(), createdEntry2.getName(),
-				createdEntry2.getNamespace(), "2.0", createdEntry2.getRoles());
+				createdEntry2.getNamespace(), "2.0", createdEntry2.getRoles(), createdEntry2.getDescription());
 		definitionDetailStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -454,6 +444,8 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getNamespace(), pulledEntry2.getNamespace());
 		Assert.assertEquals(createdEntry2.getRoles(), pulledEntry2.getRoles());
 		Assert.assertNotEquals(createdEntry2.getVersion(), pulledEntry2.getVersion());
+		Assert.assertEquals(createdEntry2.getDescription(), pulledEntry2.getDescription());
+		Assert.assertNotEquals(createdEntry2.getImportDate(), pulledEntry2.getImportDate());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 

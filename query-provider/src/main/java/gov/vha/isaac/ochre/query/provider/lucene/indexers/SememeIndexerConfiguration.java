@@ -153,9 +153,11 @@ public class SememeIndexerConfiguration
 	 * otherwise - leave false - so that a full reindex occurs (on this thread) and the index becomes valid.
 	 * 
 	 * @throws RuntimeException
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 */
 	@SuppressWarnings("unchecked")
-	public static void configureColumnsToIndex(int assemblageNidOrSequence, Integer[] columnsToIndex, boolean skipReindex) throws RuntimeException
+	public static void configureColumnsToIndex(int assemblageNidOrSequence, Integer[] columnsToIndex, boolean skipReindex) throws RuntimeException, InterruptedException, ExecutionException
 	{
 		LookupService.get().getService(SememeIndexerConfiguration.class).readNeeded_.incrementAndGet();
 		List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
@@ -192,7 +194,7 @@ public class SememeIndexerConfiguration
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getSequence(), data);
 		
 		sb.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
-		Get.commitService().commit("Index Config Change");
+		Get.commitService().commit("Index Config Change").get();
 		
 		if (!skipReindex)
 		{
