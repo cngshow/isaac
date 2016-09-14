@@ -29,17 +29,16 @@ import java.util.Date;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * A single advancement (history) of a given workflow process. A new entry is
  * added for every workflow action a user takes.
  * 
- * {@link ProcessHistoryContentStore} {@link StorableWorkflowContents}
+ * {@link ProcessHistoryContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessHistory extends StorableWorkflowContents {
+public class ProcessHistory extends AbstractStorableWorkflowContents {
 
 	/** The workflow process key for which the Process History is relevant. */
 	private UUID processId;
@@ -88,6 +87,7 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 * Constructor for a new process history based on serialized content.
 	 * 
 	 * @param data
+	 *            The data to deserialize into its components
 	 */
 	public ProcessHistory(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);

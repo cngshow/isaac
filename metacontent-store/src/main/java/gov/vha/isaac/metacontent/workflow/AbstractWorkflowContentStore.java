@@ -28,7 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
+import gov.vha.isaac.metacontent.workflow.contents.AbstractStorableWorkflowContents;
 
 /**
  * An abstract class extended by all Workflow Content Store classes. Contains
@@ -42,11 +42,11 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  */
 public abstract class AbstractWorkflowContentStore {
 	/** The Logger made available to each Workflow Content Store class */
-	protected static final Logger logger = LogManager.getLogger();
+	protected final Logger logger = LogManager.getLogger();
 
 	/** The Enum listing each Workflow Content Store Type. */
 	protected static enum WorkflowContentStoreType {
-		USER_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAIL, DOMAIN_STANDARD, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
+		USER_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAIL, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
 	};
 
 	/**
@@ -59,7 +59,8 @@ public abstract class AbstractWorkflowContentStore {
 	protected MVStoreMetaContentProvider store = null;
 
 	/**
-	 * Instantiates a new workflow content store based on the type requested.
+	 * Constructor for each new workflow content store based on the type
+	 * requested.
 	 *
 	 * @param store
 	 *            The storage facility for all workflow-based content stores
@@ -82,7 +83,7 @@ public abstract class AbstractWorkflowContentStore {
 	 * on the appropriate WorkflowContentStore type
 	 *
 	 * @param key
-	 *            defining the entry to retrieve
+	 *            The key defining the entry to retrieve
 	 * 
 	 * @return the entry requested as an Object class
 	 */
@@ -108,11 +109,11 @@ public abstract class AbstractWorkflowContentStore {
 	 * Adds a new entry to the content store. Key is generated and returned.
 	 *
 	 * @param entry
-	 *            the already populated entry which is to be added
+	 *            The entry the already populated entry which is to be added
 	 *
 	 * @return the key of the new entry
 	 */
-	public UUID addEntry(StorableWorkflowContents entry) {
+	public UUID addEntry(AbstractStorableWorkflowContents entry) {
 		UUID key = UUID.randomUUID();
 		entry.setId(key);
 
@@ -130,11 +131,11 @@ public abstract class AbstractWorkflowContentStore {
 	 * Updates an existing entry as specified defined by the key
 	 *
 	 * @param key
-	 *            the key of the entry being updated
+	 *            The key of the entry being updated
 	 * @param entry
-	 *            the updated contents of the entry
+	 *            The updated contents of the entry
 	 */
-	public void updateEntry(UUID key, StorableWorkflowContents entry) {
+	public void updateEntry(UUID key, AbstractStorableWorkflowContents entry) {
 		try {
 			map.put(key, entry.serialize());
 		} catch (IOException e) {
@@ -147,7 +148,7 @@ public abstract class AbstractWorkflowContentStore {
 	 * Removes the entry specified by the key.
 	 *
 	 * @param key
-	 *            specifying the entry to be removed
+	 *            The key specifying the entry to be removed
 	 */
 	public void removeEntry(UUID key) {
 		map.remove(key);
@@ -165,7 +166,7 @@ public abstract class AbstractWorkflowContentStore {
 	 * manner.
 	 *
 	 * @param key
-	 *            the key to the entry
+	 *            The key to the requested entry
 	 * 
 	 * @return the serialized entry requested
 	 */

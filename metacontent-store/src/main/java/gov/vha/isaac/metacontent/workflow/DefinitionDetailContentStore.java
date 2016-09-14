@@ -40,9 +40,9 @@ public class DefinitionDetailContentStore extends AbstractWorkflowContentStore {
 	/**
 	 * Constructor for the content store.
 	 * 
-	 * @param single
-	 *            store where all workflow content, regardless of type, is
-	 *            stored
+	 * @param store
+	 *            The single store where all workflow content, regardless of
+	 *            type, is stored
 	 */
 	public DefinitionDetailContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.DEFINITION_DETAIL);

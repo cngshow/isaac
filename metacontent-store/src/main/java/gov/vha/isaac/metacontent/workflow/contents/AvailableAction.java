@@ -27,7 +27,6 @@ import java.io.ObjectOutputStream;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * The available workflow actions as defined via the workflow definition. Each
@@ -37,11 +36,11 @@ import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
  * The workflow must be in the initial state and a user must have the workflow
  * role to be able to perform the action.
  * 
- * {@link AvailableActionContentStore} {@link StorableWorkflowContents}
+ * {@link AvailableActionContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AvailableAction extends StorableWorkflowContents {
+public class AvailableAction extends AbstractStorableWorkflowContents {
 	/**
 	 * The workflow definition key for which the Available Action is relevant.
 	 */
@@ -80,6 +79,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	 * Constructor for a new available action based on serialized content.
 	 *
 	 * @param data
+	 *            The data to deserialize into its components
 	 */
 	public AvailableAction(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);

@@ -32,17 +32,16 @@ import java.util.Map;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
  * include its history which is available via {@link ProcessHistory}
  * 
- * {@link ProcessDetailContentStore} {@link StorableWorkflowContents}.
+ * {@link ProcessDetailContentStore} {@link AbstractStorableWorkflowContents}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDetail extends StorableWorkflowContents {
+public class ProcessDetail extends AbstractStorableWorkflowContents {
 	/**
 	 * The exhaustive list of possible process statuses.
 	 */
@@ -56,6 +55,18 @@ public class ProcessDetail extends StorableWorkflowContents {
 		/** A previously launched process that is completed */
 		CONCLUDED
 	}
+
+	/**
+	 * The exhaustive list of possible ways an instantiated process may be ended
+	 *
+	 * 
+	 */
+	public enum EndWorkflowType {
+		/** Process is stopped without reaching a completed state */
+		CANCELED,
+		/** Process has been finished by reaching a completed state */
+		CONCLUDED
+	};
 
 	/** The workflow definition key for which the Process Detail is relevant. */
 	private UUID definitionId;
@@ -116,6 +127,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * Constructor for a new process based on serialized content.
 	 *
 	 * @param data
+	 *            The data to deserialize into its components
 	 */
 	public ProcessDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -197,7 +209,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * this isn't available during the object's construction.
 	 *
 	 * @param time
-	 *            the process canceled/concluded as long as long primitive type
+	 *            The time the process was canceled/concluded as long primitive
+	 *            type
 	 */
 	public void setTimeCanceledOrConcluded(long time) {
 		timeCanceledOrConcluded = time;
@@ -217,7 +230,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * object's construction.
 	 *
 	 * @param time
-	 *            the process launched as long primitive type
+	 *            The time the process was launched as long primitive type
 	 */
 	public void setTimeLaunched(long time) {
 		timeLaunched = time;
@@ -236,8 +249,8 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * Sets the process's current status as this is updated over the course of
 	 * the process.
 	 *
-	 * @param the
-	 *            process's current status
+	 * @param status
+	 *            The process's current status
 	 */
 	public void setStatus(ProcessStatus status) {
 		this.status = status;

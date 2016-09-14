@@ -27,16 +27,15 @@ import java.io.ObjectOutputStream;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * Workflow roles available for each user for a given workflow definition
  * 
- * {@link UserPermissionContentStore} {@link StorableWorkflowContents}
+ * {@link UserPermissionContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class UserPermission extends StorableWorkflowContents {
+public class UserPermission extends AbstractStorableWorkflowContents {
 	/**
 	 * The workflow definition key for which the User Permission is relevant.
 	 */
@@ -68,6 +67,7 @@ public class UserPermission extends StorableWorkflowContents {
 	 * Constructor for a new user permission based on serialized content.
 	 * 
 	 * @param data
+	 *            The data to deserialize into its components
 	 */
 	public UserPermission(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);

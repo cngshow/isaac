@@ -39,9 +39,9 @@ public class ProcessDetailContentStore extends AbstractWorkflowContentStore {
 	/**
 	 * Constructor for the content store.
 	 * 
-	 * @param single
-	 *            store where all workflow content, regardless of type, is
-	 *            stored
+	 * @param store
+	 *            The single store where all workflow content, regardless of
+	 *            type, is stored
 	 */
 	public ProcessDetailContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);

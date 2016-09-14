@@ -16,20 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.api.metacontent.workflow;
+package gov.vha.isaac.metacontent.workflow.contents;
 
-/**
- * Classes extending this abstract class.  Represent all Workflow Content Stores
- * 
- * {@link AvailableAction}
- * {@link UserPermission}
- * {@link HistoricalWorkflow} 
- * {@link ProcessInstance}
- * {@link DefinitionDetail}
- * {@link DomainStandard}
- *
- * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a> 
- */
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
@@ -39,14 +27,14 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * An abstract class extended by all Workflow Content Store Entry classes.
- * Contains fields and methods shared by all such Entries .
+ * Contains fields and methods shared by all such Entries.
  * 
  * {@link UserPermission} {@link AvailableAction} {@link ProcessHistory}
  * {@link ProcessDetail} {@link DefinitionDetail} {@link DomainStandard}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public abstract class StorableWorkflowContents {
+public abstract class AbstractStorableWorkflowContents {
 	/** The Logger made available to each Workflow Content Store Entry class */
 	protected final Logger logger = LogManager.getLogger();
 
@@ -71,7 +59,7 @@ public abstract class StorableWorkflowContents {
 	 * Set an entry's key
 	 * 
 	 * @param key
-	 *            to each content-store entry
+	 *            The key to each content-store entry
 	 */
 	public void setId(UUID key) {
 		id = key;

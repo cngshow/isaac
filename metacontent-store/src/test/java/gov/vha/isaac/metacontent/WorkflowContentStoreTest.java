@@ -35,13 +35,13 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
+import gov.vha.isaac.metacontent.workflow.contents.AbstractStorableWorkflowContents;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * Test both static and user based workflow content as defined in the
@@ -311,7 +311,7 @@ public class WorkflowContentStoreTest {
 		String name = "Process Name";
 		String description = "Process Description";
 
-		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2, new Date().getTime(),
+		AbstractStorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2, new Date().getTime(),
 				ProcessStatus.DEFINED, name, description);
 
 		// New scope to ensure closing store
@@ -324,7 +324,7 @@ public class WorkflowContentStoreTest {
 		// Get entry with new store
 		store = new MVStoreMetaContentProvider(new File("target"), "testWorkflow", false);
 		processInstanceStore = new ProcessDetailContentStore(store);
-		StorableWorkflowContents pulledEntry1 = processInstanceStore.getEntry(key1);
+		AbstractStorableWorkflowContents pulledEntry1 = processInstanceStore.getEntry(key1);
 
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 1);
 		Assert.assertEquals(createdEntry1, pulledEntry1);
@@ -345,7 +345,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertTrue(allEntries.contains(createdEntry2));
 
 		// Test update of an entry
-		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), 3,
+		AbstractStorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), 3,
 				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(),
 				"This is a second Description");
 		processInstanceStore.updateEntry(key2, updatedEntry2);

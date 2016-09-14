@@ -29,16 +29,15 @@ import java.util.Set;
 import java.util.UUID;
 
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
  * The metadata defining a given workflow definition.
  * 
- * {@link DefinitionDetailContentStore} {@link StorableWorkflowContents}
+ * {@link DefinitionDetailContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DefinitionDetail extends StorableWorkflowContents {
+public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	/** The bpmn2 id that contains the definition if it exists. */
 	private String bpmn2Id;
 
@@ -85,6 +84,7 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 * Constructor for a new definition based on serialized content.
 	 *
 	 * @param data
+	 *            The data to deserialize into its components
 	 */
 	public DefinitionDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
