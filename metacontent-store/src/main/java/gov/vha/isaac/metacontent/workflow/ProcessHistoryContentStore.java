@@ -27,19 +27,21 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 
 /**
- * Dynamic workflow history populated at runtime only
+ * Workflow-based Data Store containing the process instance historical entries.
+ * Updated each time a user advances workflow.
  * 
- * {@link ProcessHistoryContentStore} {@link AbstractWorkflowContentStore}
+ * {@link ProcessHistory} {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new users process advancement content store.
-	 *
-	 * @param store
-	 *            the store
+	 * Constructor for the content store.
+	 * 
+	 * @param single
+	 *            store where all workflow content, regardless of type, is
+	 *            stored
 	 */
 	public ProcessHistoryContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.HISTORICAL_WORKFLOW);
@@ -54,7 +56,7 @@ public class ProcessHistoryContentStore extends AbstractWorkflowContentStore {
 	 */
 	@Override
 	public ProcessHistory getEntry(UUID key) {
-		return new ProcessHistory(getGenericEntry(key));
+		return new ProcessHistory(getSerializedEntry(key));
 	}
 
 	/*

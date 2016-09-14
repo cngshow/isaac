@@ -31,41 +31,41 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Abstract Content Store specific to Workflow to avoid repeated functionality.
+ * An abstract class extended by all Workflow Content Store classes. Contains
+ * fields and methods shared by all such Content Stores.
  * 
- * {@link UserPermissionContentStore}
- * {@link AvailableActionContentStore}
+ * {@link UserPermissionContentStore} {@link AvailableActionContentStore}
  * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
- * {@link DefinitionDetailContentStore}
- * {@link DomainStandardContentStore}
+ * {@link DefinitionDetailContentStore} {@link DomainStandardContentStore}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowContentStore {
+	/** The Logger made available to each Workflow Content Store class */
+	protected static final Logger logger = LogManager.getLogger();
 
-	/**
-	 * The Enum WorkflowContentStoreType.
-	 */
+	/** The Enum listing each Workflow Content Store Type. */
 	protected static enum WorkflowContentStoreType {
 		USER_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAIL, DOMAIN_STANDARD, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
 	};
 
-	/** The map. */
+	/**
+	 * The storage mechanism of all entries. It is a map of key to Content Store
+	 * Entry type.
+	 */
 	private ConcurrentMap<UUID, byte[]> map = null;
 
-	/** The store. */
+	/** The actual content store for all workflow content stores. */
 	protected MVStoreMetaContentProvider store = null;
 
-	/** The Constant logger. */
-	protected static final Logger logger = LogManager.getLogger();
-
 	/**
-	 * Instantiates a new abstract workflow content store.
+	 * Instantiates a new workflow content store based on the type requested.
 	 *
 	 * @param store
-	 *            the store
+	 *            The storage facility for all workflow-based content stores
+	 * 
 	 * @param type
-	 *            the type
+	 *            The type of workflow content store being instantiated
 	 */
 	public AbstractWorkflowContentStore(MVStoreMetaContentProvider store, WorkflowContentStoreType type) {
 		if (this.store == null) {
@@ -73,44 +73,47 @@ public abstract class AbstractWorkflowContentStore {
 		}
 
 		if (map == null) {
-			map = store.<UUID, byte[]> openStore(type.toString());
+			map = store.<UUID, byte[]>openStore(type.toString());
 		}
 	}
 
 	/**
-	 * Gets the entry.
+	 * Gets the entry based on the key. Returns an object that is casted based
+	 * on the appropriate WorkflowContentStore type
 	 *
 	 * @param key
-	 *            the key
-	 * @return the entry
+	 *            defining the entry to retrieve
+	 * 
+	 * @return the entry requested as an Object class
 	 */
 	abstract public Object getEntry(UUID key);
 
 	/**
-	 * Gets the all entries.
+	 * Gets the all entries of the Content Store Type.
 	 *
-	 * @return the all entries
+	 * @return all the entries
 	 */
 	abstract public Collection<?> getAllEntries();
 
 	/**
-	 * Gets the number of entries.
+	 * Gets the number of entries of the Content Store Type.
 	 *
-	 * @return the number of entries
+	 * @return number of entries
 	 */
 	public int getNumberOfEntries() {
 		return map.size();
 	}
 
 	/**
-	 * Adds the entry.
+	 * Adds a new entry to the content store. Key is generated and returned.
 	 *
 	 * @param entry
-	 *            the entry
-	 * @return the uuid
+	 *            the already populated entry which is to be added
+	 *
+	 * @return the key of the new entry
 	 */
 	public UUID addEntry(StorableWorkflowContents entry) {
-		UUID key = getNewUUID(entry.hashCode());
+		UUID key = UUID.randomUUID();
 		entry.setId(key);
 
 		try {
@@ -124,12 +127,12 @@ public abstract class AbstractWorkflowContentStore {
 	}
 
 	/**
-	 * Update entry.
+	 * Updates an existing entry as specified defined by the key
 	 *
 	 * @param key
-	 *            the key
+	 *            the key of the entry being updated
 	 * @param entry
-	 *            the entry
+	 *            the updated contents of the entry
 	 */
 	public void updateEntry(UUID key, StorableWorkflowContents entry) {
 		try {
@@ -141,46 +144,48 @@ public abstract class AbstractWorkflowContentStore {
 	}
 
 	/**
-	 * Removes the entry.
+	 * Removes the entry specified by the key.
 	 *
 	 * @param key
-	 *            the key
+	 *            specifying the entry to be removed
 	 */
 	public void removeEntry(UUID key) {
 		map.remove(key);
 	}
 
 	/**
-	 * Removes the all entries.
+	 * Removes every single entry of the content store type.
 	 */
 	public void removeAllEntries() {
 		map.clear();
 	}
 
 	/**
-	 * Gets the generic entry.
+	 * Gets the entry based on the key. Returns the object in a serialized
+	 * manner.
 	 *
 	 * @param key
-	 *            the key
-	 * @return the generic entry
+	 *            the key to the entry
+	 * 
+	 * @return the serialized entry requested
 	 */
-	protected byte[] getGenericEntry(UUID key) {
+	protected byte[] getSerializedEntry(UUID key) {
 		return map.get(key);
 	}
 
 	/**
-	 * Gets the all generic entries.
+	 * Gets all entries in a serialized manner.
 	 *
-	 * @return the all generic entries
+	 * @return all entries in a serialized manner
 	 */
 	protected Collection<byte[]> getAllGenericEntries() {
 		return map.values();
 	}
 
 	/**
-	 * Key set.
+	 * Returns the set of all entry keys.
 	 *
-	 * @return the sets the
+	 * @return keys of all entries
 	 */
 	protected Set<UUID> keySet() {
 		return map.keySet();
@@ -194,6 +199,10 @@ public abstract class AbstractWorkflowContentStore {
 	 * @return the new uuid
 	 */
 	private UUID getNewUUID(int hashCode) {
+		// TODO: Decide if need reproducible UUID for contentStores. If not,
+		// remove method. If so, use in addEntry() in place of UUID.randomUUID()
+		// call. May want to make this abstract so can seed UUID with each part
+		// of entry
 		return UUID.randomUUID();
 	}
 
@@ -208,7 +217,7 @@ public abstract class AbstractWorkflowContentStore {
 
 		return this.map.equals(other.map);
 	}
-	
+
 	public void close() {
 		store = null;
 		map = null;

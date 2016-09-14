@@ -27,21 +27,21 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 
 /**
- * Statically populated user workflow permissions initialized during reading of
- * WF Definition only
+ * Workflow-based Data Store containing the workflow User Permission entries.
+ * Initialized during reading of WF Definition only and static from then on.
  * 
- * {@link UserPermissionContentStore}
- * {@link AbstractWorkflowContentStore}.
+ * {@link UserPermission} {@link AbstractWorkflowContentStore}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class UserPermissionContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new user permission workflow content store.
-	 *
-	 * @param store
-	 *            the store
+	 * Constructor for the content store.
+	 * 
+	 * @param single
+	 *            store where all workflow content, regardless of type, is
+	 *            stored
 	 */
 	public UserPermissionContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.USER_PERMISSION);
@@ -56,7 +56,7 @@ public class UserPermissionContentStore extends AbstractWorkflowContentStore {
 	 */
 	@Override
 	public UserPermission getEntry(UUID key) {
-		return new UserPermission(getGenericEntry(key));
+		return new UserPermission(getSerializedEntry(key));
 	}
 
 	/*

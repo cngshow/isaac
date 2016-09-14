@@ -28,63 +28,50 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
 
 /**
- * Storage of workflow history
+ * A single advancement (history) of a given workflow process. A new entry is
+ * added for every workflow action a user takes.
  * 
- * {@link ProcessHistory} {@link StorableWorkflowContents}
- *
- * NOTE: The processId is the Key of the Process Definition Content Store.
+ * {@link ProcessHistoryContentStore} {@link StorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessHistory extends StorableWorkflowContents {
 
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
-
-	/** The process id. */
+	/** The workflow process key for which the Process History is relevant. */
 	private UUID processId;
 
-	/** The workflowUser. */
+	/** The user who advanced the process. */
 	private int userNid;
 
-	/** The time advanced. */
+	/** The time the workflow was advanced. */
 	private long timeAdvanced;
 
-	/** The initial state. */
+	/** The workflow process state before an action was taken. */
 	private String initialState;
 
-	/** The action. */
+	/** The workflow action taken by the user. */
 	private String action;
 
-	/** The outcome state. */
+	/** The workflow process state that exists after the action was taken. */
 	private String outcomeState;
 
-	/** The comment. */
+	/** The comment added by the user when performing the workflow action. */
 	private String comment;
 
 	/**
-	 * Instantiates a new workflow advancement.
-	 *
+	 * Constructor for a new process history based on specified entry fields.
+	 * 
 	 * @param processId
-	 *            the process id
 	 * @param userNid
-	 *            the workflowUser
 	 * @param timeAdvanced
-	 *            the time advanced
 	 * @param initialState
-	 *            the initial state
 	 * @param action
-	 *            the action
 	 * @param outcomeState
-	 *            the outcome state
 	 * @param comment
-	 *            the comment
 	 */
 	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action,
 			String outcomeState, String comment) {
@@ -98,10 +85,9 @@ public class ProcessHistory extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Instantiates a new workflow advancement.
-	 *
+	 * Constructor for a new process history based on serialized content.
+	 * 
 	 * @param data
-	 *            the data
 	 */
 	public ProcessHistory(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -126,61 +112,61 @@ public class ProcessHistory extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the process id.
+	 * Gets the key of the process entry.
 	 *
-	 * @return the process id
+	 * @return process key
 	 */
 	public UUID getProcessId() {
 		return processId;
 	}
 
 	/**
-	 * Gets the workflowUser.
+	 * Gets the user's nid that advanced the workflow process.
 	 *
-	 * @return the workflowUser
+	 * @return the user nid
 	 */
 	public int getUserNid() {
 		return userNid;
 	}
 
 	/**
-	 * Gets the time advanced.
+	 * Gets the time which the workflow process was advanced.
 	 *
-	 * @return the time advanced
+	 * @return the time the process was advanced
 	 */
 	public long getTimeAdvanced() {
 		return timeAdvanced;
 	}
 
 	/**
-	 * Gets the initial state.
+	 * Gets the state of the process prior to it being advanced.
 	 *
-	 * @return the initialState
+	 * @return the initial state of the process
 	 */
 	public String getInitialState() {
 		return initialState;
 	}
 
 	/**
-	 * Gets the action.
+	 * Gets the action performed upon the workflow process.
 	 *
-	 * @return the action
+	 * @return the action taken
 	 */
 	public String getAction() {
 		return action;
 	}
 
 	/**
-	 * Gets the outcome state.
+	 * Gets the state of the process following it being advanced.
 	 *
-	 * @return the outcomeState
+	 * @return the outcome state
 	 */
 	public String getOutcomeState() {
 		return outcomeState;
 	}
 
 	/**
-	 * Gets the comment.
+	 * Gets the comment provided by the user when advancing the process.
 	 *
 	 * @return the comment
 	 */
@@ -220,12 +206,13 @@ public class ProcessHistory extends StorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-	    Date date=new Date(timeAdvanced);
-	    String timeAdvancedString = workflowDateFormatrer.format(date);
+		Date date = new Date(timeAdvanced);
+		String timeAdvancedString = workflowDateFormatrer.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid
-				+ "\n\t\tTime Advanced as Long: " + timeAdvanced+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action
-				+ "\n\t\tOutcome State: " + outcomeState + "\n\t\tComment: " + comment;
+				+ "\n\t\tTime Advanced as Long: " + timeAdvanced + "\n\t\tTime Advanced: " + timeAdvancedString
+				+ "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "
+				+ outcomeState + "\n\t\tComment: " + comment;
 	}
 
 	/*
@@ -254,11 +241,21 @@ public class ProcessHistory extends StorableWorkflowContents {
 				+ action.hashCode() + outcomeState.hashCode() + comment.hashCode();
 	}
 
+	/**
+	 * A custom comparator to assist in ordering process history information.
+	 * Based on advancement time.
+	 *
+	 */
 	public static class ProcessHistoryComparator implements Comparator<ProcessHistory> {
 		public ProcessHistoryComparator() {
 
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+		 */
 		@Override
 		public int compare(ProcessHistory o1, ProcessHistory o2) {
 			long t1 = o1.getTimeAdvanced();
@@ -267,7 +264,8 @@ public class ProcessHistory extends StorableWorkflowContents {
 				return 1;
 			else if (t1 < t2)
 				return -1;
-			else return (o1.getProcessId().compareTo(o2.getProcessId())); 
+			else
+				return (o1.getProcessId().compareTo(o2.getProcessId()));
 		}
 	}
 }

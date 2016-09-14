@@ -27,15 +27,22 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 
 /**
- * Dynamic workflow processes populated at runtime only
+ * Workflow-based Data Store containing the workflow process instance entries.
+ * Initialized by user during process creation and updated by users thereafter.
  *
- * {@link ProcessDetailContentStore} {@link ProcessDetail}
- * {@link AbstractWorkflowContentStore}
+ * {@link ProcessDetail} {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class ProcessDetailContentStore extends AbstractWorkflowContentStore {
 
+	/**
+	 * Constructor for the content store.
+	 * 
+	 * @param single
+	 *            store where all workflow content, regardless of type, is
+	 *            stored
+	 */
 	public ProcessDetailContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.PROCESS_DEFINITION);
 	}
@@ -49,7 +56,7 @@ public class ProcessDetailContentStore extends AbstractWorkflowContentStore {
 	 */
 	@Override
 	public ProcessDetail getEntry(UUID key) {
-		return new ProcessDetail(getGenericEntry(key));
+		return new ProcessDetail(getSerializedEntry(key));
 	}
 
 	/*

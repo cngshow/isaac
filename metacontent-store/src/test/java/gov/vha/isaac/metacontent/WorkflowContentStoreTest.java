@@ -19,7 +19,6 @@
 package gov.vha.isaac.metacontent;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -39,19 +38,18 @@ import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 
 /**
  * Test both static and user based workflow content as defined in the
  * metacontent-store
  * 
- * {@link UserPermissionContentStore}
- * {@link AvailableActionContentStore}
- * {@link DefinitionDetailContentStore}
- * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
+ * {@link UserPermissionContentStore} {@link AvailableActionContentStore}
+ * {@link DefinitionDetailContentStore} {@link ProcessHistoryContentStore}
+ * {@link ProcessDetailContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -312,9 +310,9 @@ public class WorkflowContentStoreTest {
 	public void testProcessInstanceStore() throws Exception {
 		String name = "Process Name";
 		String description = "Process Description";
-		
-		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2,
-				new Date().getTime(), ProcessStatus.DEFINED, name, description);
+
+		StorableWorkflowContents createdEntry1 = new ProcessDetail(UUID.randomUUID(), 2, new Date().getTime(),
+				ProcessStatus.DEFINED, name, description);
 
 		// New scope to ensure closing store
 		ProcessDetailContentStore processInstanceStore = new ProcessDetailContentStore(store);
@@ -332,8 +330,8 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3,
-				new Date().getTime(),ProcessStatus.DEFINED, name, description);
+		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3, new Date().getTime(),
+				ProcessStatus.DEFINED, name, description);
 
 		UUID key2 = processInstanceStore.addEntry(createdEntry2);
 		Assert.assertEquals(processInstanceStore.getNumberOfEntries(), 2);
@@ -348,7 +346,8 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		StorableWorkflowContents updatedEntry2 = new ProcessDetail(createdEntry2.getDefinitionId(), 3,
-				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(), "This is a second Description");
+				createdEntry2.getTimeCreated(), ProcessStatus.DEFINED, createdEntry2.getName(),
+				"This is a second Description");
 		processInstanceStore.updateEntry(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -395,8 +394,9 @@ public class WorkflowContentStoreTest {
 		roles1.add("Editor");
 		roles1.add("Reviewer");
 		String description = "This is the description for this unit test";
-		
-		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1, description);
+
+		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1,
+				description);
 
 		// New scope to ensure closing store
 		DefinitionDetailContentStore definitionDetailStore = new DefinitionDetailContentStore(store);
@@ -417,7 +417,8 @@ public class WorkflowContentStoreTest {
 		Set<String> roles2 = new HashSet<>();
 		roles2.add("Editor");
 		roles2.add("Approver");
-		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2, description);
+		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2,
+				description);
 
 		UUID key2 = definitionDetailStore.addEntry(createdEntry2);
 		Assert.assertEquals(definitionDetailStore.getNumberOfEntries(), 2);

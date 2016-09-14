@@ -19,7 +19,7 @@
 package gov.vha.isaac.ochre.api.metacontent.workflow;
 
 /**
- * Entries for Workflow Content Store
+ * Classes extending this abstract class.  Represent all Workflow Content Stores
  * 
  * {@link AvailableAction}
  * {@link UserPermission}
@@ -34,45 +34,53 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
- * The Interface StorableWorkflowContents.
+ * An abstract class extended by all Workflow Content Store Entry classes.
+ * Contains fields and methods shared by all such Entries .
+ * 
+ * {@link UserPermission} {@link AvailableAction} {@link ProcessHistory}
+ * {@link ProcessDetail} {@link DefinitionDetail} {@link DomainStandard}
+ * 
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class StorableWorkflowContents {
-    public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
+	/** The Logger made available to each Workflow Content Store Entry class */
+	protected final Logger logger = LogManager.getLogger();
+
+	/** A universal means of expressing a workflow time stamp */
+	public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
 
 	/**
-	 * The Enum DefiningStatus.
+	 * As every content store entry is key-value based and as all keys are of
+	 * type UUID, add in abstract
 	 */
-	public enum ProcessStatus {
-		DEFINED, LAUNCHED, CANCELED, CONCLUDED
-	}
-
-	/** The id. */
 	protected UUID id;
 
 	/**
-	 * Turn the concrete class into a suitable byte[] for storage.
-	 *
-	 * @return the byte[]
+	 * Ensure all extending classes are serialized
+	 * 
+	 * @return
 	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
 	 */
 	public abstract byte[] serialize() throws IOException;
 
 	/**
-	 * Sets the id.
-	 *
+	 * Set an entry's key
+	 * 
 	 * @param key
-	 *            the new id
+	 *            to each content-store entry
 	 */
 	public void setId(UUID key) {
 		id = key;
 	}
 
 	/**
-	 * Gets the id.
-	 *
-	 * @return the id
+	 * Return an entry's key
+	 * 
+	 * @return content-store entry key
 	 */
 	public UUID getId() {
 		return id;
