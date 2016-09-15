@@ -19,7 +19,6 @@
 package gov.vha.isaac.ochre.workflow.provider;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -34,35 +33,43 @@ import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 
 /**
- * Abstract class for higher-level workflow routines
+ * An abstract class extended by all higher-level Workflow classes. These
+ * provide useful Methods to interact with workflow removing need for developers
+ * to interact with lower level workflow metacontent-store routines.
  * 
- * {@link AbstractWorkflowUtilities} {@link Bpmn2FileImporter}
- * {@link WorkflowProcessInitializerConcluder} {@link WorkflowAccessor}
- * {@line WorkflowUpdater}
+ * {@link Bpmn2FileImporter} {@link WorkflowProcessInitializerConcluder}
+ * {@link WorkflowAccessor} {@line WorkflowUpdater}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public abstract class AbstractWorkflowUtilities {
-	/** The Constant logger. */
-	protected static final Logger logger = LogManager.getLogger();
+	/** The Logger made available to each Workflow Content Store class */
+	protected final Logger logger = LogManager.getLogger();
 
-	public enum EndWorkflowType {
-		CANCELED, CONCLUDED
-	};
+	/**
+	 * A constant used to inform the user that the system automated the
+	 * advancing workflow action rather than a specific user
+	 */
+	public static final String AUTOMATED_ROLE = "Automated By System";
 
-	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
-	private static final String AUTOMATED_ROLE = "Automated By System";
-	private static final String EDITING_ACTION = "EDITING";
-
+	/** A map of available actions per type of ending workflow */
 	private static Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
-	private static Map<UUID, Set<AvailableAction>> definitionStartActionMap = new HashMap<>();
-	private static Set<String> editStates = new HashSet<>();
 
-	/** The workflow stores. */
+	/**
+	 * A map of available actions per definition from which a workflow may be
+	 * started
+	 */
+	private static Map<UUID, Set<AvailableAction>> definitionStartActionMap = new HashMap<>();
+
+	/** A map of all states per definition from which a process may be edited */
+	private static Map<UUID, Set<String>> editStatesMap = new HashMap<>();
+
+	/** Access to every kind of workflow content store */
 	protected static MVStoreMetaContentProvider store = null;
 	protected static UserPermissionContentStore userPermissionStore;
 	protected static AvailableActionContentStore availableActionStore;
@@ -71,10 +78,11 @@ public abstract class AbstractWorkflowUtilities {
 	protected static ProcessHistoryContentStore processHistoryStore;
 
 	/**
-	 * Instantiates a new abstract workflow utilities.
+	 * Constructor for each kind of workflow utility class. Presumes a store has
+	 * already been created.
 	 *
 	 * @throws Exception
-	 *             the exception
+	 *             Thrown if the store has yet to be created.
 	 */
 	public AbstractWorkflowUtilities() throws Exception {
 		if (store == null) {
@@ -83,10 +91,10 @@ public abstract class AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Instantiates a new abstract workflow utilities.
+	 * Constructor for each kind of workflow utility class.
 	 *
 	 * @param workflowStore
-	 *            the workflow store
+	 *            The metacontent-store containing all workflow data
 	 */
 	public AbstractWorkflowUtilities(MVStoreMetaContentProvider workflowStore) {
 		if (store == null) {
@@ -100,35 +108,55 @@ public abstract class AbstractWorkflowUtilities {
 		}
 	}
 
-	public static ProcessDetailContentStore getProcessDetailStore() {
-		return processDetailStore;
-	}
-
-	protected String getCanceledComment() {
-		return CANCELED_HISTORY_COMMENT;
-	}
-
-	public static String getEditingAction() {
-		return EDITING_ACTION;
-	}
-
-	public static String getAutomatedRole() {
-		return AUTOMATED_ROLE;
-	}
-
-	public static Map<EndWorkflowType, Set<AvailableAction>> getEndWorkflowTypeMap() {
+	/**
+	 * Retrieves the map of end workflow types to the set of all available
+	 * actions causing a process to be ProcessStatus.CANCELED or
+	 * ProcessStatus.CONLCUDED.
+	 * 
+	 * Used for programmatically identifying if a requested action requested is
+	 * concluding a process.
+	 *
+	 * @return the map of available actions per type of ending workflow
+	 */
+	public Map<EndWorkflowType, Set<AvailableAction>> getEndWorkflowTypeMap() {
 		return endNodeTypeMap;
 	}
 
-	public static Map<UUID, Set<AvailableAction>> getDefinitionStartActionMap() {
+	/**
+	 * Retrieves the map of workflow definitions to the set of all available
+	 * actions start-process actions available.
+	 * 
+	 * Used for populating Process History with the initial workflow action via
+	 * an automated role.
+	 *
+	 * @return the map of available actions per type of ending workflow
+	 */
+	public Map<UUID, Set<AvailableAction>> getDefinitionStartActionMap() {
 		return definitionStartActionMap;
 	}
 
-	public static Set<String> getEditStates() {
-		return editStates;
+	/**
+	 * Gets a map of all edit states available per workflow definition.
+	 * 
+	 * Used to identify if the current state is an edit state. If it is,
+	 * modeling and mapping can occur and will be added to the process.
+	 * 
+	 * @return A set of edit states
+	 */
+	public Map<UUID, Set<String>> getEditStatesMap() {
+		return editStatesMap;
 	}
-	
-	public static boolean isFinishStates(String state) {
+
+	/**
+	 * Identifies if the state represents a concluded state by examining the
+	 * endNoeTypeMap's CONCLUDED list of AvaialbleActions
+	 * 
+	 * @param state
+	 *            The state to test
+	 * 
+	 * @return true if the state is a Concluded state
+	 */
+	public boolean isConcludedState(String state) {
 		for (AvailableAction action : endNodeTypeMap.get(EndWorkflowType.CONCLUDED)) {
 			if (action.getInitialState().equals(state)) {
 				return true;
@@ -137,13 +165,33 @@ public abstract class AbstractWorkflowUtilities {
 		return false;
 	}
 
+	/**
+	 * Identifies if the state is an edit state by examining the editStatesMap.
+	 * 
+	 * @param definitionId
+	 *            The definition which the state's process belongs
+	 * @param state
+	 *            The state to test
+	 * 
+	 * @return true if the state is an Edit state
+	 */
+	public boolean isEditState(UUID definitionId, String state) {
+		return editStatesMap.get(definitionId).contains(state);
+	}
+
+	/**
+	 * Enables a BPMN2 file to be imported into a clean environment
+	 */
 	public void clearDefinitionCollections() {
 		endNodeTypeMap.clear();
 		definitionStartActionMap.clear();
-		editStates.clear();
+		editStatesMap.clear();
 	}
 
-	public static void close() {
+	/**
+	 * Closes all workflow content stores
+	 */
+	public void closeContentStores() {
 		store = null;
 
 		userPermissionStore.close();

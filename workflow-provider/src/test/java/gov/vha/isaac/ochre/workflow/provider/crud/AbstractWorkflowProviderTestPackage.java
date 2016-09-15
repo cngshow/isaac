@@ -19,15 +19,14 @@ import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
+import gov.vha.isaac.metacontent.workflow.contents.AbstractStorableWorkflowContents;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 
 /**
@@ -54,9 +53,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UserPermissionContentStore userPermissionStore;
 	protected AvailableActionContentStore availableActionStore;
 
+	protected static Bpmn2FileImporter importer;
+
 	protected static AvailableAction concludeAction;
 	protected static AvailableAction cancelAction;
-
 
 	/*
 	 * Defined by importing definition and static throughout testclasses to
@@ -100,19 +100,19 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		processHistoryStore = new ProcessHistoryContentStore(store);
 		userPermissionStore = new UserPermissionContentStore(store);
 		availableActionStore = new AvailableActionContentStore(store);
-		
+
 		if (definitionDetailStore.getAllEntries().size() == 0) {
-			Bpmn2FileImporter importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			mainDefinitionId = importer.getCurrentDefinitionId();
 
-			AvailableAction startNodeAction = AbstractWorkflowUtilities.getDefinitionStartActionMap()
-					.get(mainDefinitionId).iterator().next();
+			AvailableAction startNodeAction = importer.getDefinitionStartActionMap().get(mainDefinitionId).iterator()
+					.next();
 			createState = startNodeAction.getInitialState();
 			createAction = startNodeAction.getAction();
 			createOutcome = startNodeAction.getOutcomeState();
-			
-			cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
-			concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+
+			cancelAction = importer.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+			concludeAction = importer.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 		}
 
 		processDetailStore.removeAllEntries();
@@ -138,12 +138,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UUID createSecondWorkflowProcess(UUID requestedDefinitionId) {
 		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description");
 	}
-	
+
 	protected void executeLaunchWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
 			ProcessDetail entry = processDetailStore.getEntry(processId);
-			
+
 			entry.setStatus(ProcessStatus.LAUNCHED);
 			entry.setTimeLaunched(new Date().getTime());
 			processDetailStore.updateEntry(processId, entry);
@@ -152,7 +152,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			e.printStackTrace();
 		}
 	}
-	
+
 	protected void executeSendForReviewAdvancement(UUID processId) {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 		try {
@@ -172,8 +172,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			Thread.sleep(1);
 
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
-					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
-			
+					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
+					SEND_TO_APPROVAL_COMMENT);
+
 			processHistoryStore.addEntry(entry);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -181,13 +182,13 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected void  executeRejectReviewAdvancement(UUID requestedProcessId) {
+	protected void executeRejectReviewAdvancement(UUID requestedProcessId) {
 		try {
 			Thread.sleep(1);
 
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
 					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
-			
+
 			processHistoryStore.addEntry(entry);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -198,9 +199,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void concludeWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
-			
-			finishWorkflowProcess(processId, concludeAction,
-					firstUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
+
+			finishWorkflowProcess(processId, concludeAction, firstUserId, "Concluded Workflow",
+					EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -209,9 +210,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void cancelWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
-			
-			finishWorkflowProcess(processId, cancelAction,
-					firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
+
+			finishWorkflowProcess(processId, cancelAction, firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -222,7 +222,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		for (Integer con : conceptsForTesting) {
 			entry.getComponentNidToStampsMap().put(con, stampSequenceForTesting);
 		}
-		
+
 		processDetailStore.updateEntry(processId, entry);
 	}
 
@@ -320,8 +320,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
 		// Mimick the initConcluder's create new process
-		StorableWorkflowContents details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
-				ProcessStatus.DEFINED, name, description);
+		AbstractStorableWorkflowContents details = new ProcessDetail(requestedDefinitionId, firstUserId,
+				new Date().getTime(), ProcessStatus.DEFINED, name, description);
 		UUID processId = processDetailStore.addEntry(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
@@ -335,7 +335,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		return processId;
 	}
 
-
 	protected UUID createSecondaryDefinition() {
 		Set<String> roles = new HashSet<>();
 		roles.add("Editor");
@@ -344,23 +343,24 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
 				"Description of BPMN2 ID-X");
 		UUID defId = definitionDetailStore.addEntry(createdEntry);
-		
+
 		// Duplicate Permissions
 		Set<UserPermission> permsToAdd = new HashSet<>();
 		for (UserPermission perm : userPermissionStore.getAllEntries()) {
 			permsToAdd.add(new UserPermission(defId, perm.getUserNid(), perm.getRole()));
 		}
-		
+
 		for (UserPermission perm : permsToAdd) {
 			userPermissionStore.addEntry(perm);
 		}
-		
+
 		// Duplicate AvailableActions
 		Set<AvailableAction> actionsToAdd = new HashSet<>();
 		for (AvailableAction action : availableActionStore.getAllEntries()) {
-			actionsToAdd.add(new AvailableAction(defId, action.getInitialState(), action.getAction(), action.getOutcomeState(), action.getRole()));
+			actionsToAdd.add(new AvailableAction(defId, action.getInitialState(), action.getAction(),
+					action.getOutcomeState(), action.getRole()));
 		}
-		
+
 		for (AvailableAction action : actionsToAdd) {
 			availableActionStore.addEntry(action);
 		}
