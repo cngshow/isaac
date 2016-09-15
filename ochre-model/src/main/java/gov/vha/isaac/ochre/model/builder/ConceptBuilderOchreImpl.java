@@ -15,6 +15,8 @@
  */
 package gov.vha.isaac.ochre.model.builder;
 
+import java.util.ArrayList;
+import java.util.List;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -25,15 +27,14 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilderService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
-import java.util.ArrayList;
-import java.util.List;
+import javafx.concurrent.Task;
 
 /**
  *
@@ -141,7 +142,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public ConceptChronology build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
+    public OptionalWaitTask<ConceptChronology<?>> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
             List builtObjects) throws IllegalStateException {
 
         ConceptChronologyImpl conceptChronology
@@ -163,12 +164,21 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
                     getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
         }
         sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
+        Task<Void> nested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
-            Get.commitService().addUncommitted(conceptChronology);
+            nested = Get.commitService().addUncommitted(conceptChronology);
         } else {
-            Get.commitService().addUncommittedNoChecks(conceptChronology);
+            nested = Get.commitService().addUncommittedNoChecks(conceptChronology);
         }
-        return conceptChronology;
+        return new OptionalWaitTask<ConceptChronology<?>>(conceptChronology)
+        {
+            @Override
+            protected ConceptChronology call() throws Exception
+            {
+                nested.get();
+                return conceptChronology;
+            }
+        };
     }
 
     @Override

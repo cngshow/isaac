@@ -90,13 +90,14 @@ public class MappingSetDAO extends MappingDAO
 //				LOG.error("Unexpected error enabling the index on newly created mapping set!", e);
 //			}
 //		});
+
 		
 		//Then, annotate the concept created above as a member of the MappingSet dynamic sememe, and add the inverse name, if present.
 		if (!StringUtils.isBlank(inverseName))
 		{
 			ObjectChronology<?> builtDesc = LookupService.get().getService(DescriptionBuilderService.class).getDescriptionBuilder(inverseName, rdud.getDynamicSememeUsageDescriptorSequence(), 
 					MetaData.SYNONYM, MetaData.ENGLISH_LANGUAGE).build(
-							editCoord, ChangeCheckerMode.ACTIVE);
+							editCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 			
 			Get.sememeBuilderService().getDynamicSememeBuilder(builtDesc.getNid(),DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getSequence()).build(
 					editCoord, ChangeCheckerMode.ACTIVE);
@@ -108,7 +109,7 @@ public class MappingSetDAO extends MappingDAO
 				new DynamicSememeData[] {
 //						(editorStatus == null ? null : new DynamicSememeUUIDImpl(editorStatus)),
 						(StringUtils.isBlank(purpose) ? null : new DynamicSememeStringImpl(purpose))}).build(
-				editCoord, ChangeCheckerMode.ACTIVE);
+				editCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 
 		
 		Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
@@ -124,12 +125,12 @@ public class MappingSetDAO extends MappingDAO
 			throw new RuntimeException();
 		}
 		
-		
 		@SuppressWarnings("unchecked")
 		Optional<LatestVersion<DynamicSememe<?>>> sememe = mappingAnnotation.getLatestVersion(DynamicSememe.class, stampCoord);
 		
 		//Find the constructed dynamic refset
 		return new MappingSet(sememe.get().value(), stampCoord);
+
 	}
 	
 	/**

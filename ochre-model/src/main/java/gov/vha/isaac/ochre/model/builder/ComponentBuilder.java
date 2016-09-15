@@ -15,20 +15,20 @@
  */
 package gov.vha.isaac.ochre.model.builder;
 
-import gov.vha.isaac.ochre.api.ConceptProxy;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
-import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
-import gov.vha.isaac.ochre.api.commit.CommittableComponent;
-import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
-import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
-import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import gov.vha.isaac.ochre.api.ConceptProxy;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
+import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.CommittableComponent;
+import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 
 /**
  *
@@ -88,7 +88,7 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
     }
 
     @Override
-    public final T build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode) throws IllegalStateException {
+    public final OptionalWaitTask<T> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode) throws IllegalStateException {
         return build(editCoordinate, changeCheckerMode, new ArrayList());
     }
     
