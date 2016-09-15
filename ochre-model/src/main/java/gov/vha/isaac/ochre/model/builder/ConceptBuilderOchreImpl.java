@@ -145,14 +145,14 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     public OptionalWaitTask<ConceptChronology<?>> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
             List builtObjects) throws IllegalStateException {
 
-        ConceptChronologyImpl conceptChronology
-                = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
+        ArrayList<OptionalWaitTask<?>> nestedBuilders = new ArrayList<>();
+        ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(State.ACTIVE, editCoordinate);
         builtObjects.add(conceptChronology);
         descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());
         descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
         descriptionBuilders.forEach((builder) -> {
-            builder.build(editCoordinate, changeCheckerMode, builtObjects);
+            nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects));
         });
         SememeBuilderService builderService = LookupService.getService(SememeBuilderService.class);
         for (LogicalExpression logicalExpression : logicalExpressions) {
@@ -163,22 +163,21 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
             sememeBuilders.add(builderService.
                     getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
         }
-        sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
-        Task<Void> nested;
+        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        Task<Void> primaryNested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
-            nested = Get.commitService().addUncommitted(conceptChronology);
+            primaryNested = Get.commitService().addUncommitted(conceptChronology);
         } else {
-            nested = Get.commitService().addUncommittedNoChecks(conceptChronology);
+        	primaryNested = Get.commitService().addUncommittedNoChecks(conceptChronology);
         }
-        return new OptionalWaitTask<ConceptChronology<?>>(nested, conceptChronology);
+        return new OptionalWaitTask<ConceptChronology<?>>(primaryNested, conceptChronology, nestedBuilders);
     }
 
     @Override
     public ConceptChronology build(int stampCoordinate,
             List builtObjects) throws IllegalStateException {
 
-        ConceptChronologyImpl conceptChronology
-                = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
+        ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(stampCoordinate);
         builtObjects.add(conceptChronology);
         descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());

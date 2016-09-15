@@ -50,6 +50,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnUtility;
@@ -70,6 +71,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
@@ -817,9 +819,8 @@ public class Frills implements DynamicSememeColumnUtility {
 
 			ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(sememeFSN, null, parentDef);
 
-			DescriptionBuilder<?, ?> definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememePreferredTerm, builder,
-							MetaData.SYNONYM,
-							MetaData.ENGLISH_LANGUAGE);
+			DescriptionBuilder<? extends SememeChronology<?> , ? extends MutableDescriptionSememe<?>> definitionBuilder = descriptionBuilderService.
+					getDescriptionBuilder(sememePreferredTerm, builder, MetaData.SYNONYM, MetaData.ENGLISH_LANGUAGE);
 			definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 			builder.addDescription(definitionBuilder);
 			
@@ -831,9 +832,9 @@ public class Frills implements DynamicSememeColumnUtility {
 						MetaData.ENGLISH_LANGUAGE);
 				definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 				@SuppressWarnings("rawtypes")
-				SememeChronology definitonSememe = (SememeChronology) definitionBuilder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+				SememeChronology<?> definitionSememe = definitionBuilder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
 				
-				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitonSememe.getNid(), 
+				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitionSememe.getNid(), 
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(EditCoordinates.getDefaultUserMetadata(), 
 								ChangeCheckerMode.ACTIVE).get();
 			}

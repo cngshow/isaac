@@ -15,6 +15,7 @@
  */
 package gov.vha.isaac.ochre.model.builder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import gov.vha.isaac.ochre.api.DataTarget;
@@ -132,15 +133,16 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 throw new UnsupportedOperationException("Can't handle: " + sememeType);
         }
         
-        Task<Void> nested;
+        Task<Void> primaryNested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
-            nested = Get.commitService().addUncommitted(sememeChronicle);
+            primaryNested = Get.commitService().addUncommitted(sememeChronicle);
         } else {
-            nested = Get.commitService().addUncommittedNoChecks(sememeChronicle);
+            primaryNested = Get.commitService().addUncommittedNoChecks(sememeChronicle);
         }
-        sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
+        ArrayList<OptionalWaitTask<?>> nested = new ArrayList<>();
+        sememeBuilders.forEach((builder) -> nested.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         builtObjects.add(sememeChronicle);
-        return new OptionalWaitTask<C>(nested, (C)sememeChronicle);
+        return new OptionalWaitTask<C>(primaryNested, (C)sememeChronicle, nested);
     }
 
     @Override

@@ -41,17 +41,21 @@ public class OptionalWaitTask<T>
 {
 	private ArrayList<Task<Void>> backgroundTasks = new ArrayList<>(1);
 	private T value;
-	public OptionalWaitTask(Task<Void> task, T value)
+	public OptionalWaitTask(Task<Void> task, T value, List<OptionalWaitTask<?>> nestedTasks)
 	{
-		backgroundTasks.add(task);
-		this.value = value;
-	}
-	
-	public OptionalWaitTask(List<Task<Void>> tasks, T value)
-	{
-		for (Task<Void> t : tasks)
+		if (task != null)
 		{
-			backgroundTasks.add(t);
+			backgroundTasks.add(task);
+		}
+		if (nestedTasks != null)
+		{
+			for (OptionalWaitTask<?> nestedTask : nestedTasks)
+			{
+				for (Task<Void> t : nestedTask.backgroundTasks)
+				{
+					backgroundTasks.add(t);
+				}
+			}
 		}
 		this.value = value;
 	}
@@ -91,10 +95,5 @@ public class OptionalWaitTask<T>
 			t.get();
 		}
 		return value;
-	}
-	
-	public List<Task<Void>> getUnderlyingTasks()
-	{
-		return backgroundTasks;
 	}
 }

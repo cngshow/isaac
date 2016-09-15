@@ -193,7 +193,7 @@ public class SememeIndexerConfiguration
 				Get.sememeBuilderService().getDynamicSememeBuilder(assemblageNidOrSequence,
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getSequence(), data);
 		
-		sb.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE);
+		sb.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
 		Get.commitService().commit("Index Config Change").get();
 		
 		if (!skipReindex)

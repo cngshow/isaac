@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -91,14 +92,7 @@ public class CommitProvider implements CommitService {
     private final AtomicReference<Semaphore> writePermitReference
             = new AtomicReference<>(new Semaphore(WRITE_POOL_SIZE));
 
-    private final WriteConceptCompletionService writeConceptCompletionService = new WriteConceptCompletionService();
-    private final WriteSememeCompletionService writeSememeCompletionService = new WriteSememeCompletionService();
-    private final ExecutorService writeConceptCompletionServicePool = Executors.newSingleThreadExecutor((Runnable r) -> {
-        return new Thread(r, "writeConceptCompletionService");
-    });
-    private final ExecutorService writeSememeCompletionServicePool = Executors.newSingleThreadExecutor((Runnable r) -> {
-        return new Thread(r, "writeSememeCompletionService");
-    });
+    private final WriteCompletionService writeCompletionService = new WriteCompletionService();
 
     ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners = new ConcurrentSkipListSet<>();
     private final ConcurrentSkipListSet<ChangeChecker> checkers = new ConcurrentSkipListSet<>();
@@ -147,8 +141,7 @@ public class CommitProvider implements CommitService {
     private void startMe() {
         try {
             LOG.info("Starting CommitProvider post-construct");
-            writeConceptCompletionServicePool.submit(writeConceptCompletionService);
-            writeSememeCompletionServicePool.submit(writeSememeCompletionService);
+            writeCompletionService.start();
             if (loadRequired.get()) {
                 LOG.info("Reading existing commit manager data. ");
                 LOG.info("Reading " + COMMIT_MANAGER_DATA_FILENAME);
@@ -177,8 +170,7 @@ public class CommitProvider implements CommitService {
     private void stopMe() {
         LOG.info("Stopping CommitProvider pre-destroy. ");
         try {
-            writeConceptCompletionService.cancel();
-            writeSememeCompletionService.cancel();
+            writeCompletionService.stop();
             stampAliasMap.write(new File(commitManagerFolder.toFile(), STAMP_ALIAS_MAP_FILENAME));
             stampCommentMap.write(new File(commitManagerFolder.toFile(), STAMP_COMMENT_MAP_FILENAME));
     
@@ -508,29 +500,64 @@ public class CommitProvider implements CommitService {
     @Override
     public Task<Void> addUncommitted(SememeChronology sc) {
         handleUncommittedSequenceSet(sc, uncommittedSememesWithChecksSequenceSet);
-        return writeSememeCompletionService.checkAndWrite(sc, checkers, alertCollection,
-                writePermitReference.get(), changeListeners);
+        return checkAndWrite(sc, checkers, alertCollection,  writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommittedNoChecks(SememeChronology sc) {
         handleUncommittedSequenceSet(sc, uncommittedSememesNoChecksSequenceSet);
-        return writeSememeCompletionService.write(sc,
-                writePermitReference.get(), changeListeners);
+        return write(sc, writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommitted(ConceptChronology cc) {
         handleUncommittedSequenceSet(cc, uncommittedConceptsWithChecksSequenceSet);
-        return writeConceptCompletionService.checkAndWrite(cc, checkers, alertCollection,
-                writePermitReference.get(), changeListeners);
+        return checkAndWrite(cc, checkers, alertCollection, writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommittedNoChecks(ConceptChronology cc) {
         handleUncommittedSequenceSet(cc, uncommittedConceptsNoChecksSequenceSet);
-        return writeConceptCompletionService.write(cc,
-                writePermitReference.get(), changeListeners);
+        return write(cc, writePermitReference.get(), changeListeners);
+    }
+    
+    private Task<Void> checkAndWrite(SememeChronology sc, 
+            ConcurrentSkipListSet<ChangeChecker> checkers,
+            ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore, 
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+        writeSemaphore.acquireUninterruptibly();
+        WriteAndCheckSememeChronicle task = new WriteAndCheckSememeChronicle(sc, checkers, alertCollection, writeSemaphore, changeListeners);
+        writeCompletionService.submit(task);
+        return task;
+    }
+
+    private Task<Void> write(SememeChronology sc, Semaphore writeSemaphore, 
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+        writeSemaphore.acquireUninterruptibly();
+        WriteSememeChronicle task = new WriteSememeChronicle(sc, writeSemaphore,
+            changeListeners);
+        writeCompletionService.submit(task);
+        return task;
+    }
+    
+    private Task<Void> checkAndWrite(ConceptChronology cc, 
+            ConcurrentSkipListSet<ChangeChecker> checkers,
+            ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+        writeSemaphore.acquireUninterruptibly();
+        WriteAndCheckConceptChronicle task = new WriteAndCheckConceptChronicle(
+                cc, checkers, alertCollection, writeSemaphore, changeListeners);
+        writeCompletionService.submit(task);
+        return task;
+    }
+
+    private Task<Void> write(ConceptChronology cc, Semaphore writeSemaphore,
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+        writeSemaphore.acquireUninterruptibly();        
+        WriteConceptChronicle task = new WriteConceptChronicle(cc, writeSemaphore,
+                changeListeners);
+        writeCompletionService.submit(task);
+        return task;
     }
 
     private void handleUncommittedSequenceSet(SememeChronology sememeChronicle, SememeSequenceSet set) {

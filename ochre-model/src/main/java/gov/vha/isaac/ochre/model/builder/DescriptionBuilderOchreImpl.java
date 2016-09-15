@@ -91,6 +91,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
         if (conceptSequence == Integer.MAX_VALUE) {
             conceptSequence = Get.identifierService().getConceptSequenceForUuids(conceptBuilder.getUuids());
         }
+        ArrayList<OptionalWaitTask<?>> nestedBuilders = new ArrayList<>();
         SememeBuilderService sememeBuilder = LookupService.getService(SememeBuilderService.class);
         SememeBuilder<? extends SememeChronology<? extends DescriptionSememe>> descBuilder
                 = sememeBuilder.getDescriptionSememeBuilder(Get.languageCoordinateService().caseSignificanceToConceptSequence(false),
@@ -102,26 +103,25 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
         descBuilder.setPrimordialUuid(this.getPrimordialUuid());
         OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>> newDescription = (OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>>)
                 descBuilder.build(editCoordinate, changeCheckerMode, builtObjects);
+        nestedBuilders.add(newDescription);
         SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
         preferredInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
+            nestedBuilders.add(sememeBuilderService.getComponentSememeBuilder(
                     TermAux.PREFERRED.getNid(), newDescription.getNoWait().getNid(),
                     Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(editCoordinate, changeCheckerMode, builtObjects);
+                    build(editCoordinate, changeCheckerMode, builtObjects));
         });
         acceptableInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
+            nestedBuilders.add(sememeBuilderService.getComponentSememeBuilder(
                     TermAux.ACCEPTABLE.getNid(), 
                     newDescription.getNoWait().getNid(),
                     Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(editCoordinate, changeCheckerMode, builtObjects);
+                    build(editCoordinate, changeCheckerMode, builtObjects));
         });
         
-        ArrayList<Task<Void>> nestedBuildTasks = new ArrayList<>();
+        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         
-        sememeBuilders.forEach((builder) -> nestedBuildTasks.addAll(builder.build(editCoordinate, changeCheckerMode, builtObjects).getUnderlyingTasks()));
-        
-        return new OptionalWaitTask<T>(nestedBuildTasks, (T)newDescription);
+        return new OptionalWaitTask<T>(null, (T)newDescription.getNoWait(), nestedBuilders);
     }
 
     @Override
