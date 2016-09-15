@@ -170,15 +170,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
         } else {
             nested = Get.commitService().addUncommittedNoChecks(conceptChronology);
         }
-        return new OptionalWaitTask<ConceptChronology<?>>(conceptChronology)
-        {
-            @Override
-            protected ConceptChronology call() throws Exception
-            {
-                nested.get();
-                return conceptChronology;
-            }
-        };
+        return new OptionalWaitTask<ConceptChronology<?>>(nested, conceptChronology);
     }
 
     @Override

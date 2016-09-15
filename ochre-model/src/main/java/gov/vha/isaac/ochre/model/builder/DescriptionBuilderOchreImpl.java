@@ -117,20 +117,11 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
                     build(editCoordinate, changeCheckerMode, builtObjects);
         });
         
-        ArrayList<OptionalWaitTask<?>> nestedBuildTasks = new ArrayList<>();
+        ArrayList<Task<Void>> nestedBuildTasks = new ArrayList<>();
         
-        sememeBuilders.forEach((builder) -> nestedBuildTasks.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        sememeBuilders.forEach((builder) -> nestedBuildTasks.addAll(builder.build(editCoordinate, changeCheckerMode, builtObjects).getUnderlyingTasks()));
         
-        return new OptionalWaitTask<T>((T)newDescription)
-        {
-            @Override
-            protected T call() throws Exception
-            {
-                newDescription.get();
-                nestedBuildTasks.forEach((task) -> task.getNoThrow());
-                return (T) newDescription;
-            }
-        };
+        return new OptionalWaitTask<T>(nestedBuildTasks, (T)newDescription);
     }
 
     @Override

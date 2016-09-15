@@ -18,14 +18,17 @@
  */
 package gov.vha.isaac.ochre.api.task;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import javafx.concurrent.Task;
 
 /**
  * {@link OptionalWaitTask}
- * This task services the purpose of allowing an object that is created 
- * to be returned immediately, if the caller wishes, or wait for another 
- * subtask related to the created object.
+ * This class wraps a task, where the task doesn't serve the purpose of calculating a value, 
+ * but rather, is forcing a wait on a background task.
+ * 
+ * This allows a caller to wait for the background task, or return the value immediately.
  * 
  * A use case for this is in the object builders - the object is created and read, 
  * but a subtask is issued to write the object to disk.
@@ -34,11 +37,22 @@ import javafx.concurrent.Task;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public abstract class OptionalWaitTask<T> extends Task<T>
+public class OptionalWaitTask<T>
 {
+	private ArrayList<Task<Void>> backgroundTasks = new ArrayList<>(1);
 	private T value;
-	public OptionalWaitTask(T value)
+	public OptionalWaitTask(Task<Void> task, T value)
 	{
+		backgroundTasks.add(task);
+		this.value = value;
+	}
+	
+	public OptionalWaitTask(List<Task<Void>> tasks, T value)
+	{
+		for (Task<Void> t : tasks)
+		{
+			backgroundTasks.add(t);
+		}
 		this.value = value;
 	}
 	
@@ -65,4 +79,22 @@ public abstract class OptionalWaitTask<T> extends Task<T>
 		}
 	}
 	
+	/**
+	 * Wait for the background task, then return the value.
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public T get() throws InterruptedException, ExecutionException
+	{
+		for (Task<Void> t : backgroundTasks)
+		{
+			t.get();
+		}
+		return value;
+	}
+	
+	public List<Task<Void>> getUnderlyingTasks()
+	{
+		return backgroundTasks;
+	}
 }

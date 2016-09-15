@@ -140,15 +140,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         }
         sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
         builtObjects.add(sememeChronicle);
-        return new OptionalWaitTask<C>((C)sememeChronicle)
-        {
-            @Override
-            protected C call() throws Exception
-            {
-                nested.get();
-                return (C) sememeChronicle;
-            }
-        };
+        return new OptionalWaitTask<C>(nested, (C)sememeChronicle);
     }
 
     @Override
