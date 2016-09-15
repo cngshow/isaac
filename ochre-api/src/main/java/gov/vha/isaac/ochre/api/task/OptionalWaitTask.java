@@ -39,23 +39,15 @@ import javafx.concurrent.Task;
  */
 public class OptionalWaitTask<T>
 {
-	private ArrayList<Task<Void>> backgroundTasks = new ArrayList<>(1);
+	private ArrayList<OptionalWaitTask<?>> backgroundTasks = new ArrayList<>();
+	private Task<Void> primaryTask;
 	private T value;
 	public OptionalWaitTask(Task<Void> task, T value, List<OptionalWaitTask<?>> nestedTasks)
 	{
-		if (task != null)
-		{
-			backgroundTasks.add(task);
-		}
+		primaryTask = task;
 		if (nestedTasks != null)
 		{
-			for (OptionalWaitTask<?> nestedTask : nestedTasks)
-			{
-				for (Task<Void> t : nestedTask.backgroundTasks)
-				{
-					backgroundTasks.add(t);
-				}
-			}
+			backgroundTasks.addAll(nestedTasks);
 		}
 		this.value = value;
 	}
@@ -90,9 +82,13 @@ public class OptionalWaitTask<T>
 	 */
 	public T get() throws InterruptedException, ExecutionException
 	{
-		for (Task<Void> t : backgroundTasks)
+		for (OptionalWaitTask<?> t : backgroundTasks)
 		{
 			t.get();
+		}
+		if (primaryTask != null)
+		{
+			primaryTask.get();
 		}
 		return value;
 	}
