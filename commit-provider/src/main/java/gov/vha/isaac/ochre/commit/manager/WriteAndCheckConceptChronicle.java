@@ -24,7 +24,6 @@ import gov.vha.isaac.ochre.api.commit.CheckPhase;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.progress.ActiveTasks;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Semaphore;
 import javafx.concurrent.Task;
@@ -33,7 +32,7 @@ import javafx.concurrent.Task;
  *
  * @author kec
  */
-public class WriteAndCheckConceptChronicle extends Task<Void> implements Callable<Void> {
+public class WriteAndCheckConceptChronicle extends Task<Void> {
 
 
     private final ConceptChronology cc;
