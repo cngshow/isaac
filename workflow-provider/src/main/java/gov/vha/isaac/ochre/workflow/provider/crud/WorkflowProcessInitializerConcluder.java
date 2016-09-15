@@ -89,11 +89,14 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 			throw new Exception("Name and Description must be filled out when creating a process");
 		}
 
+		// TODO: Do we actually want this prevention measure?
+		/*
 		for (ProcessDetail detail : processDetailStore.getAllEntries()) {
 			if (detail.getName().equalsIgnoreCase(name)) {
 				throw new Exception("Process names must be unique");
 			}
 		}
+		*/
 
 		// Create Process Details with "DEFINED"
 		AbstractStorableWorkflowContents details = new ProcessDetail(definitionId, userNid, new Date().getTime(),

@@ -183,6 +183,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 
 			detail.getComponentNidToStampsMap().remove(compNid);
 			processDetailStore.updateEntry(processId, detail);
+		} else {
+			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
 
 		// TODO: Handle reverting automatically
@@ -284,9 +286,12 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			while (stampItr.hasNext()) {
 				int stampSeq = stampItr.next();
 				while (conceptItr.hasNext()) {
-					int compNid = conceptItr.next();
-					if (isModifiableComponentInProcess(detail, compNid)) {
-						addComponentToWorkflow(detail, compNid, stampSeq);
+					int conNid = conceptItr.next();
+					if (isModifiableComponentInProcess(detail, conNid)) {
+						addComponentToWorkflow(detail, conNid, stampSeq);
+					} else {
+						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						throw new Exception("Concept may not be added to Workflow: " + conNid);
 					}
 				}
 
@@ -294,6 +299,9 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					int semNid = sememeItr.next();
 					if (isModifiableComponentInProcess(detail, semNid)) {
 						addComponentToWorkflow(detail, semNid, stampSeq);
+					} else {
+						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						throw new Exception("Sememe may not be added to Workflow: " + semNid);
 					}
 				}
 			}
