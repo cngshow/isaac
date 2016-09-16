@@ -79,12 +79,27 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
-        SememeChronologyImpl sememeChronicle = new SememeChronologyImpl(sememeType, 
+        
+        SememeChronologyImpl sememeChronicle;
+        int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
+        if (Get.sememeService().hasSememe(sememeNid)) {
+            sememeChronicle = (SememeChronologyImpl)Get.sememeService().getSememe(sememeNid);
+            
+            if (sememeChronicle.getSememeType() != sememeType 
+                    || !sememeChronicle.getPrimordialUuid().equals(getPrimordialUuid())
+                    || sememeChronicle.getAssemblageSequence() != assemblageConceptSequence
+                    || sememeChronicle.getReferencedComponentNid() != referencedComponentNid) {
+                throw new RuntimeException("Builder is being used to attempt a mis-matched edit of an existing sememe!");
+            }
+        }
+        else {
+            sememeChronicle = new SememeChronologyImpl(sememeType, 
                 getPrimordialUuid(), 
-                Get.identifierService().getNidForUuids(this.getUuids()), 
-            assemblageConceptSequence, 
-            referencedComponentNid, 
-            Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+                sememeNid, 
+                assemblageConceptSequence, 
+                referencedComponentNid, 
+                Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+        }
         sememeChronicle.setAdditionalUuids(additionalUuids);
         switch (sememeType) {
             case COMPONENT_NID:
@@ -151,12 +166,28 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
-        SememeChronologyImpl sememeChronicle = new SememeChronologyImpl(sememeType, 
+        
+        SememeChronologyImpl sememeChronicle;
+        int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
+        if (Get.sememeService().hasSememe(sememeNid)) {
+            sememeChronicle = (SememeChronologyImpl)Get.sememeService().getSememe(sememeNid);
+            
+            if (sememeChronicle.getSememeType() != sememeType 
+                    || !sememeChronicle.getPrimordialUuid().equals(getPrimordialUuid())
+                    || sememeChronicle.getAssemblageSequence() != assemblageConceptSequence
+                    || sememeChronicle.getReferencedComponentNid() != referencedComponentNid) {
+                throw new RuntimeException("Builder is being used to attempt a mis-matched edit of an existing sememe!");
+            }
+        }
+        else {
+            sememeChronicle = new SememeChronologyImpl(sememeType, 
                 getPrimordialUuid(), 
-                Get.identifierService().getNidForUuids(this.getUuids()), 
-            assemblageConceptSequence, 
-            referencedComponentNid, 
-            Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+                sememeNid, 
+                assemblageConceptSequence, 
+                referencedComponentNid, 
+                Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+        }
+        
         sememeChronicle.setAdditionalUuids(additionalUuids);
         switch (sememeType) {
             case COMPONENT_NID:
@@ -206,7 +237,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         }
         sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
         builtObjects.add(sememeChronicle);
-        return (C) sememeChronicle;    
+        return (C) sememeChronicle;
     }
 
 
