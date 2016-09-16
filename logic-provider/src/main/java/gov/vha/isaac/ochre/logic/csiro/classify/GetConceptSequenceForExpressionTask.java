@@ -100,7 +100,7 @@ public class GetConceptSequenceForExpressionTask extends Task<Integer> {
             ConceptBuilder builder = conceptBuilderService.getDefaultConceptBuilder(
                     uuidForNewConcept.toString(), "expression", expression);
 
-            ConceptChronology concept = builder.build(statedEditCoordinate, ChangeCheckerMode.INACTIVE);
+            ConceptChronology concept = builder.build(statedEditCoordinate, ChangeCheckerMode.INACTIVE).get();
             updateMessage("Commiting new expression...");
             try {
                 Get.commitService().commit("Expression commit.").get();

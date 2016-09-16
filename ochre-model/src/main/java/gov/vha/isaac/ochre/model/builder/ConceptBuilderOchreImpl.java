@@ -15,6 +15,8 @@
  */
 package gov.vha.isaac.ochre.model.builder;
 
+import java.util.ArrayList;
+import java.util.List;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -25,15 +27,14 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilderService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
-import java.util.ArrayList;
-import java.util.List;
+import javafx.concurrent.Task;
 
 /**
  *
@@ -141,17 +142,17 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public ConceptChronology build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
+    public OptionalWaitTask<ConceptChronology<?>> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
             List builtObjects) throws IllegalStateException {
 
-        ConceptChronologyImpl conceptChronology
-                = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
+        ArrayList<OptionalWaitTask<?>> nestedBuilders = new ArrayList<>();
+        ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(State.ACTIVE, editCoordinate);
         builtObjects.add(conceptChronology);
         descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());
         descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
         descriptionBuilders.forEach((builder) -> {
-            builder.build(editCoordinate, changeCheckerMode, builtObjects);
+            nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects));
         });
         SememeBuilderService builderService = LookupService.getService(SememeBuilderService.class);
         for (LogicalExpression logicalExpression : logicalExpressions) {
@@ -162,21 +163,21 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
             sememeBuilders.add(builderService.
                     getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
         }
-        sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
+        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        Task<Void> primaryNested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
-            Get.commitService().addUncommitted(conceptChronology);
+            primaryNested = Get.commitService().addUncommitted(conceptChronology);
         } else {
-            Get.commitService().addUncommittedNoChecks(conceptChronology);
+        	primaryNested = Get.commitService().addUncommittedNoChecks(conceptChronology);
         }
-        return conceptChronology;
+        return new OptionalWaitTask<ConceptChronology<?>>(primaryNested, conceptChronology, nestedBuilders);
     }
 
     @Override
     public ConceptChronology build(int stampCoordinate,
             List builtObjects) throws IllegalStateException {
 
-        ConceptChronologyImpl conceptChronology
-                = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
+        ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(stampCoordinate);
         builtObjects.add(conceptChronology);
         descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());

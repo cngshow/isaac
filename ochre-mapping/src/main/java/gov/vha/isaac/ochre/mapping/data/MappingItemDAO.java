@@ -55,14 +55,14 @@ public class MappingItemDAO extends MappingDAO
 		{
 			throw new RuntimeException("A mapping with the specified source, target and qualifier already exists in this set.  Please edit that mapping.");
 		}
-		
+
 		sb.setPrimordialUuid(mappingItemUUID);
 		@SuppressWarnings("rawtypes")
-		SememeChronology built = sb.build(editCoord,ChangeCheckerMode.ACTIVE);
+		SememeChronology built = sb.build(editCoord,ChangeCheckerMode.ACTIVE).getNoThrow();
 
 		@SuppressWarnings("deprecation")
 		Task<Optional<CommitRecord>> task = Get.commitService().commit("Added comment");
-		
+
 		try
 		{
 			task.get();
@@ -71,12 +71,13 @@ public class MappingItemDAO extends MappingDAO
 		{
 			throw new RuntimeException();
 		}
-		
+
 		@SuppressWarnings({ "unchecked" })
 		Optional<LatestVersion<DynamicSememe<?>>> latest = built.getLatestVersion(DynamicSememe.class, 
 				stampCoord.makeAnalog(State.ACTIVE, State.INACTIVE));
 		
 		return new MappingItem(latest.get().value());
+		
 	}
 	
 	/**

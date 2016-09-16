@@ -15,14 +15,14 @@
  */
 package gov.vha.isaac.ochre.api;
 
-import gov.vha.isaac.ochre.api.identity.IdentifiedObject;
+import java.util.List;
+import java.util.UUID;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
-
-import java.util.List;
-import java.util.UUID;
+import gov.vha.isaac.ochre.api.identity.IdentifiedObject;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 
 /**
  *
@@ -67,10 +67,11 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * Create a component with a state of ACTIVE. 
      * @param editCoordinate the edit coordinate that determines the author, module and path for the change
      * @param changeCheckerMode determines if added to the commit manager with or without checks. 
-     * @return the constructed component after it has been added to the commit manager
+     * @return a task which will return the constructed component after it has been added to the commit manager - 
+     * the write to the commit manager is not complete until the task is complete (the task has already been launched)
      * @throws IllegalStateException 
      */
-    T build(EditCoordinate editCoordinate, 
+    OptionalWaitTask<T> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode) throws IllegalStateException;
     
     /**
@@ -78,10 +79,11 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * @param editCoordinate the edit coordinate that determines the author, module and path for the change
      * @param changeCheckerMode determines if added to the commit manager with or without checks. 
      * @param subordinateBuiltObjects a list of subordinate objects also build as a result of building this object.
-     * @return the constructed component after it has been added to the commit manager
+     * @return a task which will return the constructed component after it has been added to the commit manager - 
+     * the write to the commit manager is not complete until the task is complete (the task has already been launched)
      * @throws IllegalStateException 
      */
-    T build(EditCoordinate editCoordinate, 
+    OptionalWaitTask<T> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode,
             List<?> subordinateBuiltObjects) throws IllegalStateException;
 

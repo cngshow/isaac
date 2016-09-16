@@ -25,7 +25,6 @@ import gov.vha.isaac.ochre.api.commit.CommitStates;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.progress.ActiveTasks;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Semaphore;
 import javafx.concurrent.Task;
@@ -34,7 +33,7 @@ import javafx.concurrent.Task;
  *
  * @author kec
  */
-public class WriteAndCheckSememeChronicle extends Task<Void> implements Callable<Void> {
+public class WriteAndCheckSememeChronicle extends Task<Void> {
 
     private final SememeChronology sc;
     private final ConcurrentSkipListSet<ChangeChecker> checkers;
