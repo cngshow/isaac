@@ -202,7 +202,7 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 //            GlobalPropertyChange.firePropertyChange(TerminologyStoreDI.CONCEPT_EVENT.POST_COMMIT, null, conceptsToCommit);
             return Optional.empty();
         } catch (Exception e1) {
-            throw new RuntimeException(e1);
+            throw new RuntimeException("Commit Failure of commit with message " + commitComment, e1);
         } finally {
             Get.activeTasks().remove(this);
         }
