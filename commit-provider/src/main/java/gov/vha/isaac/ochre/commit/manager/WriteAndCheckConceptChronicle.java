@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.commit.manager;
 
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.Alert;
 import gov.vha.isaac.ochre.api.commit.ChangeChecker;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -26,6 +27,7 @@ import gov.vha.isaac.ochre.api.progress.ActiveTasks;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.Semaphore;
+import java.util.function.BiConsumer;
 import javafx.concurrent.Task;
 
 /**
@@ -40,16 +42,29 @@ public class WriteAndCheckConceptChronicle extends Task<Void> {
     private final ConcurrentSkipListSet<Alert> alertCollection;
     private final Semaphore writeSemaphore;
     private final ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners;
+    private final BiConsumer<ObjectChronology, Boolean> uncommittedTracking;
 
+    /**
+     * @param cc
+     * @param checkers
+     * @param alertCollection
+     * @param writeSemaphore
+     * @param changeListeners
+     * @param uncommittedTracking A handle to call back to the caller to notify it that the concept has been 
+     * written to the ConceptService.  Parameter 1 is the Concept, Parameter two is true to indicate that the
+     * change checker is active for this implementation.
+     */
     public WriteAndCheckConceptChronicle(ConceptChronology cc,
             ConcurrentSkipListSet<ChangeChecker> checkers,
             ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
-            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners, 
+            BiConsumer<ObjectChronology, Boolean> uncommittedTracking) {
         this.cc = cc;
         this.checkers = checkers;
         this.alertCollection = alertCollection;
         this.writeSemaphore = writeSemaphore;
         this.changeListeners = changeListeners;
+        this.uncommittedTracking = uncommittedTracking;
         updateTitle("Write and check concept");
         //TODO dan disabled this, cause it keeps causing a timing based (randomly occurring) null pointer exception when it tries to read the descriptions 
         //for this new concept.  see https://slack-files.com/T04QD7FHW-F0B2PQL87-4d6e82e985
@@ -62,6 +77,7 @@ public class WriteAndCheckConceptChronicle extends Task<Void> {
     public Void call() throws Exception {
         try {
             Get.conceptService().writeConcept(cc);
+            uncommittedTracking.accept(cc,  true);
             updateProgress(1, 3);
             //TODO dan disabled for the same reason as above.
             updateMessage("checking nid: " + cc.getNid());// Get.conceptDescriptionText(cc.getConceptSequence()));

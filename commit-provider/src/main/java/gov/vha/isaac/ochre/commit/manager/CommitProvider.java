@@ -286,6 +286,11 @@ public class CommitProvider implements CommitService {
     @Override
     public synchronized Task<Optional<CommitRecord>> commit(ObjectChronology<?> chronicle, EditCoordinate editCoordinate, String commitComment) {
         // TODO make asynchronous with a actual task. 
+        //TODO there are numerous inconsistencies with this impl, and the global commit. Need to understand:
+        //global seq number, should a write be done on the provider?
+        //This also doesn't safely copy the uncommitted lists before using them.
+        //TODO I think this needs to be rewritten to use the CommitTask - but need to understand these issues first.
+        //This also doesn't update the stamp provider...
         CommitRecord commitRecord = null;
         Set<Alert> alerts = new HashSet<>();
         if (chronicle instanceof ConceptChronology) {
@@ -366,6 +371,7 @@ public class CommitProvider implements CommitService {
         // TODO, make this only commit those components with changes from the provided edit coordinate. 
         throw new UnsupportedOperationException("This implementation is broken");
         //TODO this needs repair... pendingStampsForCommit, for example, is never populated.  
+        //Also do we need to lock around the CommitTask creation to makre sure the uncommitted lists are consistent during copy?
 //        Semaphore pendingWrites = writePermitReference.getAndSet(new Semaphore(WRITE_POOL_SIZE));
 //        pendingWrites.acquireUninterruptibly(WRITE_POOL_SIZE);
 //        alertCollection.clear();
@@ -418,17 +424,25 @@ public class CommitProvider implements CommitService {
 
         Map<UncommittedStamp, Integer> pendingStampsForCommit = Get.stampService().getPendingStampsForCommit();
 
-        CommitTask task = CommitTask.get(commitComment,
-                uncommittedConceptsWithChecksSequenceSet,
-                uncommittedConceptsNoChecksSequenceSet,
-                uncommittedSememesWithChecksSequenceSet,
-                uncommittedSememesNoChecksSequenceSet,
-                lastCommit,
-                checkers,
-                alertCollection,
-                pendingStampsForCommit,
-                this);
-        return task;
+        try
+        {
+            uncommittedSequenceLock.lock();
+            CommitTask task = CommitTask.get(commitComment,
+                    uncommittedConceptsWithChecksSequenceSet,
+                    uncommittedConceptsNoChecksSequenceSet,
+                    uncommittedSememesWithChecksSequenceSet,
+                    uncommittedSememesNoChecksSequenceSet,
+                    lastCommit,
+                    checkers,
+                    alertCollection,
+                    pendingStampsForCommit,
+                    this);
+            return task;
+        }
+        finally
+        {
+            uncommittedSequenceLock.unlock();
+        }
     }
 
     protected void handleCommitNotification(CommitRecord commitRecord) {
@@ -495,29 +509,23 @@ public class CommitProvider implements CommitService {
         checkers.remove(checker);
     }
 
-
-
     @Override
     public Task<Void> addUncommitted(SememeChronology sc) {
-        handleUncommittedSequenceSet(sc, uncommittedSememesWithChecksSequenceSet);
         return checkAndWrite(sc, checkers, alertCollection,  writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommittedNoChecks(SememeChronology sc) {
-        handleUncommittedSequenceSet(sc, uncommittedSememesNoChecksSequenceSet);
         return write(sc, writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommitted(ConceptChronology cc) {
-        handleUncommittedSequenceSet(cc, uncommittedConceptsWithChecksSequenceSet);
         return checkAndWrite(cc, checkers, alertCollection, writePermitReference.get(), changeListeners);
     }
 
     @Override
     public Task<Void> addUncommittedNoChecks(ConceptChronology cc) {
-        handleUncommittedSequenceSet(cc, uncommittedConceptsNoChecksSequenceSet);
         return write(cc, writePermitReference.get(), changeListeners);
     }
     
@@ -526,7 +534,8 @@ public class CommitProvider implements CommitService {
             ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore, 
             ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
         writeSemaphore.acquireUninterruptibly();
-        WriteAndCheckSememeChronicle task = new WriteAndCheckSememeChronicle(sc, checkers, alertCollection, writeSemaphore, changeListeners);
+        WriteAndCheckSememeChronicle task = new WriteAndCheckSememeChronicle(sc, checkers, alertCollection, writeSemaphore, changeListeners, 
+                (sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
         writeCompletionService.submit(task);
         return task;
     }
@@ -534,8 +543,8 @@ public class CommitProvider implements CommitService {
     private Task<Void> write(SememeChronology sc, Semaphore writeSemaphore, 
             ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
         writeSemaphore.acquireUninterruptibly();
-        WriteSememeChronicle task = new WriteSememeChronicle(sc, writeSemaphore,
-            changeListeners);
+        WriteSememeChronicle task = new WriteSememeChronicle(sc, writeSemaphore, changeListeners, 
+            (sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
         writeCompletionService.submit(task);
         return task;
     }
@@ -545,57 +554,67 @@ public class CommitProvider implements CommitService {
             ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
             ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
         writeSemaphore.acquireUninterruptibly();
-        WriteAndCheckConceptChronicle task = new WriteAndCheckConceptChronicle(
-                cc, checkers, alertCollection, writeSemaphore, changeListeners);
+        WriteAndCheckConceptChronicle task = new WriteAndCheckConceptChronicle(cc, checkers, alertCollection, writeSemaphore, changeListeners, 
+                (sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
         writeCompletionService.submit(task);
         return task;
     }
 
     private Task<Void> write(ConceptChronology cc, Semaphore writeSemaphore,
             ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
-        writeSemaphore.acquireUninterruptibly();        
-        WriteConceptChronicle task = new WriteConceptChronicle(cc, writeSemaphore,
-                changeListeners);
+        writeSemaphore.acquireUninterruptibly();
+        WriteConceptChronicle task = new WriteConceptChronicle(cc, writeSemaphore, changeListeners, 
+                (sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
         writeCompletionService.submit(task);
         return task;
     }
 
-    private void handleUncommittedSequenceSet(SememeChronology sememeChronicle, SememeSequenceSet set) {
-        if (sememeChronicle.getCommitState() == CommitStates.UNCOMMITTED) {
+    private void handleUncommittedSequenceSet(ObjectChronology sememeOrConceptChronicle, boolean changeCheckerActive) {
+        try
+        {
             uncommittedSequenceLock.lock();
-            try {
-                set.add(Get.identifierService().getSememeSequence(sememeChronicle.getNid()));
-            } finally {
-                uncommittedSequenceLock.unlock();
-            }
-        } else {
-            uncommittedSequenceLock.lock();
-            try {
-                set.remove(Get.identifierService().getSememeSequence(sememeChronicle.getNid()));
-            } finally {
-                uncommittedSequenceLock.unlock();
+        
+            switch (sememeOrConceptChronicle.getOchreObjectType())
+            {
+                case CONCEPT:
+                {
+                    int sequence = Get.identifierService().getConceptSequence(sememeOrConceptChronicle.getNid());
+                    ConceptSequenceSet set = changeCheckerActive ? uncommittedConceptsWithChecksSequenceSet : uncommittedConceptsNoChecksSequenceSet;
+
+                    if (sememeOrConceptChronicle.isUncommitted())
+                    {
+                        set.add(sequence);
+                    }
+                    else
+                    {
+                        set.remove(sequence);
+                    }
+                    break;
+                }
+                case SEMEME:
+                {
+                    int sequence = Get.identifierService().getSememeSequence(sememeOrConceptChronicle.getNid());
+                    SememeSequenceSet set = changeCheckerActive ? uncommittedSememesWithChecksSequenceSet : uncommittedSememesNoChecksSequenceSet;
+
+                    if (sememeOrConceptChronicle.isUncommitted())
+                    {
+                        set.add(sequence);
+                    }
+                    else
+                    {
+                        set.remove(sequence);
+                    }
+                    break;
+                }
+                default :
+                    throw new RuntimeException("Only Concepts or Sememes should be passed");
             }
         }
-    }
-
-    private void handleUncommittedSequenceSet(ConceptChronology concept, ConceptSequenceSet set) {
-        if (concept.isUncommitted()) {
-            uncommittedSequenceLock.lock();
-            try {
-                set.add(Get.identifierService().getConceptSequence(concept.getNid()));
-            } finally {
-                uncommittedSequenceLock.unlock();
-            }
-        } else {
-            uncommittedSequenceLock.lock();
-            try {
-                set.remove(Get.identifierService().getConceptSequence(concept.getNid()));
-            } finally {
-                uncommittedSequenceLock.unlock();
-            }
+        finally
+        {
+            uncommittedSequenceLock.unlock();
         }
     }
-
 
     protected void addComment(int stamp, String commitComment) {
         stampCommentMap.addComment(stamp, commitComment);
