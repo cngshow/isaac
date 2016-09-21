@@ -27,21 +27,22 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 
 /**
- * Statically populated workflow details initialized from BPMN2 file during
- * reading of WF Definition only
+ * Workflow-based Data Store containing the details associated with a given
+ * project. Initialized during the importing of a BPMN2 file (containing the
+ * definition) and static from then on.
  * 
- * {@link DefinitionDetailContentStore}
- * {@link AbstractWorkflowContentStore}
+ * {@link DefinitionDetail} {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class DefinitionDetailContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new Definition Details Workflow Content Store.
-	 *
+	 * Constructor for the content store.
+	 * 
 	 * @param store
-	 *            the store
+	 *            The single store where all workflow content, regardless of
+	 *            type, is stored
 	 */
 	public DefinitionDetailContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.DEFINITION_DETAIL);
@@ -56,7 +57,7 @@ public class DefinitionDetailContentStore extends AbstractWorkflowContentStore {
 	 */
 	@Override
 	public DefinitionDetail getEntry(UUID key) {
-		return new DefinitionDetail(getGenericEntry(key));
+		return new DefinitionDetail(getSerializedEntry(key));
 	}
 
 	/*

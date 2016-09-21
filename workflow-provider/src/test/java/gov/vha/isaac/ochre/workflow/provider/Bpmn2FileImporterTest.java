@@ -36,17 +36,18 @@ import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.provider.crud.AbstractWorkflowProviderTestPackage;
 
 /**
- * Test the WorkflowDefinitionUtility class
+ * Test the Bpmn2FileImporter class
  * 
- * {@link Bpmn2FileImporter}.
+ * {@link Bpmn2FileImporter} {@link AbstractWorkflowProviderTestPackage}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
+
 	private static boolean setupCompleted = false;
 
 	private static MVStoreMetaContentProvider store;
@@ -66,17 +67,17 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 
 	@AfterClass
 	public static void tearDownClass() {
-		AbstractWorkflowUtilities.close();
+		importer.closeContentStores();
 	}
 
 	/**
-	 * Test vetz workflow set nodes.
+	 * Test proper definition metadata following import of a bpmn2 file
 	 *
 	 * @throws Exception
-	 *             the exception
+	 *             Thrown if test fails
 	 */
 	@Test
-	public void testStaticBpmnSetDefinition() throws Exception {
+	public void testImportBpmn2FileMetadata() throws Exception {
 		DefinitionDetailContentStore createdDefinitionDetailContentStore = new DefinitionDetailContentStore(store);
 
 		Assert.assertSame("Expected number of actionOutome records not what expected",
@@ -87,7 +88,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
-		expectedRoles.add(AbstractWorkflowUtilities.getAutomatedRole());
+		expectedRoles.add(AbstractWorkflowUtilities.AUTOMATED_ROLE);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -97,10 +98,10 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 	}
 
 	/**
-	 * Test vetz workflow set nodes.
+	 * Test proper definition nodes following import of a bpmn2 file
 	 *
 	 * @throws Exception
-	 *             the exception
+	 *             Thrown if test fails
 	 */
 	@Test
 	public void testStaticBpmnSetNodes() throws Exception {
@@ -115,8 +116,9 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		List<String> possibleActions = Arrays.asList("Cancel Workflow", "Edit", "QA Fails", "QA Passes", "Approve",
 				"Reject Edit", "Reject Review", "Create Workflow Process");
 
-		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Edit", "Canceled During Review", "Canceled During Approval",
-				"Ready for Edit", "Ready for Approve", "Ready for Publish", "Ready for Review");
+		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Edit", "Canceled During Review",
+				"Canceled During Approval", "Ready for Edit", "Ready for Approve", "Ready for Publish",
+				"Ready for Review");
 
 		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
 		Set<AvailableAction> identifiedConcludedActions = new HashSet<>();
@@ -141,37 +143,40 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			Assert.assertTrue(possibleActions.contains(entry.getAction()));
 		}
 
-		Set<AvailableAction> concludedActions = AbstractWorkflowUtilities.getEndWorkflowTypeMap()
-				.get(EndWorkflowType.CONCLUDED);
-		Set<AvailableAction> canceledActions = AbstractWorkflowUtilities.getEndWorkflowTypeMap()
-				.get(EndWorkflowType.CANCELED);
+		Set<AvailableAction> concludedActions = importer.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED);
+		Set<AvailableAction> canceledActions = importer.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED);
 
 		Assert.assertEquals(canceledActions, identifiedCanceledActions);
 		Assert.assertEquals(concludedActions, identifiedConcludedActions);
 
-		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().keySet().size(), 1);
-		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().size(),
-				identifiedStartTypeActions.size());
-		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().keySet().iterator().next(),
+		Assert.assertEquals(importer.getDefinitionStartActionMap().keySet().size(), 1);
+		Assert.assertEquals(importer.getDefinitionStartActionMap().size(), identifiedStartTypeActions.size());
+		Assert.assertEquals(importer.getDefinitionStartActionMap().keySet().iterator().next(),
 				definitionDetails.getId());
-		Assert.assertEquals(AbstractWorkflowUtilities.getDefinitionStartActionMap().get(definitionDetails.getId()),
+		Assert.assertEquals(importer.getDefinitionStartActionMap().get(definitionDetails.getId()),
 				identifiedStartTypeActions);
 
-		Assert.assertEquals(AbstractWorkflowUtilities.getEditStates(), identifiedEditingActions);
+		Assert.assertEquals(importer.getEditStatesMap().get(definitionDetails.getId()), identifiedEditingActions);
 	}
 
+	/**
+	 * Test proper available actions following import of a bpmn2 file
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testStaticBpmnAvailableActions() throws Exception {
 		Map<String, Set<AvailableAction>> actionMap = new HashMap<>();
-		
+
 		for (AvailableAction action : availableActionStore.getAllEntries()) {
 			if (!actionMap.containsKey(action.getInitialState())) {
 				actionMap.put(action.getInitialState(), new HashSet<AvailableAction>());
 			}
-			
+
 			actionMap.get(action.getInitialState()).add(action);
 		}
-		
+
 		for (String initState : actionMap.keySet()) {
 			if (initState.equals("Assigned")) {
 				assertAssignedActions(actionMap.get(initState));
@@ -210,7 +215,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 
 	private void assertReadyForReviewActions(Set<AvailableAction> actions) {
 		Assert.assertEquals(3, actions.size());
-		
+
 		for (AvailableAction act : actions) {
 			Assert.assertEquals("Reviewer", act.getRole());
 
@@ -228,7 +233,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 
 	private void assertReadyForApprovalActions(Set<AvailableAction> actions) {
 		Assert.assertEquals(4, actions.size());
-		
+
 		for (AvailableAction act : actions) {
 			Assert.assertEquals("Approver", act.getRole());
 
@@ -244,6 +249,6 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				Assert.fail();
 			}
 		}
-		
+
 	}
 }

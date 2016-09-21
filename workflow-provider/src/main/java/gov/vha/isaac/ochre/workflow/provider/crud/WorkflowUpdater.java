@@ -28,60 +28,77 @@ import java.util.UUID;
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
- * Utility to update workflow content stores after initialization
+ * Contains methods necessary to update existing workflow content after
+ * initialization aside from launching or ending them.
  * 
- * {@link AbstractWorkflowUtilities} {@link WorkflowUpdater}.
+ * {@link AbstractWorkflowUtilities}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowUpdater extends AbstractWorkflowUtilities {
+	/**
+	 * A constant used to inform the user that the comment added during
+	 * cancelation is in a special location
+	 */
+	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 
 	static private UUID restTestProcessId;
 
 	/**
-	 * Instantiates a new workflow updater.
-	 *
+	 * Default constructor which presumes the workflow-based content store has
+	 * already been setup
+	 * 
 	 * @throws Exception
-	 *             the exception
+	 *             Thrown if workflow-based content store has yet to be setup
 	 */
 	public WorkflowUpdater() throws Exception {
-		// Default Constructor fails if store not already set
+
 	}
 
 	/**
-	 * Instantiates a new workflow updater.
+	 * Constructor includes setting up workflow-based content store which is
+	 * used by the workflow accessing methods to pull data
 	 *
 	 * @param store
-	 *            the store
+	 *            The workflow content store
 	 */
 	public WorkflowUpdater(MVStoreMetaContentProvider store) {
 		super(store);
 	}
 
 	/**
-	 * Advance workflow.
-	 *
+	 * Advance an existing process with the specified action. In doing so, the
+	 * user must add an advancement comment.
+	 * 
+	 * Used by filling in the information prompted for after selecting a
+	 * Transition Workflow action.
+	 * 
 	 * @param processId
-	 *            the process id
+	 *            The process being advanced.
 	 * @param userNid
-	 *            the user nid
+	 *            The user advancing the process.
 	 * @param actionRequested
-	 *            the action requested
+	 *            The advancement action the user requested.
 	 * @param comment
-	 *            the comment
-	 * @return the string
+	 *            The comment added by the user in advancing the process.
+	 * 
+	 * @return True if the advancement attempt was successful
+	 * 
 	 * @throws Exception
-	 *             the exception
+	 *             Thrown if the requested action was to launch or end a process
+	 *             and while updating the process accordingly, an execption
+	 *             occurred
 	 */
-	public UUID advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment) throws Exception {
+	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
+			throws Exception {
 		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 
 		// Get User Permissible actions
@@ -104,7 +121,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 							// Advancing request is to launch workflow
 							WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(
 									store);
-							initConcluder.launchWorkflowProcess(processId);
+							initConcluder.launchProcess(processId);
 
 							break;
 						}
@@ -119,102 +136,145 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					// Special case where comment added to cancel screen and
 					// cancel store
 					// TODO: Better approach?
-					comment = getCanceledComment();
+					comment = CANCELED_HISTORY_COMMENT;
 				}
 
 				// Add to process history
 				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
 						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment);
-				return processHistoryStore.addEntry(entry);
+
+				processHistoryStore.addEntry(entry);
+				return true;
 			}
 		}
 
-		return null;
+		return false;
 
 	}
 
 	/**
-	 * Adds the new user role.
-	 *
-	 * @param definitionId
-	 *            the definition id
-	 * @param userNid
-	 *            the user nid
-	 * @param domain
-	 *            the domain
-	 * @param role
-	 *            the role
-	 * @return the uuid
+	 * Removes a component from a process where the component had been
+	 * previously saved and associated with. In doing so, reverts the component
+	 * to its original state prior to the saves associated with the component.
+	 * The revert is performed by adding new versions to ensure that the
+	 * component attributes are identical prior to any modification associated
+	 * with the process. Note that nothing prevents future edits to be performed
+	 * upon the component associated with the same process.
+	 * 
+	 * Used when component is removed from the process's component details panel
+	 * 
+	 * @param processId
+	 *            THe process from which the component is to be removed
+	 * @param compNid
+	 *            The component whose changes are to be reverted and removed
+	 *            from the process
+	 * 
+	 * @throws Exception
+	 *             Thrown if the component has been found to not be currently
+	 *             associated with the process
 	 */
-	public UUID addNewUserRole(UUID definitionId, int userNid, String role) {
-		return userPermissionStore.addEntry(new UserPermission(definitionId, userNid, role));
-	}
-
 	public void removeComponentFromWorkflow(UUID processId, int compNid) throws Exception {
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
-		if (isProcessInAcceptableEditState(detail, compNid, "remove")) {
+		if (isModifiableComponentInProcess(detail, compNid)) {
 			if (!detail.getComponentNidToStampsMap().containsKey(compNid)) {
 				throw new Exception("Component " + compNid + " is not already in Workflow");
 			}
 
 			detail.getComponentNidToStampsMap().remove(compNid);
 			processDetailStore.updateEntry(processId, detail);
+		} else {
+			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
 
 		// TODO: Handle reverting automatically
 	}
 
-	private boolean isProcessInAcceptableEditState(ProcessDetail detail, int compNid, String exceptionCase)
-			throws Exception {
-		// Only can do if
-		// CASE A: (Component is not in any workflow || Component is already in
-		// current process's workflow) AND one of the following:
-		// CASE B: Process is in DEFINED
-		// CASE C: Process is in LAUNCHED && latestHistory's Outcome is in
-		// Editing state
-		if (detail == null) {
-			throw new Exception("Cannot " + exceptionCase + " component to a workflow that hasn't been defined yet");
+	/**
+	 * Identifies if process is in an edit state. May only be done if either the
+	 * component is not in any workflow or if it is already in this process's
+	 * workflow AND one of the following: a) Process status is DEFINED or b)
+	 * process status is LAUNCHED while its latestHistory's Outcome is an
+	 * Editing state.
+	 * 
+	 * Used by addCommitRecordToWorkflow() and removeComponentFromWorfklow() to
+	 * ensure that the process is in a valid state to be performing such an
+	 * action
+	 * 
+	 * @param process
+	 *            The process being investigated
+	 * @param compNid
+	 *            The component to be added/removed
+	 * 
+	 * @return True if the component can be added or removed from the process
+	 * 
+	 * @throws Exception
+	 *             Thrown if process doesn't exist,
+	 */
+	private boolean isModifiableComponentInProcess(ProcessDetail process, int compNid) throws Exception {
+		if (process == null) {
+			throw new Exception("Cannot examine modification capability as the process doesn't exist");
 		}
 
-		UUID processId = detail.getId();
+		UUID processId = process.getId();
 
 		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 		// Check if in Case A. If not, throw exception
-		if (wfAccessor.isComponentInActiveWorkflow(detail.getDefinitionId(), compNid)
-				&& !detail.getComponentNidToStampsMap().containsKey(compNid)) {
-			throw new Exception("Cannot " + exceptionCase
-					+ " component to workflow because component is already in another active workflow");
+		if (wfAccessor.isComponentInActiveWorkflow(process.getDefinitionId(), compNid)
+				&& !process.getComponentNidToStampsMap().containsKey(compNid)) {
+			// Can't do so because component is already in another active
+			// workflow
+			return false;
 		}
 
 		boolean canAddComponent = false;
 		// Test Case B
-		if (detail.getStatus() == ProcessStatus.DEFINED) {
+		if (process.getStatus() == ProcessStatus.DEFINED) {
 			canAddComponent = true;
 		} else {
 			// Test Case C
-			if (detail.getStatus() == ProcessStatus.LAUNCHED) {
+			if (process.getStatus() == ProcessStatus.LAUNCHED) {
 				ProcessHistory latestHx = wfAccessor.getProcessHistory(processId).last();
-				if (getEditStates().contains(latestHx.getOutcomeState())) {
+				if (isEditState(process.getDefinitionId(), latestHx.getOutcomeState())) {
 					canAddComponent = true;
 				}
 			}
 		}
 
 		if (!canAddComponent) {
-			if (!detail.isActive()) {
-				throw new Exception("Cannot " + exceptionCase + " component to inactive workflow");
+			if (!process.isActive()) {
+				// Cannot do so because process is not active
+				return false;
 			} else {
-				throw new Exception("Cannot " + exceptionCase
-						+ " component when process is in LAUNCHED state, workflow is not in an EDIT state");
+				// Cannot do so because process is in LAUNCHED state yet the
+				// workflow is not in an EDIT state
+				return false;
 			}
 		}
 
 		return true;
 	}
 
+	/**
+	 * Attempts to add components associated with a commit to a process. Can
+	 * only be done if the process and component are in the process state as
+	 * defined by addComponentToWorkflow. Does so for all concepts and sememes
+	 * in the commit record as well as the commit record's stamp sequence .
+	 * 
+	 * Called by the REST implement commit() methods.
+	 *
+	 * @param processId
+	 *            The process to which a commit record is being added
+	 * @param commitRecord
+	 *            The commit record being associated with the process
+	 * 
+	 * @throws Exception
+	 *             Thrown if process doesn't exist,
+	 */
 	public void addCommitRecordToWorkflow(UUID processId, Optional<CommitRecord> commitRecord) throws Exception {
 		if (commitRecord.isPresent()) {
+			ProcessDetail detail = processDetailStore.getEntry(processId);
+
 			OfInt conceptItr = Get.identifierService()
 					.getConceptNidsForConceptSequences(commitRecord.get().getConceptsInCommit().parallelStream())
 					.iterator();
@@ -226,37 +286,70 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			while (stampItr.hasNext()) {
 				int stampSeq = stampItr.next();
 				while (conceptItr.hasNext()) {
-					addComponentToWorkflow(processId, conceptItr.next(), stampSeq);
+					int conNid = conceptItr.next();
+					if (isModifiableComponentInProcess(detail, conNid)) {
+						addComponentToWorkflow(detail, conNid, stampSeq);
+					} else {
+						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						throw new Exception("Concept may not be added to Workflow: " + conNid);
+					}
 				}
 
 				while (sememeItr.hasNext()) {
-					addComponentToWorkflow(processId, sememeItr.next(), stampSeq);
+					int semNid = sememeItr.next();
+					if (isModifiableComponentInProcess(detail, semNid)) {
+						addComponentToWorkflow(detail, semNid, stampSeq);
+					} else {
+						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						throw new Exception("Sememe may not be added to Workflow: " + semNid);
+					}
 				}
 			}
 		}
 	}
 
-	public void addComponentToWorkflow(UUID processId, int compNid, int stampSeq) throws Exception {
-		ProcessDetail detail = processDetailStore.getEntry(processId);
-
-		if (isProcessInAcceptableEditState(detail, compNid, "add")) {
-			if (detail.getComponentNidToStampsMap().containsKey(compNid)) {
-				detail.getComponentNidToStampsMap().get(compNid).add(stampSeq);
-			} else {
-				ArrayList<Integer> list = new ArrayList<>();
-				list.add(stampSeq);
-				detail.getComponentNidToStampsMap().put(compNid, list);
-			}
-
-			processDetailStore.updateEntry(processId, detail);
+	/**
+	 * Associates a component with a process. In doing so, associates the stamp
+	 * sequence as well. Multiple stamps may be associated with any given
+	 * component in a single process.
+	 * 
+	 * Note: Made public to enable unit testing
+	 *
+	 * @param process
+	 *            The process to which a component/stamp pair is being added
+	 * @param compNid
+	 *            The component being added
+	 * @param stampSeq
+	 *            The stamp being added
+	 */
+	public void addComponentToWorkflow(ProcessDetail process, int compNid, int stampSeq) {
+		if (process.getComponentNidToStampsMap().containsKey(compNid)) {
+			process.getComponentNidToStampsMap().get(compNid).add(stampSeq);
+		} else {
+			ArrayList<Integer> list = new ArrayList<>();
+			list.add(stampSeq);
+			process.getComponentNidToStampsMap().put(compNid, list);
 		}
+
+		processDetailStore.updateEntry(process.getId(), process);
 	}
 
+	/**
+	 * Gets the process id for a rest test.
+	 */
 	public UUID getRestTestProcessId() {
+		// TODO: Examine if better solution to this
 		return restTestProcessId;
 	}
 
+	/**
+	 * sets the process id for a rest test.
+	 *
+	 * @param processId
+	 *            The process created for Rest Teseting purposes
+	 */
 	public void setRestTestProcessId(UUID processId) {
+		// TODO: Examine if better solution to this
 		restTestProcessId = processId;
 	}
 }

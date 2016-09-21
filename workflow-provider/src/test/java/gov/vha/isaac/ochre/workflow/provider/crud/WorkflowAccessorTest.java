@@ -29,17 +29,14 @@ import java.util.UUID;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 
 import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -49,7 +46,6 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	private static boolean setupCompleted = false;
 
@@ -77,9 +73,15 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 	@AfterClass
 	public static void tearDownClass() {
-		AbstractWorkflowUtilities.close();
+		wfAccessor.closeContentStores();
 	}
 
+	/**
+	 * Test able to properly access definition details.
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testGetDefinitionDetails() throws Exception {
 		DefinitionDetail entry = wfAccessor.getDefinitionDetails(mainDefinitionId);
@@ -88,7 +90,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
-		expectedRoles.add(AbstractWorkflowUtilities.getAutomatedRole());
+		expectedRoles.add(AbstractWorkflowUtilities.AUTOMATED_ROLE);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -97,6 +99,12 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(entry.getRoles(), expectedRoles);
 	}
 
+	/**
+	 * Test able to properly access process details.
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testGetProcessDetails() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
@@ -119,13 +127,19 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
 	}
 
+	/**
+	 * Test able to properly access process history. While doing so, advance
+	 * workflow such that history expands. Keep testing after each advancement.
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testGetProcessHistory() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		SortedSet<ProcessHistory> processHistory = wfAccessor.getProcessHistory(processId);
 		Assert.assertEquals(1, processHistory.size());
 		assertHistoryForProcess(processHistory, processId);
-
 
 		executeLaunchWorkflow(processId);
 		executeSendForReviewAdvancement(processId);
@@ -145,34 +159,49 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		assertConcludeHistory(processHistory.last(), processId);
 	}
 
+	/**
+	 * Cannot make this work without at least a Mock Database. Added to
+	 * Integration-Test module's workflowFramworkTest. For now just pass.
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testIsComponentInActiveWorkflow() throws Exception {
-		// Cannot make this work without at least a Mock Database.
-		// Added to Integration-Test module's workflowFramworkTest. For now just
-		// pass.
 		Assert.assertTrue(true);
 	}
 
+	/**
+	 * Test able to properly access the user roles as expected. Do this for
+	 * multiple users as each contains different roles as defined in the
+	 * AbstractWorkflowProviderTestPackage.
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
-	public void testGetUserPermission() throws Exception {
-		Set<UserPermission> permissions = wfAccessor.getUserPermissions(mainDefinitionId, firstUserId);
-		Assert.assertEquals(2, permissions.size());
+	public void testGetUserRoles() throws Exception {
+		Set<String> roles = wfAccessor.getUserRoles(mainDefinitionId, firstUserId);
+		Assert.assertEquals(2, roles.size());
 
-		for (UserPermission perm : permissions) {
-			Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
-			Assert.assertEquals(firstUserId, perm.getUserNid());
-			Assert.assertTrue(perm.getRole().equals("Editor") || perm.getRole().equals("Approver"));
+		for (String role : roles) {
+			Assert.assertTrue(role.equals("Editor") || role.equals("Approver"));
 		}
 
-		permissions = wfAccessor.getUserPermissions(mainDefinitionId, secondUserId);
-		Assert.assertEquals(1, permissions.size());
+		roles = wfAccessor.getUserRoles(mainDefinitionId, secondUserId);
+		Assert.assertEquals(1, roles.size());
 
-		UserPermission perm = permissions.iterator().next();
-		Assert.assertEquals(mainDefinitionId, perm.getDefinitionId());
-		Assert.assertEquals(secondUserId, perm.getUserNid());
-		Assert.assertEquals("Reviewer", perm.getRole());
+		String role = roles.iterator().next();
+		Assert.assertEquals("Reviewer", role);
 	}
 
+	/**
+	 * Test that as advance workflow, different process information is
+	 * associated with the process
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testGetAdvanceableProcessInformation() throws Exception {
 		Map<ProcessDetail, SortedSet<ProcessHistory>> info = wfAccessor
@@ -244,8 +273,8 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
-
-		// Cancel second process (role is editor for first and no role for second) and
+		// Cancel second process (role is editor for first and no role for
+		// second) and
 		cancelWorkflow(secondProcessId);
 		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
@@ -254,9 +283,9 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
-		
 		// Create third process on second definition.
-		// Thus mainDef: (role is editor for first and no role for second) and secondDef: (role is
+		// Thus mainDef: (role is editor for first and no role for second) and
+		// secondDef: (role is
 		// editor)
 		UUID secondDefinitionId = createSecondaryDefinition();
 		// test first definition
@@ -275,10 +304,16 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		info = wfAccessor.getAdvanceableProcessInformation(secondDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
-
 		definitionDetailStore.removeEntry(secondDefinitionId);
 	}
 
+	/**
+	 * Test that as advance workflow, different users are able to advance
+	 * workflow based on the user permissions and the process's current state
+	 *
+	 * @throws Exception
+	 *             Thrown if test fails
+	 */
 	@Test
 	public void testGetUserPermissibleActionsForProcess() throws Exception {
 		UUID firstProcessId = createFirstWorkflowProcess(mainDefinitionId);
@@ -356,7 +391,8 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 
-		// Launch second Process and send for review (Is in Ready_To_Review State)
+		// Launch second Process and send for review (Is in Ready_To_Review
+		// State)
 		executeLaunchWorkflow(secondProcessId);
 		executeSendForReviewAdvancement(secondProcessId);
 		secondProcessFirstUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, firstUserId);

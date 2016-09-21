@@ -27,21 +27,22 @@ import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
 import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
 
 /**
- * Statically populated available actions initialized during reading of WF
- * Definition only
+ * Workflow-based Data Store containing the available actions based on role and
+ * initial state. Initialized during the importing of a BPMN2 file (containing
+ * the definition) and static from then on.
  * 
- * {@link AvailableActionContentStore}
- * {@link AbstractWorkflowContentStore}
+ * {@link AvailableAction} {@link AbstractWorkflowContentStore}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 
 	/**
-	 * Instantiates a new static state action content store.
-	 *
+	 * Constructor for the content store.
+	 * 
 	 * @param store
-	 *            the store
+	 *            The single store where all workflow content, regardless of
+	 *            type, is stored
 	 */
 	public AvailableActionContentStore(MVStoreMetaContentProvider store) {
 		super(store, WorkflowContentStoreType.AVAILABLE_ACTION);
@@ -56,7 +57,7 @@ public class AvailableActionContentStore extends AbstractWorkflowContentStore {
 	 */
 	@Override
 	public AvailableAction getEntry(UUID key) {
-		return new AvailableAction(getGenericEntry(key));
+		return new AvailableAction(getSerializedEntry(key));
 	}
 
 	/*
