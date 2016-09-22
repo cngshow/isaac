@@ -24,26 +24,38 @@ import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import javax.inject.Singleton;
+import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Contains methods necessary to update existing workflow content after
  * initialization aside from launching or ending them.
  * 
- * {@link AbstractWorkflowUtilities}
+ * {@link BPMNInfo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowUpdater extends AbstractWorkflowUtilities {
+@Service
+@Singleton
+public class WorkflowUpdater {
+	
+	private WorkflowProvider workflowProvider_;
+	
+	public WorkflowUpdater()
+	{
+		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
+	}
+	
 	/**
 	 * A constant used to inform the user that the comment added during
 	 * cancelation is in a special location
@@ -51,28 +63,6 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 
 	static private UUID restTestProcessId;
-
-	/**
-	 * Default constructor which presumes the workflow-based content store has
-	 * already been setup
-	 * 
-	 * @throws Exception
-	 *             Thrown if workflow-based content store has yet to be setup
-	 */
-	public WorkflowUpdater() throws Exception {
-
-	}
-
-	/**
-	 * Constructor includes setting up workflow-based content store which is
-	 * used by the workflow accessing methods to pull data
-	 *
-	 * @param store
-	 *            The workflow content store
-	 */
-	public WorkflowUpdater(MVStoreMetaContentProvider store) {
-		super(store);
-	}
 
 	/**
 	 * Advance an existing process with the specified action. In doing so, the
@@ -99,40 +89,33 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 */
 	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
 			throws Exception {
-		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
-
 		// Get User Permissible actions
-		Set<AvailableAction> userPermissableActions = wfAccessor.getUserPermissibleActionsForProcess(processId,
+		Set<AvailableAction> userPermissableActions = workflowProvider_.getWorkflowAccessor().getUserPermissibleActionsForProcess(processId,
 				userNid);
 
 		// Advance Workflow
 		for (AvailableAction action : userPermissableActions) {
 			if (action.getAction().equals(actionRequested)) {
-				ProcessDetail process = processDetailStore.getEntry(processId);
+				ProcessDetail process = workflowProvider_.getProcessDetailStore().get(processId);
 
 				// Update Process Details for launch, cancel, or conclude
-				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
+				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
 					// Request to cancel workflow
-					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED);
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED);
 				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
-					for (AvailableAction startAction : getDefinitionStartActionMap().get(process.getDefinitionId())) {
+					for (AvailableAction startAction : workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(process.getDefinitionId())) {
 						if (startAction.getOutcomeState().equals(action.getInitialState())) {
 							// Advancing request is to launch workflow
-							WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(
-									store);
-							initConcluder.launchProcess(processId);
-
+							workflowProvider_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 							break;
 						}
 					}
-				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
+				} else if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
-					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED);
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED);
 				}
 
-				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
+				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
 					// Special case where comment added to cancel screen and
 					// cancel store
 					// TODO: Better approach?
@@ -143,7 +126,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
 						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment);
 
-				processHistoryStore.addEntry(entry);
+				workflowProvider_.getProcessHistoryStore().add(entry);
 				return true;
 			}
 		}
@@ -174,7 +157,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *             associated with the process
 	 */
 	public void removeComponentFromWorkflow(UUID processId, int compNid) throws Exception {
-		ProcessDetail detail = processDetailStore.getEntry(processId);
+		ProcessDetail detail = workflowProvider_.getProcessDetailStore().get(processId);
 
 		if (isModifiableComponentInProcess(detail, compNid)) {
 			if (!detail.getComponentNidToStampsMap().containsKey(compNid)) {
@@ -182,7 +165,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			}
 
 			detail.getComponentNidToStampsMap().remove(compNid);
-			processDetailStore.updateEntry(processId, detail);
+			workflowProvider_.getProcessDetailStore().put(processId, detail);
 		} else {
 			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
@@ -217,10 +200,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		}
 
 		UUID processId = process.getId();
-
-		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 		// Check if in Case A. If not, throw exception
-		if (wfAccessor.isComponentInActiveWorkflow(process.getDefinitionId(), compNid)
+		if (workflowProvider_.getWorkflowAccessor().isComponentInActiveWorkflow(process.getDefinitionId(), compNid)
 				&& !process.getComponentNidToStampsMap().containsKey(compNid)) {
 			// Can't do so because component is already in another active
 			// workflow
@@ -234,8 +215,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 		} else {
 			// Test Case C
 			if (process.getStatus() == ProcessStatus.LAUNCHED) {
-				ProcessHistory latestHx = wfAccessor.getProcessHistory(processId).last();
-				if (isEditState(process.getDefinitionId(), latestHx.getOutcomeState())) {
+				ProcessHistory latestHx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
+				if (workflowProvider_.getBPMNInfo().isEditState(process.getDefinitionId(), latestHx.getOutcomeState())) {
 					canAddComponent = true;
 				}
 			}
@@ -273,7 +254,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 */
 	public void addCommitRecordToWorkflow(UUID processId, Optional<CommitRecord> commitRecord) throws Exception {
 		if (commitRecord.isPresent()) {
-			ProcessDetail detail = processDetailStore.getEntry(processId);
+			ProcessDetail detail = workflowProvider_.getProcessDetailStore().get(processId);
 
 			OfInt conceptItr = Get.identifierService()
 					.getConceptNidsForConceptSequences(commitRecord.get().getConceptsInCommit().parallelStream())
@@ -331,7 +312,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			process.getComponentNidToStampsMap().put(compNid, list);
 		}
 
-		processDetailStore.updateEntry(process.getId(), process);
+		workflowProvider_.getProcessDetailStore().put(process.getId(), process);
 	}
 
 	/**
