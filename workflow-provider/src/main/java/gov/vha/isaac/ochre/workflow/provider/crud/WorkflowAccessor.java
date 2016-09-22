@@ -48,7 +48,8 @@ public class WorkflowAccessor {
 	
 	private WorkflowProvider workflowProvider_;
 
-	public WorkflowAccessor()
+	//for HK2
+	private WorkflowAccessor()
 	{
 		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}

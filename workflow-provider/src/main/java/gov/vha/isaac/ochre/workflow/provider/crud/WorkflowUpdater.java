@@ -51,7 +51,8 @@ public class WorkflowUpdater {
 	
 	private WorkflowProvider workflowProvider_;
 	
-	public WorkflowUpdater()
+	//For HK2
+	private WorkflowUpdater()
 	{
 		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}
@@ -61,8 +62,6 @@ public class WorkflowUpdater {
 	 * cancelation is in a special location
 	 */
 	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
-
-	static private UUID restTestProcessId;
 
 	/**
 	 * Advance an existing process with the specified action. In doing so, the
@@ -313,24 +312,5 @@ public class WorkflowUpdater {
 		}
 
 		workflowProvider_.getProcessDetailStore().put(process.getId(), process);
-	}
-
-	/**
-	 * Gets the process id for a rest test.
-	 */
-	public UUID getRestTestProcessId() {
-		// TODO: Examine if better solution to this
-		return restTestProcessId;
-	}
-
-	/**
-	 * sets the process id for a rest test.
-	 *
-	 * @param processId
-	 *            The process created for Rest Teseting purposes
-	 */
-	public void setRestTestProcessId(UUID processId) {
-		// TODO: Examine if better solution to this
-		restTestProcessId = processId;
 	}
 }

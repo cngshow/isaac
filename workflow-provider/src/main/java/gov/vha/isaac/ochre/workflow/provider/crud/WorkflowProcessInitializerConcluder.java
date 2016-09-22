@@ -46,7 +46,8 @@ public class WorkflowProcessInitializerConcluder {
 
 	private WorkflowProvider workflowProvider_;
 	
-	public WorkflowProcessInitializerConcluder()
+	//for HK2
+	private WorkflowProcessInitializerConcluder()
 	{
 		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}
