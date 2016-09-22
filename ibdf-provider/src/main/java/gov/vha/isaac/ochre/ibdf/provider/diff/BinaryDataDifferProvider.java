@@ -32,6 +32,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import javax.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
@@ -69,7 +70,8 @@ import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @Service(name = "binary data differ")
-@RunLevel(value = 2)
+@Singleton  
+//TODO there are some serious thread-safety issues in this class
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private final Logger log = LogManager.getLogger();
 	private BinaryDataDifferProviderUtility diffUtil;
