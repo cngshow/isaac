@@ -234,9 +234,9 @@ public class Bpmn2FileImporter {
 		}
 
 		try {
+			Set<AvailableAction> entries = generateAvailableActions();
 			if (provider.getAvailableActionStore().size() == 0) {
 				logger.info("Loading Available Action store from BPMN");
-				Set<AvailableAction> entries = generateAvailableActions();
 	
 				for (AvailableAction entry : entries) {
 					// Write content into database
