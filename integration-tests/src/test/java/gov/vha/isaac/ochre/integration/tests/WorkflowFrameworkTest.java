@@ -70,30 +70,21 @@ public class WorkflowFrameworkTest {
 	
 	WorkflowProvider wp_;
 
-	@Test(groups = { "wf" })
-	public void testLoadMetaData() {
+	@Test(groups = { "wf" }, dependsOnGroups = { "load"})
+	public void testLoadWorkflow() {
 		LOG.info("Loading Metadata db");
-		try {
-			BinaryDataReaderService reader = Get.binaryDataReader(Paths.get("target", "data", "IsaacMetadataAuxiliary.ibdf"));
-			CommitService commitService = Get.commitService();
-			reader.getStream().forEach((object) -> {
-				commitService.importNoChecks(object);
-			});
+		firstTestConceptNid = MetaData.ISAAC_METADATA.getNid();
+		secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
 
-			firstTestConceptNid = MetaData.ISAAC_METADATA.getNid();
-			secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
+		WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
+		wp_ = LookupService.get().getService(WorkflowProvider.class);
+		cancelAction =  wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 
-			WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
-			wp_ = LookupService.get().getService(WorkflowProvider.class);
-			cancelAction =  wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+		setupUserRoles();
 
-			setupUserRoles();
-		} catch (FileNotFoundException e) {
-			Assert.fail("File not found", e);
-		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStatusAccessorComponentInActiveWorkflow() {
 		clearStores();
 
@@ -138,7 +129,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testCancelNoLaunch() {
 		clearStores();
 
@@ -157,7 +148,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testConcludeNoLaunch() {
 		clearStores();
 
@@ -177,7 +168,7 @@ public class WorkflowFrameworkTest {
 		Assert.assertEquals(ProcessStatus.DEFINED, wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartCancel() {
 		clearStores();
 
@@ -204,7 +195,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailLaunch() {
 		clearStores();
 
@@ -238,7 +229,7 @@ public class WorkflowFrameworkTest {
 
 	// TODO: Decide if prevent multiple processes with same name
 	/*
-	 * @Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	 * @Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	 * public void testFailDefineAfterDefineSameName() { LOG.
 	 * info("Testing inability to define a workflow on a concept that has already been defined"
 	 * ); UUID processId = null;
@@ -254,7 +245,7 @@ public class WorkflowFrameworkTest {
 	 * clearStores(); }
 	 */
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailDefineAfterLaunched() {
 		clearStores();
 
@@ -290,7 +281,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailConclude() {
 		clearStores();
 
@@ -322,7 +313,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartAllPassConclude() {
 		clearStores();
 
@@ -348,7 +339,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailCancelCall() {
 		clearStores();
 
@@ -377,7 +368,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testRedefineCall() {
 		clearStores();
 
@@ -406,7 +397,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartAllFailConclude() {
 		clearStores();
 
@@ -446,7 +437,7 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testIntegrationAddCommitRecordToWorkflow() throws Exception {
 		clearStores();
 
@@ -488,7 +479,7 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(9990));
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testIntegrationRemoveComponentsFromProcess() throws Exception {
 		clearStores();
 
@@ -527,7 +518,7 @@ public class WorkflowFrameworkTest {
 		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testIntegrationFailuresWithAddRemoveComponentsToProcess() throws Exception {
 		clearStores();
 
