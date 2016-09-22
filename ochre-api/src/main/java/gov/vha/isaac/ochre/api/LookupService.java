@@ -173,10 +173,17 @@ public class LookupService {
 
     public static void setRunLevel(int runLevel) {
         int current = getService(RunLevelController.class).getCurrentRunLevel();
-        getService(RunLevelController.class).proceedTo(runLevel);
         if (current > runLevel) {
+            looker.getAllServiceHandles(OchreCache.class).forEach(handle ->
+            {
+                if (handle.isActive()) {
+                    LOG.info("Clear cache for: " + handle.getActiveDescriptor().getImplementation());
+                    handle.getService().reset();
+                }
+            });
             looker.getAllServices(OchreCache.class).forEach((cache) -> {cache.reset();});
         }
+        getService(RunLevelController.class).proceedTo(runLevel);
     }
     
     /**
@@ -211,9 +218,6 @@ public class LookupService {
         if (isInitialized())
         {
             setRunLevel(ISAAC_STOPPED_RUNLEVEL);
-            LOG.info("Service caches: " + looker.getAllServices(OchreCache.class));
-            looker.getAllServices(OchreCache.class)
-                    .forEach((cache) -> {cache.reset();});
             looker.shutdown();
             ServiceLocatorFactory.getInstance().destroy(looker);
             looker = null;
