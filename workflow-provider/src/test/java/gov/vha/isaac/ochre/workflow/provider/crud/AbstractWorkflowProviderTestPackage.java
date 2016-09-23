@@ -54,6 +54,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected AvailableActionContentStore availableActionStore;
 
 	protected static Bpmn2FileImporter importer;
+	private static WorkflowUpdater updater;
+	private static WorkflowProcessInitializerConcluder initConcluder;
 
 	protected static AvailableAction concludeAction;
 	protected static AvailableAction cancelAction;
@@ -103,6 +105,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		if (definitionDetailStore.getAllEntries().size() == 0) {
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
+			updater = new WorkflowUpdater(store);
+			initConcluder = new WorkflowProcessInitializerConcluder(store);
+
 			mainDefinitionId = importer.getCurrentDefinitionId();
 
 			AvailableAction startNodeAction = importer.getDefinitionStartActionMap().get(mainDefinitionId).iterator()
@@ -367,4 +372,16 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		return defId;
 	}
+
+	protected boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
+			throws Exception {
+		return updater.advanceWorkflow(processId, userNid, actionRequested, comment, null);
+	}
+
+	protected void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
+			EndWorkflowType endType) throws Exception {
+		initConcluder.endWorkflowProcess(processId, actionToProcess, userNid, comment, endType, null);
+
+	}
+
 }

@@ -159,7 +159,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
 
-		updater.removeComponentFromWorkflow(processId, firstConceptNid);
+		updater.removeComponentFromWorkflow(processId, firstConceptNid, null);
 		details = processDetailStore.getEntry(processId);
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
 		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
@@ -168,7 +168,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(secondStampSeq));
 
-		updater.removeComponentFromWorkflow(processId, secondConceptNid);
+		updater.removeComponentFromWorkflow(processId, secondConceptNid, null);
 		details = processDetailStore.getEntry(processId);
 		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 	}
@@ -189,58 +189,58 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 
 		// Process in Ready to Edit state: Can execute action "Edit" by
 		// firstUser
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
 
-		Assert.assertTrue(updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
 
 		// Process in Ready for Review state: Can execute action "QA Passes" by
 		// secondUser
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
 
-		Assert.assertTrue(updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
 
 		// Process in Ready for Approve state: Can execute action "Approve" by
 		// firstUser
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertTrue(updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
 
 		// Process in Publish state: no one can advance
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(updater.advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
 	}
 
 }

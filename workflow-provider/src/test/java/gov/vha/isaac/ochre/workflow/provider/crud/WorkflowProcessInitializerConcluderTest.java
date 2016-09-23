@@ -149,7 +149,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testCancelWorkflowProcess() throws Exception {
 		// Attempt to cancel a process that hasn't yet been created
 		try {
-			initConcluder.endWorkflowProcess(UUID.randomUUID(), cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
+			endWorkflowProcess(UUID.randomUUID(), cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
 					EndWorkflowType.CANCELED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -174,7 +174,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
-		initConcluder.endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
+		endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
 				EndWorkflowType.CANCELED);
 
 		assertProcessDefinition(ProcessStatus.CANCELED, mainDefinitionId, processId);
@@ -184,7 +184,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to cancel an already launched process
 		try {
-			initConcluder.endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
 					EndWorkflowType.CANCELED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -208,7 +208,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testConcludeWorkflow() throws Exception {
 		// Attempt to conclude a process that hasn't yet been created
 		try {
-			initConcluder.endWorkflowProcess(UUID.randomUUID(), concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(UUID.randomUUID(), concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -221,7 +221,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to conclude a process that hasn't yet been launched
 		try {
-			initConcluder.endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -235,7 +235,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to conclude a process that isn't at an end state
 		try {
-			initConcluder.endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -251,7 +251,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
-		initConcluder.endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+		endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
 				EndWorkflowType.CONCLUDED);
 
 		assertProcessDefinition(ProcessStatus.CONCLUDED, mainDefinitionId, processId);
@@ -261,7 +261,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to cancel an already launched process
 		try {
-			initConcluder.endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {

@@ -28,6 +28,10 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
@@ -37,11 +41,22 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
+import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
+import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
+import javafx.concurrent.Task;
 
 /**
  * Created by kec on 1/2/16.
@@ -86,6 +101,9 @@ public class WorkflowFrameworkTest {
 	private ProcessHistoryContentStore processHistoryStore;
 	protected static AvailableAction cancelAction;
 
+	private EditCoordinate defaultEditCoordinate;
+	private StampCoordinate defaultStampCoordinate;
+
 	@Test(groups = { "wf" })
 	public void testLoadMetaData() {
 		LOG.info("Loading Metadata db");
@@ -106,13 +124,25 @@ public class WorkflowFrameworkTest {
 			processHistoryStore = new ProcessHistoryContentStore(store);
 			userPermissionStore = new UserPermissionContentStore(store);
 
-			firstTestConceptNid = MetaData.ISAAC_METADATA.getNid();
+			firstTestConceptNid = MetaData.EL_PLUS_PLUS_INFERRED_FORM_ASSEMBLAGE.getNid();
 			secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
 
 			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
 			definitionId = importer.getCurrentDefinitionId();
 
 			cancelAction = importer.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+			defaultEditCoordinate = new EditCoordinateImpl(
+			                TermAux.USER.getNid(),
+			                TermAux.ISAAC_MODULE.getNid(),
+			                TermAux.DEVELOPMENT_PATH.getNid());
+			
+			ObservableStampCoordinate defaultSC = Get.configurationService().getDefaultStampCoordinate();
+			defaultStampCoordinate = new StampCoordinateImpl(
+							defaultSC.getStampPrecedence(),
+							defaultSC.getStampPosition(),
+							defaultSC.getModuleSequences(),
+							State.ANY_STATE_SET);
+					
 
 			setupUserRoles();
 		} catch (FileNotFoundException e) {
@@ -150,13 +180,12 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
 			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
 			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
 			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
 
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
+			updater.advanceWorkflow(processId, userId, "Cancel Workflow", "Canceling Workflow for Testing", null);
 
 			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
 			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
@@ -175,8 +204,8 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
+			updater.advanceWorkflow(processId, userId, "Cancel Workflow", "Canceling Workflow for Testing",
+					defaultEditCoordinate);
 
 			Assert.assertEquals(ProcessStatus.CANCELED, wfAccessor.getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
@@ -194,8 +223,8 @@ public class WorkflowFrameworkTest {
 		try {
 			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Concluding Workflow for Testing",
-					EndWorkflowType.CONCLUDED);
+			updater.advanceWorkflow(processId, userId, "Approve", "Concluding Workflow for Testing",
+					defaultEditCoordinate);
 
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -218,9 +247,9 @@ public class WorkflowFrameworkTest {
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 2220);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Cancel Workflow", "Canceling Workflow for Testing",
+					defaultEditCoordinate);
 
 			Assert.assertEquals(ProcessStatus.CANCELED, wfAccessor.getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
@@ -238,7 +267,7 @@ public class WorkflowFrameworkTest {
 		UUID processId = UUID.randomUUID();
 
 		try {
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
 			try {
@@ -248,7 +277,7 @@ public class WorkflowFrameworkTest {
 				try {
 					process = wfAccessor.getProcessDetails(processId);
 				} catch (NullPointerException ee) {
-
+					Assert.assertTrue(true);
 				}
 
 				if (process == null) {
@@ -295,7 +324,7 @@ public class WorkflowFrameworkTest {
 
 			commitRecord = createCommitRecord(firstTestConceptNid, null, 3331);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
 			try {
 				commitRecord = createCommitRecord(firstTestConceptNid, null, 3332);
@@ -305,7 +334,7 @@ public class WorkflowFrameworkTest {
 				Assert.assertTrue(true);
 			}
 
-			updater.advanceWorkflow(processId, userId, "QA Fails", "QA Fail");
+			updater.advanceWorkflow(processId, userId, "QA Fails", "QA Fail", defaultEditCoordinate);
 
 			commitRecord = createCommitRecord(firstTestConceptNid, null, 3333);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
@@ -334,17 +363,17 @@ public class WorkflowFrameworkTest {
 			Assert.assertTrue(importer.getEditStatesMap().get(definitionId).contains(hx.getOutcomeState()));
 			Assert.assertTrue(isStartState(definitionId, hx.getInitialState()));
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Conclude Workflow for Testing",
-					EndWorkflowType.CONCLUDED);
-			Assert.fail();
-		} catch (Exception e) {
-			Assert.assertTrue(true);
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			boolean result = updater.advanceWorkflow(processId, userId, "Approve", "Concluding Workflow for Testing",
+					defaultEditCoordinate);
+			Assert.assertFalse(result);
 
 			Assert.assertEquals(ProcessStatus.LAUNCHED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+			hx = wfAccessor.getProcessHistory(processId).last();
 			Assert.assertFalse(importer.getEditStatesMap().get(definitionId).contains(hx.getOutcomeState()));
 			Assert.assertFalse(isStartState(definitionId, hx.getInitialState()));
+		} catch (Exception e) {
+			Assert.fail();
 		}
 	}
 
@@ -362,9 +391,9 @@ public class WorkflowFrameworkTest {
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 5550);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment", defaultEditCoordinate);
 
 			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
@@ -388,18 +417,18 @@ public class WorkflowFrameworkTest {
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 6660);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
-			Assert.fail();
-		} catch (Exception e) {
-			Assert.assertTrue(true);
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment", defaultEditCoordinate);
+
+			Assert.assertFalse(updater.advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate));
 
 			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
+		} catch (Exception e) {
+			Assert.fail();
 		}
 	}
 
@@ -416,9 +445,9 @@ public class WorkflowFrameworkTest {
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 7770);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment", defaultEditCoordinate);
 
 			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
@@ -447,28 +476,25 @@ public class WorkflowFrameworkTest {
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 8880);
 			updater.addCommitRecordToWorkflow(processId, commitRecord);
 
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Fails", "Fail Review Comment");
-			updater.advanceWorkflow(processId, userId, "Edit", "Second Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Reject Edit", "Reject Edit Comment");
-			updater.advanceWorkflow(processId, userId, "Edit", "Third Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Second Review Comment");
-			updater.advanceWorkflow(processId, userId, "Reject Review", "Reject Review Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Third Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CONCLUDED);
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Fails", "Fail Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Edit", "Second Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Reject Edit", "Reject Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Edit", "Third Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Second Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Reject Review", "Reject Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "QA Passes", "Third Review Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment", defaultEditCoordinate);
+			boolean result = updater.advanceWorkflow(processId, userId, "Approve", "Concluding Workflow for Testing",
+					defaultEditCoordinate);
+			Assert.assertFalse(result);
+
+			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
+		} catch (Exception ee) {
 			Assert.fail();
-		} catch (Exception e) {
-			try {
-				Assert.assertTrue(true);
-				Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
-				ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
-				Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
-			} catch (Exception ee) {
-				Assert.fail();
-			}
 		}
 	}
 
@@ -539,7 +565,7 @@ public class WorkflowFrameworkTest {
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondTestConceptNid).size());
 
-		updater.removeComponentFromWorkflow(processId, firstTestConceptNid);
+		updater.removeComponentFromWorkflow(processId, firstTestConceptNid, defaultEditCoordinate);
 		details = processDetailStore.getEntry(processId);
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
 		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
@@ -548,7 +574,7 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(121200));
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(121201));
 
-		updater.removeComponentFromWorkflow(processId, secondTestConceptNid);
+		updater.removeComponentFromWorkflow(processId, secondTestConceptNid, defaultEditCoordinate);
 		details = processDetailStore.getEntry(processId);
 		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 	}
@@ -560,10 +586,10 @@ public class WorkflowFrameworkTest {
 		UUID processId = UUID.randomUUID();
 
 		try {
-			updater.removeComponentFromWorkflow(processId, firstTestConceptNid);
+			updater.removeComponentFromWorkflow(processId, firstTestConceptNid, defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
-
+			Assert.assertTrue(true);
 		}
 
 		UUID firstProcessId = createFirstWorkflowProcess(definitionId);
@@ -571,7 +597,7 @@ public class WorkflowFrameworkTest {
 		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 565600);
 		updater.addCommitRecordToWorkflow(firstProcessId, commitRecord);
 
-		updater.advanceWorkflow(firstProcessId, userId, "Edit", "Edit Comment");
+		updater.advanceWorkflow(firstProcessId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
 		try {
 			updater.addCommitRecordToWorkflow(firstProcessId, commitRecord);
@@ -582,7 +608,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			// Go back to no components in any workflow
-			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid);
+			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid, defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -599,7 +625,7 @@ public class WorkflowFrameworkTest {
 
 		try {
 			// Go back to no components in any workflow
-			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid);
+			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid, defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -609,7 +635,7 @@ public class WorkflowFrameworkTest {
 		executeRejectReviewAdvancement(firstProcessId);
 
 		// Go back to no components in any workflow
-		updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid);
+		updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid, defaultEditCoordinate);
 
 		// Testing LAUNCHED-EDIT Case
 		updater.addCommitRecordToWorkflow(firstProcessId, commitRecord);
@@ -623,12 +649,10 @@ public class WorkflowFrameworkTest {
 		cancelWorkflow(firstProcessId);
 
 		try {
-			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid);
+			updater.removeComponentFromWorkflow(firstProcessId, firstTestConceptNid, defaultEditCoordinate);
 			Assert.fail();
-		} catch (
-
-		Exception e) {
-
+		} catch (Exception e) {
+			Assert.assertTrue(true);
 		}
 	}
 
@@ -666,14 +690,6 @@ public class WorkflowFrameworkTest {
 		}
 
 		return false;
-	}
-
-	private AvailableAction getCancelAction() {
-		return importer.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
-	}
-
-	private AvailableAction getConcludeAction() {
-		return importer.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 	}
 
 	private Optional<CommitRecord> createCommitRecord(Integer conNid, Integer semNid, int stampSeq) {
@@ -732,7 +748,7 @@ public class WorkflowFrameworkTest {
 
 			finishWorkflowProcess(processId, cancelAction, userId, "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
-			e.printStackTrace();
+			Assert.fail();
 		}
 	}
 
@@ -770,8 +786,7 @@ public class WorkflowFrameworkTest {
 			entry.setTimeLaunched(new Date().getTime());
 			processDetailStore.updateEntry(processId, entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Assert.fail();
 		}
 	}
 
@@ -784,8 +799,7 @@ public class WorkflowFrameworkTest {
 					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
 			processHistoryStore.addEntry(advanceEntry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Assert.fail();
 		}
 	}
 
@@ -799,8 +813,7 @@ public class WorkflowFrameworkTest {
 
 			processHistoryStore.addEntry(entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Assert.fail();
 		}
 	}
 
@@ -813,9 +826,146 @@ public class WorkflowFrameworkTest {
 
 			processHistoryStore.addEntry(entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Assert.fail();
 		}
 	}
 
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	public void testCancelInactivationOfComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel change on a concept and a sememe made inactive when originally was active");
+
+		try {
+			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+
+			ConceptChronologyImpl con = (ConceptChronologyImpl) Get.conceptService().getConcept(firstTestConceptNid);
+			SememeChronologyImpl descSem = (SememeChronologyImpl) con.getConceptDescriptionList().iterator()
+					.next();
+
+			verifyState(con, descSem, State.ACTIVE);
+
+			// Inactivate Concept
+			con.createMutableVersion(State.INACTIVE, defaultEditCoordinate);
+			Get.commitService().addUncommitted(con);
+			Task<Optional<CommitRecord>> commitRecord = Get.commitService().commit("Inactivating concept for Testing");
+			updater.addCommitRecordToWorkflow(processId, commitRecord.get());
+
+			// Inactivate Sememe
+			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+					.createMutableVersion(DescriptionSememeImpl.class, State.INACTIVE, defaultEditCoordinate);
+// TODO: Joel #1 Review why this throws exception: Get.commitService().addUncommitted(createdVersion.getChronology()).get();
+			
+// TODO: Joel #2 Review why the below's commitRecord shows nothing under StampsToCheck or StampsToCommit 
+			
+			Get.commitService().addUncommitted(createdVersion.getChronology());
+			commitRecord = Get.commitService().commit("Inactivating sememe for Testing");
+			updater.addCommitRecordToWorkflow(processId, commitRecord.get());
+
+			/*
+			verifyState(con, descSem, State.INACTIVE);
+
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			updater.advanceWorkflow(processId, userId, "Cancel Workflow", "Canceling Workflow for Testing",
+					defaultEditCoordinate);
+
+			verifyState(con, descSem, State.ACTIVE);
+*/		} catch (Exception e) {
+			Assert.fail();
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	public void testCancelEditingOfSememe() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel changes made to a sememe's text");
+
+		try {
+			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+
+			ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(firstTestConceptNid);
+			SememeChronologyImpl descSem = (SememeChronologyImpl) con.getConceptDescriptionList().iterator()
+					.next();
+
+			Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) descSem)
+					.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+
+			// Revert description if previous execution of test failed
+			if (latestDescVersion.get().value().getText().equals("New Text")) {
+				DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+						.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
+				createdVersion.setText("ISAAC metadata");
+
+				Get.commitService().addUncommitted(descSem);
+				Get.commitService().commit("Inactivating sememe for Testing");
+				
+				latestDescVersion = ((SememeChronology) descSem)
+						.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+				Assert.assertNotEquals(latestDescVersion.get().value().getText(), "New Text");
+			}
+
+			String originalText = latestDescVersion.get().value().getText();
+
+			// Modify Sememe Text
+			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+					.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
+			createdVersion.setText("New Text");
+
+			Get.commitService().addUncommitted(descSem);
+			Task<Optional<CommitRecord>> commitRecord = Get.commitService().commit("Inactivating sememe for Testing");
+			updater.addCommitRecordToWorkflow(processId, commitRecord.get());
+
+			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
+			Assert.assertNotEquals(originalText, createdVersion.getText());
+			updater.advanceWorkflow(processId, userId, "Cancel Workflow", "Canceling Workflow for Testing",
+					defaultEditCoordinate);
+			
+			latestDescVersion = ((SememeChronology) descSem)
+					.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+			
+// TODO: Jesse Remove commented out code
+//			Assert.assertEquals(originalText, latestDescVersion.get().value().getText());
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	public void testCancelNewSememe() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel new sememe reverting it entirely");
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	public void testCancelActivationOfComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel change on a concept and a sememe made active when originally was inactive");
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	public void testCancelNewComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel new concept reverting it entirely");
+	}
+
+	private void verifyState(ConceptChronology<? extends ConceptVersion<?>> con,
+		SememeChronology<? extends DescriptionSememe<?>> descSem, State state) {
+
+		con = (ConceptChronologyImpl) Get.conceptService().getConcept(firstTestConceptNid);
+		Optional<LatestVersion<StampedVersion>> latestConVersion = ((ObjectChronology<StampedVersion>) con)
+				.getLatestVersion(StampedVersion.class, defaultStampCoordinate);
+		Assert.assertEquals(latestConVersion.get().value().getState(), state);
+
+		SememeChronology<? extends SememeVersion<?>> semChron = Get.sememeService().getSememe(descSem.getNid());
+		Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) semChron)
+				.getLatestVersion(DescriptionSememe.class, defaultStampCoordinate);
+		Assert.assertEquals(latestDescVersion.get().value().getState(), state);
+	}
 }

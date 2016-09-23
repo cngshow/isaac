@@ -29,6 +29,7 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -91,12 +92,10 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 
 		// TODO: Do we actually want this prevention measure?
 		/*
-		for (ProcessDetail detail : processDetailStore.getAllEntries()) {
-			if (detail.getName().equalsIgnoreCase(name)) {
-				throw new Exception("Process names must be unique");
-			}
-		}
-		*/
+		 * for (ProcessDetail detail : processDetailStore.getAllEntries()) { if
+		 * (detail.getName().equalsIgnoreCase(name)) { throw new
+		 * Exception("Process names must be unique"); } }
+		 */
 
 		// Create Process Details with "DEFINED"
 		AbstractStorableWorkflowContents details = new ProcessDetail(definitionId, userNid, new Date().getTime(),
@@ -187,7 +186,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *             state according to the definition
 	 */
 	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
-			EndWorkflowType endType) throws Exception {
+			EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
 		ProcessDetail entry = processDetailStore.getEntry(processId);
 
 		if (entry == null) {
@@ -225,7 +224,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		processHistoryStore.addEntry(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
-			// TODO: Handle cancelation store and handle reverting automatically
+			revertChanges(entry.getComponentNidToStampsMap().keySet(), entry.getTimeCreated(), editCoordinate);
 		}
 	}
 }

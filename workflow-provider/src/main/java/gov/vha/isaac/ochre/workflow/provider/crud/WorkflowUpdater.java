@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
@@ -33,6 +34,7 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
 
 /**
@@ -44,11 +46,6 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowUpdater extends AbstractWorkflowUtilities {
-	/**
-	 * A constant used to inform the user that the comment added during
-	 * cancelation is in a special location
-	 */
-	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
 
 	static private UUID restTestProcessId;
 
@@ -89,6 +86,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *            The advancement action the user requested.
 	 * @param comment
 	 *            The comment added by the user in advancing the process.
+	 * @param editCoordinate
 	 * 
 	 * @return True if the advancement attempt was successful
 	 * 
@@ -97,8 +95,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 *             and while updating the process accordingly, an execption
 	 *             occurred
 	 */
-	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
-			throws Exception {
+	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment,
+			EditCoordinate editCoordinate) throws Exception {
 		WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
 
 		// Get User Permissible actions
@@ -111,10 +109,11 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				ProcessDetail process = processDetailStore.getEntry(processId);
 
 				// Update Process Details for launch, cancel, or conclude
-				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(actionRequested)) {
+				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
 					// Request to cancel workflow
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED);
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED,
+							editCoordinate);
 				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
 					for (AvailableAction startAction : getDefinitionStartActionMap().get(process.getDefinitionId())) {
 						if (startAction.getOutcomeState().equals(action.getInitialState())) {
@@ -129,14 +128,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 				} else if (getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action)) {
 					// Conclude Request made
 					WorkflowProcessInitializerConcluder initConcluder = new WorkflowProcessInitializerConcluder(store);
-					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED);
-				}
-
-				if (getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action)) {
-					// Special case where comment added to cancel screen and
-					// cancel store
-					// TODO: Better approach?
-					comment = CANCELED_HISTORY_COMMENT;
+					initConcluder.endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED,
+							null);
 				}
 
 				// Add to process history
@@ -168,12 +161,14 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 	 * @param compNid
 	 *            The component whose changes are to be reverted and removed
 	 *            from the process
-	 * 
+	 * @param editCoordinate
+	 *            TODO
 	 * @throws Exception
 	 *             Thrown if the component has been found to not be currently
 	 *             associated with the process
 	 */
-	public void removeComponentFromWorkflow(UUID processId, int compNid) throws Exception {
+	public void removeComponentFromWorkflow(UUID processId, int compNid, EditCoordinate editCoordinate)
+			throws Exception {
 		ProcessDetail detail = processDetailStore.getEntry(processId);
 
 		if (isModifiableComponentInProcess(detail, compNid)) {
@@ -187,7 +182,7 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
 
-		// TODO: Handle reverting automatically
+		revertChanges(Arrays.asList(compNid), detail.getTimeCreated(), editCoordinate);
 	}
 
 	/**
@@ -290,7 +285,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					if (isModifiableComponentInProcess(detail, conNid)) {
 						addComponentToWorkflow(detail, conNid, stampSeq);
 					} else {
-						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						// TODO: Prevention strategy for when component not
+						// deemed "addable" to WF
 						throw new Exception("Concept may not be added to Workflow: " + conNid);
 					}
 				}
@@ -300,7 +296,8 @@ public class WorkflowUpdater extends AbstractWorkflowUtilities {
 					if (isModifiableComponentInProcess(detail, semNid)) {
 						addComponentToWorkflow(detail, semNid, stampSeq);
 					} else {
-						// TODO: Prevention strategy for when component not deemed "addable" to WF
+						// TODO: Prevention strategy for when component not
+						// deemed "addable" to WF
 						throw new Exception("Sememe may not be added to Workflow: " + semNid);
 					}
 				}
