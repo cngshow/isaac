@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,8 +27,6 @@ import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
 
 /**
  * The metadata defining a given workflow definition.
@@ -86,10 +84,15 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * @param data
 	 *            The data to deserialize into its components
 	 */
+	@SuppressWarnings("unchecked")
 	public DefinitionDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
+			
+			//TODO Jesse - these serializers / deserializers don't have version numbers (so changing their format is hard)
+			//and they rely on the java serializer, which is extremely inefficient - and fragile, should any of the serialized classes change.
+			//these should likely be redone at a much lower level as they are in other places in ISAAC
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.bpmn2Id = (String) in.readObject();
@@ -99,12 +102,10 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 			this.roles = (Set<String>) in.readObject();
 			this.description = (String) in.readObject();
 			this.importDate = (long) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into Definition Detail", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast Definition Detail fields", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into Definition Detail", e);
 		}
 	}
 
@@ -180,21 +181,28 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(bpmn2Id);
-		out.writeObject(name);
-		out.writeObject(namespace);
-		out.writeObject(version);
-		out.writeObject(roles);
-		out.writeObject(description);
-		out.writeObject(importDate);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(bpmn2Id);
+			out.writeObject(name);
+			out.writeObject(namespace);
+			out.writeObject(version);
+			out.writeObject(roles);
+			out.writeObject(description);
+			out.writeObject(importDate);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*

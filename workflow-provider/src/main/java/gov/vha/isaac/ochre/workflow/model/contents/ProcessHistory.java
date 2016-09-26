@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,8 +27,6 @@ import java.io.ObjectOutputStream;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
 
 /**
  * A single advancement (history) of a given workflow process. A new entry is
@@ -92,6 +90,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	public ProcessHistory(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
+		//TODO swap nids to UUIDs....
 		try {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
@@ -102,12 +101,10 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 			this.action = (String) in.readObject();
 			this.outcomeState = (String) in.readObject();
 			this.comment = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into ProcessHistory", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast ProcessHistory fields", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into ProcessHistory", e);
 		}
 	}
 
@@ -182,21 +179,28 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(processId);
-		out.writeObject(userNid);
-		out.writeObject(timeAdvanced);
-		out.writeObject(initialState);
-		out.writeObject(action);
-		out.writeObject(outcomeState);
-		out.writeObject(comment);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(processId);
+			out.writeObject(userNid);
+			out.writeObject(timeAdvanced);
+			out.writeObject(initialState);
+			out.writeObject(action);
+			out.writeObject(outcomeState);
+			out.writeObject(comment);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*

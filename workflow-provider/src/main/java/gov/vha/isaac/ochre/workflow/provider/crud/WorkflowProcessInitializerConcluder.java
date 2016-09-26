@@ -21,47 +21,38 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.util.Date;
 import java.util.UUID;
 
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AbstractStorableWorkflowContents;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
+import javax.inject.Singleton;
+
+import org.jvnet.hk2.annotations.Service;
+
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Contains methods necessary to start, launch, cancel, or conclude a workflow
  * process
  * 
- * {@link AbstractWorkflowUtilities}
+ * {@link BPMNInfo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtilities {
+@Service
+@Singleton
+public class WorkflowProcessInitializerConcluder {
 
-	/**
-	 * Default constructor which presumes the workflow-based content store has
-	 * already been setup
-	 * 
-	 * @throws Exception
-	 *             Thrown if workflow-based content store has yet to be setup
-	 */
-	public WorkflowProcessInitializerConcluder() throws Exception {
+	private WorkflowProvider workflowProvider_;
 
-	}
-
-	/**
-	 * Constructor includes setting up workflow-based content store which is
-	 * used by the workflow accessing methods to pull data
-	 *
-	 * @param store
-	 *            The workflow content store
-	 */
-	public WorkflowProcessInitializerConcluder(MVStoreMetaContentProvider store) {
-		super(store);
+	// for HK2
+	private WorkflowProcessInitializerConcluder() {
+		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}
 
 	/**
@@ -98,26 +89,27 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		 */
 
 		// Create Process Details with "DEFINED"
-		AbstractStorableWorkflowContents details = new ProcessDetail(definitionId, userNid, new Date().getTime(),
-				ProcessStatus.DEFINED, name, description);
-		UUID processId = processDetailStore.addEntry(details);
+		ProcessDetail details = new ProcessDetail(definitionId, userNid, new Date().getTime(), ProcessStatus.DEFINED,
+				name, description);
+		UUID processId = workflowProvider_.getProcessDetailStore().add(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 
 		// At some point, need to handle the case where multiple startActions
 		// may be defined for single DefinitionId. For now, verify only one and
 		// use it
-		if (getDefinitionStartActionMap().get(definitionId).size() != 1) {
+		if (workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size() != 1) {
 			throw new Exception(
 					"Currently only able to handle single startAction within a definition. This definition found: "
-							+ getDefinitionStartActionMap().get(definitionId).size());
+							+ workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size());
 		}
 
-		AvailableAction startAdvancement = getDefinitionStartActionMap().get(definitionId).iterator().next();
+		AvailableAction startAdvancement = workflowProvider_.getBPMNInfo().getDefinitionStartActionMap()
+				.get(definitionId).iterator().next();
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"");
-		processHistoryStore.addEntry(advanceEntry);
+		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
 		return processId;
 	}
@@ -140,7 +132,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 *             with the process
 	 */
 	public void launchProcess(UUID processId) throws Exception {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
+		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
 
 		if (entry == null) {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
@@ -153,7 +145,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 		// Update Process Details with "LAUNCHED"
 		entry.setStatus(ProcessStatus.LAUNCHED);
 		entry.setTimeLaunched(new Date().getTime());
-		processDetailStore.updateEntry(processId, entry);
+		workflowProvider_.getProcessDetailStore().put(processId, entry);
 	}
 
 	/**
@@ -187,7 +179,7 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 	 */
 	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
 			EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
+		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
 
 		if (entry == null) {
 			throw new Exception("Cannot cancel nor conclude a workflow that hasn't been defined yet");
@@ -197,10 +189,10 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 			if (entry.getStatus() != ProcessStatus.LAUNCHED) {
 				throw new Exception("Cannot conclude workflow that is in the following state: " + entry.getStatus());
 			} else {
-				WorkflowAccessor wfAccessor = new WorkflowAccessor(store);
-				ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
-				if (!isConcludedState(hx.getOutcomeState())) {
-					DefinitionDetail defEntry = definitionDetailStore.getEntry(entry.getDefinitionId());
+				ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
+				if (!workflowProvider_.getBPMNInfo().isConcludedState(hx.getOutcomeState())) {
+					DefinitionDetail defEntry = workflowProvider_.getDefinitionDetailStore()
+							.get(entry.getDefinitionId());
 					throw new Exception(
 							"Cannot perform Conclude action on the definition: " + defEntry.getName() + " version: "
 									+ defEntry.getVersion() + " when the workflow state is: " + hx.getOutcomeState());
@@ -214,17 +206,18 @@ public class WorkflowProcessInitializerConcluder extends AbstractWorkflowUtiliti
 			entry.setStatus(ProcessStatus.CONCLUDED);
 		}
 		entry.setTimeCanceledOrConcluded(new Date().getTime());
-		processDetailStore.updateEntry(processId, entry);
+		workflowProvider_.getProcessDetailStore().put(processId, entry);
 
 		// Only add Cancel state in Workflow if process has already been
 		// launched
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
 				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
 				comment);
-		processHistoryStore.addEntry(advanceEntry);
+		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
-			revertChanges(entry.getComponentNidToStampsMap().keySet(), entry.getTimeCreated(), editCoordinate);
+			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentNidToStampsMap().keySet(),
+					entry.getTimeCreated(), editCoordinate);
 		}
 	}
 }

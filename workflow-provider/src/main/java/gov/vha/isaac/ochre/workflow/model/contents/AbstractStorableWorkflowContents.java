@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -53,7 +53,7 @@ public abstract class AbstractStorableWorkflowContents {
 	 * @return
 	 * @throws IOException
 	 */
-	public abstract byte[] serialize() throws IOException;
+	public abstract byte[] serialize();
 
 	/**
 	 * Set an entry's key

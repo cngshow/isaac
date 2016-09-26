@@ -19,15 +19,20 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.util.RecursiveDelete;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Test the WorkflowUpdater class
@@ -37,11 +42,6 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
-	private static boolean setupCompleted = false;
-
-	private static MVStoreMetaContentProvider store;
-	private static WorkflowUpdater updater;
-
 	private static int firstConceptNid = 0;
 	private static int secondConceptNid = 0;
 	private static int firstStampSeq = -1;
@@ -50,42 +50,41 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	/**
 	 * Sets the up.
 	 */
-	@Before
-	public void setUpClass() {
-		if (!setupCompleted) {
-			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowUpdate", true);
+	@BeforeClass
+	public static void setUpClass() {
+		WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
+		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(new File("target/store").toPath());
+		LookupService.startupMetadataStore();
+		globalSetup();
+		for (Integer nid : conceptsForTesting) {
+			if (firstConceptNid == 0) {
+				firstConceptNid = nid;
+			} else {
+				secondConceptNid = nid;
+			}
 		}
 
-		globalSetup(store);
-		setupUserRoles();
-
-		if (!setupCompleted) {
-			updater = new WorkflowUpdater(store);
-
-			for (Integer nid : conceptsForTesting) {
-				if (firstConceptNid == 0) {
-					firstConceptNid = nid;
-				} else {
-					secondConceptNid = nid;
-				}
+		for (Integer seq : stampSequenceForTesting) {
+			if (firstStampSeq == -1) {
+				firstStampSeq = seq;
+			} else {
+				secondStampSeq = seq;
 			}
-
-			for (Integer seq : stampSequenceForTesting) {
-				if (firstStampSeq == -1) {
-					firstStampSeq = seq;
-				} else {
-					secondStampSeq = seq;
-				}
-			}
-
-			setupCompleted = true;
 		}
-
 	}
 
 	@AfterClass
-	public static void tearDownClass() {
-		updater.closeContentStores();
+	public static void tearDownClass() throws IOException {
+		LookupService.shutdownIsaac();
+		RecursiveDelete.delete(new File("target/store"));
+	}
+
+	@Before
+	public void beforeTest() {
+		wp_.getProcessDetailStore().clear();
+		wp_.getProcessHistoryStore().clear();
+		wp_.getUserPermissionStore().clear();
+		setupUserRoles();
 	}
 
 	/**
@@ -102,26 +101,26 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	public void testAddComponentsToProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		ProcessDetail details = processDetailStore.getEntry(processId);
+		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
 
-		updater.addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
-		details = processDetailStore.getEntry(processId);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
 		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstConceptNid).size());
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
 
-		updater.addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
-		details = processDetailStore.getEntry(processId);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
 		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(secondStampSeq));
 
-		updater.addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
-		details = processDetailStore.getEntry(processId);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
 		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
@@ -146,21 +145,21 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	public void testRemoveComponentsFromProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		ProcessDetail details = processDetailStore.getEntry(processId);
+		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 
-		updater.addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
-		updater.addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
-		updater.addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
-		updater.addComponentToWorkflow(details, secondConceptNid, secondStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, secondStampSeq);
 
-		details = processDetailStore.getEntry(processId);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
 		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
 
-		updater.removeComponentFromWorkflow(processId, firstConceptNid, null);
-		details = processDetailStore.getEntry(processId);
+		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstConceptNid, null);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
 		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
 		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondConceptNid));
@@ -168,8 +167,8 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
 		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(secondStampSeq));
 
-		updater.removeComponentFromWorkflow(processId, secondConceptNid, null);
-		details = processDetailStore.getEntry(processId);
+		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, secondConceptNid, null);
+		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
 	}
 

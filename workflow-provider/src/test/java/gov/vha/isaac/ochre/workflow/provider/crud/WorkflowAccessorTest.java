@@ -19,25 +19,29 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.util.RecursiveDelete;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Test the WorkflowAccessor class
@@ -47,33 +51,31 @@ import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
-	private static boolean setupCompleted = false;
-
-	private static MVStoreMetaContentProvider store;
-	private static WorkflowAccessor wfAccessor;
 
 	/**
 	 * Sets the up.
 	 */
-	@Before
-	public void setUpClass() {
-		if (!setupCompleted) {
-			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowStatusAccess", true);
-		}
-
-		globalSetup(store);
-		setupUserRoles();
-
-		if (!setupCompleted) {
-			wfAccessor = new WorkflowAccessor(store);
-
-			setupCompleted = true;
-		}
+	@BeforeClass
+	public static void setUpClass() {
+		WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
+		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(new File("target/store").toPath());
+		LookupService.startupMetadataStore();
+		globalSetup();
 	}
 
 	@AfterClass
-	public static void tearDownClass() {
-		wfAccessor.closeContentStores();
+	public static void tearDownClass() throws IOException {
+		LookupService.shutdownIsaac();
+		RecursiveDelete.delete(new File("target/store"));
+	}
+	
+	@Before
+	public void beforeTest()
+	{
+		wp_.getProcessDetailStore().clear();
+		wp_.getProcessHistoryStore().clear();
+		wp_.getUserPermissionStore().clear();
+		setupUserRoles();
 	}
 
 	/**
@@ -84,13 +86,13 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetDefinitionDetails() throws Exception {
-		DefinitionDetail entry = wfAccessor.getDefinitionDetails(mainDefinitionId);
+		DefinitionDetail entry = wp_.getWorkflowAccessor().getDefinitionDetails(mainDefinitionId);
 
 		Set<String> expectedRoles = new HashSet<>();
 		expectedRoles.add("Editor");
 		expectedRoles.add("Reviewer");
 		expectedRoles.add("Approver");
-		expectedRoles.add(AbstractWorkflowUtilities.AUTOMATED_ROLE);
+		expectedRoles.add(BPMNInfo.AUTOMATED_ROLE);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -110,7 +112,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		addComponentsToProcess(processId);
 
-		ProcessDetail entry = wfAccessor.getProcessDetails(processId);
+		ProcessDetail entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
 		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
@@ -137,23 +139,23 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testGetProcessHistory() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		SortedSet<ProcessHistory> processHistory = wfAccessor.getProcessHistory(processId);
+		SortedSet<ProcessHistory> processHistory = wp_.getWorkflowAccessor().getProcessHistory(processId);
 		Assert.assertEquals(1, processHistory.size());
 		assertHistoryForProcess(processHistory, processId);
 
 		executeLaunchWorkflow(processId);
 		executeSendForReviewAdvancement(processId);
-		processHistory = wfAccessor.getProcessHistory(processId);
+		processHistory = wp_.getWorkflowAccessor().getProcessHistory(processId);
 		Assert.assertEquals(2, processHistory.size());
 		assertHistoryForProcess(processHistory, processId);
 
 		executeSendForApprovalAdvancement(processId);
-		processHistory = wfAccessor.getProcessHistory(processId);
+		processHistory = wp_.getWorkflowAccessor().getProcessHistory(processId);
 		Assert.assertEquals(3, processHistory.size());
 		assertHistoryForProcess(processHistory, processId);
 
 		concludeWorkflow(processId);
-		processHistory = wfAccessor.getProcessHistory(processId);
+		processHistory = wp_.getWorkflowAccessor().getProcessHistory(processId);
 		Assert.assertEquals(4, processHistory.size());
 		assertHistoryForProcess(processHistory, processId);
 		assertConcludeHistory(processHistory.last(), processId);
@@ -181,14 +183,14 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetUserRoles() throws Exception {
-		Set<String> roles = wfAccessor.getUserRoles(mainDefinitionId, firstUserId);
+		Set<String> roles = wp_.getWorkflowAccessor().getUserRoles(mainDefinitionId, firstUserId);
 		Assert.assertEquals(2, roles.size());
 
 		for (String role : roles) {
 			Assert.assertTrue(role.equals("Editor") || role.equals("Approver"));
 		}
 
-		roles = wfAccessor.getUserRoles(mainDefinitionId, secondUserId);
+		roles = wp_.getWorkflowAccessor().getUserRoles(mainDefinitionId, secondUserId);
 		Assert.assertEquals(1, roles.size());
 
 		String role = roles.iterator().next();
@@ -204,83 +206,83 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetAdvanceableProcessInformation() throws Exception {
-		Map<ProcessDetail, SortedSet<ProcessHistory>> info = wfAccessor
+		Map<ProcessDetail, SortedSet<ProcessHistory>> info = wp_.getWorkflowAccessor()
 				.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(0, info.size());
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Create first process-Main definition (role is Editor)
 		UUID firstProcessId = createFirstWorkflowProcess(mainDefinitionId);
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(firstProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(firstProcessId));
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(firstProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(firstProcessId));
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Launch workflow and send for review (role is reviewer)
 		executeLaunchWorkflow(firstProcessId);
 		executeSendForReviewAdvancement(firstProcessId);
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(0, info.size());
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(firstProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(firstProcessId));
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(firstProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(firstProcessId));
 
 		// Make workflow ready for review (role is Approver)
 		executeSendForApprovalAdvancement(firstProcessId);
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(firstProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(firstProcessId));
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(firstProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(firstProcessId));
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Create second process-Main definition. (first process role is
 		// Approver and second process role is Editor)
 		UUID secondProcessId = createSecondWorkflowProcess(mainDefinitionId);
 		// Create testing collections
-		Set<ProcessDetail> mainDefProcesses = new HashSet<>(Arrays.asList(wfAccessor.getProcessDetails(firstProcessId),
-				wfAccessor.getProcessDetails(secondProcessId)));
+		Set<ProcessDetail> mainDefProcesses = new HashSet<>(Arrays.asList(wp_.getWorkflowAccessor().getProcessDetails(firstProcessId),
+				wp_.getWorkflowAccessor().getProcessDetails(secondProcessId)));
 		Set<SortedSet<ProcessHistory>> mainDefProcessHistory = new HashSet<>(Arrays
-				.asList(wfAccessor.getProcessHistory(firstProcessId), wfAccessor.getProcessHistory(secondProcessId)));
+				.asList(wp_.getWorkflowAccessor().getProcessHistory(firstProcessId), wp_.getWorkflowAccessor().getProcessHistory(secondProcessId)));
 		// test
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(2, info.size());
 		Assert.assertEquals(info.keySet(), mainDefProcesses);
 		for (ProcessDetail process : info.keySet()) {
 			Assert.assertTrue(mainDefProcessHistory.contains(info.get(process)));
 		}
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Reject first process ready for edit (role is editor for both)
 		executeRejectReviewAdvancement(firstProcessId);
 		// Create testing collections
-		mainDefProcesses = new HashSet<>(Arrays.asList(wfAccessor.getProcessDetails(firstProcessId),
-				wfAccessor.getProcessDetails(secondProcessId)));
-		mainDefProcessHistory = new HashSet<>(Arrays.asList(wfAccessor.getProcessHistory(firstProcessId),
-				wfAccessor.getProcessHistory(secondProcessId)));
+		mainDefProcesses = new HashSet<>(Arrays.asList(wp_.getWorkflowAccessor().getProcessDetails(firstProcessId),
+				wp_.getWorkflowAccessor().getProcessDetails(secondProcessId)));
+		mainDefProcessHistory = new HashSet<>(Arrays.asList(wp_.getWorkflowAccessor().getProcessHistory(firstProcessId),
+				wp_.getWorkflowAccessor().getProcessHistory(secondProcessId)));
 		// test
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(2, info.size());
 		Assert.assertEquals(info.keySet(), mainDefProcesses);
 		for (ProcessDetail process : info.keySet()) {
 			Assert.assertTrue(mainDefProcessHistory.contains(info.get(process)));
 		}
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Cancel second process (role is editor for first and no role for
 		// second) and
 		cancelWorkflow(secondProcessId);
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(firstProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(firstProcessId));
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(firstProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(firstProcessId));
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
 		// Create third process on second definition.
@@ -290,21 +292,21 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		UUID secondDefinitionId = createSecondaryDefinition();
 		// test first definition
 		UUID thirdProcessId = createFirstWorkflowProcess(secondDefinitionId);
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(firstProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(firstProcessId));
-		info = wfAccessor.getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(firstProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(firstProcessId));
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(mainDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 		// test second definition
-		info = wfAccessor.getAdvanceableProcessInformation(secondDefinitionId, firstUserId);
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(secondDefinitionId, firstUserId);
 		Assert.assertEquals(1, info.size());
-		Assert.assertEquals(info.keySet().iterator().next(), wfAccessor.getProcessDetails(thirdProcessId));
-		Assert.assertEquals(info.get(info.keySet().iterator().next()), wfAccessor.getProcessHistory(thirdProcessId));
-		info = wfAccessor.getAdvanceableProcessInformation(secondDefinitionId, secondUserId);
+		Assert.assertEquals(info.keySet().iterator().next(), wp_.getWorkflowAccessor().getProcessDetails(thirdProcessId));
+		Assert.assertEquals(info.get(info.keySet().iterator().next()), wp_.getWorkflowAccessor().getProcessHistory(thirdProcessId));
+		info = wp_.getWorkflowAccessor().getAdvanceableProcessInformation(secondDefinitionId, secondUserId);
 		Assert.assertEquals(0, info.size());
 
-		definitionDetailStore.removeEntry(secondDefinitionId);
+		wp_.getDefinitionDetailStore().remove(secondDefinitionId);
 	}
 
 	/**
@@ -319,7 +321,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		UUID firstProcessId = createFirstWorkflowProcess(mainDefinitionId);
 
 		// Create Process (Is in Ready_To_Edit State)
-		Set<AvailableAction> firstProcessFirstUserActions = wfAccessor
+		Set<AvailableAction> firstProcessFirstUserActions = wp_.getWorkflowAccessor()
 				.getUserPermissibleActionsForProcess(firstProcessId, firstUserId);
 		Assert.assertEquals(2, firstProcessFirstUserActions.size());
 		for (AvailableAction act : firstProcessFirstUserActions) {
@@ -335,16 +337,16 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 				Assert.fail();
 			}
 		}
-		Set<AvailableAction> firstProcessSecondUserActions = wfAccessor
+		Set<AvailableAction> firstProcessSecondUserActions = wp_.getWorkflowAccessor()
 				.getUserPermissibleActionsForProcess(firstProcessId, secondUserId);
 		Assert.assertEquals(0, firstProcessSecondUserActions.size());
 
 		// Launch Process and send for review (Is in Ready_To_Review State)
 		executeLaunchWorkflow(firstProcessId);
 		executeSendForReviewAdvancement(firstProcessId);
-		firstProcessFirstUserActions = wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, firstUserId);
+		firstProcessFirstUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId);
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
-		firstProcessSecondUserActions = wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, secondUserId);
+		firstProcessSecondUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId);
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 		for (AvailableAction act : firstProcessSecondUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
@@ -364,7 +366,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		// Create Process (Is in Ready_To_Edit State)
 		UUID secondProcessId = createFirstWorkflowProcess(mainDefinitionId);
-		Set<AvailableAction> secondProcessFirstUserActions = wfAccessor
+		Set<AvailableAction> secondProcessFirstUserActions = wp_.getWorkflowAccessor()
 				.getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
 		Assert.assertEquals(2, secondProcessFirstUserActions.size());
 		for (AvailableAction act : secondProcessFirstUserActions) {
@@ -380,14 +382,14 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 				Assert.fail();
 			}
 		}
-		Set<AvailableAction> secondProcessSecondUserActions = wfAccessor
+		Set<AvailableAction> secondProcessSecondUserActions = wp_.getWorkflowAccessor()
 				.getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
 		Assert.assertEquals(0, secondProcessSecondUserActions.size());
 		// Verify the first process hasn't changed
 		Assert.assertEquals(firstProcessFirstUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
 		Assert.assertEquals(firstProcessSecondUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 
@@ -395,9 +397,9 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		// State)
 		executeLaunchWorkflow(secondProcessId);
 		executeSendForReviewAdvancement(secondProcessId);
-		secondProcessFirstUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
+		secondProcessFirstUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
 		Assert.assertEquals(0, secondProcessFirstUserActions.size());
-		secondProcessSecondUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
+		secondProcessSecondUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
 		Assert.assertEquals(3, secondProcessSecondUserActions.size());
 		for (AvailableAction act : secondProcessSecondUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
@@ -416,17 +418,17 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		}
 		// Verify the first process hasn't changed
 		Assert.assertEquals(firstProcessFirstUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
 		Assert.assertEquals(firstProcessSecondUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 
 		// Send second process for approval (At Ready for Approve State)
 		executeSendForApprovalAdvancement(secondProcessId);
-		secondProcessSecondUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
+		secondProcessSecondUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
 		Assert.assertEquals(0, secondProcessSecondUserActions.size());
-		secondProcessFirstUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
+		secondProcessFirstUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, firstUserId);
 		Assert.assertEquals(4, secondProcessFirstUserActions.size());
 		for (AvailableAction act : secondProcessFirstUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
@@ -446,25 +448,25 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 			}
 		}
 
-		secondProcessSecondUserActions = wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
+		secondProcessSecondUserActions = wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, secondUserId);
 		Assert.assertEquals(0, secondProcessSecondUserActions.size());
 		// Verify the first process hasn't changed
 		Assert.assertEquals(firstProcessFirstUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId));
 		Assert.assertEquals(firstProcessSecondUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId));
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 
 		// Cancel first process so should have zero permissions available
 		cancelWorkflow(firstProcessId);
-		Assert.assertEquals(0, wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, firstUserId).size());
-		Assert.assertEquals(0, wfAccessor.getUserPermissibleActionsForProcess(firstProcessId, secondUserId).size());
+		Assert.assertEquals(0, wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId).size());
+		Assert.assertEquals(0, wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId).size());
 		// Verify the second process hasn't changed
 		Assert.assertEquals(secondProcessFirstUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, firstUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, firstUserId));
 		Assert.assertEquals(secondProcessSecondUserActions,
-				wfAccessor.getUserPermissibleActionsForProcess(secondProcessId, secondUserId));
+				wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(secondProcessId, secondUserId));
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 	}

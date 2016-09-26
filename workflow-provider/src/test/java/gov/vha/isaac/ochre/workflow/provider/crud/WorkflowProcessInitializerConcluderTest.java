@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -26,15 +27,19 @@ import java.util.UUID;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessDetailComparator;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.ProcessStatus;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory.ProcessHistoryComparator;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.util.RecursiveDelete;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessDetailComparator;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Test the WorkflowProcessInitializerConcluder class
@@ -45,29 +50,29 @@ import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory.ProcessHistory
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowProviderTestPackage {
-	private static boolean setupCompleted = false;
-
-	private static MVStoreMetaContentProvider store;
-
-	private static WorkflowProcessInitializerConcluder initConcluder;
 
 	/**
 	 * Sets the up.
 	 */
-	@Before
-	public void setUpClass() {
-		if (!setupCompleted) {
-			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowInitConclude", true);
-			initConcluder = new WorkflowProcessInitializerConcluder(store);
-			setupCompleted = true;
-		}
-
-		globalSetup(store);
+	@BeforeClass
+	public static void setUpClass() {
+		WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
+		LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(new File("target/store").toPath());
+		LookupService.startupMetadataStore();
+		globalSetup();
 	}
 
 	@AfterClass
-	public static void tearDownClass() {
-		initConcluder.closeContentStores();
+	public static void tearDownClass() throws IOException {
+		LookupService.shutdownIsaac();
+		RecursiveDelete.delete(new File("target/store"));
+	}
+
+	@Before
+	public void beforeTest() {
+		wp_.getProcessDetailStore().clear();
+		wp_.getProcessHistoryStore().clear();
+		wp_.getUserPermissionStore().clear();
 	}
 
 	/**
@@ -80,15 +85,15 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	@Test
 	public void testCreateWorkflowProcess() throws Exception {
 		// Initialization
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name",
-				"Main Process Description");
+		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
+				firstUserId, "Main Process Name", "Main Process Description");
 		addComponentsToProcess(processId);
 
 		// verify content in workflow is as expected
 		assertProcessDefinition(ProcessStatus.DEFINED, mainDefinitionId, processId);
 
 		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistoryComparator());
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 		Assert.assertEquals(1, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 	}
@@ -106,30 +111,30 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testLaunchWorkflow() throws Exception {
 		// Attempt to launch a process that hasn't yet been created
 		try {
-			initConcluder.launchProcess(UUID.randomUUID());
+			wp_.getWorkflowProcessInitializerConcluder().launchProcess(UUID.randomUUID());
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 		}
 
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name",
-				"Main Process Description");
+		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
+				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
 		executeSendForReviewAdvancement(processId);
-		initConcluder.launchProcess(processId);
+		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 
 		assertProcessDefinition(ProcessStatus.LAUNCHED, mainDefinitionId, processId);
 
 		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistoryComparator());
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 		Assert.assertEquals(2, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
 		// Attempt to launch an already launched process
 		try {
-			initConcluder.launchProcess(processId);
+			wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
@@ -156,30 +161,29 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 			Assert.assertTrue(true);
 		}
 
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name",
-				"Main Process Description");
+		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
+				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		addComponentsToProcess(processId);
 		executeSendForReviewAdvancement(processId);
-		initConcluder.launchProcess(processId);
+		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
 
 		executeSendForApprovalAdvancement(processId);
 		Thread.sleep(1);
 
 		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistoryComparator());
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
-		endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
-				EndWorkflowType.CANCELED);
+		endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
 
 		assertProcessDefinition(ProcessStatus.CANCELED, mainDefinitionId, processId);
 		hxEntries.clear();
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 		assertCancelHistory(hxEntries.last(), processId);
 
 		// Attempt to cancel an already launched process
@@ -215,8 +219,8 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 			Assert.assertTrue(true);
 		}
 
-		UUID processId = initConcluder.createWorkflowProcess(mainDefinitionId, firstUserId, "Main Process Name",
-				"Main Process Description");
+		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
+				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		// Attempt to conclude a process that hasn't yet been launched
@@ -230,7 +234,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		addComponentsToProcess(processId);
 		executeSendForReviewAdvancement(processId);
-		initConcluder.launchProcess(processId);
+		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
 
 		// Attempt to conclude a process that isn't at an end state
@@ -246,7 +250,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Thread.sleep(1);
 
 		SortedSet<ProcessHistory> hxEntries = new TreeSet<>(new ProcessHistoryComparator());
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
@@ -256,7 +260,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		assertProcessDefinition(ProcessStatus.CONCLUDED, mainDefinitionId, processId);
 		hxEntries.clear();
-		hxEntries.addAll(processHistoryStore.getAllEntries());
+		hxEntries.addAll(wp_.getProcessHistoryStore().values());
 		assertConcludeHistory(hxEntries.last(), processId);
 
 		// Attempt to cancel an already launched process
@@ -271,7 +275,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 	private void assertProcessDefinition(ProcessStatus processStatus, UUID definitionId, UUID processId) {
 		SortedSet<ProcessDetail> detailEntries = new TreeSet<>(new ProcessDetailComparator());
-		detailEntries.addAll(processDetailStore.getAllEntries());
+		detailEntries.addAll(wp_.getProcessDetailStore().values());
 		ProcessDetail entry = detailEntries.last();
 
 		Assert.assertEquals(processId, entry.getId());

@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,8 +25,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
 
 /**
  * Workflow roles available for each user for a given workflow definition
@@ -76,14 +74,12 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.userNid = (Integer) in.readObject();
+			this.userNid = (Integer) in.readObject();  //swap nids
 			this.role = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into UserPermission", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast UserPermission fields into String", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into UserPermission", e);
 		}
 	}
 
@@ -122,17 +118,24 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
-
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(userNid);
-		out.writeObject(role);
-
-		return bos.toByteArray();
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
+	
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(userNid);
+			out.writeObject(role);
+	
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*

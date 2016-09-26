@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
@@ -137,6 +135,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 
+			//TODO these nids need to swap to UUIDs - certainly when writing to the changeset file
 			@SuppressWarnings("unchecked")
 			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
 			this.componentNidToStampsMap = componentToStampMapReadObject;
@@ -148,12 +147,10 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			this.status = (ProcessStatus) in.readObject();
 			this.name = (String) in.readObject();
 			this.description = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into ProcessDetail", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast ProcessDetail fields", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into ProcessDetail", e);
 		}
 	}
 
@@ -282,23 +279,30 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(componentNidToStampsMap);
-		out.writeObject(creatorNid);
-		out.writeObject(timeCreated);
-		out.writeObject(timeLaunched);
-		out.writeObject(timeCanceledOrConcluded);
-		out.writeObject(status);
-		out.writeObject(name);
-		out.writeObject(description);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(componentNidToStampsMap);
+			out.writeObject(creatorNid);
+			out.writeObject(timeCreated);
+			out.writeObject(timeLaunched);
+			out.writeObject(timeCanceledOrConcluded);
+			out.writeObject(status);
+			out.writeObject(name);
+			out.writeObject(description);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	public boolean isActive() {

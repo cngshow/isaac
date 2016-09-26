@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,8 +25,6 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
 
 /**
  * The available workflow actions as defined via the workflow definition. Each
@@ -92,12 +90,10 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 			this.action = (String) in.readObject();
 			this.outcomeState = (String) in.readObject();
 			this.role = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into Available Action", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast Available Action fields", e);
-			e.printStackTrace();
+		} 
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into Available Action", e);
 		}
 	}
 
@@ -154,19 +150,26 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(initialState);
-		out.writeObject(action);
-		out.writeObject(outcomeState);
-		out.writeObject(role);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(initialState);
+			out.writeObject(action);
+			out.writeObject(outcomeState);
+			out.writeObject(role);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*

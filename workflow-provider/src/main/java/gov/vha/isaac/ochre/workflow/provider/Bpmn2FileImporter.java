@@ -18,14 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,8 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import org.drools.core.io.impl.ByteArrayResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.drools.core.io.impl.InputStreamResource;
 import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
 import org.jbpm.bpmn2.core.SequenceFlow;
@@ -60,20 +56,18 @@ import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
-
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link AbstractWorkflowUtilities} {@link Bpmn2FileImporter}
+ * {@link BPMNInfo} {@link Bpmn2FileImporter}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
+public class Bpmn2FileImporter {
 	/**
 	 * A flag defining whether person importing the BPMN2 file wants the outcome
 	 * printed to console for analysis purposes.
@@ -123,7 +117,23 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	private RuleFlowProcess ruleFlow;
 
 	/** The path to the BPMN2 file being imported */
-	private String currentBpmn2FilePath;
+	private String bpmn2ResourcePath;
+	
+	/** A map of available actions per type of ending workflow */
+	private HashMap<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
+
+	/**
+	 * A map of available actions per definition from which a workflow may be
+	 * started
+	 */
+	private HashMap<UUID, Set<AvailableAction>> definitionStartActionMap = new HashMap<>();
+
+	/** A map of all states per definition from which a process may be edited */
+	private HashMap<UUID, Set<String>> editStatesMap = new HashMap<>();
+	
+	private WorkflowProvider provider;
+	
+	private final Logger logger = LogManager.getLogger();
 
 	/**
 	 * Imports a new workflow definition storing the contents into the store
@@ -134,10 +144,9 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 * @param bpmn2FilePath
 	 *            The bpmn2 file path being imported
 	 */
-	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
-		super(store);
-		clearPreviousImport();
-		currentBpmn2FilePath = bpmn2FilePath;
+	public Bpmn2FileImporter(String bpmn2ResourcePath, WorkflowProvider provider) {
+		this.bpmn2ResourcePath = bpmn2ResourcePath;
+		this.provider = provider;
 
 		try {
 
@@ -155,11 +164,16 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			importAndProcessNodes();
 
 			// Finalize import process
-			getEditStatesMap().put(currentDefinitionId, currentEditStates);
+			editStatesMap.put(currentDefinitionId, currentEditStates);
 		} catch (Exception e) {
-			logger.error("Failed in processing the workflow definition defined at: " + currentBpmn2FilePath);
+			logger.error("Failed in processing the workflow definition defined at: " + bpmn2ResourcePath);
 			e.printStackTrace();
 		}
+	}
+	
+	public BPMNInfo getBPMNInfo()
+	{
+		return new BPMNInfo(currentDefinitionId, endNodeTypeMap, definitionStartActionMap, editStatesMap);
 	}
 
 	/**
@@ -174,19 +188,33 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	 *         key
 	 */
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
-		Set<String> roles = new HashSet<>();
-		roles.add(AUTOMATED_ROLE);
-
-		ProcessAssetDesc definition = descriptor.getProcess();
-
-		for (String key : descriptor.getTaskAssignments().keySet()) {
-			roles.addAll(descriptor.getTaskAssignments().get(key));
+		if (provider.getDefinitionDetailStore().size() == 0)
+		{
+			Set<String> roles = new HashSet<>();
+			roles.add(BPMNInfo.AUTOMATED_ROLE);
+	
+			ProcessAssetDesc definition = descriptor.getProcess();
+	
+			for (String key : descriptor.getTaskAssignments().keySet()) {
+				roles.addAll(descriptor.getTaskAssignments().get(key));
+			}
+			
+	
+			DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
+					definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
+			return provider.getDefinitionDetailStore().add(entry);
 		}
-
-		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
-				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
-
-		return definitionDetailStore.addEntry(entry);
+		else
+		{
+			for (DefinitionDetail dd : provider.getDefinitionDetailStore().values())
+			{
+				if (dd.getBpmn2Id().equals(descriptor.getProcess().getId()))
+				{
+					return dd.getId();
+				}
+			}
+		}
+		throw new RuntimeException("Loaded datastore mis-aligns with bpmn file!");
 	}
 
 	/**
@@ -207,19 +235,23 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		try {
 			Set<AvailableAction> entries = generateAvailableActions();
-
-			for (AvailableAction entry : entries) {
-				// Write content into database
-				availableActionStore.addEntry(entry);
+			if (provider.getAvailableActionStore().size() == 0) {
+				logger.info("Loading Available Action store from BPMN");
+	
+				for (AvailableAction entry : entries) {
+					// Write content into database
+					provider.getAvailableActionStore().add(entry);
+				}
+			}
+			else {
+				logger.info("Not updating Action Store, because it is already populated.");
 			}
 
 			if (printForAnalysis) {
 				printNodes();
 			}
 		} catch (Exception e) {
-			logger.error(
-					"Failed in transforming the workflow definition into Possible Actions: " + currentBpmn2FilePath);
-			e.printStackTrace();
+			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2ResourcePath, e);
 		}
 	}
 
@@ -346,7 +378,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			}
 
 			if (roles.size() == 0 && node.getId() == ruleFlow.getStartNodes().iterator().next().getId()) {
-				roles.add(AUTOMATED_ROLE);
+				roles.add(BPMNInfo.AUTOMATED_ROLE);
 			}
 
 			// Verify that all requirements met
@@ -378,9 +410,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	private ProcessDescriptor identifyDefinitionMetadata() throws Exception {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 
-		byte[] xmlContents = new String(Files.readAllBytes(Paths.get(currentBpmn2FilePath)), Charset.defaultCharset())
-				.getBytes();
-		kbuilder.add(new ByteArrayResource(xmlContents), ResourceType.BPMN2);
+		kbuilder.add(new InputStreamResource(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath)), ResourceType.BPMN2);
 
 		try {
 			KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
@@ -408,18 +438,18 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		XmlProcessReader processReader = new XmlProcessReader(modules, getClass().getClassLoader());
 
 		try {
-			InputStream in = new FileInputStream(new File(currentBpmn2FilePath));
-			List<Process> processes = processReader.read(in);
+			InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);
+			List<Process> processes = processReader.read(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath));
 			in.close();
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
-			logger.error("Couldn't Find Fine: " + currentBpmn2FilePath, e);
+			logger.error("Couldn't Find Fine: " + bpmn2ResourcePath, e);
 			e.printStackTrace();
 		} catch (IOException ioe) {
-			logger.error("Error in readFile method: " + currentBpmn2FilePath, ioe);
+			logger.error("Error in readFile method: " + bpmn2ResourcePath, ioe);
 			ioe.printStackTrace();
 		} catch (SAXException se) {
-			logger.error("Error in parsing XML file: " + currentBpmn2FilePath, se);
+			logger.error("Error in parsing XML file: " + bpmn2ResourcePath, se);
 			se.printStackTrace();
 		}
 
@@ -501,15 +531,15 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 
 		// Handle special cases denoted by flag
 		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
-			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CANCELED)) {
-				getEndWorkflowTypeMap().put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
+			if (!endNodeTypeMap.containsKey(EndWorkflowType.CANCELED)) {
+				endNodeTypeMap.put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
 			}
-			getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).addAll(availActions);
+			endNodeTypeMap.get(EndWorkflowType.CANCELED).addAll(availActions);
 		} else if (flag.equalsIgnoreCase(EndWorkflowType.CONCLUDED.toString())) {
-			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CONCLUDED)) {
-				getEndWorkflowTypeMap().put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
+			if (!endNodeTypeMap.containsKey(EndWorkflowType.CONCLUDED)) {
+				endNodeTypeMap.put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
 			}
-			getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
+			endNodeTypeMap.get(EndWorkflowType.CONCLUDED).addAll(availActions);
 		} else if (flag.equalsIgnoreCase(EDITING_ACTION)) {
 			for (AvailableAction action : availActions) {
 				currentEditStates.add(action.getInitialState());
@@ -641,7 +671,7 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			// At this point, only single start state is in scope.
 		}
 
-		getDefinitionStartActionMap().put(currentDefinitionId, actions);
+		definitionStartActionMap.put(currentDefinitionId, actions);
 	}
 
 	/**
@@ -759,17 +789,5 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 				}
 			}
 		}
-	}
-
-	private void clearPreviousImport() {
-		processNodes.clear();
-		visitedNodes.clear();
-		nodeToOutgoingMap.clear();
-		nodeNameMap.clear();
-		humanNodesProcessed.clear();
-
-		clearDefinitionCollections();
-		currentEditStates.clear();
-		getEditStatesMap().remove(currentDefinitionId);
 	}
 }

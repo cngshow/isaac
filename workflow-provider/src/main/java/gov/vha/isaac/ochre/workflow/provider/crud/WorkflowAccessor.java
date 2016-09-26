@@ -25,45 +25,33 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory.ProcessHistoryComparator;
-import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
+import javax.inject.Singleton;
+import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
+import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Contains methods necessary to perform workflow-based accessing
  * 
- * {@link AbstractWorkflowUtilities}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class WorkflowAccessor extends AbstractWorkflowUtilities {
+@Service
+@Singleton
+public class WorkflowAccessor {
+	
+	private WorkflowProvider workflowProvider_;
 
-	/**
-	 * Default constructor which presumes the workflow-based content store has
-	 * already been setup
-	 * 
-	 * @throws Exception
-	 *             Thrown if workflow-based content store has yet to be setup
-	 */
-	public WorkflowAccessor() throws Exception {
-
-	}
-
-	/**
-	 * Constructor includes setting up workflow-based content store which is
-	 * used by the workflow accessing methods to pull data
-	 *
-	 * @param store
-	 *            The workflow content store
-	 */
-	public WorkflowAccessor(MVStoreMetaContentProvider store) {
-		super(store);
+	//for HK2
+	private WorkflowAccessor()
+	{
+		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}
 
 	/**
@@ -78,7 +66,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	 * @return The definition details entry requested
 	 */
 	public DefinitionDetail getDefinitionDetails(UUID definitionId) {
-		return definitionDetailStore.getEntry(definitionId);
+		return workflowProvider_.getDefinitionDetailStore().get(definitionId);
 	}
 
 	/**
@@ -93,7 +81,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	 * @return The process details entry requested
 	 */
 	public ProcessDetail getProcessDetails(UUID processId) {
-		return processDetailStore.getEntry(processId);
+		return workflowProvider_.getProcessDetailStore().get(processId);
 	}
 
 	/**
@@ -112,7 +100,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	public SortedSet<ProcessHistory> getProcessHistory(UUID processId) {
 		SortedSet<ProcessHistory> allHistoryForProcess = new TreeSet<>(new ProcessHistoryComparator());
 
-		for (ProcessHistory hx : processHistoryStore.getAllEntries()) {
+		for (ProcessHistory hx : workflowProvider_.getProcessHistoryStore().values()) {
 			if (hx.getProcessId().equals(processId)) {
 				allHistoryForProcess.add(hx);
 			}
@@ -139,7 +127,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	 * @return True if the component is in an active workflow.
 	 */
 	public boolean isComponentInActiveWorkflow(UUID definitionId, int compNid) {
-		for (ProcessDetail proc : processDetailStore.getAllEntries()) {
+		for (ProcessDetail proc : workflowProvider_.getProcessDetailStore().values()) {
 			if (proc.getDefinitionId().equals(definitionId) && proc.isActive()
 					&& proc.getComponentNidToStampsMap().containsKey(compNid)) {
 				return true;
@@ -166,7 +154,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	public Set<String> getUserRoles(UUID definitionId, int userId) {
 		Set<String> userRoles = new HashSet<>();
 
-		for (UserPermission permission : userPermissionStore.getAllEntries()) {
+		for (UserPermission permission : workflowProvider_.getUserPermissionStore().values()) {
 			if (permission.getUserNid() == userId && permission.getDefinitionId().equals(definitionId)) {
 				userRoles.add(permission.getRole());
 			}
@@ -196,12 +184,12 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		Map<ProcessDetail, SortedSet<ProcessHistory>> processInformation = new HashMap<>();
 
 		// Get User Roles
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(definitionId,
+		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(definitionId,
 				userNid);
 
 		// For each ActiveProcesses, see if its current state is "applicable
 		// current state" and if
-		for (ProcessDetail process : processDetailStore.getAllEntries()) {
+		for (ProcessDetail process : workflowProvider_.getProcessDetailStore().values()) {
 			if (process.isActive() && process.getDefinitionId().equals(definitionId)) {
 				SortedSet<ProcessHistory> hx = getProcessHistory(process.getId());
 
@@ -232,7 +220,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 		ProcessDetail processDetail = getProcessDetails(processId);
 		ProcessHistory processLatest = getProcessHistory(processId).last();
 
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitiailState(
+		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
 				processDetail.getDefinitionId(), userNid);
 
 		if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
@@ -257,7 +245,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 	 * @return The set of all Available Actions for each initial state for which
 	 *         the user can advance workflow.
 	 */
-	private Map<String, Set<AvailableAction>> getUserAvailableActionsByInitiailState(UUID definitionId, int userId) {
+	private Map<String, Set<AvailableAction>> getUserAvailableActionsByInitialState(UUID definitionId, int userId) {
 		Map<String, Set<AvailableAction>> applicableActions = new HashMap<>();
 
 		// Get User Roles
@@ -265,7 +253,7 @@ public class WorkflowAccessor extends AbstractWorkflowUtilities {
 
 		// Get Map of available actions (by initialState) that can be executed
 		// based on userRoles
-		for (AvailableAction action : availableActionStore.getAllEntries()) {
+		for (AvailableAction action : workflowProvider_.getAvailableActionStore().values()) {
 			if (action.getDefinitionId().equals(definitionId) && userRoles.contains(action.getRole())) {
 				if (!applicableActions.containsKey(action.getInitialState())) {
 					applicableActions.put(action.getInitialState(), new HashSet<AvailableAction>());
