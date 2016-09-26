@@ -44,8 +44,9 @@ public class LookupService {
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
-    public static final int WORKERS_STARTED_RUNLEVEL = -1;
-    public static final int ISAAC_STOPPED_RUNLEVEL = -2;
+    public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
+    public static final int WORKERS_STARTED_RUNLEVEL = -2;
+    public static final int ISAAC_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
 
     /**
@@ -171,6 +172,17 @@ public class LookupService {
     }
 
     public static void setRunLevel(int runLevel) {
+        int current = getService(RunLevelController.class).getCurrentRunLevel();
+        if (current > runLevel) {
+            looker.getAllServiceHandles(OchreCache.class).forEach(handle ->
+            {
+                if (handle.isActive()) {
+                    LOG.info("Clear cache for: " + handle.getActiveDescriptor().getImplementation());
+                    handle.getService().reset();
+                }
+            });
+            looker.getAllServices(OchreCache.class).forEach((cache) -> {cache.reset();});
+        }
         getService(RunLevelController.class).proceedTo(runLevel);
     }
     
@@ -180,6 +192,15 @@ public class LookupService {
     public static void startupWorkExecutors() {
         if (getService(RunLevelController.class).getCurrentRunLevel() < WORKERS_STARTED_RUNLEVEL) {
             setRunLevel(WORKERS_STARTED_RUNLEVEL);
+        }
+    }
+    
+    /**
+     * Start the Metadata services (without starting ISAAC core services), blocking until started (or failed). 
+     */
+    public static void startupMetadataStore() {
+        if (getService(RunLevelController.class).getCurrentRunLevel() < METADATA_STORE_STARTED_RUNLEVEL) {
+            setRunLevel(METADATA_STORE_STARTED_RUNLEVEL);
         }
     }
     
@@ -197,9 +218,6 @@ public class LookupService {
         if (isInitialized())
         {
             setRunLevel(ISAAC_STOPPED_RUNLEVEL);
-            LOG.info("Service caches: " + looker.getAllServices(OchreCache.class));
-            looker.getAllServices(OchreCache.class)
-                    .forEach((cache) -> {cache.reset();});
             looker.shutdown();
             ServiceLocatorFactory.getInstance().destroy(looker);
             looker = null;
