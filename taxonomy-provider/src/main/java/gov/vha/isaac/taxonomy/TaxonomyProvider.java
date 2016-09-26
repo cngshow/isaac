@@ -179,9 +179,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public Tree getTaxonomyTree(TaxonomyCoordinate tc) {
-    	//TODO invalidate this cache when a commit, or some other action happens that would make it invalid.
-    	//TODO determine if the returned tree is thread safe for multiple accesses in parallel, if not, 
-    	//may need a pool of these.
+    	//TODO determine if the returned tree is thread safe for multiple accesses in parallel, if not, may need a pool of these.
     	Tree temp = treeCache.get(tc.hashCode());
     	{
     		if (temp != null)
@@ -730,6 +728,10 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public void handleCommit(CommitRecord commitRecord) {
+        //If a logic graph changed, clear our cache.
+        if (sememeSequencesForUnhandledChanges.size() > 0) {
+            treeCache.clear();
+        }
         UpdateTaxonomyAfterCommitTask.get(this, commitRecord, sememeSequencesForUnhandledChanges, stampedLock);
     }
 
