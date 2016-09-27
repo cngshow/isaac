@@ -125,7 +125,7 @@ public class WorkflowUpdater {
 
 				// Update Process Details for launch, cancel, or conclude
 				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
-						.contains(actionRequested)) {
+						.contains(action)) {
 					// Request to cancel workflow
 					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action,
 							userNid, comment, EndWorkflowType.CANCELED, editCoordinate);
@@ -410,6 +410,7 @@ public class WorkflowUpdater {
 									version.getClass(), ((SememeVersion<?>) version).getState(), editCoordinate);
 
 							createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
+							Get.commitService().addUncommitted(createdVersion.getChronology()).get();
 							Get.commitService().commit("Reverting sememe to how it was prior to workflow");
 
 							break;

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +19,6 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
@@ -30,7 +30,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
 import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
@@ -868,41 +867,50 @@ public class WorkflowFrameworkTest {
 					" Framework Workflow Description");
 
 			ConceptChronologyImpl con = (ConceptChronologyImpl) Get.conceptService().getConcept(firstTestConceptNid);
-			SememeChronologyImpl descSem = (SememeChronologyImpl) con.getConceptDescriptionList().iterator().next();
+			int semNid = con.getConceptDescriptionList().iterator().next().getNid();
 
-			verifyState(con, descSem, State.ACTIVE);
+			SememeChronologyImpl semChron = (SememeChronologyImpl) Get.sememeService().getSememe(semNid);
+
+			verifyState(con, semChron, State.ACTIVE);
 
 			// Inactivate Concept
 			con.createMutableVersion(State.INACTIVE, defaultEditCoordinate);
-			Get.commitService().addUncommitted(con);
+			Get.commitService().addUncommitted(con).get();
 			Optional<CommitRecord> commitRecord = Get.commitService().commit("Inactivating concept for Testing").get();
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			// Inactivate Sememe
-			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
-					.createMutableVersion(DescriptionSememeImpl.class, State.INACTIVE, defaultEditCoordinate);
-			// TODO: Joel #1 Review why this throws exception:
-			// Get.commitService().addUncommitted(createdVersion.getChronology()).get();
-
-			// TODO: Joel #2 Review why the below's commitRecord shows nothing
-			// under StampsToCheck or StampsToCommit
-
-			Get.commitService().addUncommitted(createdVersion.getChronology());
+			DescriptionSememeImpl createdVersion = cloneVersion(semChron, State.INACTIVE);
+			Get.commitService().addUncommitted(semChron).get();
 			commitRecord = Get.commitService().commit("Inactivating sememe for Testing").get();
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-			/*
-			 * verifyState(con, descSem, State.INACTIVE);
-			 * 
-			 * updater.advanceWorkflow(processId, userId, "Edit",
-			 * "Edit Comment", defaultEditCoordinate);
-			 * updater.advanceWorkflow(processId, userId, "Cancel Workflow",
-			 * "Canceling Workflow for Testing", defaultEditCoordinate);
-			 * 
-			 * verifyState(con, descSem, State.ACTIVE);
-			 */ } catch (Exception e) {
+			verifyState(con, semChron, State.INACTIVE);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate);
+
+			verifyState(con, semChron, State.ACTIVE);
+		} catch (Exception e) {
 			Assert.fail();
 		}
+	}
+
+	private DescriptionSememeImpl cloneVersion(SememeChronologyImpl semChron, State state)
+			throws InterruptedException, ExecutionException {
+		DescriptionSememe<?> latestVersion = ((LatestVersion<DescriptionSememe<?>>) semChron
+				.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate())
+				.get()).value();
+
+		DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) semChron
+				.createMutableVersion(DescriptionSememeImpl.class, state, defaultEditCoordinate);
+		createdVersion.setCaseSignificanceConceptSequence(latestVersion.getCaseSignificanceConceptSequence());
+		createdVersion.setDescriptionTypeConceptSequence((latestVersion.getDescriptionTypeConceptSequence()));
+		createdVersion.setLanguageConceptSequence(latestVersion.getLanguageConceptSequence());
+		createdVersion.setText(latestVersion.getText());
+
+		return createdVersion;
 	}
 
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
@@ -921,29 +929,12 @@ public class WorkflowFrameworkTest {
 
 			Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) descSem)
 					.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
-
-			// Revert description if previous execution of test failed
-			if (latestDescVersion.get().value().getText().equals("New Text")) {
-				DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
-						.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
-				createdVersion.setText("ISAAC metadata");
-
-				Get.commitService().addUncommitted(descSem);
-				Get.commitService().commit("Inactivating sememe for Testing");
-
-				latestDescVersion = ((SememeChronology) descSem).getLatestVersion(DescriptionSememe.class,
-						Get.configurationService().getDefaultStampCoordinate());
-				Assert.assertNotEquals(latestDescVersion.get().value().getText(), "New Text");
-			}
-
 			String originalText = latestDescVersion.get().value().getText();
 
 			// Modify Sememe Text
-			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
-					.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
+			DescriptionSememeImpl createdVersion = cloneVersion(descSem, State.ACTIVE);
 			createdVersion.setText("New Text");
-
-			Get.commitService().addUncommitted(descSem);
+			Get.commitService().addUncommitted(descSem).get();
 			Optional<CommitRecord> commitRecord = Get.commitService().commit("Inactivating sememe for Testing").get();
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
@@ -953,12 +944,11 @@ public class WorkflowFrameworkTest {
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
 					"Canceling Workflow for Testing", defaultEditCoordinate);
 
-			latestDescVersion = ((SememeChronology) descSem).getLatestVersion(DescriptionSememe.class,
+			SememeChronology<? extends SememeVersion<?>> semChron = Get.sememeService().getSememe(descSem.getNid());
+			latestDescVersion = ((SememeChronology) semChron).getLatestVersion(DescriptionSememe.class,
 					Get.configurationService().getDefaultStampCoordinate());
 
-			// TODO: Jesse Remove commented out code
-			// Assert.assertEquals(originalText,
-			// latestDescVersion.get().value().getText());
+			Assert.assertEquals(originalText, latestDescVersion.get().value().getText());
 		} catch (Exception e) {
 			Assert.fail(e.getMessage());
 		}
@@ -988,8 +978,9 @@ public class WorkflowFrameworkTest {
 	private void verifyState(ConceptChronology<? extends ConceptVersion<?>> con,
 			SememeChronology<? extends DescriptionSememe<?>> descSem, State state) {
 
-		ConceptChronology<? extends ConceptVersion<?>> cc = (ConceptChronologyImpl) Get.conceptService().getConcept(con.getNid());
-		Optional<LatestVersion<ConceptVersion>> latestConVersion = ((ConceptChronology) con)
+		ConceptChronology<? extends ConceptVersion<?>> cc = (ConceptChronologyImpl) Get.conceptService()
+				.getConcept(con.getNid());
+		Optional<LatestVersion<ConceptVersion>> latestConVersion = ((ConceptChronology) cc)
 				.getLatestVersion(ConceptVersion.class, defaultStampCoordinate);
 		Assert.assertEquals(latestConVersion.get().value().getState(), state);
 
