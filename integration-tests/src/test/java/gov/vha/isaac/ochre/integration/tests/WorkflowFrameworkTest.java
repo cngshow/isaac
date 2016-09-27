@@ -135,9 +135,9 @@ public class WorkflowFrameworkTest {
 			Assert.assertFalse(
 					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(conNid, null, 1110);
+			Optional<CommitRecord> commitRecord = createCommitRecord(conNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
-			commitRecord = createCommitRecord(null, semNid, 1111);
+			commitRecord = createCommitRecord(null, semNid);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			Assert.assertTrue(
@@ -218,7 +218,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 2220);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -298,15 +298,15 @@ public class WorkflowFrameworkTest {
 			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 3330);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-			commitRecord = createCommitRecord(firstTestConceptNid, null, 3331);
+			commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
 			try {
-				commitRecord = createCommitRecord(firstTestConceptNid, null, 3332);
+				commitRecord = createCommitRecord(firstTestConceptNid, null);
 				wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 				Assert.fail();
 			} catch (Exception e) {
@@ -315,7 +315,7 @@ public class WorkflowFrameworkTest {
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Fails", "QA Fail", defaultEditCoordinate);
 
-			commitRecord = createCommitRecord(firstTestConceptNid, null, 3333);
+			commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			Assert.assertEquals(ProcessStatus.LAUNCHED,
@@ -337,7 +337,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 4440);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
@@ -373,7 +373,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 5550);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -403,7 +403,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 6660);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -434,7 +434,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 7770);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -471,7 +471,7 @@ public class WorkflowFrameworkTest {
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 8880);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -516,36 +516,27 @@ public class WorkflowFrameworkTest {
 		Assert.assertTrue(true);
 		UUID processId = createFirstWorkflowProcess(wp_.getBPMNInfo().getDefinitionId());
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertFalse(details.getComponentNids().containsKey(firstTestConceptNid));
+		Assert.assertFalse(details.getComponentNids().contains(firstTestConceptNid));
 
-		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 9990);
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().containsKey(firstTestConceptNid));
-		Assert.assertEquals(1, details.getComponentNids().get(firstTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(9990));
+		Assert.assertTrue(details.getComponentNids().contains(firstTestConceptNid));
+		Assert.assertEquals(1, details.getComponentNids().size());
 
-		commitRecord = createCommitRecord(firstTestConceptNid, null, 9991);
+		commitRecord = createCommitRecord(firstTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().containsKey(firstTestConceptNid));
-		Assert.assertEquals(2, details.getComponentNids().get(firstTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(9990));
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(9991));
+		Assert.assertTrue(details.getComponentNids().contains(firstTestConceptNid));
 
-		commitRecord = createCommitRecord(secondTestConceptNid, null, 9990);
+		commitRecord = createCommitRecord(secondTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().containsKey(firstTestConceptNid));
-		Assert.assertEquals(2, details.getComponentNids().get(firstTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(9990));
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(9991));
-		Assert.assertTrue(details.getComponentNids().containsKey(secondTestConceptNid));
-		Assert.assertEquals(1, details.getComponentNids().get(secondTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(secondTestConceptNid).contains(9990));
+		Assert.assertTrue(details.getComponentNids().contains(firstTestConceptNid));
+		Assert.assertTrue(details.getComponentNids().contains(secondTestConceptNid));
 	}
 
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
@@ -556,31 +547,26 @@ public class WorkflowFrameworkTest {
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(0, details.getComponentNids().size());
 
-		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 121200);
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-		commitRecord = createCommitRecord(firstTestConceptNid, null, 121201);
+		commitRecord = createCommitRecord(firstTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-		commitRecord = createCommitRecord(secondTestConceptNid, null, 121200);
+		commitRecord = createCommitRecord(secondTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-		commitRecord = createCommitRecord(secondTestConceptNid, null, 121201);
+		commitRecord = createCommitRecord(secondTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentNids().size());
-		Assert.assertEquals(2, details.getComponentNids().get(firstTestConceptNid).size());
-		Assert.assertEquals(2, details.getComponentNids().get(secondTestConceptNid).size());
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstTestConceptNid, defaultEditCoordinate);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertFalse(details.getComponentNids().containsKey(firstTestConceptNid));
-		Assert.assertTrue(details.getComponentNids().containsKey(secondTestConceptNid));
-		Assert.assertEquals(2, details.getComponentNids().get(secondTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(secondTestConceptNid).contains(121200));
-		Assert.assertTrue(details.getComponentNids().get(secondTestConceptNid).contains(121201));
+		Assert.assertFalse(details.getComponentNids().contains(firstTestConceptNid));
+		Assert.assertTrue(details.getComponentNids().contains(secondTestConceptNid));
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, secondTestConceptNid, defaultEditCoordinate);
 		details = wp_.getProcessDetailStore().get(processId);
@@ -603,7 +589,7 @@ public class WorkflowFrameworkTest {
 
 		UUID firstProcessId = createFirstWorkflowProcess(wp_.getBPMNInfo().getDefinitionId());
 
-		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 565600);
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
 
 		wp_.getWorkflowUpdater().advanceWorkflow(firstProcessId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
@@ -654,9 +640,8 @@ public class WorkflowFrameworkTest {
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
 		ProcessDetail details = wp_.getProcessDetailStore().get(firstProcessId);
 		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().containsKey(firstTestConceptNid));
-		Assert.assertEquals(1, details.getComponentNids().get(firstTestConceptNid).size());
-		Assert.assertTrue(details.getComponentNids().get(firstTestConceptNid).contains(565600));
+		Assert.assertTrue(details.getComponentNids().contains(firstTestConceptNid));
+		Assert.assertEquals(1, details.getComponentNids().size());
 
 		// Testing INACTIVE Case
 		cancelWorkflow(firstProcessId);
@@ -714,10 +699,10 @@ public class WorkflowFrameworkTest {
 		return wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 	}
 
-	private Optional<CommitRecord> createCommitRecord(Integer conNid, Integer semNid, int stampSeq) {
+	private Optional<CommitRecord> createCommitRecord(Integer conNid, Integer semNid) {
 		ConceptSequenceSet conSet;
 		SememeSequenceSet semSet;
-		StampSequenceSet stampSet = StampSequenceSet.of(stampSeq);
+		StampSequenceSet stampSet = StampSequenceSet.of(111);
 
 		if (conNid == null) {
 			conSet = new ConceptSequenceSet();
