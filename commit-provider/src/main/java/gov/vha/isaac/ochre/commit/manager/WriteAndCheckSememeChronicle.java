@@ -15,42 +15,57 @@
  */
 package gov.vha.isaac.ochre.commit.manager;
 
+import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Semaphore;
+import java.util.function.BiConsumer;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.Alert;
 import gov.vha.isaac.ochre.api.commit.ChangeChecker;
-import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CheckPhase;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitStates;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.progress.ActiveTasks;
-import java.lang.ref.WeakReference;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Semaphore;
 import javafx.concurrent.Task;
 
 /**
  *
  * @author kec
  */
-public class WriteAndCheckSememeChronicle extends Task<Void> implements Callable<Void> {
+public class WriteAndCheckSememeChronicle extends Task<Void> {
 
     private final SememeChronology sc;
     private final ConcurrentSkipListSet<ChangeChecker> checkers;
     private final ConcurrentSkipListSet<Alert> alertCollection;
     private final Semaphore writeSemaphore;
     private final ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners;
+    private final BiConsumer<ObjectChronology, Boolean> uncommittedTracking;
 
+    /**
+     * 
+     * @param sc
+     * @param checkers
+     * @param alertCollection
+     * @param writeSemaphore
+     * @param changeListeners
+     * @param uncommittedTracking A handle to call back to the caller to notify it that the sememe has been 
+     * written to the SememeService.  Parameter 1 is the Sememe, Parameter two is true to indicate that the
+     * change checker is active for this implementation.
+     */
     public WriteAndCheckSememeChronicle(SememeChronology sc,
             ConcurrentSkipListSet<ChangeChecker> checkers,
             ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
-            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
+            ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners, 
+            BiConsumer<ObjectChronology, Boolean> uncommittedTracking) {
         this.sc = sc;
         this.checkers = checkers;
         this.alertCollection = alertCollection;
         this.writeSemaphore = writeSemaphore;
         this.changeListeners = changeListeners;
+        this.uncommittedTracking = uncommittedTracking;
         updateTitle("Write, check, and notify for sememe change");
         updateMessage("write: " + sc.getSememeType() + " " + sc.getSememeSequence());
         updateProgress(-1, Long.MAX_VALUE); // Indeterminate progress
@@ -61,6 +76,7 @@ public class WriteAndCheckSememeChronicle extends Task<Void> implements Callable
     public Void call() throws Exception {
         try {
             Get.sememeService().writeSememe(sc);
+            uncommittedTracking.accept(sc, true);
             updateProgress(1, 3);
             updateMessage("checking: " + sc.getSememeType() + " " + sc.getSememeSequence());
             if (sc.getCommitState() == CommitStates.UNCOMMITTED) {

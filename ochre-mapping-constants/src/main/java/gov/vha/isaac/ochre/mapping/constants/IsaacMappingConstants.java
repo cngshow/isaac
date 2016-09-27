@@ -131,7 +131,11 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
-		
+	
+	/** 
+	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT}
+	 * see {@link #MAPPING_QUALIFIERS}
+	 */
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE = new MetadataDynamicSememeConstant("Mapping Sememe Type", 
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
 		"A Sememe used annotate sememe definition concepts that represent a mapping definition.  Mapping sememes will contain a data column named 'target concept', "

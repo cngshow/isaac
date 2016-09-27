@@ -13,22 +13,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.AvailableActionContentStore;
-import gov.vha.isaac.metacontent.workflow.DefinitionDetailContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.metacontent.workflow.UserPermissionContentStore;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessDetail;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
-import gov.vha.isaac.metacontent.workflow.contents.UserPermission;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
@@ -45,18 +38,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final Logger logger = LogManager.getLogger();
 
 	/** The bpmn file path. */
-	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/workflow/provider/StaticUnitTestingDefinition.bpmn2";
-
-	/** The store. */
-	protected ProcessDetailContentStore processDetailStore;
-	protected ProcessHistoryContentStore processHistoryStore;
-	protected DefinitionDetailContentStore definitionDetailStore;
-	protected UserPermissionContentStore userPermissionStore;
-	protected AvailableActionContentStore availableActionStore;
+	protected static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/workflow/provider/StaticUnitTestingDefinition.bpmn2";
 
 	protected static AvailableAction concludeAction;
 	protected static AvailableAction cancelAction;
-
 
 	/*
 	 * Defined by importing definition and static throughout testclasses to
@@ -67,6 +52,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	private static String createAction;
 	private static String createOutcome;
 	private static String createRole = "Automated By System";
+
+	protected static WorkflowProvider wp_;
 
 	/* Constants throughout testclasses to simplify process */
 	private static final long TEST_START_TIME = new Date().getTime();
@@ -94,41 +81,30 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected static final String CONCLUDED_WORKFLOW_COMMENT = "Concluded Workflow";
 	protected static final String CANCELED_WORKFLOW_COMMENT = "Canceled Workflow";
 
-	protected void globalSetup(MVStoreMetaContentProvider store) {
-		definitionDetailStore = new DefinitionDetailContentStore(store);
-		processDetailStore = new ProcessDetailContentStore(store);
-		processHistoryStore = new ProcessHistoryContentStore(store);
-		userPermissionStore = new UserPermissionContentStore(store);
-		availableActionStore = new AvailableActionContentStore(store);
-		
-		if (definitionDetailStore.getAllEntries().size() == 0) {
-			Bpmn2FileImporter importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			mainDefinitionId = importer.getCurrentDefinitionId();
+	protected static void globalSetup() {
+		wp_ = LookupService.get().getService(WorkflowProvider.class);
 
-			AvailableAction startNodeAction = AbstractWorkflowUtilities.getDefinitionStartActionMap()
-					.get(mainDefinitionId).iterator().next();
-			createState = startNodeAction.getInitialState();
-			createAction = startNodeAction.getAction();
-			createOutcome = startNodeAction.getOutcomeState();
-			
-			cancelAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
-			concludeAction = AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
-		}
+		mainDefinitionId = wp_.getBPMNInfo().getDefinitionId();
 
-		processDetailStore.removeAllEntries();
-		processHistoryStore.removeAllEntries();
-		userPermissionStore.removeAllEntries();
+		AvailableAction startNodeAction = wp_.getBPMNInfo().getDefinitionStartActionMap().get(mainDefinitionId)
+				.iterator().next();
+		createState = startNodeAction.getInitialState();
+		createAction = startNodeAction.getAction();
+		createOutcome = startNodeAction.getOutcomeState();
+
+		cancelAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+		concludeAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 	}
 
-	protected void setupUserRoles() {
+	protected static void setupUserRoles() {
 		UserPermission perm = new UserPermission(mainDefinitionId, firstUserId, "Editor");
-		userPermissionStore.addEntry(perm);
+		wp_.getUserPermissionStore().add(perm);
 
 		perm = new UserPermission(mainDefinitionId, secondUserId, "Reviewer");
-		userPermissionStore.addEntry(perm);
+		wp_.getUserPermissionStore().add(perm);
 
 		perm = new UserPermission(mainDefinitionId, firstUserId, "Approver");
-		userPermissionStore.addEntry(perm);
+		wp_.getUserPermissionStore().add(perm);
 	}
 
 	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
@@ -138,32 +114,30 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected UUID createSecondWorkflowProcess(UUID requestedDefinitionId) {
 		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description");
 	}
-	
+
 	protected void executeLaunchWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
-			ProcessDetail entry = processDetailStore.getEntry(processId);
-			
+			ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
+
 			entry.setStatus(ProcessStatus.LAUNCHED);
 			entry.setTimeLaunched(new Date().getTime());
-			processDetailStore.updateEntry(processId, entry);
+			wp_.getProcessDetailStore().put(processId, entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
-	
+
 	protected void executeSendForReviewAdvancement(UUID processId) {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
+		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 		try {
 			Thread.sleep(1);
 
 			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
 					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
-			processHistoryStore.addEntry(advanceEntry);
+			wp_.getProcessHistoryStore().add(advanceEntry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -172,35 +146,34 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			Thread.sleep(1);
 
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
-					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME, SEND_TO_APPROVAL_COMMENT);
-			
-			processHistoryStore.addEntry(entry);
+					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
+					SEND_TO_APPROVAL_COMMENT);
+
+			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
-	protected void  executeRejectReviewAdvancement(UUID requestedProcessId) {
+	protected void executeRejectReviewAdvancement(UUID requestedProcessId) {
 		try {
 			Thread.sleep(1);
 
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
 					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
-			
-			processHistoryStore.addEntry(entry);
+
+			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 	}
 
 	protected void concludeWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
-			
-			finishWorkflowProcess(processId, concludeAction,
-					firstUserId, "Concluded Workflow", EndWorkflowType.CONCLUDED);
+
+			finishWorkflowProcess(processId, concludeAction, firstUserId, "Concluded Workflow",
+					EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -209,21 +182,20 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void cancelWorkflow(UUID processId) {
 		try {
 			Thread.sleep(1);
-			
-			finishWorkflowProcess(processId, cancelAction,
-					firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
+
+			finishWorkflowProcess(processId, cancelAction, firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	protected void addComponentsToProcess(UUID processId) {
-		ProcessDetail entry = processDetailStore.getEntry(processId);
+		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 		for (Integer con : conceptsForTesting) {
 			entry.getComponentNidToStampsMap().put(con, stampSequenceForTesting);
 		}
-		
-		processDetailStore.updateEntry(processId, entry);
+
+		wp_.getProcessDetailStore().put(processId, entry);
 	}
 
 	protected boolean timeSinceYesterdayBeforeTomorrow(long time) {
@@ -296,7 +268,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	private void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userId, String comment,
 			EndWorkflowType endType) throws Exception {
 		// Mimick the initConcluder's finish workflow process
-		ProcessDetail entry = processDetailStore.getEntry(processId);
+		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			entry.setStatus(ProcessStatus.CANCELED);
@@ -304,14 +276,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			entry.setStatus(ProcessStatus.CONCLUDED);
 		}
 		entry.setTimeCanceledOrConcluded(new Date().getTime());
-		processDetailStore.updateEntry(processId, entry);
+		wp_.getProcessDetailStore().put(processId, entry);
 
 		// Only add Cancel state in Workflow if process has already been
 		// launched
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
 				comment);
-		processHistoryStore.addEntry(advanceEntry);
+		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			// TODO: Handle cancelation store and handle reverting automatically
@@ -320,9 +292,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
 		// Mimick the initConcluder's create new process
-		StorableWorkflowContents details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
+		ProcessDetail details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
 				ProcessStatus.DEFINED, name, description);
-		UUID processId = processDetailStore.addEntry(details);
+		UUID processId = wp_.getProcessDetailStore().add(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, createState, createAction,
@@ -330,11 +302,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		ProcessHistory advanceEntry = new ProcessHistory(processId, firstUserId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"");
-		processHistoryStore.addEntry(advanceEntry);
+		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		return processId;
 	}
-
 
 	protected UUID createSecondaryDefinition() {
 		Set<String> roles = new HashSet<>();
@@ -343,28 +314,42 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		roles.add("Approver");
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
 				"Description of BPMN2 ID-X");
-		UUID defId = definitionDetailStore.addEntry(createdEntry);
-		
+		UUID defId = wp_.getDefinitionDetailStore().add(createdEntry);
+
 		// Duplicate Permissions
 		Set<UserPermission> permsToAdd = new HashSet<>();
-		for (UserPermission perm : userPermissionStore.getAllEntries()) {
+		for (UserPermission perm : wp_.getUserPermissionStore().values()) {
 			permsToAdd.add(new UserPermission(defId, perm.getUserNid(), perm.getRole()));
 		}
-		
+
 		for (UserPermission perm : permsToAdd) {
-			userPermissionStore.addEntry(perm);
+			wp_.getUserPermissionStore().add(perm);
 		}
-		
+
 		// Duplicate AvailableActions
 		Set<AvailableAction> actionsToAdd = new HashSet<>();
-		for (AvailableAction action : availableActionStore.getAllEntries()) {
-			actionsToAdd.add(new AvailableAction(defId, action.getInitialState(), action.getAction(), action.getOutcomeState(), action.getRole()));
+		for (AvailableAction action : wp_.getAvailableActionStore().values()) {
+			actionsToAdd.add(new AvailableAction(defId, action.getInitialState(), action.getAction(),
+					action.getOutcomeState(), action.getRole()));
 		}
-		
+
 		for (AvailableAction action : actionsToAdd) {
-			availableActionStore.addEntry(action);
+			wp_.getAvailableActionStore().add(action);
 		}
 
 		return defId;
 	}
+
+	protected boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
+			throws Exception {
+		return wp_.getWorkflowUpdater().advanceWorkflow(processId, userNid, actionRequested, comment, null);
+	}
+
+	protected void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
+			EndWorkflowType endType) throws Exception {
+		wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, actionToProcess, userNid, comment,
+				endType, null);
+
+	}
+
 }

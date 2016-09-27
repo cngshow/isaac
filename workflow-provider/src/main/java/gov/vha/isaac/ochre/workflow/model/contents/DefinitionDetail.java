@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,39 +28,27 @@ import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-
 /**
- * Definition of workflow to Outcomes based on Roles and Current State
+ * The metadata defining a given workflow definition.
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store. Different actions are defined per workflow definitions.
- * 
- * {@link DefinitionDetail} {@link StorableWorkflowContents}
+ * {@link DefinitionDetailContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class DefinitionDetail extends StorableWorkflowContents {
-
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
-
-	/** The bpmn2 id. */
+public class DefinitionDetail extends AbstractStorableWorkflowContents {
+	/** The bpmn2 id that contains the definition if it exists. */
 	private String bpmn2Id;
 
-	/** The name. */
+	/** The definition name. */
 	private String name;
 
-	/** The namespace. */
+	/** The definition namespace. */
 	private String namespace;
 
-	/** The version. */
+	/** The version of the definition. */
 	private String version;
 
-	/** The roles. */
+	/** The workflow roles available defined via the definition . */
 	private Set<String> roles;
 
 	/** A description of the purpose of the Definition pulled by BPMN2. */
@@ -70,20 +58,14 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	private long importDate;
 
 	/**
-	 * Instantiates a new definition details.
-	 *
+	 * Constructor for a new definition based on specified entry fields.
+	 * 
 	 * @param bpmn2Id
-	 *            the bpmn2 id
 	 * @param name
-	 *            the name
 	 * @param namespace
-	 *            the namespace
 	 * @param version
-	 *            the version
 	 * @param roles
-	 *            the roles
 	 * @param description
-	 *            the description
 	 */
 	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles,
 			String description) {
@@ -97,15 +79,20 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Instantiates a new definition details from a serialized byte array.
+	 * Constructor for a new definition based on serialized content.
 	 *
 	 * @param data
-	 *            serialized byte array
+	 *            The data to deserialize into its components
 	 */
+	@SuppressWarnings("unchecked")
 	public DefinitionDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
 		try {
+			
+			//TODO Jesse - these serializers / deserializers don't have version numbers (so changing their format is hard)
+			//and they rely on the java serializer, which is extremely inefficient - and fragile, should any of the serialized classes change.
+			//these should likely be redone at a much lower level as they are in other places in ISAAC
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.bpmn2Id = (String) in.readObject();
@@ -115,39 +102,73 @@ public class DefinitionDetail extends StorableWorkflowContents {
 			this.roles = (Set<String>) in.readObject();
 			this.description = (String) in.readObject();
 			this.importDate = (long) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into Definition Detail", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast Definition Detail fields", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into Definition Detail", e);
 		}
 	}
 
+	/**
+	 * Gets the BPMN2 file's Id
+	 * 
+	 * @return bpmn2 id
+	 */
 	public String getBpmn2Id() {
 		return bpmn2Id;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public String getNamespace() {
-		return namespace;
-	}
-
-	public String getVersion() {
-		return version;
-	}
-
-	public Set<String> getRoles() {
-		return roles;
-	}
-
+	/**
+	 * Gets the name of the workflow definition
+	 * 
+	 * @return definition name
+	 */
 	public String getDescription() {
 		return description;
 	}
 
+	/**
+	 * Gets the name of the workflow definition
+	 * 
+	 * @return definition name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Gets the namespace for which the definition is relevant
+	 * 
+	 * @return namespace
+	 */
+	public String getNamespace() {
+		return namespace;
+	}
+
+	/**
+	 * Gets the definition's version
+	 * 
+	 * @return version
+	 */
+	public String getVersion() {
+		return version;
+	}
+
+	/**
+	 * Gets the workflow roles that are used within the definition
+	 * 
+	 * @return the workflow roles available
+	 */
+	public Set<String> getRoles() {
+		return roles;
+	}
+
+	/**
+	 * Gets the date which the BPM2 file containing the definition was imported
+	 * into the system
+	 * 
+	 * @return version
+	 */
 	public long getImportDate() {
 		return importDate;
 	}
@@ -160,21 +181,28 @@ public class DefinitionDetail extends StorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(bpmn2Id);
-		out.writeObject(name);
-		out.writeObject(namespace);
-		out.writeObject(version);
-		out.writeObject(roles);
-		out.writeObject(description);
-		out.writeObject(importDate);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(bpmn2Id);
+			out.writeObject(name);
+			out.writeObject(namespace);
+			out.writeObject(version);
+			out.writeObject(roles);
+			out.writeObject(description);
+			out.writeObject(importDate);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*

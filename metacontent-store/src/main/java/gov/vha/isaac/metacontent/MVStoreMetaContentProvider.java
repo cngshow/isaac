@@ -19,10 +19,11 @@
 package gov.vha.isaac.metacontent;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
-
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +31,6 @@ import org.glassfish.hk2.runlevel.RunLevel;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
@@ -45,7 +45,7 @@ import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service(name = "MVStoreMetaContent")
-@RunLevel(value = 2)
+@RunLevel(value = -1)
 public class MVStoreMetaContentProvider implements MetaContentService {
 	private final Logger LOG = LogManager.getLogger();
 
@@ -57,14 +57,7 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	@SuppressWarnings("unused")
 	private MVStoreMetaContentProvider() {
 		// For HK2
-		LOG.info("Starting MVStoreMetaContent service");
-		File temp = new File(Get.configurationService().getDataStoreFolderPath().get().toFile(), "metacontent");
-		temp.mkdir();
-		if (!temp.isDirectory()) {
-			throw new RuntimeException(
-					"Cannot initialize MetaContent Store - was unable to create " + temp.getAbsolutePath());
-		}
-		initialize(temp, "service_", false);
+		LOG.info("Constructing MVStoreMetaContent service " + this.hashCode());
 	}
 
 	/**
@@ -96,10 +89,29 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 						"wipeExisting was requested, but can't delete " + dataFile.getAbsolutePath());
 			}
 		}
+		LOG.info("MVStoreMetaContent store path: " + dataFile.getAbsolutePath());
 		store = new MVStore.Builder().fileName(dataFile.getAbsolutePath()).open();
 		// store.setVersionsToKeep(0); TODO check group answer
 		userPrefsMap = store.<Integer, byte[]> openMap(USER_PREFS_STORE);
 		return this;
+	}
+	
+	@PostConstruct
+	private void start()
+	{
+		LOG.info("Starting MVStoreMetaContent service");
+		Optional<Path> path = Get.configurationService().getDataStoreFolderPath();
+		if (!path.isPresent())
+		{
+			throw new RuntimeException("Unable to start MVStore - no folder path is available in the Configuration Service!");
+		}
+		File temp = new File(path.get().toFile(), "metacontent");
+		temp.mkdir();
+		if (!temp.isDirectory()) {
+			throw new RuntimeException(
+					"Cannot initialize MetaContent Store - was unable to create " + temp.getAbsolutePath());
+		}
+		initialize(temp, "service_", false);
 	}
 
 	/**

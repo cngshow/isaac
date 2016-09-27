@@ -15,6 +15,9 @@
  */
 package gov.vha.isaac.ochre.model.builder;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
@@ -24,8 +27,10 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
+import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
@@ -34,9 +39,7 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.SememeVersionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import javafx.concurrent.Task;
 
 /**
  *
@@ -70,18 +73,33 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     }
     
     @Override
-    public C build(EditCoordinate editCoordinate, 
+    public OptionalWaitTask<C> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode,
             List builtObjects) throws IllegalStateException {
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
-        SememeChronologyImpl sememeChronicle = new SememeChronologyImpl(sememeType, 
+        
+        SememeChronologyImpl sememeChronicle;
+        int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
+        if (Get.sememeService().hasSememe(sememeNid)) {
+            sememeChronicle = (SememeChronologyImpl)Get.sememeService().getSememe(sememeNid);
+            
+            if (sememeChronicle.getSememeType() != sememeType 
+                    || !sememeChronicle.getPrimordialUuid().equals(getPrimordialUuid())
+                    || sememeChronicle.getAssemblageSequence() != assemblageConceptSequence
+                    || sememeChronicle.getReferencedComponentNid() != referencedComponentNid) {
+                throw new RuntimeException("Builder is being used to attempt a mis-matched edit of an existing sememe!");
+            }
+        }
+        else {
+            sememeChronicle = new SememeChronologyImpl(sememeType, 
                 getPrimordialUuid(), 
-                Get.identifierService().getNidForUuids(this.getUuids()), 
-            assemblageConceptSequence, 
-            referencedComponentNid, 
-            Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+                sememeNid, 
+                assemblageConceptSequence, 
+                referencedComponentNid, 
+                Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+        }
         sememeChronicle.setAdditionalUuids(additionalUuids);
         switch (sememeType) {
             case COMPONENT_NID:
@@ -130,14 +148,16 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 throw new UnsupportedOperationException("Can't handle: " + sememeType);
         }
         
+        Task<Void> primaryNested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
-            Get.commitService().addUncommitted(sememeChronicle);
+            primaryNested = Get.commitService().addUncommitted(sememeChronicle);
         } else {
-            Get.commitService().addUncommittedNoChecks(sememeChronicle);
+            primaryNested = Get.commitService().addUncommittedNoChecks(sememeChronicle);
         }
-        sememeBuilders.forEach((builder) -> builder.build(editCoordinate, changeCheckerMode, builtObjects));
+        ArrayList<OptionalWaitTask<?>> nested = new ArrayList<>();
+        sememeBuilders.forEach((builder) -> nested.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         builtObjects.add(sememeChronicle);
-        return (C) sememeChronicle;
+        return new OptionalWaitTask<C>(primaryNested, (C)sememeChronicle, nested);
     }
 
     @Override
@@ -146,12 +166,28 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
-        SememeChronologyImpl sememeChronicle = new SememeChronologyImpl(sememeType, 
+        
+        SememeChronologyImpl sememeChronicle;
+        int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
+        if (Get.sememeService().hasSememe(sememeNid)) {
+            sememeChronicle = (SememeChronologyImpl)Get.sememeService().getSememe(sememeNid);
+            
+            if (sememeChronicle.getSememeType() != sememeType 
+                    || !sememeChronicle.getPrimordialUuid().equals(getPrimordialUuid())
+                    || sememeChronicle.getAssemblageSequence() != assemblageConceptSequence
+                    || sememeChronicle.getReferencedComponentNid() != referencedComponentNid) {
+                throw new RuntimeException("Builder is being used to attempt a mis-matched edit of an existing sememe!");
+            }
+        }
+        else {
+            sememeChronicle = new SememeChronologyImpl(sememeType, 
                 getPrimordialUuid(), 
-                Get.identifierService().getNidForUuids(this.getUuids()), 
-            assemblageConceptSequence, 
-            referencedComponentNid, 
-            Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+                sememeNid, 
+                assemblageConceptSequence, 
+                referencedComponentNid, 
+                Get.identifierService().getSememeSequenceForUuids(this.getUuids()));
+        }
+        
         sememeChronicle.setAdditionalUuids(additionalUuids);
         switch (sememeType) {
             case COMPONENT_NID:
@@ -201,7 +237,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         }
         sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
         builtObjects.add(sememeChronicle);
-        return (C) sememeChronicle;    
+        return (C) sememeChronicle;
     }
 
 

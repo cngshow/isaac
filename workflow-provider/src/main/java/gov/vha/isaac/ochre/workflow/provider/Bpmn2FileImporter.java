@@ -18,14 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,8 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
-import org.drools.core.io.impl.ByteArrayResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.drools.core.io.impl.InputStreamResource;
 import org.drools.core.process.core.Work;
 import org.drools.core.xml.SemanticModules;
 import org.jbpm.bpmn2.core.SequenceFlow;
@@ -60,266 +56,301 @@ import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
-
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link AbstractWorkflowUtilities} {@link Bpmn2FileImporter}
+ * {@link BPMNInfo} {@link Bpmn2FileImporter}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
+public class Bpmn2FileImporter {
+	/**
+	 * A flag defining whether person importing the BPMN2 file wants the outcome
+	 * printed to console for analysis purposes.
+	 */
+	final boolean printForAnalysis = false;
 
-	/** The process nodes. */
-	// Handling of Nodes
+	/** A constant used to flag which states in a BPMN2 file are editing */
+	private static final String EDITING_ACTION = "EDITING";
+
+	/**
+	 * The Definition Id to be used as DefinionDetail entry's key in the content
+	 * store
+	 */
+	private UUID currentDefinitionId;
+
+	/** The nodes discovered and processed when importing a BPMN2 file. */
 	private List<Node> processNodes = new ArrayList<Node>();
 
-	/** The visited nodes. */
+	/**
+	 * The list of nodes already processed to prevent re-processing already
+	 * processed nodes.
+	 */
 	private List<Long> visitedNodes = new ArrayList<>();
 
-	/** The node to outgoing map. */
-	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
-
-	/** The node to outgoing map. */
-	private Map<Long, String> nodeNameMap = new HashMap<Long, String>();
-
-	/** The print for analysis. */
-	boolean printForAnalysis = false;
-
-	/** The process. */
-	private RuleFlowProcess process;
-
+	/**
+	 * The list of humanNodes to prevent their being reprocessed. These define
+	 * user actions.
+	 */
 	private Set<Long> humanNodesProcessed = new HashSet<>();
 
-	private UUID currentDefinitionId;
+	/**
+	 * A map detailing each node's outgoing connections to other nodes.
+	 * Populated during node discovery and used during node processing.
+	 */
+	private Map<Long, List<Long>> nodeToOutgoingMap = new HashMap<Long, List<Long>>();
+
+	/**
+	 * A map of all nodes to their name. Populated during node discovery and
+	 * used during node processing.
+	 */
+	private Map<Long, String> nodeNameMap = new HashMap<Long, String>();
+
+	/** A list of all editing states observed during importing of BPMN2 file. */
+	private Set<String> currentEditStates = new HashSet<>();
+
+	/** The JBPMN RuleFlowProcess discovered when importing the BPMN2 file. */
+	private RuleFlowProcess ruleFlow;
+
+	/** The path to the BPMN2 file being imported */
+	private String bpmn2ResourcePath;
 	
-	public Bpmn2FileImporter() throws Exception {
-		// Default Constructor fails if store not already set
-	}
+	/** A map of available actions per type of ending workflow */
+	private HashMap<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap = new HashMap<>();
 
 	/**
-	 * Instantiates a new workflow definition utility.
+	 * A map of available actions per definition from which a workflow may be
+	 * started
+	 */
+	private HashMap<UUID, Set<AvailableAction>> definitionStartActionMap = new HashMap<>();
+
+	/** A map of all states per definition from which a process may be edited */
+	private HashMap<UUID, Set<String>> editStatesMap = new HashMap<>();
+	
+	private WorkflowProvider provider;
+	
+	private final Logger logger = LogManager.getLogger();
+
+	/**
+	 * Imports a new workflow definition storing the contents into the store
+	 * based on the bpmn2 file passed in.
 	 *
 	 * @param store
-	 *            the store
-	 */
-	public Bpmn2FileImporter(MVStoreMetaContentProvider store) {
-		super(store);
-	}
-
-	/**
-	 * Instantiates a new workflow definition utility.
-	 *
-	 * @param store
-	 *            the store
+	 *            The workflow content store
 	 * @param bpmn2FilePath
-	 *            the bpmn2 file path
+	 *            The bpmn2 file path being imported
 	 */
-	public Bpmn2FileImporter(MVStoreMetaContentProvider store, String bpmn2FilePath) {
-		super(store);
+	public Bpmn2FileImporter(String bpmn2ResourcePath, WorkflowProvider provider) {
+		this.bpmn2ResourcePath = bpmn2ResourcePath;
+		this.provider = provider;
 
 		try {
-			currentDefinitionId = setDefinition(bpmn2FilePath);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
-	/**
-	 * Sets the definition.
-	 *
-	 * @param bpmn2FilePath
-	 *            the new definition
-	 * @return the uuid
-	 * @throws Exception 
-	 */
-	public UUID setDefinition(String bpmn2FilePath) throws Exception {
-		String xmlContents;
+			// Use JBPMN to transform the bpmn2FilePath into a JBPMN class
+			ProcessDescriptor descriptor = identifyDefinitionMetadata();
 
-		try {
-			xmlContents = readFile(bpmn2FilePath, Charset.defaultCharset());
-			ProcessDescriptor descriptor = processWorkflowDefinition(xmlContents);
-
-			UUID definitionId = populateWorkflowDefinitionRecords(descriptor);
+			// Pull and populate Definition Details
+			currentDefinitionId = populateWorkflowDefinitionRecords(descriptor);
 
 			if (printForAnalysis) {
 				printProcessDefinition(descriptor);
 			}
 
-			setNodes(bpmn2FilePath, definitionId);
-			
-			return definitionId;
-		} catch (IOException e) {
-			logger.error("Failed in processing the workflow definition defined at: " + bpmn2FilePath);
+			// Import bpmn2 file and process all nodes
+			importAndProcessNodes();
+
+			// Finalize import process
+			editStatesMap.put(currentDefinitionId, currentEditStates);
+		} catch (Exception e) {
+			logger.error("Failed in processing the workflow definition defined at: " + bpmn2ResourcePath);
 			e.printStackTrace();
 		}
-		
-
-		return null;
+	}
+	
+	public BPMNInfo getBPMNInfo()
+	{
+		return new BPMNInfo(currentDefinitionId, endNodeTypeMap, definitionStartActionMap, editStatesMap);
 	}
 
 	/**
-	 * Populate workflow definition records.
+	 * Populate workflow Definition Detail meta-content store.
+	 *
+	 * Results used to populate DefinitionDetailContentStore.
 	 *
 	 * @param descriptor
-	 *            the descriptor
-	 * @return the uuid
+	 *            The process descriptor defining the process in a JBPMN manner
+	 * 
+	 * @return The definition uuid to be used as the Definition Detail Entry's
+	 *         key
 	 */
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
-		Set<String> roles = new HashSet<>();
-		roles.add(getAutomatedRole());
-
-		ProcessAssetDesc definition = descriptor.getProcess();
-		
-		for (String key : descriptor.getTaskAssignments().keySet()) {
-			roles.addAll(descriptor.getTaskAssignments().get(key));
+		if (provider.getDefinitionDetailStore().size() == 0)
+		{
+			Set<String> roles = new HashSet<>();
+			roles.add(BPMNInfo.AUTOMATED_ROLE);
+	
+			ProcessAssetDesc definition = descriptor.getProcess();
+	
+			for (String key : descriptor.getTaskAssignments().keySet()) {
+				roles.addAll(descriptor.getTaskAssignments().get(key));
+			}
+			
+	
+			DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
+					definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
+			return provider.getDefinitionDetailStore().add(entry);
 		}
-
-		DefinitionDetail entry = new DefinitionDetail(definition.getId(), definition.getName(),
-				definition.getNamespace(), definition.getVersion(), roles, getDescription(descriptor));
-
-		return definitionDetailStore.addEntry(entry);
+		else
+		{
+			for (DefinitionDetail dd : provider.getDefinitionDetailStore().values())
+			{
+				if (dd.getBpmn2Id().equals(descriptor.getProcess().getId()))
+				{
+					return dd.getId();
+				}
+			}
+		}
+		throw new RuntimeException("Loaded datastore mis-aligns with bpmn file!");
 	}
 
 	/**
-	 * Sets the nodes.
-	 *
-	 * @param bpmn2FilePath
-	 *            the new nodes
-	 * @param definitionId
-	 *            the definition id
+	 * Reads the bpmn2 file, identifies each node, and processes each node to
+	 * identify the types, connections, and handling.
+	 * 
+	 * Results used to populate AvailableActionContentStore.
 	 */
-	private void setNodes(String bpmn2FilePath, UUID definitionId) {
-		clearImporterCollections();
-		
-		process = buildProcessFromFile(bpmn2FilePath);
-		List<Long> nodesInOrder = identifyOutputOrder(process.getStartNodes().iterator().next(), new ArrayList<Long>());
+	private void importAndProcessNodes() {
+		ruleFlow = importDefinitionRules();
+		List<Long> nodesInOrder = identifyOutputOrder(ruleFlow.getStartNodes().iterator().next(),
+				new ArrayList<Long>());
 
 		// Populate the actual nodes object
 		for (Long nodeId : nodesInOrder) {
-			processNodes.add(process.getNode(nodeId));
+			processNodes.add(ruleFlow.getNode(nodeId));
 		}
-
-		populateAvailableActionRecords(bpmn2FilePath, definitionId);
-
-		if (printForAnalysis) {
-			printNodes();
-		}
-	}
-
-	/**
-	 * Populate action outcomes records.
-	 *
-	 * @param bpmn2FilePath
-	 *            the bpmn2 file path
-	 * @param definitionId
-	 *            the definition id
-	 */
-	private void populateAvailableActionRecords(String bpmn2FilePath, UUID definitionId) {
-		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
 
 		try {
-			Set<AvailableAction> entries = generateAvailableActions(definitionId, connections);
+			Set<AvailableAction> entries = generateAvailableActions();
+			if (provider.getAvailableActionStore().size() == 0) {
+				logger.info("Loading Available Action store from BPMN");
+	
+				for (AvailableAction entry : entries) {
+					// Write content into database
+					provider.getAvailableActionStore().add(entry);
+				}
+			}
+			else {
+				logger.info("Not updating Action Store, because it is already populated.");
+			}
 
-			for (AvailableAction entry : entries) {
-				// Write content into database
-				availableActionStore.addEntry(entry);
+			if (printForAnalysis) {
+				printNodes();
 			}
 		} catch (Exception e) {
-			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2FilePath);
-			e.printStackTrace();
+			logger.error("Failed in transforming the workflow definition into Possible Actions: " + bpmn2ResourcePath, e);
 		}
 	}
 
 	/**
-	 * Generate avaialble actions.
-	 *
-	 * @param nodes
-	 *            the nodes
-	 * @param nodeToOutgoingMap2
-	 *            the node to outgoing map2
-	 * @param nodeNameMap
-	 * @param definitionId
-	 *            the definition id
-	 * @param connections
-	 *            the connections
-	 * @return the sets the
-	 * @throws Exception
-	 *             the exception
+	 * Iterate through all the nodes, processing each, and create the complete
+	 * set of AvailableActions from the definition.
+	 * 
+	 * @return Complete set of AvailableActions to be persisted in
+	 *         AvailableAction Content Store
 	 */
-	private Set<AvailableAction> generateAvailableActions(UUID definitionId, List<SequenceFlow> connections)
-			throws Exception {
+	private Set<AvailableAction> generateAvailableActions() throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 		String initialState = null;
 		Set<String> roles = new HashSet<>();
 		Set<AvailableAction> startNodeActions = new HashSet<>();
 		String flagMetaDataStr = null;
 		Set<AvailableAction> availActions = new HashSet<>();
-		
+
+		List<SequenceFlow> connections = (List<SequenceFlow>) ruleFlow.getMetaData(ProcessHandler.CONNECTIONS);
+
 		for (Node node : processNodes) {
 			availActions.clear();
-			
+
 			if (node.getName() != null && !node.getName().isEmpty() && !(node instanceof HumanTaskNode)
 					&& !(node instanceof EndNode)) {
 				initialState = node.getName();
 			}
 
 			if (node.getMetaData() != null && node.getMetaData().get("Documentation") != null) {
-				flagMetaDataStr = (String)node.getMetaData().get("Documentation");
+				flagMetaDataStr = (String) node.getMetaData().get("Documentation");
 			}
-			
+
 			if (node instanceof StartNode) {
-				availActions.addAll(identifyNodeActions(node, connections, definitionId, initialState,
-						roles, ((StartNode) node).getDefaultOutgoingConnections()));
+				availActions.addAll(identifyNodeActions(node, initialState, roles,
+						((StartNode) node).getDefaultOutgoingConnections(), connections));
 				actions.addAll(availActions);
 				startNodeActions.addAll(availActions);
 			} else if (node instanceof Split) {
-				availActions.addAll(identifyNodeActions(node, connections, definitionId, initialState,
-						roles, ((Split) node).getDefaultOutgoingConnections()));
+				availActions.addAll(identifyNodeActions(node, initialState, roles,
+						((Split) node).getDefaultOutgoingConnections(), connections));
 				actions.addAll(availActions);
 			} else if (node instanceof HumanTaskNode) {
 				roles = getActorFromHumanTask((HumanTaskNode) node);
 				if (!humanNodesProcessed.contains(node.getId())) {
-					availActions.addAll(identifyNodeActions(node, connections, definitionId,
-							initialState, roles, ((HumanTaskNode) node).getDefaultOutgoingConnections()));
+					availActions.addAll(identifyNodeActions(node, initialState, roles,
+							((HumanTaskNode) node).getDefaultOutgoingConnections(), connections));
 					actions.addAll(availActions);
 					humanNodesProcessed.add(node.getId());
 				}
 			}
 
 			if (flagMetaDataStr != null) {
-				boolean flagProcessed = processNodeFlags(availActions, actions, node, flagMetaDataStr);
+				boolean flagProcessed = identifySpecialNodes(availActions, actions, node, flagMetaDataStr);
 				if (flagProcessed) {
 					flagMetaDataStr = null;
 				}
 			}
 		}
-		
-		// R3: If Multiple, need to look at nodes further
-		processStartNodeStates(definitionId, startNodeActions);
+
+		// TODO: Update to handle multiple start states
+		processStartNodeStates(startNodeActions);
 
 		return actions;
 	}
 
-	private Set<AvailableAction> identifyNodeActions(Node node, List<SequenceFlow> connections, UUID definitionId,
-			String initialState, Set<String> roles, List<Connection> defaultOutgoingConnections) throws Exception {
+	/**
+	 * For a given node, process its outgoing connections to determine if any of
+	 * them give cause to create a new set of AvailableActions
+	 * 
+	 * @param node
+	 *            The node to process
+	 * @param initialState
+	 *            The current state when processing the current node to be used
+	 *            if any AvailableActions are to be created
+	 * @param roles
+	 *            The current roles when processing the current node to be used
+	 *            if any AvailableActions are to be created
+	 * @param nodeOutgoingConnections
+	 *            The node's outgoing connections.
+	 * @param allOutgoingConnections
+	 *            The full set of Sequence Flows which contain information
+	 *            associated with the outgoing connections
+	 * @return The full set of AvailableActions based on the current node
+	 */
+	private Set<AvailableAction> identifyNodeActions(Node node, String initialState, Set<String> roles,
+			List<Connection> nodeOutgoingConnections, List<SequenceFlow> allOutgoingConnections) {
 		Set<AvailableAction> availActions = new HashSet<>();
 
+		// Process the node's outgoing connection.
 		for (Long id : nodeToOutgoingMap.get(node.getId())) {
 			String action = null;
 			String outcome = null;
 			String state = initialState;
 
-			for (Connection connection : defaultOutgoingConnections) {
+			for (Connection connection : nodeOutgoingConnections) {
 				if (connection.getTo().getId() == id) {
 					String connectionId = (String) connection.getMetaData().get("UniqueId");
 
-					for (SequenceFlow sequence : connections) {
+					for (SequenceFlow sequence : allOutgoingConnections) {
 						if (sequence.getId().equals(connectionId)) {
 							action = sequence.getName();
 							if (!(connection.getTo() instanceof HumanTaskNode)) {
@@ -346,17 +377,16 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 				}
 			}
 
-			if (roles.size() == 0 && node.getId() == process.getStartNodes().iterator().next().getId()) {
-				roles.add(getAutomatedRole());
+			if (roles.size() == 0 && node.getId() == ruleFlow.getStartNodes().iterator().next().getId()) {
+				roles.add(BPMNInfo.AUTOMATED_ROLE);
 			}
 
 			// Verify that all requirements met
 			if (action != null && outcome != null && state != null && roles.size() > 0) {
 
-				
 				// Generate a new AvailableAction for each role
 				for (String role : roles) {
-					AvailableAction newAction = new AvailableAction(definitionId, state, action, outcome, role);
+					AvailableAction newAction = new AvailableAction(currentDefinitionId, state, action, outcome, role);
 					availActions.add(newAction);
 				}
 			}
@@ -366,54 +396,60 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Process workflow definition.
+	 * Import workflow definition based using JBPMN methods based on the BPMN2
+	 * file being imported examining the definition metadata.
 	 * 
-	 * @param xmlContents
-	 *            the xml contents
-	 *
-	 * @return the process descriptor
-	 * @throws Exception 
+	 * @return The JBPMN process descriptor identified while importing the BPMN2
+	 *         file
+	 * 
+	 * @throws Exception
+	 *             Thrown if any error arises in importing the BPMN2 file using
+	 *             hte JBPMN apis. Caught & re-thrown to help output the issues
+	 *             preventing a successful import.
 	 */
-	private ProcessDescriptor processWorkflowDefinition(String xmlContents) throws Exception {
+	private ProcessDescriptor identifyDefinitionMetadata() throws Exception {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-		ByteArrayResource resr = new ByteArrayResource(xmlContents.getBytes());
-		kbuilder.add(resr, ResourceType.BPMN2);
+
+		kbuilder.add(new InputStreamResource(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath)), ResourceType.BPMN2);
+
 		try {
 			KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
 			Process process = pckg.getProcesses().iterator().next();
 
 			return (ProcessDescriptor) process.getMetaData().get("ProcessDescriptor");
 		} catch (Exception e) {
-			throw new Exception("Failed importing the BPMN2 file due to the following errors:\n" + kbuilder.getErrors());
+			throw new Exception(
+					"Failed importing the BPMN2 file due to the following errors:\n" + kbuilder.getErrors());
 		}
-		
+
 	}
 
 	/**
-	 * Builds the process from file.
-	 *
-	 * @param bpmn2FilePath
-	 *            the bpmn2 file path
-	 * @return the rule flow process
+	 * Import the BPMN2 file this time analyzing it for its rules (including the
+	 * definition nodes)
+	 * 
+	 * @return The definition's rules (nodes)
 	 */
-	private RuleFlowProcess buildProcessFromFile(String bpmn2FilePath) {
+	private RuleFlowProcess importDefinitionRules() {
 		SemanticModules modules = new SemanticModules();
+
 		modules.addSemanticModule(new BPMNSemanticModule());
 		modules.addSemanticModule(new BPMNDISemanticModule());
 		XmlProcessReader processReader = new XmlProcessReader(modules, getClass().getClassLoader());
+
 		try {
-			InputStream in = new FileInputStream(new File(bpmn2FilePath));
-			List<Process> processes = processReader.read(in);
+			InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);
+			List<Process> processes = processReader.read(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath));
 			in.close();
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
-			logger.error("Couldn't Find Fine: " + bpmn2FilePath, e);
+			logger.error("Couldn't Find Fine: " + bpmn2ResourcePath, e);
 			e.printStackTrace();
 		} catch (IOException ioe) {
-			logger.error("Error in readFile method: " + bpmn2FilePath, ioe);
+			logger.error("Error in readFile method: " + bpmn2ResourcePath, ioe);
 			ioe.printStackTrace();
 		} catch (SAXException se) {
-			logger.error("Error in parsing XML file: " + bpmn2FilePath, se);
+			logger.error("Error in parsing XML file: " + bpmn2ResourcePath, se);
 			se.printStackTrace();
 		}
 
@@ -421,15 +457,20 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Identify output order.
+	 * Recursively iterate through the nodes and identify the best order to
+	 * process them.
 	 *
 	 * @param node
-	 *            the node
+	 *            The start node based on the definition and thus the initial
+	 *            node to process.
 	 * @param retList
-	 *            the ret list
-	 * @return the list
+	 *            The ordered list of nodes beginning with the start node. Keeps
+	 *            being passed in as this is a recursive method.
+	 * 
+	 * @return The ordered list of nodes
 	 */
 	private List<Long> identifyOutputOrder(Node node, List<Long> retList) {
+		// TODO: Eventually handle case where multiple start nodes are possible
 		if (visitedNodes.contains(node.getId())) {
 			return retList;
 		} else {
@@ -454,17 +495,72 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
+	 * Examines node, current flags, and actions to identify if any special
+	 * handling is required. This includes EDIT nodes and FINISH Nodes.
+	 * 
+	 * @param availActions
+	 *            The list of available actions to be processed at this
+	 *            iteration of node processing. May be empty.
+	 * @param allActions
+	 *            The full set of actions which are known
 	 * @param node
-	 *            any node
-	 * @return Set of role strings
+	 *            The node to examine
+	 * @param flag
+	 *            The current flag. Method won't be called unless a flag exists.
 	 * 
-	 *         IFF passed Node is a HumanTask then simply return the HumanTask
-	 *         ActorId(s) from parameters, ELSE recursively apply to nodes that
-	 *         precede this one until a HumanTask is found and its role(s)
-	 *         returned
+	 * @return True if special handling performed. This causes a reset of the
+	 *         flag status for future processing.
 	 * 
-	 *         This will return empty set for nodes preceded only by Start event
-	 *         (i.e. no preceding HumanTask)
+	 * @throws Exception
+	 *             Thrown if a non-supported flag is encountered
+	 */
+	private boolean identifySpecialNodes(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node,
+			String flag) throws Exception {
+		// If empty, process all nodes
+		if (availActions.isEmpty()) {
+			for (AvailableAction action : allActions) {
+				if (node.getName().equalsIgnoreCase(action.getOutcomeState())) {
+					availActions.add(action);
+				}
+			}
+		}
+
+		if (availActions.isEmpty()) {
+			return false;
+		}
+
+		// Handle special cases denoted by flag
+		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
+			if (!endNodeTypeMap.containsKey(EndWorkflowType.CANCELED)) {
+				endNodeTypeMap.put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
+			}
+			endNodeTypeMap.get(EndWorkflowType.CANCELED).addAll(availActions);
+		} else if (flag.equalsIgnoreCase(EndWorkflowType.CONCLUDED.toString())) {
+			if (!endNodeTypeMap.containsKey(EndWorkflowType.CONCLUDED)) {
+				endNodeTypeMap.put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
+			}
+			endNodeTypeMap.get(EndWorkflowType.CONCLUDED).addAll(availActions);
+		} else if (flag.equalsIgnoreCase(EDITING_ACTION)) {
+			for (AvailableAction action : availActions) {
+				currentEditStates.add(action.getInitialState());
+			}
+		} else {
+			throw new Exception("Have unexpected flag in processNodeFlags(): " + flag);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Having identified that the current node is of type HumanTaskNode,
+	 * identify the role associated with the human take. The role is defined via
+	 * the ActorId HumanTaskNode parameters.
+	 * 
+	 * @param node
+	 *            The HumanTaskNode being investigated
+	 * 
+	 * @return The set of workflow roles which defining the user permission
+	 *         which can execute the task
 	 */
 	private Set<String> getActorFromHumanTask(HumanTaskNode node) {
 		Set<String> restrictions = new HashSet<>();
@@ -486,6 +582,16 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 		return restrictions;
 	}
 
+	/**
+	 * Having identified that the current node is of type HumanTaskNode,
+	 * identify the name of the the human node. The name is defined via the
+	 * TaskName HumanTaskNode parameters.
+	 * 
+	 * @param node
+	 *            The HumanTaskNode being investigated
+	 * 
+	 * @return The name of the task
+	 */
 	private String getHumanTaskName(HumanTaskNode node) {
 		Work work = node.getWork();
 
@@ -497,27 +603,12 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Read file.
-	 *
-	 * @param path
-	 *            the path
-	 * @param encoding
-	 *            the encoding
-	 * @return the string
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 */
-	private String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
-	}
-
-	/**
-	 * Gets the outgoing nodes.
+	 * Identifies the outgoing nodes coming out of a given node.
 	 *
 	 * @param node
-	 *            the node
-	 * @return the outgoing nodes
+	 *            The node being investigated.
+	 * 
+	 * @return The outgoing nodes
 	 */
 	private List<Node> getOutgoingNodes(Node node) {
 		List<Node> retList = new ArrayList<Node>();
@@ -533,7 +624,58 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Prints the process definition.
+	 * Retrieves the definition id of the last import imported BPMN2 file
+	 * 
+	 * @return The definition id used as the DefinitionDetail entry's key
+	 */
+	public UUID getCurrentDefinitionId() {
+		return currentDefinitionId;
+	}
+
+	/**
+	 * Placeholder for when the BPMN2 version is updated with the ability to
+	 * access the metadata associated with a VPMN2 definition as a whole
+	 *
+	 * @param descriptor
+	 *            The process descriptor containing the metadata associated with
+	 *            the BPMN2 file that was imported.
+	 * 
+	 * @return The BPMN2 process description
+	 */
+	private String getDescription(ProcessDescriptor descriptor) {
+		// TODO: Fix this once the next version of BPMN2 enables accessing the
+		// metadata of the definition as a whole
+
+		return "DESCRIPTION";
+	}
+
+	/**
+	 * Method to process and identify when the definition contains multiple
+	 * start states.
+	 * 
+	 * @param actions
+	 *            The list of AvailableActions identified as start state actions
+	 * 
+	 * @throws Exception
+	 *             Thrown if an unexpected number of start states are
+	 *             discovered.
+	 */
+	private void processStartNodeStates(Set<AvailableAction> actions) throws Exception {
+		if (actions.size() == 0) {
+			throw new Exception("No Start Actions Found");
+		} else if (actions.size() != 1) {
+			// TODO: Handle multiple start states. Out of scope as of now.
+			throw new Exception(
+					"For R2, there may only be a single case.  If mutliple actions found an error occurred");
+		} else {
+			// At this point, only single start state is in scope.
+		}
+
+		definitionStartActionMap.put(currentDefinitionId, actions);
+	}
+
+	/**
+	 * Prints the workflow definition metadata.
 	 *
 	 * @param processDescriptor
 	 *            the process descriptor
@@ -587,12 +729,12 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 	}
 
 	/**
-	 * Prints the nodes.
+	 * Prints the definition's node information.
 	 */
 	private void printNodes() {
 		/* Process Nodes */
 		System.out.println("\n\n\n\n\t\t ***** Node Processing *****");
-		List<SequenceFlow> connections = (List<SequenceFlow>) process.getMetaData(ProcessHandler.CONNECTIONS);
+		List<SequenceFlow> connections = (List<SequenceFlow>) ruleFlow.getMetaData(ProcessHandler.CONNECTIONS);
 
 		// Print out remaining nodes
 		for (Node node : processNodes) {
@@ -605,23 +747,24 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 			System.out.println("ID: " + node.getId());
 
 			List<Connection> outgoingConnections = null;
-			
+
 			if (node instanceof StartNode) {
 				System.out.println("Type: StartNode");
-				outgoingConnections  = ((StartNode) node).getDefaultOutgoingConnections();
+				outgoingConnections = ((StartNode) node).getDefaultOutgoingConnections();
 			} else if (node instanceof EndNode) {
 				System.out.println("Type: EndNode");
 			} else if (node instanceof HumanTaskNode) {
 				System.out.println("Type: HumanTaskNode");
-				outgoingConnections  = ((HumanTaskNode) node).getDefaultOutgoingConnections();
+				outgoingConnections = ((HumanTaskNode) node).getDefaultOutgoingConnections();
 			} else if (node instanceof Join) {
 				System.out.println("Type: Join");
 			} else if (node instanceof Split) {
 				System.out.println("Type: Split");
-				outgoingConnections  = ((Split) node).getDefaultOutgoingConnections();
+				outgoingConnections = ((Split) node).getDefaultOutgoingConnections();
 			}
 
-			if (!nodeToOutgoingMap.get(node.getId()).isEmpty() && outgoingConnections != null) {;
+			if (!nodeToOutgoingMap.get(node.getId()).isEmpty() && outgoingConnections != null) {
+				;
 				System.out.println("This node has the following outgoing connections:");
 
 				for (Long id : nodeToOutgoingMap.get(node.getId())) {
@@ -646,76 +789,5 @@ public class Bpmn2FileImporter extends AbstractWorkflowUtilities {
 				}
 			}
 		}
-	}
-
-	public UUID getCurrentDefinitionId() {
-		return currentDefinitionId;
-	}
-
-	private String getDescription(ProcessDescriptor descriptor) {
-		ProcessAssetDesc a = descriptor.getProcess();
-		Map<String, Collection<String>> b = a.getAssociatedEntities();
-		Map<String, String> c = a.getForms();
-		Map<String, String> d = a.getProcessVariables();
-		String s = a.getId();
-		
-		return "DESCRIPTION";
-	}
-	
-	private void processStartNodeStates(UUID definitionId, Set<AvailableAction> actions) throws Exception {
-		if (actions.size() == 0) {
-			throw new Exception("No Start Actions Found");
-		} else if (actions.size() != 1) {
-			// If single StartState... add SINGLE_CASE
-			throw new Exception("For R2, there may only be a single case.  If mutliple actions found an error occurred");
-		} else {
-			// For R3 where may have multiple Start Actions
-		}
-		
-		getDefinitionStartActionMap().put(definitionId, actions);
-	}
-
-	private boolean processNodeFlags(Set<AvailableAction> availActions, Set<AvailableAction> allActions, Node node, String flag) throws Exception {
-		if (availActions.isEmpty()) {
-			for (AvailableAction action : allActions) {
-				if (node.getName().equalsIgnoreCase(action.getOutcomeState())) {
-					availActions.add(action);
-				}
-			}
-		}
-		
-		if (availActions.isEmpty()) {
-			return false;
-		}
-
-		if (flag.equalsIgnoreCase(EndWorkflowType.CANCELED.toString())) {
-			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CANCELED)) {
-				getEndWorkflowTypeMap().put(EndWorkflowType.CANCELED, new HashSet<AvailableAction>());
-			}
-			getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).addAll(availActions);
-		} else if (flag.equalsIgnoreCase(EndWorkflowType.CONCLUDED.toString())) {
-			if (!getEndWorkflowTypeMap().containsKey(EndWorkflowType.CONCLUDED)) {
-				getEndWorkflowTypeMap().put(EndWorkflowType.CONCLUDED, new HashSet<AvailableAction>());
-			}
-			getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).addAll(availActions);
-		} else if (flag.equalsIgnoreCase(getEditingAction())) {
-			for (AvailableAction action : availActions) {
-				getEditStates().add(action.getInitialState());
-			}
-		} else {
-			throw new Exception("Have unexpected flag in processNodeFlags(): " + flag);
-		}
-		
-		return true;
-	}
-	
-	private void clearImporterCollections() {
-		processNodes.clear();
-		visitedNodes.clear();
-		nodeToOutgoingMap.clear();
-		nodeNameMap.clear();
-		humanNodesProcessed.clear();
-		
-		clearDefinitionCollections();
 	}
 }

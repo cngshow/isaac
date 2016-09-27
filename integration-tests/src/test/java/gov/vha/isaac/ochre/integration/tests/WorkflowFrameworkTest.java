@@ -1,41 +1,50 @@
 package gov.vha.isaac.ochre.integration.tests;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import gov.vha.isaac.MetaData;
-import gov.vha.isaac.metacontent.MVStoreMetaContentProvider;
-import gov.vha.isaac.metacontent.workflow.ProcessDetailContentStore;
-import gov.vha.isaac.metacontent.workflow.ProcessHistoryContentStore;
-import gov.vha.isaac.metacontent.workflow.contents.AvailableAction;
-import gov.vha.isaac.metacontent.workflow.contents.ProcessHistory;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
+import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents.ProcessStatus;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities;
-import gov.vha.isaac.ochre.workflow.provider.AbstractWorkflowUtilities.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.provider.Bpmn2FileImporter;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
-import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
+import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
+import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
+import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowContents;
+import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
+import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
+import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
  * Created by kec on 1/2/16.
@@ -43,176 +52,209 @@ import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
 @HK2("integration")
 public class WorkflowFrameworkTest {
 	private static final Logger LOG = LogManager.getLogger();
-	private static MVStoreMetaContentProvider store;
-	private static WorkflowAccessor wfAccessor;
-	private static WorkflowProcessInitializerConcluder initConcluder;
-	private static WorkflowUpdater updater;
-	private static Bpmn2FileImporter importer;
+
+	private static final String LAUNCH_STATE = "Ready for Edit";
+	private static final String LAUNCH_ACTION = "Edit";
+	private static final String LAUNCH_OUTCOME = "Ready for Review";
+	private static final String LAUNCH_COMMENT = "Launch Comment";
+
+	private static final String SEND_TO_APPROVAL_STATE = "Ready for Review";
+	private static final String SEND_TO_APPROVAL_ACTION = "Review";
+	private static final String SEND_TO_APPROVAL_OUTCOME = "Ready for Approve";
+	private static final String SEND_TO_APPROVAL_COMMENT = "Sending for Approval";
+
+	private static final String REJECT_REVIEW_STATE = "Ready for Review";
+	private static final String REJECT_REVIEW_ACTION = "Reject QA";
+	private static final String REJECT_REVIEW_OUTCOME = "Ready for Edit";
+	private static final String REJECT_REVIEW_COMMENT = "Rejecting QA sending back to Edit";
+
+	protected static final String CONCLUDED_WORKFLOW_COMMENT = "Concluded Workflow";
+	protected static final String CANCELED_WORKFLOW_COMMENT = "Canceled Workflow";
 
 	/** The bpmn file path. */
-	private static final String BPMN_FILE_PATH = "src/test/resources/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
+	private static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
-	private static UUID definitionId;
 	private static int userId = 99;
-	protected static ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12, 13));
-	private static int testConceptNid;
-	private static Set<Integer> testConcepts = new HashSet<>();
-	private ProcessDetailContentStore processDetailStore;
-	private ProcessHistoryContentStore processHistoryStore;
+	private static int firstTestConceptNid;
+	private static int secondTestConceptNid;
 
-	@Test(groups = { "wf" })
-	public void testLoadMetaData() {
+	protected static AvailableAction cancelAction;
+
+	WorkflowProvider wp_;
+
+	private EditCoordinate defaultEditCoordinate;
+	private StampCoordinate defaultStampCoordinate;
+
+	@Test(groups = { "wf" }, dependsOnGroups = { "load" })
+	public void testLoadWorkflow() {
 		LOG.info("Loading Metadata db");
-		try {
-			BinaryDataReaderService reader = Get
-					.binaryDataReader(Paths.get("target", "data", "IsaacMetadataAuxiliary.ibdf"));
-			CommitService commitService = Get.commitService();
-			reader.getStream().forEach((object) -> {
-				commitService.importNoChecks(object);
-			});
+		firstTestConceptNid = MetaData.ISAAC_METADATA.getNid();
+		secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
 
-			store = new MVStoreMetaContentProvider(new File("target"), "testWorkflowIntegration", true);
-			wfAccessor = new WorkflowAccessor(store);
-			initConcluder = new WorkflowProcessInitializerConcluder(store);
-			updater = new WorkflowUpdater(store);
-			processDetailStore = new ProcessDetailContentStore(store);
-			processHistoryStore = new ProcessHistoryContentStore(store);
+		WorkflowProvider.BPMN_PATH = BPMN_FILE_PATH;
+		wp_ = LookupService.get().getService(WorkflowProvider.class);
+		cancelAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 
-			testConceptNid = MetaData.ISAAC_METADATA.getNid();
-			testConcepts.add(testConceptNid);
+		defaultEditCoordinate = new EditCoordinateImpl(TermAux.USER.getNid(), TermAux.ISAAC_MODULE.getNid(),
+				TermAux.DEVELOPMENT_PATH.getNid());
 
-			importer = new Bpmn2FileImporter(store, BPMN_FILE_PATH);
-			definitionId = importer.getCurrentDefinitionId();
-			setupUserRoles();
-		} catch (FileNotFoundException e) {
-			Assert.fail("File not found", e);
-		}
+		ObservableStampCoordinate defaultSC = Get.configurationService().getDefaultStampCoordinate();
+		defaultStampCoordinate = new StampCoordinateImpl(defaultSC.getStampPrecedence(), defaultSC.getStampPosition(),
+				defaultSC.getModuleSequences(), State.ANY_STATE_SET);
 
-		clearStores();
+		firstTestConceptNid = MetaData.EL_PLUS_PLUS_INFERRED_FORM_ASSEMBLAGE.getNid();
+		secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
+
+		setupUserRoles();
+
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStatusAccessorComponentInActiveWorkflow() {
+		clearStores();
+
 		LOG.info("Testing Workflow History Accessor isComponentInActiveWorkflow()");
 
-		ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(testConceptNid);
+		ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(firstTestConceptNid);
 		SememeChronology<? extends DescriptionSememe<?>> descSem = con.getConceptDescriptionList().iterator().next();
 
 		int conNid = con.getNid();
 		int semNid = descSem.getNid();
 
 		try {
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), conNid));
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 
-			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
 
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), conNid));
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 
-			updater.addComponentToWorkflow(processId, conNid, 1110);
-			updater.addComponentToWorkflow(processId, semNid, 1111);
+			Optional<CommitRecord> commitRecord = createCommitRecord(conNid, null, 1110);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+			commitRecord = createCommitRecord(null, semNid, 1111);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));			
-			
-			initConcluder.launchWorkflowProcess(processId);
+			Assert.assertTrue(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), conNid));
+			Assert.assertTrue(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
-			Assert.assertTrue(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
+			Assert.assertTrue(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), conNid));
+			Assert.assertTrue(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, conNid));
-			Assert.assertFalse(wfAccessor.isComponentInActiveWorkflow(definitionId, semNid));
+			wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, getCancelAction(), userId,
+					"Canceling Workflow for Testing", EndWorkflowType.CANCELED, null);
+
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), conNid));
+			Assert.assertFalse(
+					wp_.getWorkflowAccessor().isComponentInActiveWorkflow(wp_.getBPMNInfo().getDefinitionId(), semNid));
 		} catch (Exception e) {
 			Assert.fail(e.getMessage());
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testCancelNoLaunch() {
+		clearStores();
+
 		LOG.info("Testing ability to cancel a workflow that has only been defined");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
+			wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, getCancelAction(), userId,
+					"Canceling Workflow for Testing", EndWorkflowType.CANCELED, defaultEditCoordinate);
 
-			Assert.assertEquals(ProcessStatus.CANCELED, wfAccessor.getProcessDetails(processId).getStatus());
+			Assert.assertEquals(ProcessStatus.CANCELED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
 			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testConcludeNoLaunch() {
+		clearStores();
+
 		LOG.info("Testing ability to conclude a workflow that has only been defined");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Concluding Workflow for Testing",
-					EndWorkflowType.CONCLUDED);
+			wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, getConcludeAction(), userId,
+					"Concluding Workflow for Testing", EndWorkflowType.CONCLUDED, defaultEditCoordinate);
 
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 		}
 
-		Assert.assertEquals(ProcessStatus.DEFINED, wfAccessor.getProcessDetails(processId).getStatus());
-
-		clearStores();
+		Assert.assertEquals(ProcessStatus.DEFINED, wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartCancel() {
+		clearStores();
+
 		LOG.info("Testing ability to cancel a workflow that has been defined and launched");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -222, 2220);
-			initConcluder.launchWorkflowProcess(processId);
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
 
-			Assert.assertEquals(ProcessStatus.CANCELED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 2220);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			Thread.sleep(1);// TODO fix Dan Work around bug in design
+			wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, getCancelAction(), userId,
+					"Canceling Workflow for Testing", EndWorkflowType.CANCELED, defaultEditCoordinate);
+
+			Assert.assertEquals(ProcessStatus.CANCELED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CANCELED));
 		} catch (Exception e) {
 			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailLaunch() {
+		clearStores();
+
 		LOG.info("Testing inability to launch a workflow that has yet to be defined");
 		UUID processId = UUID.randomUUID();
 
 		try {
-			initConcluder.launchWorkflowProcess(processId);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
 			try {
 				Assert.assertTrue(true);
 
-				StorableWorkflowContents process = null;
+				AbstractStorableWorkflowContents process = null;
 				try {
-					process = wfAccessor.getProcessDetails(processId);
+					process = wp_.getWorkflowAccessor().getProcessDetails(processId);
 				} catch (NullPointerException ee) {
-
+					Assert.assertTrue(true);
 				}
 
 				if (process == null) {
@@ -224,226 +266,429 @@ public class WorkflowFrameworkTest {
 				Assert.fail();
 			}
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
-	public void testFailDefineAfterDefineSameName() {
-		LOG.info("Testing inability to define a workflow on a concept that has already been defined");
-		UUID processId = null;
+	// TODO: Decide if prevent multiple processes with same name
+	/*
+	 * @Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	 * public void testFailDefineAfterDefineSameName() { LOG.
+	 * info("Testing inability to define a workflow on a concept that has already been defined"
+	 * ); UUID processId = null;
+	 * 
+	 * try { processId =
+	 * wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(wp_.
+	 * getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+	 * " Framework Workflow Description"); processId =
+	 * wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(wp_.
+	 * getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+	 * " Framework Workflow Description"); Assert.fail(); } catch (Exception e)
+	 * { Assert.assertTrue(true); Assert.assertEquals(ProcessStatus.DEFINED,
+	 * wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus()); }
+	 * 
+	 * clearStores(); }
+	 */
 
-		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description");
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
-					" Framework Workflow Description");
-			Assert.fail();
-		} catch (Exception e) {
-			Assert.assertTrue(true);
-			Assert.assertEquals(ProcessStatus.DEFINED, wfAccessor.getProcessDetails(processId).getStatus());
-		}
-
-		clearStores();
-	}
-
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailDefineAfterLaunched() {
+		clearStores();
+
 		LOG.info("Testing inability to add a concept onto a workflow other than one that has already been launched");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -333, 3330);
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 3330);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			commitRecord = createCommitRecord(firstTestConceptNid, null, 3331);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
 			try {
-				updater.addComponentToWorkflow(processId, -333, 3331);
-				Assert.assertTrue(true);
-			} catch (Exception e) {
-				Assert.fail();
-			}
-			initConcluder.launchWorkflowProcess(processId);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			try {
-				updater.addComponentToWorkflow(processId, -333, 3332);
+				commitRecord = createCommitRecord(firstTestConceptNid, null, 3332);
+				wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 				Assert.fail();
 			} catch (Exception e) {
 				Assert.assertTrue(true);
 			}
 
-			updater.advanceWorkflow(processId, userId, "QA Fails", "QA Fail");
-			UUID processId2 = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name2",
-					" Framework Workflow Description");
-			try {
-				updater.addComponentToWorkflow(processId2, -333, 3333);
-				Assert.fail();
-			} catch (Exception e) {
-				Assert.assertTrue(true);
-			}
-			updater.addComponentToWorkflow(processId, -333, 3334);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Fails", "QA Fail", defaultEditCoordinate);
 
-			Assert.assertEquals(ProcessStatus.LAUNCHED, wfAccessor.getProcessDetails(processId).getStatus());
+			commitRecord = createCommitRecord(firstTestConceptNid, null, 3333);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			Assert.assertEquals(ProcessStatus.LAUNCHED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
 			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailConclude() {
+		clearStores();
+
 		LOG.info("Testing inability to conclude a workflow that hasn't reached a final workflow state");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -444, 4440);
-			initConcluder.launchWorkflowProcess(processId);
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId, "Conclude Workflow for Testing",
-					EndWorkflowType.CONCLUDED);
-			Assert.fail();
+
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 4440);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
+			Assert.assertTrue(wp_.getBPMNInfo().getEditStatesMap().get(wp_.getBPMNInfo().getDefinitionId())
+					.contains(hx.getOutcomeState()));
+			Assert.assertTrue(isStartState(wp_.getBPMNInfo().getDefinitionId(), hx.getInitialState()));
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			boolean result = wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve",
+					"Concluding Workflow for Testing", defaultEditCoordinate);
+			Assert.assertFalse(result);
+
+			Assert.assertEquals(ProcessStatus.LAUNCHED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
+			Assert.assertFalse(wp_.getBPMNInfo().getEditStatesMap().get(wp_.getBPMNInfo().getDefinitionId())
+					.contains(hx.getOutcomeState()));
+			Assert.assertFalse(isStartState(wp_.getBPMNInfo().getDefinitionId(), hx.getInitialState()));
 		} catch (Exception e) {
-			Assert.assertTrue(true);
-
-			Assert.assertEquals(ProcessStatus.LAUNCHED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
-			Assert.assertTrue(AbstractWorkflowUtilities.getEditStates().contains(hx.getOutcomeState()));
-			Assert.assertTrue(isStartState(definitionId, hx.getInitialState()));
+			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartAllPassConclude() {
+		clearStores();
+
 		LOG.info("Testing ability to advance workflow to conclusion via its easy-path");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -555, 5550);
-			initConcluder.launchWorkflowProcess(processId);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-			
-			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 5550);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve", "Approve Comment",
+					defaultEditCoordinate);
+
+			Assert.assertEquals(ProcessStatus.CONCLUDED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
 		} catch (Exception e) {
 			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testFailCancelCall() {
+		clearStores();
+
 		LOG.info("Testing inability to cancel an already concluded Workflow ");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -666, 6660);
-			initConcluder.launchWorkflowProcess(processId);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-			initConcluder.endWorkflowProcess(processId, getCancelAction(), userId, "Canceling Workflow for Testing",
-					EndWorkflowType.CANCELED);
-			Assert.fail();
-		} catch (Exception e) {
-			Assert.assertTrue(true);
 
-			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 6660);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve", "Approve Comment",
+					defaultEditCoordinate);
+			Assert.assertFalse(wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate));
+
+			Assert.assertEquals(ProcessStatus.CONCLUDED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
+		} catch (Exception e) {
+			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testRedefineCall() {
+		clearStores();
+
 		LOG.info("Testing ability to define and launch workflow on a concept that has an already-concluded workflow");
 
 		try {
-			UUID processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -777, 7770);
-			initConcluder.launchWorkflowProcess(processId);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
 
-			Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
-			ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 7770);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve", "Approve Comment",
+					defaultEditCoordinate);
+
+			Assert.assertEquals(ProcessStatus.CONCLUDED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
 
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name2",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name2",
 					" Framework Workflow Description");
-			Assert.assertEquals(ProcessStatus.DEFINED, wfAccessor.getProcessDetails(processId).getStatus());
+			Assert.assertEquals(ProcessStatus.DEFINED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 		} catch (Exception e) {
 			Assert.fail();
 		}
-
-		clearStores();
 	}
 
-	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadMetaData" })
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testStartAllFailConclude() {
+		clearStores();
+
 		LOG.info(
 				"Testing ability to advance workflow to conclusion via with a rejection/failure happening at each point in path");
 		UUID processId = null;
 
 		try {
-			processId = initConcluder.createWorkflowProcess(definitionId, userId, "Framework Workflow Name",
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-			updater.addComponentToWorkflow(processId, -888, 8880);
-			initConcluder.launchWorkflowProcess(processId);
-			updater.advanceWorkflow(processId, userId, "Edit", "Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Fails", "Fail Review Comment");
-			updater.advanceWorkflow(processId, userId, "Edit", "Second Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Review Comment");
-			updater.advanceWorkflow(processId, userId, "Reject Edit", "Reject Edit Comment");
-			updater.advanceWorkflow(processId, userId, "Edit", "Third Edit Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Second Review Comment");
-			updater.advanceWorkflow(processId, userId, "Reject Review", "Reject Review Comment");
-			updater.advanceWorkflow(processId, userId, "QA Passes", "Third Review Comment");
-			updater.advanceWorkflow(processId, userId, "Approve", "Approve Comment");
-			initConcluder.endWorkflowProcess(processId, getConcludeAction(), userId,
-					"Canceling Workflow for Testing", EndWorkflowType.CONCLUDED);
+
+			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 8880);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Fails", "Fail Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Second Edit Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Reject Edit", "Reject Edit Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Third Edit Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Second Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Reject Review", "Reject Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Third Review Comment",
+					defaultEditCoordinate);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve", "Approve Comment",
+					defaultEditCoordinate);
+			boolean result = wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve",
+					"Concluding Workflow for Testing", defaultEditCoordinate);
+			Assert.assertFalse(result);
+
+			Assert.assertEquals(ProcessStatus.CONCLUDED,
+					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
+			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
+		} catch (Exception ee) {
+			Assert.fail();
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testIntegrationAddCommitRecordToWorkflow() throws Exception {
+		clearStores();
+
+		// Cannot make this work without at least a Mock Database.
+		// Added to Integration-Test module's workflowFramworkTest. For now just
+		// pass.
+		Assert.assertTrue(true);
+		UUID processId = createFirstWorkflowProcess(wp_.getBPMNInfo().getDefinitionId());
+		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 9990);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(9990));
+
+		commitRecord = createCommitRecord(firstTestConceptNid, null, 9991);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(9990));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(9991));
+
+		commitRecord = createCommitRecord(secondTestConceptNid, null, 9990);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(9990));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(9991));
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondTestConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(secondTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(9990));
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testIntegrationRemoveComponentsFromProcess() throws Exception {
+		clearStores();
+
+		UUID processId = createFirstWorkflowProcess(wp_.getBPMNInfo().getDefinitionId());
+		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
+
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 121200);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+		commitRecord = createCommitRecord(firstTestConceptNid, null, 121201);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+		commitRecord = createCommitRecord(secondTestConceptNid, null, 121200);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+		commitRecord = createCommitRecord(secondTestConceptNid, null, 121201);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondTestConceptNid).size());
+
+		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstTestConceptNid, defaultEditCoordinate);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondTestConceptNid));
+		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(121200));
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondTestConceptNid).contains(121201));
+
+		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, secondTestConceptNid, defaultEditCoordinate);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testIntegrationFailuresWithAddRemoveComponentsToProcess() throws Exception {
+		clearStores();
+
+		UUID processId = UUID.randomUUID();
+
+		try {
+
+			wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstTestConceptNid, defaultEditCoordinate);
 			Assert.fail();
 		} catch (Exception e) {
-			try {
-				Assert.assertTrue(true);
-				Assert.assertEquals(ProcessStatus.CONCLUDED, wfAccessor.getProcessDetails(processId).getStatus());
-				ProcessHistory hx = wfAccessor.getProcessHistory(processId).last();
-				Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
-			} catch (Exception ee) {
-				Assert.fail();
-			}
+			Assert.assertTrue(true);
 		}
 
-		clearStores();
+		UUID firstProcessId = createFirstWorkflowProcess(wp_.getBPMNInfo().getDefinitionId());
+
+		Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null, 565600);
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
+
+		wp_.getWorkflowUpdater().advanceWorkflow(firstProcessId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
+		try {
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		try {
+			// Go back to no components in any workflow
+
+			wp_.getWorkflowUpdater().removeComponentFromWorkflow(firstProcessId, firstTestConceptNid,
+					defaultEditCoordinate);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		executeSendForReviewAdvancement(firstProcessId);
+
+		try {
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		try {
+			// Go back to no components in any workflow
+			wp_.getWorkflowUpdater().removeComponentFromWorkflow(firstProcessId, firstTestConceptNid,
+					defaultEditCoordinate);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		// Rejecting QA to get back to edit state
+		executeRejectReviewAdvancement(firstProcessId);
+
+		// Go back to no components in any workflow
+		wp_.getWorkflowUpdater().removeComponentFromWorkflow(firstProcessId, firstTestConceptNid,
+				defaultEditCoordinate);
+
+		// Testing LAUNCHED-EDIT Case
+		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(firstProcessId, commitRecord);
+		ProcessDetail details = wp_.getProcessDetailStore().get(firstProcessId);
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstTestConceptNid));
+		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstTestConceptNid).size());
+		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstTestConceptNid).contains(565600));
+
+		// Testing INACTIVE Case
+		cancelWorkflow(firstProcessId);
+
+		try {
+			wp_.getWorkflowUpdater().removeComponentFromWorkflow(firstProcessId, firstTestConceptNid,
+					defaultEditCoordinate);
+			Assert.fail();
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
 	}
 
 	private void clearStores() {
-		processDetailStore.removeAllEntries();
-		processHistoryStore.removeAllEntries();
+		wp_.getProcessDetailStore().clear();
+		wp_.getProcessHistoryStore().clear();
 	}
 
-	private void setupUserRoles() {
-		updater.addNewUserRole(definitionId, userId, "Editor");
-		updater.addNewUserRole(definitionId, userId, "Reviewer");
-		updater.addNewUserRole(definitionId, userId, "Approver");
+	protected void setupUserRoles() {
+		UserPermission perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Editor");
+		wp_.getUserPermissionStore().add(perm);
+
+		perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Reviewer");
+		wp_.getUserPermissionStore().add(perm);
+
+		perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Approver");
+		wp_.getUserPermissionStore().add(perm);
 	}
 
 	private boolean isStartState(UUID defId, String state) {
-		for (AvailableAction action : AbstractWorkflowUtilities.getDefinitionStartActionMap().get(defId)) {
+		for (AvailableAction action : wp_.getBPMNInfo().getDefinitionStartActionMap().get(defId)) {
 			if (action.getInitialState().equals(state)) {
 				return true;
 			}
@@ -453,7 +698,7 @@ public class WorkflowFrameworkTest {
 	}
 
 	private boolean isEndState(String state, EndWorkflowType type) {
-		for (AvailableAction action : AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(type)) {
+		for (AvailableAction action : wp_.getBPMNInfo().getEndWorkflowTypeMap().get(type)) {
 			if (action.getOutcomeState().equals(state)) {
 				return true;
 			}
@@ -463,10 +708,294 @@ public class WorkflowFrameworkTest {
 	}
 
 	private AvailableAction getCancelAction() {
-		return AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
+		return wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).iterator().next();
 	}
 
 	private AvailableAction getConcludeAction() {
-		return AbstractWorkflowUtilities.getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+		return wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
+	}
+
+	private Optional<CommitRecord> createCommitRecord(Integer conNid, Integer semNid, int stampSeq) {
+		ConceptSequenceSet conSet;
+		SememeSequenceSet semSet;
+		StampSequenceSet stampSet = StampSequenceSet.of(stampSeq);
+
+		if (conNid == null) {
+			conSet = new ConceptSequenceSet();
+		} else {
+			conSet = ConceptSequenceSet.of(conNid);
+		}
+
+		if (semNid == null) {
+			semSet = new SememeSequenceSet();
+		} else {
+			semSet = SememeSequenceSet.of(semNid);
+		}
+
+		CommitRecord cr = new CommitRecord(Instant.ofEpochMilli(new Date().getTime()), stampSet,
+				new OpenIntIntHashMap(), conSet, semSet, "");
+
+		return Optional.ofNullable(cr);
+	}
+
+	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
+		return createWorkflowProcess(requestedDefinitionId, "Main Process Name", "Main Process Description");
+	}
+
+	protected UUID createSecondWorkflowProcess(UUID requestedDefinitionId) {
+		return createWorkflowProcess(requestedDefinitionId, "Secondary Process Name", "Secondary Process Description");
+	}
+
+	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
+		AvailableAction startNodeAction = wp_.getBPMNInfo().getDefinitionStartActionMap()
+				.get(wp_.getBPMNInfo().getDefinitionId()).iterator().next();
+
+		// Mimick the wp_.getWorkflowProcessInitializerConcluder()'s create new
+		// process
+		ProcessDetail details = new ProcessDetail(requestedDefinitionId, userId, new Date().getTime(),
+				ProcessStatus.DEFINED, name, description);
+		UUID processId = wp_.getProcessDetailStore().add(details);
+
+		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
+		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, startNodeAction.getInitialState(),
+				startNodeAction.getAction(), startNodeAction.getOutcomeState(), "Automated By System");
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
+				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
+				"");
+		wp_.getProcessHistoryStore().add(advanceEntry);
+
+		return processId;
+	}
+
+	protected void cancelWorkflow(UUID processId) {
+		try {
+			Thread.sleep(1);
+
+			finishWorkflowProcess(processId, cancelAction, userId, "Canceled Workflow", EndWorkflowType.CANCELED);
+		} catch (Exception e) {
+			Assert.fail();
+		}
+	}
+
+	private void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userId, String comment,
+			EndWorkflowType endType) throws Exception {
+		// Mimick the wp_.getWorkflowProcessInitializerConcluder()'s finish
+		// workflow process
+		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
+
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			entry.setStatus(ProcessStatus.CANCELED);
+		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
+			entry.setStatus(ProcessStatus.CONCLUDED);
+		}
+		entry.setTimeCanceledOrConcluded(new Date().getTime());
+		wp_.getProcessDetailStore().put(processId, entry);
+
+		// Only add Cancel state in Workflow if process has already been
+		// launched
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
+				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
+				comment);
+		wp_.getProcessHistoryStore().add(advanceEntry);
+
+		if (endType.equals(EndWorkflowType.CANCELED)) {
+			// TODO: Handle cancelation store and handle reverting automatically
+		}
+	}
+
+	protected void executeLaunchWorkflow(UUID processId) {
+		try {
+			Thread.sleep(1);
+			ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
+
+			entry.setStatus(ProcessStatus.LAUNCHED);
+			entry.setTimeLaunched(new Date().getTime());
+			wp_.getProcessDetailStore().put(processId, entry);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected void executeSendForReviewAdvancement(UUID processId) {
+		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
+					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
+			wp_.getProcessHistoryStore().add(advanceEntry);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected void executeSendForApprovalAdvancement(UUID requestedProcessId) {
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, new Date().getTime(),
+					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
+					SEND_TO_APPROVAL_COMMENT);
+
+			wp_.getProcessHistoryStore().add(entry);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected void executeRejectReviewAdvancement(UUID requestedProcessId) {
+		try {
+			Thread.sleep(1);
+
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, new Date().getTime(),
+					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
+
+			wp_.getProcessHistoryStore().add(entry);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testCancelInactivationOfComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel change on a concept and a sememe made inactive when originally was active");
+
+		try {
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+
+			ConceptChronologyImpl con = (ConceptChronologyImpl) Get.conceptService().getConcept(firstTestConceptNid);
+			SememeChronologyImpl descSem = (SememeChronologyImpl) con.getConceptDescriptionList().iterator().next();
+
+			verifyState(con, descSem, State.ACTIVE);
+
+			// Inactivate Concept
+			con.createMutableVersion(State.INACTIVE, defaultEditCoordinate);
+			Get.commitService().addUncommitted(con);
+			Optional<CommitRecord> commitRecord = Get.commitService().commit("Inactivating concept for Testing").get();
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			// Inactivate Sememe
+			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+					.createMutableVersion(DescriptionSememeImpl.class, State.INACTIVE, defaultEditCoordinate);
+			// TODO: Joel #1 Review why this throws exception:
+			// Get.commitService().addUncommitted(createdVersion.getChronology()).get();
+
+			// TODO: Joel #2 Review why the below's commitRecord shows nothing
+			// under StampsToCheck or StampsToCommit
+
+			Get.commitService().addUncommitted(createdVersion.getChronology());
+			commitRecord = Get.commitService().commit("Inactivating sememe for Testing").get();
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			/*
+			 * verifyState(con, descSem, State.INACTIVE);
+			 * 
+			 * updater.advanceWorkflow(processId, userId, "Edit",
+			 * "Edit Comment", defaultEditCoordinate);
+			 * updater.advanceWorkflow(processId, userId, "Cancel Workflow",
+			 * "Canceling Workflow for Testing", defaultEditCoordinate);
+			 * 
+			 * verifyState(con, descSem, State.ACTIVE);
+			 */ } catch (Exception e) {
+			Assert.fail();
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testCancelEditingOfSememe() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel changes made to a sememe's text");
+
+		try {
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+
+			ConceptChronology<? extends ConceptVersion<?>> con = Get.conceptService().getConcept(firstTestConceptNid);
+			SememeChronologyImpl descSem = (SememeChronologyImpl) con.getConceptDescriptionList().iterator().next();
+
+			Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) descSem)
+					.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+
+			// Revert description if previous execution of test failed
+			if (latestDescVersion.get().value().getText().equals("New Text")) {
+				DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+						.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
+				createdVersion.setText("ISAAC metadata");
+
+				Get.commitService().addUncommitted(descSem);
+				Get.commitService().commit("Inactivating sememe for Testing");
+
+				latestDescVersion = ((SememeChronology) descSem).getLatestVersion(DescriptionSememe.class,
+						Get.configurationService().getDefaultStampCoordinate());
+				Assert.assertNotEquals(latestDescVersion.get().value().getText(), "New Text");
+			}
+
+			String originalText = latestDescVersion.get().value().getText();
+
+			// Modify Sememe Text
+			DescriptionSememeImpl createdVersion = (DescriptionSememeImpl) descSem
+					.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, defaultEditCoordinate);
+			createdVersion.setText("New Text");
+
+			Get.commitService().addUncommitted(descSem);
+			Optional<CommitRecord> commitRecord = Get.commitService().commit("Inactivating sememe for Testing").get();
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
+			Assert.assertNotEquals(originalText, createdVersion.getText());
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate);
+
+			latestDescVersion = ((SememeChronology) descSem).getLatestVersion(DescriptionSememe.class,
+					Get.configurationService().getDefaultStampCoordinate());
+
+			// TODO: Jesse Remove commented out code
+			// Assert.assertEquals(originalText,
+			// latestDescVersion.get().value().getText());
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testCancelNewSememe() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel new sememe reverting it entirely");
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testCancelActivationOfComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel change on a concept and a sememe made active when originally was inactive");
+	}
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testCancelNewComponents() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel new concept reverting it entirely");
+	}
+
+	private void verifyState(ConceptChronology<? extends ConceptVersion<?>> con,
+			SememeChronology<? extends DescriptionSememe<?>> descSem, State state) {
+
+		ConceptChronology<? extends ConceptVersion<?>> cc = (ConceptChronologyImpl) Get.conceptService().getConcept(con.getNid());
+		Optional<LatestVersion<ConceptVersion>> latestConVersion = ((ConceptChronology) con)
+				.getLatestVersion(ConceptVersion.class, defaultStampCoordinate);
+		Assert.assertEquals(latestConVersion.get().value().getState(), state);
+
+		SememeChronology<? extends SememeVersion<?>> semChron = Get.sememeService().getSememe(descSem.getNid());
+		Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) semChron)
+				.getLatestVersion(DescriptionSememe.class, defaultStampCoordinate);
+		Assert.assertEquals(latestDescVersion.get().value().getState(), state);
 	}
 }

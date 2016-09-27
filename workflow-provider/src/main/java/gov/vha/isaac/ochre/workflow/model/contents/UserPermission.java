@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,50 +26,34 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-
 /**
- * Role available to a given workflow user
+ * Workflow roles available for each user for a given workflow definition
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store. Used to support different role for different workflow definitions.
- *
- * {@link UserPermission} {@link StorableWorkflowContents}
+ * {@link UserPermissionContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-/**
- * @author yishai
- *
- */
-public class UserPermission extends StorableWorkflowContents {
-
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
-
-	/** The definition id. */
+public class UserPermission extends AbstractStorableWorkflowContents {
+	/**
+	 * The workflow definition key for which the User Permission is relevant.
+	 */
 	private UUID definitionId;
 
-	/** The user nid. */
+	/** The user whose Workflow Permission is being defined. */
 	private int userNid;
 
-	/** The role. */
+	/**
+	 * The workflow role available to the user for the associated definition. A
+	 * user may have multiple roles.
+	 */
 	private String role;
 
 	/**
-	 * Instantiates a new user permission.
-	 *
+	 * Constructor for a new user permission based on specified entry fields.
+	 * 
 	 * @param definitionId
-	 *            the definition id
 	 * @param userNid
-	 *            the user nid
 	 * @param role
-	 *            the role
-	 * @param domainStandard
-	 *            the domain standard
 	 */
 	public UserPermission(UUID definitionId, int userNid, String role) {
 		this.definitionId = definitionId;
@@ -78,10 +62,10 @@ public class UserPermission extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Instantiates a new user permission.
-	 *
+	 * Constructor for a new user permission based on serialized content.
+	 * 
 	 * @param data
-	 *            the data
+	 *            The data to deserialize into its components
 	 */
 	public UserPermission(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -90,19 +74,17 @@ public class UserPermission extends StorableWorkflowContents {
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
-			this.userNid = (Integer) in.readObject();
+			this.userNid = (Integer) in.readObject();  //swap nids
 			this.role = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into UserPermission", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast UserPermission fields into String", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into UserPermission", e);
 		}
 	}
 
 	/**
-	 * Gets the definition Id.
+	 * Gets the definition key for which the user permission is pertinent.
 	 *
 	 * @return the definition Id
 	 */
@@ -111,16 +93,16 @@ public class UserPermission extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the user.
-	 *
-	 * @return the user
+	 * Gets the user whose permission is being defined
+	 * 
+	 * @return the user nid
 	 */
 	public int getUserNid() {
 		return userNid;
 	}
 
 	/**
-	 * Gets the role.
+	 * Gets the workflow role for the user.
 	 *
 	 * @return the role
 	 */
@@ -136,17 +118,24 @@ public class UserPermission extends StorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
-
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(userNid);
-		out.writeObject(role);
-
-		return bos.toByteArray();
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
+	
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(userNid);
+			out.writeObject(role);
+	
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*
@@ -169,7 +158,8 @@ public class UserPermission extends StorableWorkflowContents {
 	public boolean equals(Object obj) {
 		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.userNid == other.userNid && this.role.equals(other.role);
+		return this.definitionId.equals(other.definitionId) && this.userNid == other.userNid
+				&& this.role.equals(other.role);
 
 	}
 

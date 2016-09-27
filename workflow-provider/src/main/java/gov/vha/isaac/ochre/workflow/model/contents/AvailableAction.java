@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,54 +26,44 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-
 /**
- * Definition of Actions to Outcome States based on Roles and Initial State
+ * The available workflow actions as defined via the workflow definition. Each
+ * entry contains a single initial state-action-outcome state triplet that is an
+ * available action for a given role.
  * 
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store. Different actions are defined per workflow definitions.
+ * The workflow must be in the initial state and a user must have the workflow
+ * role to be able to perform the action.
  * 
- * {@link AvailableAction} {@link StorableWorkflowContents}
+ * {@link AvailableActionContentStore} {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class AvailableAction extends StorableWorkflowContents {
-
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
-
-	/** The definition id. */
+public class AvailableAction extends AbstractStorableWorkflowContents {
+	/**
+	 * The workflow definition key for which the Available Action is relevant.
+	 */
 	private UUID definitionId;
 
-	/** The initial state. */
+	/** The state which the action described may be executed upon. */
 	private String initialState;
 
-	/** The action. */
+	/** The action that may be taken. */
 	private String action;
 
-	/** The outcome state. */
+	/** The resulting state based on the action taken on the initial state. */
 	private String outcomeState;
 
-	/** The role. */
+	/** The workflow role which may perform the action on the initial state. */
 	private String role;
 
 	/**
-	 * Instantiates a new possible action.
-	 *
+	 * Constructor for a new available action on specified entry fields.
+	 * 
 	 * @param definitionId
-	 *            the definition id
 	 * @param initialState
-	 *            the initial state
 	 * @param action
-	 *            the action
 	 * @param outcomeState
-	 *            the outcome state
 	 * @param role
-	 *            the role
 	 */
 	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, String role) {
 		this.definitionId = definitionId;
@@ -84,10 +74,10 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Instantiates a new possible action.
+	 * Constructor for a new available action based on serialized content.
 	 *
 	 * @param data
-	 *            the data
+	 *            The data to deserialize into its components
 	 */
 	public AvailableAction(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -100,26 +90,24 @@ public class AvailableAction extends StorableWorkflowContents {
 			this.action = (String) in.readObject();
 			this.outcomeState = (String) in.readObject();
 			this.role = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into Available Action", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast Available Action fields", e);
-			e.printStackTrace();
+		} 
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into Available Action", e);
 		}
 	}
 
 	/**
-	 * Gets the definition Id.
+	 * Gets the definition Id associated with the process.
 	 *
-	 * @return the definition Id
+	 * @return the key of the definition from which the process is created
 	 */
 	public UUID getDefinitionId() {
 		return definitionId;
 	}
 
 	/**
-	 * Gets the initial state.
+	 * Gets the initial state associated with the available action.
 	 *
 	 * @return the initial state
 	 */
@@ -128,7 +116,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the action.
+	 * Gets the action which can be executed on the initial state.
 	 *
 	 * @return the action
 	 */
@@ -137,7 +125,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the outcome state.
+	 * Gets the outcome state if the action is performed.
 	 *
 	 * @return the outcomeState
 	 */
@@ -146,7 +134,7 @@ public class AvailableAction extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the role.
+	 * Gets the workflow role that a user must have to perform the action.
 	 *
 	 * @return the role
 	 */
@@ -162,19 +150,26 @@ public class AvailableAction extends StorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(initialState);
-		out.writeObject(action);
-		out.writeObject(outcomeState);
-		out.writeObject(role);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(initialState);
+			out.writeObject(action);
+			out.writeObject(outcomeState);
+			out.writeObject(role);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*
@@ -185,7 +180,8 @@ public class AvailableAction extends StorableWorkflowContents {
 	@Override
 	public String toString() {
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tInitial State: "
-				+ initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: " + outcomeState + "\n\t\tRole: " + role;
+				+ initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: " + outcomeState + "\n\t\tRole: "
+				+ role;
 	}
 
 	/*

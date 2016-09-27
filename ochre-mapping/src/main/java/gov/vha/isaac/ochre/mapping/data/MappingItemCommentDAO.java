@@ -47,7 +47,7 @@ public class MappingItemCommentDAO extends MappingDAO
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_COMMENT_ATTRIBUTE.getSequence(), 
 				new DynamicSememeData[] {new DynamicSememeStringImpl(pCommentText),
 						(StringUtils.isBlank(commentContext) ? null : new DynamicSememeStringImpl(commentContext))})
-			.build(editCoord, ChangeCheckerMode.ACTIVE);
+			.build(editCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 
 		@SuppressWarnings("deprecation")
 		Task<Optional<CommitRecord>> task = Get.commitService().commit("Added comment");
@@ -60,11 +60,11 @@ public class MappingItemCommentDAO extends MappingDAO
 		{
 			throw new RuntimeException();
 		}
-		
+	
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)built).getLatestVersion(DynamicSememe.class, 
 				stampCoord.makeAnalog(State.ACTIVE, State.INACTIVE));
-		
+
 		return new MappingItemComment(latest.get().value());
 	}
 

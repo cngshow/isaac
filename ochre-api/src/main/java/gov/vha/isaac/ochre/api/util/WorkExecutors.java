@@ -62,7 +62,7 @@ import gov.vha.isaac.ochre.api.LookupService;
  */
 
 @Service
-@RunLevel(value = -1)
+@RunLevel(value = -2)
 public class WorkExecutors
 {
 	private ForkJoinPool forkJoinExecutor_;

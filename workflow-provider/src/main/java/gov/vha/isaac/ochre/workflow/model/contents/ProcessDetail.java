@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.metacontent.workflow.contents;
+package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,77 +31,85 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents;
-
 /**
- * Definition of process when new workflow instance created
+ * The metadata defining a given process (or workflow instance). This doesn't
+ * include its history which is available via {@link ProcessHistory}
  * 
- * {@link ProcessDetail} {@link StorableWorkflowContents}.
- *
- * NOTE: The DefinitionId is the Key of the Definition Details Workflow Content
- * Store as multiple Process Detailss will exist for a single Workflow
- * Definition
+ * {@link ProcessDetailContentStore} {@link AbstractStorableWorkflowContents}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDetail extends StorableWorkflowContents {
-	/** The Constant logger. */
-	private static final Logger logger = LogManager.getLogger();
-
-	/** The definition id. */
-	private UUID definitionId;
-
-	/** The map from component nids to all stamps associated with component. */
-	private Map<Integer, List<Integer>> componentNidToStampsMap = new HashMap<>();
-
-	/** The creator. */
-	private int creatorNid;
-
-	/** The time created. */
-	private long timeCreated;
-
-	/** The time launched. */
-	private long timeLaunched = -1L;
-
-	/** The time canceled Or Concluded. */
-	private long timeCanceledOrConcluded = -1L;
-
-	/** The status. */
-	private ProcessStatus status;
-
-	/** The name. */
-	private String name;
-
-	/** The description. */
-	private String description;
-
+public class ProcessDetail extends AbstractStorableWorkflowContents {
 	/**
-	 * Instantiates a new process detail.
+	 * The exhaustive list of possible process statuses.
 	 */
-	public ProcessDetail() {
-
+	public enum ProcessStatus {
+		/** Process is being defined and has yet to be launched. */
+		DEFINED,
+		/** Process has been launched */
+		LAUNCHED,
+		/** A previously launched or defined process that has been canceled */
+		CANCELED,
+		/** A previously launched process that is completed */
+		CONCLUDED
 	}
 
 	/**
-	 * Instantiates a new process definition.
+	 * The exhaustive list of possible ways an instantiated process may be ended
 	 *
+	 * 
+	 */
+	public enum EndWorkflowType {
+		/** Process is stopped without reaching a completed state */
+		CANCELED,
+		/** Process has been finished by reaching a completed state */
+		CONCLUDED
+	};
+
+	/** The workflow definition key for which the Process Detail is relevant. */
+	private UUID definitionId;
+
+	/**
+	 * A map listing all compontent nids and each nid's associated stamps
+	 * sequences that are part of the workflow process. Therefore, if a
+	 * component has been modified multiple times within a single process, all
+	 * those stamps are persisted in order.
+	 */
+	private Map<Integer, List<Integer>> componentNidToStampsMap = new HashMap<>();
+
+	/** The user who originally defined (created) the workflow process. */
+	private int creatorNid;
+
+	/** The time the workflow process was created. */
+	private long timeCreated;
+
+	/** The time the workflow process was launched. */
+	private long timeLaunched = -1L;
+
+	/**
+	 * The time the workflow process was finished (either via canceled Or
+	 * Concluded).
+	 */
+	private long timeCanceledOrConcluded = -1L;
+
+	/** The workflow process's status. */
+	private ProcessStatus status;
+
+	/** The workflow process's name. */
+	private String name;
+
+	/** The workflow process's description. */
+	private String description;
+
+	/**
+	 * Constructor for a new process based on specified entry fields.
+	 * 
 	 * @param definitionId
-	 *            the definition id
 	 * @param creatorNid
-	 *            the creator
 	 * @param timeCreated
-	 *            the time created
-	 * @param active
-	 *            the active flag
-	 * @param ProcessStatus
-	 *            the process status
+	 * @param status
 	 * @param name
-	 *            the name
 	 * @param description
-	 *            the description
 	 */
 	public ProcessDetail(UUID definitionId, int creatorNid, long timeCreated, ProcessStatus status, String name,
 			String description) {
@@ -114,10 +122,10 @@ public class ProcessDetail extends StorableWorkflowContents {
 	}
 
 	/**
-	 * Instantiates a new process definition.
+	 * Constructor for a new process based on serialized content.
 	 *
 	 * @param data
-	 *            the data
+	 *            The data to deserialize into its components
 	 */
 	public ProcessDetail(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -127,6 +135,7 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 
+			//TODO these nids need to swap to UUIDs - certainly when writing to the changeset file
 			@SuppressWarnings("unchecked")
 			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
 			this.componentNidToStampsMap = componentToStampMapReadObject;
@@ -138,101 +147,126 @@ public class ProcessDetail extends StorableWorkflowContents {
 			this.status = (ProcessStatus) in.readObject();
 			this.name = (String) in.readObject();
 			this.description = (String) in.readObject();
-		} catch (IOException e) {
-			logger.error("Failure to deserialize data into ProcessDetail", e);
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			logger.error("Failure to cast ProcessDetail fields", e);
-			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failure to deserialize data into ProcessDetail", e);
 		}
 	}
 
 	/**
-	 * Gets the definition Id.
+	 * Gets the definition Id associated with the process.
 	 *
-	 * @return the definition Id
+	 * @return the key of the definition from which the process is created
 	 */
 	public UUID getDefinitionId() {
 		return definitionId;
 	}
 
 	/**
-	 * Gets the component to statmps map.
+	 * Gets the process's component nids along with each component's stamp
+	 * sequences.
 	 *
-	 * @return the stamp sequences
+	 * @return map of component nids to ordered stamp sequences
 	 */
 	public Map<Integer, List<Integer>> getComponentNidToStampsMap() {
 		return componentNidToStampsMap;
 	}
 
 	/**
-	 * Gets the creator.
+	 * Gets the process creator.
 	 *
-	 * @return the creator
+	 * @return the process creator's nid
 	 */
 	public int getCreatorNid() {
 		return creatorNid;
 	}
 
 	/**
-	 * Gets the time created.
+	 * Gets the time the process was created as long primitive type.
 	 *
-	 * @return the time created
+	 * @return the time the process was created
 	 */
 	public long getTimeCreated() {
 		return timeCreated;
 	}
 
 	/**
-	 * Gets the time concluded.
+	 * Gets the time the process ended either via cancelation or conclusion as
+	 * long primitive type.
 	 *
-	 * @return the time concluded
+	 * @return the time the process was canceled or concluded
 	 */
 	public long getTimeCanceledOrConcluded() {
 		return timeCanceledOrConcluded;
 	}
 
 	/**
-	 * Sets the time concluded.
+	 * Sets the time the process ended either via cancelation or conclusion as
+	 * this isn't available during the object's construction.
 	 *
 	 * @param time
-	 *            the new time concluded
+	 *            The time the process was canceled/concluded as long primitive
+	 *            type
 	 */
 	public void setTimeCanceledOrConcluded(long time) {
 		timeCanceledOrConcluded = time;
 	}
 
+	/**
+	 * Get the time the process was launched as long primitive type
+	 * 
+	 * @return the time launched
+	 */
 	public long getTimeLaunched() {
 		return timeLaunched;
 	}
 
+	/**
+	 * Sets the time the process as launched as this isn't available during the
+	 * object's construction.
+	 *
+	 * @param time
+	 *            The time the process was launched as long primitive type
+	 */
 	public void setTimeLaunched(long time) {
 		timeLaunched = time;
 	}
 
 	/**
-	 * Gets the defining status.
+	 * Gets the process's current status.
 	 *
-	 * @return the defining status
+	 * @return the process Status
 	 */
 	public ProcessStatus getStatus() {
 		return status;
 	}
 
 	/**
-	 * Sets the defining status.
+	 * Sets the process's current status as this is updated over the course of
+	 * the process.
 	 *
-	 * @param definingStatus
-	 *            the new defining status
+	 * @param status
+	 *            The process's current status
 	 */
 	public void setStatus(ProcessStatus status) {
 		this.status = status;
 	}
 
+	/**
+	 * The name of the process
+	 * 
+	 * @return process name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * The description of the process
+	 * 
+	 * @return process description
+	 */
 	public String getDescription() {
 		return description;
 	}
@@ -245,23 +279,30 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() throws IOException {
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream out = new ObjectOutputStream(bos);
+	public byte[] serialize() {
+		try
+		{
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out = new ObjectOutputStream(bos);
 
-		// write the object
-		out.writeObject(id);
-		out.writeObject(definitionId);
-		out.writeObject(componentNidToStampsMap);
-		out.writeObject(creatorNid);
-		out.writeObject(timeCreated);
-		out.writeObject(timeLaunched);
-		out.writeObject(timeCanceledOrConcluded);
-		out.writeObject(status);
-		out.writeObject(name);
-		out.writeObject(description);
+			// write the object
+			out.writeObject(id);
+			out.writeObject(definitionId);
+			out.writeObject(componentNidToStampsMap);
+			out.writeObject(creatorNid);
+			out.writeObject(timeCreated);
+			out.writeObject(timeLaunched);
+			out.writeObject(timeCanceledOrConcluded);
+			out.writeObject(status);
+			out.writeObject(name);
+			out.writeObject(description);
 
-		return bos.toByteArray();
+			return bos.toByteArray();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 
 	public boolean isActive() {
@@ -311,8 +352,9 @@ public class ProcessDetail extends StorableWorkflowContents {
 		ProcessDetail other = (ProcessDetail) obj;
 
 		return this.definitionId.equals(other.definitionId)
-				&& this.componentNidToStampsMap.equals(other.componentNidToStampsMap) && this.creatorNid == other.creatorNid
-				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched
+				&& this.componentNidToStampsMap.equals(other.componentNidToStampsMap)
+				&& this.creatorNid == other.creatorNid && this.timeCreated == other.timeCreated
+				&& this.timeLaunched == other.timeLaunched
 				&& this.timeCanceledOrConcluded == other.timeCanceledOrConcluded && this.status == other.status
 				&& this.name.equals(other.name) && this.description.equals(other.description);
 	}
@@ -324,13 +366,16 @@ public class ProcessDetail extends StorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + componentNidToStampsMap.hashCode() + creatorNid + new Long(timeCreated).hashCode()
-				+ new Long(timeLaunched).hashCode() + new Long(timeCanceledOrConcluded).hashCode() + status.hashCode()
-				+ name.hashCode() + description.hashCode();
+		return definitionId.hashCode() + componentNidToStampsMap.hashCode() + creatorNid
+				+ new Long(timeCreated).hashCode() + new Long(timeLaunched).hashCode()
+				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode()
+				+ description.hashCode();
 	}
 
 	/**
-	 * The Class ProcessDetailComparator.
+	 * A custom comparator to assist in ordering process detial information.
+	 * Based on creation time.
+	 *
 	 */
 	public static class ProcessDetailComparator implements Comparator<ProcessDetail> {
 

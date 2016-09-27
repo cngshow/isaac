@@ -50,7 +50,7 @@ public class IntegrationSuiteManagement {
         HeapUseTicker.start(10);
     }
 
-    @AfterGroups(groups = {"db", "load"})
+    @AfterGroups(groups = {"db", "load", "wf"})
     public void tearDownSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement teardown");
         LookupService.shutdownIsaac();

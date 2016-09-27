@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>3.11</version>
+		<version>3.12</version>
 	</parent>
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>workflow-provider</artifactId>
@@ -15,6 +15,13 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>metacontent-store</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<!-- Metacontent-store requires a configuration service - only one is in ochre-model -->
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>ochre-model</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		
