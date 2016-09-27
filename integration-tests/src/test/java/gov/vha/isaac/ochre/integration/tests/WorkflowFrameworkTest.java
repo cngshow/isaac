@@ -745,7 +745,7 @@ public class WorkflowFrameworkTest {
 				startNodeAction.getAction(), startNodeAction.getOutcomeState(), "Automated By System");
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
-				"");
+				"", 1);
 		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		return processId;
@@ -777,9 +777,10 @@ public class WorkflowFrameworkTest {
 
 		// Only add Cancel state in Workflow if process has already been
 		// launched
+		ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
-				comment);
+				comment, hx.getHistorySequence() + 1);
 		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
@@ -805,8 +806,9 @@ public class WorkflowFrameworkTest {
 		try {
 			Thread.sleep(1);
 
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
-					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
+					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT, hx.getHistorySequence() + 1);
 			wp_.getProcessHistoryStore().add(advanceEntry);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -817,9 +819,10 @@ public class WorkflowFrameworkTest {
 		try {
 			Thread.sleep(1);
 
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last();
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, new Date().getTime(),
 					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
-					SEND_TO_APPROVAL_COMMENT);
+					SEND_TO_APPROVAL_COMMENT, hx.getHistorySequence() + 1);
 
 			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {
@@ -831,8 +834,9 @@ public class WorkflowFrameworkTest {
 		try {
 			Thread.sleep(1);
 
+			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last();
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, userId, new Date().getTime(),
-					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
+					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT, hx.getHistorySequence() + 1);
 
 			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {

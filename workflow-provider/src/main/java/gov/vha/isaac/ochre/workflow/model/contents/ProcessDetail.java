@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -360,35 +359,4 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode() + description.hashCode();
 	}
 
-	/**
-	 * A custom comparator to assist in ordering process detial information.
-	 * Based on creation time.
-	 *
-	 */
-	public static class ProcessDetailComparator implements Comparator<ProcessDetail> {
-
-		/**
-		 * Instantiates a new process detail comparator.
-		 */
-		public ProcessDetailComparator() {
-
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-		 */
-		@Override
-		public int compare(ProcessDetail o1, ProcessDetail o2) {
-			long t1 = o1.getTimeCreated();
-			long t2 = o2.getTimeCreated();
-			if (t2 > t1)
-				return 1;
-			else if (t1 > t2)
-				return -1;
-			else
-				return o1.getId().compareTo(o2.getId());
-		}
-	}
 }

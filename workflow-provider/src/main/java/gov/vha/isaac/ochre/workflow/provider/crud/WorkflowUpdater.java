@@ -150,8 +150,9 @@ public class WorkflowUpdater {
 				}
 
 				// Add to process history
+				ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
 				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
-						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment);
+						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 
 				workflowProvider_.getProcessHistoryStore().add(entry);
 				return true;

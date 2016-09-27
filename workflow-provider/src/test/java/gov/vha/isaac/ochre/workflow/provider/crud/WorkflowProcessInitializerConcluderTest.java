@@ -20,22 +20,21 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessDetailComparator;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
@@ -274,9 +273,9 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	}
 
 	private void assertProcessDefinition(ProcessStatus processStatus, UUID definitionId, UUID processId) {
-		SortedSet<ProcessDetail> detailEntries = new TreeSet<>(new ProcessDetailComparator());
+		Set<ProcessDetail> detailEntries = new HashSet<>();
 		detailEntries.addAll(wp_.getProcessDetailStore().values());
-		ProcessDetail entry = detailEntries.last();
+		ProcessDetail entry = detailEntries.iterator().next();
 
 		Assert.assertEquals(processId, entry.getId());
 		Assert.assertEquals(2, entry.getComponentNids().size());
