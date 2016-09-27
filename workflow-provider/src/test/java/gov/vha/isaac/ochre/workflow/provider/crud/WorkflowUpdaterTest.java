@@ -44,8 +44,6 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	private static int firstConceptNid = 0;
 	private static int secondConceptNid = 0;
-	private static int firstStampSeq = -1;
-	private static int secondStampSeq = -1;
 
 	/**
 	 * Sets the up.
@@ -61,14 +59,6 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 				firstConceptNid = nid;
 			} else {
 				secondConceptNid = nid;
-			}
-		}
-
-		for (Integer seq : stampSequenceForTesting) {
-			if (firstStampSeq == -1) {
-				firstStampSeq = seq;
-			} else {
-				secondStampSeq = seq;
 			}
 		}
 	}
@@ -102,33 +92,18 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void testAddComponentsToProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
+		Assert.assertFalse(details.getComponentNids().contains(firstConceptNid));
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
-		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(firstConceptNid).size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
+		Assert.assertEquals(1, details.getComponentNids().size());
+		Assert.assertTrue(details.getComponentNids().contains(firstConceptNid));
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(secondStampSeq));
-
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
-		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(firstStampSeq));
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(firstConceptNid).contains(secondStampSeq));
-		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondConceptNid));
-		Assert.assertEquals(1, details.getComponentNidToStampsMap().get(secondConceptNid).size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
+		Assert.assertEquals(2, details.getComponentNids().size());
+		Assert.assertTrue(details.getComponentNids().contains(firstConceptNid));
+		Assert.assertTrue(details.getComponentNids().contains(secondConceptNid));
 	}
 
 	/**
@@ -146,30 +121,25 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void testRemoveComponentsFromProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
+		Assert.assertEquals(0, details.getComponentNids().size());
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, firstStampSeq);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid, secondStampSeq);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, firstStampSeq);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid, secondStampSeq);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
+		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
 
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().size());
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(firstConceptNid).size());
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
+		Assert.assertEquals(2, details.getComponentNids().size());
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstConceptNid, null);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentNidToStampsMap().size());
-		Assert.assertFalse(details.getComponentNidToStampsMap().containsKey(firstConceptNid));
-		Assert.assertTrue(details.getComponentNidToStampsMap().containsKey(secondConceptNid));
-		Assert.assertEquals(2, details.getComponentNidToStampsMap().get(secondConceptNid).size());
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(firstStampSeq));
-		Assert.assertTrue(details.getComponentNidToStampsMap().get(secondConceptNid).contains(secondStampSeq));
+		Assert.assertEquals(1, details.getComponentNids().size());
+		Assert.assertFalse(details.getComponentNids().contains(firstConceptNid));
+		Assert.assertTrue(details.getComponentNids().contains(secondConceptNid));
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, secondConceptNid, null);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(0, details.getComponentNidToStampsMap().size());
+		Assert.assertEquals(0, details.getComponentNids().size());
 	}
 
 	/**

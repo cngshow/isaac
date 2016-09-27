@@ -129,7 +129,7 @@ public class WorkflowAccessor {
 	public boolean isComponentInActiveWorkflow(UUID definitionId, int compNid) {
 		for (ProcessDetail proc : workflowProvider_.getProcessDetailStore().values()) {
 			if (proc.getDefinitionId().equals(definitionId) && proc.isActive()
-					&& proc.getComponentNidToStampsMap().containsKey(compNid)) {
+					&& proc.getComponentNids().contains(compNid)) {
 				return true;
 			}
 		}

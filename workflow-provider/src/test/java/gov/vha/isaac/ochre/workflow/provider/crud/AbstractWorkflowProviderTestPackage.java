@@ -60,7 +60,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static final int firstUserId = 99;
 	protected static final int secondUserId = 999;
-	protected static final ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
@@ -192,7 +191,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	protected void addComponentsToProcess(UUID processId) {
 		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentNidToStampsMap().put(con, stampSequenceForTesting);
+			entry.getComponentNids().add(con);
 		}
 
 		wp_.getProcessDetailStore().put(processId, entry);

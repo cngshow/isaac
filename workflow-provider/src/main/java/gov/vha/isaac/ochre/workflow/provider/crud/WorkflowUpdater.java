@@ -18,7 +18,6 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -27,11 +26,8 @@ import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
@@ -193,11 +189,11 @@ public class WorkflowUpdater {
 		ProcessDetail detail = workflowProvider_.getProcessDetailStore().get(processId);
 
 		if (isModifiableComponentInProcess(detail, compNid)) {
-			if (!detail.getComponentNidToStampsMap().containsKey(compNid)) {
+			if (!detail.getComponentNids().contains(compNid)) {
 				throw new Exception("Component " + compNid + " is not already in Workflow");
 			}
 
-			detail.getComponentNidToStampsMap().remove(compNid);
+			detail.getComponentNids().remove(compNid);
 			workflowProvider_.getProcessDetailStore().put(processId, detail);
 		} else {
 			throw new Exception("Components may not be renived from Workflow: " + compNid);
@@ -235,7 +231,7 @@ public class WorkflowUpdater {
 		UUID processId = process.getId();
 		// Check if in Case A. If not, throw exception
 		if (workflowProvider_.getWorkflowAccessor().isComponentInActiveWorkflow(process.getDefinitionId(), compNid)
-				&& !process.getComponentNidToStampsMap().containsKey(compNid)) {
+				&& !process.getComponentNids().contains(compNid)) {
 			// Can't do so because component is already in another active
 			// workflow
 			return false;
@@ -296,30 +292,26 @@ public class WorkflowUpdater {
 			OfInt sememeItr = Get.identifierService()
 					.getSememeNidsForSememeSequences(commitRecord.get().getSememesInCommit().parallelStream())
 					.iterator();
-			OfInt stampItr = commitRecord.get().getStampsInCommit().getIntIterator();
 
-			while (stampItr.hasNext()) {
-				int stampSeq = stampItr.next();
-				while (conceptItr.hasNext()) {
-					int conNid = conceptItr.next();
-					if (isModifiableComponentInProcess(detail, conNid)) {
-						addComponentToWorkflow(detail, conNid, stampSeq);
-					} else {
-						// TODO: Prevention strategy for when component not
-						// deemed "addable" to WF
-						throw new Exception("Concept may not be added to Workflow: " + conNid);
-					}
+			while (conceptItr.hasNext()) {
+				int conNid = conceptItr.next();
+				if (isModifiableComponentInProcess(detail, conNid)) {
+					addComponentToWorkflow(detail, conNid);
+				} else {
+					// TODO: Prevention strategy for when component not
+					// deemed "addable" to WF
+					throw new Exception("Concept may not be added to Workflow: " + conNid);
 				}
+			}
 
-				while (sememeItr.hasNext()) {
-					int semNid = sememeItr.next();
-					if (isModifiableComponentInProcess(detail, semNid)) {
-						addComponentToWorkflow(detail, semNid, stampSeq);
-					} else {
-						// TODO: Prevention strategy for when component not
-						// deemed "addable" to WF
-						throw new Exception("Sememe may not be added to Workflow: " + semNid);
-					}
+			while (sememeItr.hasNext()) {
+				int semNid = sememeItr.next();
+				if (isModifiableComponentInProcess(detail, semNid)) {
+					addComponentToWorkflow(detail, semNid);
+				} else {
+					// TODO: Prevention strategy for when component not
+					// deemed "addable" to WF
+					throw new Exception("Sememe may not be added to Workflow: " + semNid);
 				}
 			}
 		}
@@ -339,13 +331,9 @@ public class WorkflowUpdater {
 	 * @param stampSeq
 	 *            The stamp being added
 	 */
-	public void addComponentToWorkflow(ProcessDetail process, int compNid, int stampSeq) {
-		if (process.getComponentNidToStampsMap().containsKey(compNid)) {
-			process.getComponentNidToStampsMap().get(compNid).add(stampSeq);
-		} else {
-			ArrayList<Integer> list = new ArrayList<>();
-			list.add(stampSeq);
-			process.getComponentNidToStampsMap().put(compNid, list);
+	public void addComponentToWorkflow(ProcessDetail process, int compNid) {
+		if (!process.getComponentNids().contains(compNid)) {
+			process.getComponentNids().add(compNid);
 		}
 
 		workflowProvider_.getProcessDetailStore().put(process.getId(), process);

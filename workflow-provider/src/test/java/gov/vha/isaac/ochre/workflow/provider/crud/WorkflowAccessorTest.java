@@ -114,17 +114,13 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 		ProcessDetail entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
+		Assert.assertEquals(2, entry.getComponentNids().size());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
 		Assert.assertEquals(99, entry.getCreatorNid());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
-		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
-		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-55));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-56));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(11));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(12));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(11));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(12));
+		Assert.assertEquals(2, entry.getComponentNids().size());
+		Assert.assertTrue(entry.getComponentNids().contains(-55));
+		Assert.assertTrue(entry.getComponentNids().contains(-56));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
 	}
