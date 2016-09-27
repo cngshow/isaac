@@ -306,6 +306,9 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_EDITOR_COMMENT_CONTEXT.getUUID(), DynamicSememeDataType.STRING, null, false, true)}) {
 	};  //Index the comments, and the columns
 
+	/** 
+	 * see {@link #DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT}
+	 */
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_ASSOCIATION_SEMEME = new MetadataDynamicSememeConstant("sememe represents association",
 			UUID.fromString("5252bafb-1ba7-5a35-b1a2-48d7a65fa477"),
 			"A Sememe used to annotate other sememes which define an association, which is defined as a sememe which contains "
