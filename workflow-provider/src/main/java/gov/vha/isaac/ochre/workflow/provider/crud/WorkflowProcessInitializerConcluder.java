@@ -208,7 +208,7 @@ public class WorkflowProcessInitializerConcluder {
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentNids(),
-					entry.getTimeCreated(), editCoordinate);
+					processId, editCoordinate);
 		}
 	}
 }

@@ -194,13 +194,13 @@ public class WorkflowUpdater {
 				throw new Exception("Component " + compNid + " is not already in Workflow");
 			}
 
+			revertChanges(Arrays.asList(compNid), processId, editCoordinate);
+			
 			detail.getComponentNids().remove(compNid);
 			workflowProvider_.getProcessDetailStore().put(processId, detail);
 		} else {
 			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
-
-		revertChanges(Arrays.asList(compNid), detail.getTimeCreated(), editCoordinate);
 	}
 
 	/**
@@ -340,71 +340,29 @@ public class WorkflowUpdater {
 		workflowProvider_.getProcessDetailStore().put(process.getId(), process);
 	}
 
-	protected void revertChanges(Collection<Integer> compNidSet, long wfCreationTime, EditCoordinate editCoordinate)
+	protected void revertChanges(Collection<Integer> compNidSet, UUID processId, EditCoordinate editCoordinate)
 			throws Exception {
 
 		if (editCoordinate != null) {
 			for (Integer compNid : compNidSet) {
-				ObjectChronology ObjChron;
-
-				// get Version prior to WF Creation Time
-				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT) {
-					ObjChron = Get.conceptService().getConcept(compNid);
-				} else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
-					ObjChron = Get.sememeService().getSememe(compNid);
-				} else {
-					throw new Exception("Cannot reconcile NID with Identifier Service for nid: " + compNid);
-				}
-
-				OfInt stampSequencesItr = ObjChron.getVersionStampSequences().iterator();
-
-				int actualStampSeq = -1;
-				if (stampSequencesItr.hasNext()) {
-					int stampSeq = stampSequencesItr.next();
-					long stampTime = Get.stampService().getTimeForStamp(stampSeq);
-
-					if (!stampSequencesItr.hasNext()) {
-						actualStampSeq = stampSeq;
-					} else {
-						while (stampSequencesItr.hasNext() && stampTime < wfCreationTime) {
-							actualStampSeq = stampSeq;
-
-							stampSeq = stampSequencesItr.next();
-							stampTime = Get.stampService().getTimeForStamp(stampSeq);
-						}
-					}
-				}
-
-				// Verify ACtual Stamp Seq
-				if (actualStampSeq < 0) {
-					throw new Exception("Cannot reconcile Stamp Sequence: " + actualStampSeq);
-				}
-
+				StampedVersion version = workflowProvider_.getWorkflowAccessor().getVersionPriorToWorkflow(processId, compNid);
+				
 				// add new version identical to version associated with
 				// actualStampSeq
-				List<StampedVersion> stampedVersions = ObjChron.getVersionList();
-				for (StampedVersion version : stampedVersions) {
-					if (version.getStampSequence() == actualStampSeq) {
-						if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT) {
-							ConceptChronology<?> conceptChron = (ConceptChronology<?>) ObjChron;
-							conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
-							Get.commitService().addUncommitted(conceptChron);
-							Get.commitService().commit("Reverting concept to how it was prior to workflow");
+				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT) {
+					ConceptChronology<?> conceptChron = ((ConceptVersion)version).getChronology();
+					conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
+					Get.commitService().addUncommitted(conceptChron);
+					Get.commitService().commit("Reverting concept to how it was prior to workflow");
+				} else if (Get.identifierService()
+						.getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
+					SememeChronology<?> semChron = ((SememeVersion)version).getChronology();
+					SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(
+							version.getClass(), ((SememeVersion<?>) version).getState(), editCoordinate);
 
-							break;
-						} else if (Get.identifierService()
-								.getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
-							// TODO: Fix this
-							SememeVersion createdVersion = ((SememeChronology) ObjChron).createMutableVersion(
-									version.getClass(), ((SememeVersion<?>) version).getState(), editCoordinate);
-
-							createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
-							Get.commitService().addUncommitted(createdVersion.getChronology()).get();
-							Get.commitService().commit("Reverting sememe to how it was prior to workflow");
-
-							break;
-						}
-					}
+					createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
+					Get.commitService().addUncommitted(createdVersion.getChronology()).get();
+					Get.commitService().commit("Reverting sememe to how it was prior to workflow");
 				}
 			}
 		}
