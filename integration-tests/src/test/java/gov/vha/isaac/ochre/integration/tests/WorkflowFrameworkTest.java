@@ -5,14 +5,12 @@ import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -244,26 +242,18 @@ public class WorkflowFrameworkTest {
 
 		try {
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
-			Assert.fail();
-		} catch (Exception e) {
-			try {
+			Assert.assertTrue(true);
+
+			AbstractStorableWorkflowContents process = null;
+			process = wp_.getWorkflowAccessor().getProcessDetails(processId);
+
+			if (process == null) {
 				Assert.assertTrue(true);
-
-				AbstractStorableWorkflowContents process = null;
-				try {
-					process = wp_.getWorkflowAccessor().getProcessDetails(processId);
-				} catch (NullPointerException ee) {
-					Assert.assertTrue(true);
-				}
-
-				if (process == null) {
-					Assert.assertTrue(true);
-				} else {
-					Assert.fail();
-				}
-			} catch (Exception ee) {
+			} else {
 				Assert.fail();
 			}
+		} catch (Exception ee) {
+			Assert.fail();
 		}
 	}
 
@@ -372,20 +362,45 @@ public class WorkflowFrameworkTest {
 			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
 					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
 					" Framework Workflow Description");
-
+			Assert.assertEquals(userId, wp_.getProcessDetailStore().get(processId).getOwnerNid());
+			ProcessDetail process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(userId, process.getOwnerNid());
+			
 			Optional<CommitRecord> commitRecord = createCommitRecord(firstTestConceptNid, null);
 			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+			process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(0, process.getOwnerNid());
+			process.setOwnerNid(userId);
+			wp_.getProcessDetailStore().put(processId, process);
+			
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "QA Passes", "Review Comment",
 					defaultEditCoordinate);
+			process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(0, process.getOwnerNid());
+			process.setOwnerNid(userId);
+			wp_.getProcessDetailStore().put(processId, process);
+			
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Approve", "Approve Comment",
 					defaultEditCoordinate);
+			process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(ProcessStatus.CONCLUDED, process.getStatus());
+			Assert.assertEquals(0, process.getOwnerNid());
 
-			Assert.assertEquals(ProcessStatus.CONCLUDED,
-					wp_.getWorkflowAccessor().getProcessDetails(processId).getStatus());
 			ProcessHistory hx = wp_.getWorkflowAccessor().getProcessHistory(processId).last();
 			Assert.assertTrue(isEndState(hx.getOutcomeState(), EndWorkflowType.CONCLUDED));
+			
+			processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+			process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(userId, process.getOwnerNid());
+
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate);
+			process = wp_.getProcessDetailStore().get(processId);
+			Assert.assertEquals(0, process.getOwnerNid());
 		} catch (Exception e) {
 			Assert.fail();
 		}

@@ -31,7 +31,7 @@ import java.util.UUID;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
- * include its history which is available via {@link ProcessHistory}
+ * include its Detail which is available via {@link ProcessHistory}
  * 
  * {@link ProcessDetailContentStore} {@link AbstractStorableWorkflowContents}.
  *
@@ -98,6 +98,9 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	/** The workflow process's description. */
 	private String description;
 
+	/** The workflow process's current "owner". */
+	private int ownerNid;
+
 	/**
 	 * Constructor for a new process based on specified entry fields.
 	 * 
@@ -116,6 +119,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 		this.status = status;
 		this.name = name;
 		this.description = description;
+		this.ownerNid = creatorNid;
 	}
 
 	/**
@@ -144,6 +148,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			this.status = (ProcessStatus) in.readObject();
 			this.name = (String) in.readObject();
 			this.description = (String) in.readObject();
+			this.ownerNid = (Integer) in.readObject();
 		}
 		catch (Exception e)
 		{
@@ -251,7 +256,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	}
 
 	/**
-	 * The name of the process
+	 * The name of the process 
 	 * 
 	 * @return process name
 	 */
@@ -268,6 +273,26 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 		return description;
 	}
 
+	/** 
+	 * Retrieves the current owner of the process
+	 *  
+	 *  @return if Negative Number: int current owner nid
+	 *  	    else 0: Not owned
+	 */
+	public int getOwnerNid() {
+		return ownerNid;
+	}
+	
+	/** 
+	 * Sets the current owner of the process
+	 *  
+	 * @param nid
+	 * The userNid obtaining a lock on the instance.  Note '0' means no owner.
+	 */
+	public void setOwnerNid(int nid) {
+		ownerNid = nid;
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -293,6 +318,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			out.writeObject(status);
 			out.writeObject(name);
 			out.writeObject(description);
+			out.writeObject(ownerNid);
 
 			return bos.toByteArray();
 		}
@@ -331,7 +357,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
 				+ creatorNid + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "
-				+ timeCanceledOrConcludedString + "\n\t\tStatus: " + status + "\n\t\tName: " + name + "\n\t\tDescription: " + description;
+				+ timeCanceledOrConcludedString + "\n\t\tStatus: " + status + "\n\t\tName: " + name + "\n\t\tDescription: " + description + "\n\t\tOwner Nid: " + ownerNid;
 	}
 
 	/*
@@ -345,7 +371,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 
 		return this.definitionId.equals(other.definitionId) && this.componentNids.equals(other.componentNids) && this.creatorNid == other.creatorNid
 				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched && this.timeCanceledOrConcluded == other.timeCanceledOrConcluded
-				&& this.status == other.status && this.name.equals(other.name) && this.description.equals(other.description);
+				&& this.status == other.status && this.name.equals(other.name) && this.description.equals(other.description) && this.ownerNid == other.ownerNid;
 	}
 
 	/*
@@ -356,7 +382,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	@Override
 	public int hashCode() {
 		return definitionId.hashCode() + componentNids.hashCode() + creatorNid + new Long(timeCreated).hashCode() + new Long(timeLaunched).hashCode()
-				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode() + description.hashCode();
+				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode() + description.hashCode() + ownerNid;
 	}
 
 }

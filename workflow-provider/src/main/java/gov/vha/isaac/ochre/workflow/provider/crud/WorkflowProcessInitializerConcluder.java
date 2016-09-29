@@ -137,6 +137,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		// Update Process Details with "LAUNCHED"
+		entry.setOwnerNid(0);
 		entry.setStatus(ProcessStatus.LAUNCHED);
 		entry.setTimeLaunched(new Date().getTime());
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
@@ -197,6 +198,8 @@ public class WorkflowProcessInitializerConcluder {
 		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
 			entry.setStatus(ProcessStatus.CONCLUDED);
 		}
+		
+		entry.setOwnerNid(0);
 		entry.setTimeCanceledOrConcluded(new Date().getTime());
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
 

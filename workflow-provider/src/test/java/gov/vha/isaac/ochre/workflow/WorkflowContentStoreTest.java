@@ -322,8 +322,9 @@ public class WorkflowContentStoreTest {
 		AbstractStorableWorkflowContents pulledEntry1 = processInstanceStore.get(key1);
 
 		Assert.assertEquals(processInstanceStore.size(), 1);
+		Assert.assertEquals(createdEntry1.getOwnerNid(), createdEntry1.getCreatorNid());
 		Assert.assertEquals(createdEntry1, pulledEntry1);
-
+		
 		// Add second entry
 		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3, new Date().getTime(), ProcessStatus.DEFINED, name, description);
 
@@ -352,6 +353,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
 		Assert.assertEquals(createdEntry2.getStatus(), pulledEntry2.getStatus());
 		Assert.assertEquals(createdEntry2.getName(), pulledEntry2.getName());
+		Assert.assertEquals(createdEntry2.getOwnerNid(), pulledEntry2.getOwnerNid());
 		Assert.assertNotEquals(createdEntry2.getDescription(), pulledEntry2.getDescription());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);

@@ -179,11 +179,21 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	/**
 	 * Gets the sequence within the process which the history represents.
 	 *
-	 * @return the comment
+	 * @return the history sequence
 	 */
 	public int getHistorySequence()
 	{
 		return historySequence;
+	}
+
+	/**
+	 * Sets the sequence within the process which the history represents.
+	 *
+	 * @return the history sequence
+	 */
+	public void setHistorySequence(int seq)
+	{
+		historySequence = seq;
 	}
 
 	/*

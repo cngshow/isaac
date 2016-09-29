@@ -110,19 +110,25 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testGetProcessDetails() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		addComponentsToProcess(processId);
 
 		ProcessDetail entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentNids().size());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
 		Assert.assertEquals(99, entry.getCreatorNid());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
+		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
+		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
+		Assert.assertEquals(0, entry.getComponentNids().size());
+
+		addComponentsToProcess(processId);
+		entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(2, entry.getComponentNids().size());
 		Assert.assertTrue(entry.getComponentNids().contains(-55));
 		Assert.assertTrue(entry.getComponentNids().contains(-56));
-		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
-		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
+
+		executeLaunchWorkflow(processId);
+		entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
+		Assert.assertEquals(ProcessStatus.LAUNCHED, entry.getStatus());
 	}
 
 	/**

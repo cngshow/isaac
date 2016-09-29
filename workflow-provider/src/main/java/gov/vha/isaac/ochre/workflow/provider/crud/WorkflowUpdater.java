@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
@@ -30,7 +29,6 @@ import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -139,6 +137,10 @@ public class WorkflowUpdater {
 					// Conclude Request made
 					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action,
 							userNid, comment, EndWorkflowType.CONCLUDED, null);
+				} else {
+					ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
+					entry.setOwnerNid(0);
+					workflowProvider_.getProcessDetailStore().put(processId, entry);
 				}
 
 				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
@@ -155,6 +157,7 @@ public class WorkflowUpdater {
 						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 
 				workflowProvider_.getProcessHistoryStore().add(entry);
+								
 				return true;
 			}
 		}

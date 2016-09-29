@@ -83,7 +83,7 @@ public class WorkflowAccessor {
 	 * @param processId
 	 *            The key the the Process Detail entry
 	 * 
-	 * @return The process details entry requested
+	 * @return The process details entry requested.  If none exists, return null
 	 */
 	public ProcessDetail getProcessDetails(UUID processId) {
 		return workflowProvider_.getProcessDetailStore().get(processId);
@@ -223,15 +223,18 @@ public class WorkflowAccessor {
 	 */
 	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userNid) {
 		ProcessDetail processDetail = getProcessDetails(processId);
-		ProcessHistory processLatest = getProcessHistory(processId).last();
-
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
-				processDetail.getDefinitionId(), userNid);
-
-		if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
-			return actionsByInitialState.get(processLatest.getOutcomeState());
+		
+		if (processDetail != null) {
+			ProcessHistory processLatest = getProcessHistory(processId).last();
+	
+			Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
+					processDetail.getDefinitionId(), userNid);
+	
+			if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
+				return actionsByInitialState.get(processLatest.getOutcomeState());
+			}
 		}
-
+		
 		return new HashSet<AvailableAction>();
 	}
 
