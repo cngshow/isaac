@@ -237,7 +237,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	@Override
 	public String toString() {
 		Date date = new Date(timeAdvanced);
-		String timeAdvancedString = workflowDateFormatrer.format(date);
+		String timeAdvancedString = workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid + "\n\t\tTime Advanced as Long: " + timeAdvanced
 				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "

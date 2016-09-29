@@ -20,8 +20,8 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -118,13 +118,13 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
-		Assert.assertEquals(0, entry.getComponentNids().size());
+		Assert.assertEquals(0, entry.getComponentToInitialEditMap().keySet().size());
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
-		Assert.assertEquals(2, entry.getComponentNids().size());
-		Assert.assertTrue(entry.getComponentNids().contains(-55));
-		Assert.assertTrue(entry.getComponentNids().contains(-56));
+		Assert.assertEquals(2, entry.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-56));
 
 		executeLaunchWorkflow(processId);
 		entry = wp_.getWorkflowAccessor().getProcessDetails(processId);

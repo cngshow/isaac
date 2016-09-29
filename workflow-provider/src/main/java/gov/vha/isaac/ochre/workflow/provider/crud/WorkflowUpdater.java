@@ -67,12 +67,14 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
  */
 @Service
 @Singleton
-public class WorkflowUpdater {
+public class WorkflowUpdater
+{
 
 	private WorkflowProvider workflowProvider_;
 
 	// For HK2
-	private WorkflowUpdater() {
+	private WorkflowUpdater()
+	{
 		workflowProvider_ = LookupService.get().getService(WorkflowProvider.class);
 	}
 
@@ -90,61 +92,67 @@ public class WorkflowUpdater {
 	 * Transition Workflow action.
 	 * 
 	 * @param processId
-	 *            The process being advanced.
+	 * The process being advanced.
 	 * @param userNid
-	 *            The user advancing the process.
+	 * The user advancing the process.
 	 * @param actionRequested
-	 *            The advancement action the user requested.
+	 * The advancement action the user requested.
 	 * @param comment
-	 *            The comment added by the user in advancing the process.
+	 * The comment added by the user in advancing the process.
 	 * @param editCoordinate
 	 * 
 	 * @return True if the advancement attempt was successful
 	 * 
 	 * @throws Exception
-	 *             Thrown if the requested action was to launch or end a process
-	 *             and while updating the process accordingly, an execption
-	 *             occurred
+	 * Thrown if the requested action was to launch or end a process
+	 * and while updating the process accordingly, an execption
+	 * occurred
 	 */
-	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment,
-			EditCoordinate editCoordinate) throws Exception {
+	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment, EditCoordinate editCoordinate) throws Exception
+	{
 		// Get User Permissible actions
-		Set<AvailableAction> userPermissableActions = workflowProvider_.getWorkflowAccessor()
-				.getUserPermissibleActionsForProcess(processId, userNid);
+		Set<AvailableAction> userPermissableActions = workflowProvider_.getWorkflowAccessor().getUserPermissibleActionsForProcess(processId, userNid);
 
 		// Advance Workflow
-		for (AvailableAction action : userPermissableActions) {
-			if (action.getAction().equals(actionRequested)) {
+		for (AvailableAction action : userPermissableActions)
+		{
+			if (action.getAction().equals(actionRequested))
+			{
 				ProcessDetail process = workflowProvider_.getProcessDetailStore().get(processId);
 
 				// Update Process Details for launch, cancel, or conclude
-				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
-						.contains(action)) {
+				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action))
+				{
 					// Request to cancel workflow
-					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action,
-							userNid, comment, EndWorkflowType.CANCELED, editCoordinate);
-				} else if (process.getStatus().equals(ProcessStatus.DEFINED)) {
-					for (AvailableAction startAction : workflowProvider_.getBPMNInfo().getDefinitionStartActionMap()
-							.get(process.getDefinitionId())) {
-						if (startAction.getOutcomeState().equals(action.getInitialState())) {
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED,
+							editCoordinate);
+				}
+				else if (process.getStatus().equals(ProcessStatus.DEFINED))
+				{
+					for (AvailableAction startAction : workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(process.getDefinitionId()))
+					{
+						if (startAction.getOutcomeState().equals(action.getInitialState()))
+						{
 							// Advancing request is to launch workflow
 							workflowProvider_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 							break;
 						}
 					}
-				} else if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED)
-						.contains(action)) {
+				}
+				else if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action))
+				{
 					// Conclude Request made
-					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action,
-							userNid, comment, EndWorkflowType.CONCLUDED, null);
-				} else {
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED, null);
+				}
+				else
+				{
 					ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
 					entry.setOwnerNid(0);
 					workflowProvider_.getProcessDetailStore().put(processId, entry);
 				}
 
-				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED)
-						.contains(action)) {
+				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action))
+				{
 					// Special case where comment added to cancel screen and
 					// cancel store
 					// TODO: Better approach?
@@ -153,11 +161,11 @@ public class WorkflowUpdater {
 
 				// Add to process history
 				ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
-				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(),
-						action.getInitialState(), action.getAction(), action.getOutcomeState(), comment, hx.getHistorySequence() + 1);
+				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(), action.getInitialState(), action.getAction(),
+						action.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 
 				workflowProvider_.getProcessHistoryStore().add(entry);
-								
+
 				return true;
 			}
 		}
@@ -178,30 +186,34 @@ public class WorkflowUpdater {
 	 * Used when component is removed from the process's component details panel
 	 * 
 	 * @param processId
-	 *            THe process from which the component is to be removed
+	 * THe process from which the component is to be removed
 	 * @param compNid
-	 *            The component whose changes are to be reverted and removed
-	 *            from the process
+	 * The component whose changes are to be reverted and removed
+	 * from the process
 	 * @param editCoordinate
-	 *            TODO
+	 * TODO
 	 * @throws Exception
-	 *             Thrown if the component has been found to not be currently
-	 *             associated with the process
+	 * Thrown if the component has been found to not be currently
+	 * associated with the process
 	 */
-	public void removeComponentFromWorkflow(UUID processId, int compNid, EditCoordinate editCoordinate)
-			throws Exception {
+	public void removeComponentFromWorkflow(UUID processId, int compNid, EditCoordinate editCoordinate) throws Exception
+	{
 		ProcessDetail detail = workflowProvider_.getProcessDetailStore().get(processId);
 
-		if (isModifiableComponentInProcess(detail, compNid)) {
-			if (!detail.getComponentNids().contains(compNid)) {
+		if (isModifiableComponentInProcess(detail, compNid))
+		{
+			if (!detail.getComponentToInitialEditMap().keySet().contains(compNid))
+			{
 				throw new Exception("Component " + compNid + " is not already in Workflow");
 			}
 
 			revertChanges(Arrays.asList(compNid), processId, editCoordinate);
-			
-			detail.getComponentNids().remove(compNid);
+
+			detail.getComponentToInitialEditMap().remove(compNid);
 			workflowProvider_.getProcessDetailStore().put(processId, detail);
-		} else {
+		}
+		else
+		{
 			throw new Exception("Components may not be renived from Workflow: " + compNid);
 		}
 	}
@@ -218,24 +230,27 @@ public class WorkflowUpdater {
 	 * action
 	 * 
 	 * @param process
-	 *            The process being investigated
+	 * The process being investigated
 	 * @param compNid
-	 *            The component to be added/removed
+	 * The component to be added/removed
 	 * 
 	 * @return True if the component can be added or removed from the process
 	 * 
 	 * @throws Exception
-	 *             Thrown if process doesn't exist,
+	 * Thrown if process doesn't exist,
 	 */
-	private boolean isModifiableComponentInProcess(ProcessDetail process, int compNid) throws Exception {
-		if (process == null) {
+	private boolean isModifiableComponentInProcess(ProcessDetail process, int compNid) throws Exception
+	{
+		if (process == null)
+		{
 			throw new Exception("Cannot examine modification capability as the process doesn't exist");
 		}
 
 		UUID processId = process.getId();
 		// Check if in Case A. If not, throw exception
 		if (workflowProvider_.getWorkflowAccessor().isComponentInActiveWorkflow(process.getDefinitionId(), compNid)
-				&& !process.getComponentNids().contains(compNid)) {
+				&& !process.getComponentToInitialEditMap().keySet().contains(compNid))
+		{
 			// Can't do so because component is already in another active
 			// workflow
 			return false;
@@ -243,24 +258,32 @@ public class WorkflowUpdater {
 
 		boolean canAddComponent = false;
 		// Test Case B
-		if (process.getStatus() == ProcessStatus.DEFINED) {
+		if (process.getStatus() == ProcessStatus.DEFINED)
+		{
 			canAddComponent = true;
-		} else {
+		}
+		else
+		{
 			// Test Case C
-			if (process.getStatus() == ProcessStatus.LAUNCHED) {
+			if (process.getStatus() == ProcessStatus.LAUNCHED)
+			{
 				ProcessHistory latestHx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
-				if (workflowProvider_.getBPMNInfo().isEditState(process.getDefinitionId(),
-						latestHx.getOutcomeState())) {
+				if (workflowProvider_.getBPMNInfo().isEditState(process.getDefinitionId(), latestHx.getOutcomeState()))
+				{
 					canAddComponent = true;
 				}
 			}
 		}
 
-		if (!canAddComponent) {
-			if (!process.isActive()) {
+		if (!canAddComponent)
+		{
+			if (!process.isActive())
+			{
 				// Cannot do so because process is not active
 				return false;
-			} else {
+			}
+			else
+			{
 				// Cannot do so because process is in LAUNCHED state yet the
 				// workflow is not in an EDIT state
 				return false;
@@ -279,40 +302,46 @@ public class WorkflowUpdater {
 	 * Called by the REST implement commit() methods.
 	 *
 	 * @param processId
-	 *            The process to which a commit record is being added
+	 * The process to which a commit record is being added
 	 * @param commitRecord
-	 *            The commit record being associated with the process
+	 * The commit record being associated with the process
 	 * 
 	 * @throws Exception
-	 *             Thrown if process doesn't exist,
+	 * Thrown if process doesn't exist,
 	 */
-	public void addCommitRecordToWorkflow(UUID processId, Optional<CommitRecord> commitRecord) throws Exception {
-		if (commitRecord.isPresent()) {
+	public void addCommitRecordToWorkflow(UUID processId, Optional<CommitRecord> commitRecord) throws Exception
+	{
+		if (commitRecord.isPresent())
+		{
 			ProcessDetail detail = workflowProvider_.getProcessDetailStore().get(processId);
 
-			OfInt conceptItr = Get.identifierService()
-					.getConceptNidsForConceptSequences(commitRecord.get().getConceptsInCommit().parallelStream())
-					.iterator();
-			OfInt sememeItr = Get.identifierService()
-					.getSememeNidsForSememeSequences(commitRecord.get().getSememesInCommit().parallelStream())
-					.iterator();
+			OfInt conceptItr = Get.identifierService().getConceptNidsForConceptSequences(commitRecord.get().getConceptsInCommit().parallelStream()).iterator();
+			OfInt sememeItr = Get.identifierService().getSememeNidsForSememeSequences(commitRecord.get().getSememesInCommit().parallelStream()).iterator();
 
-			while (conceptItr.hasNext()) {
+			while (conceptItr.hasNext())
+			{
 				int conNid = conceptItr.next();
-				if (isModifiableComponentInProcess(detail, conNid)) {
-					addComponentToWorkflow(detail, conNid);
-				} else {
+				if (isModifiableComponentInProcess(detail, conNid))
+				{
+					addComponentToWorkflow(detail, conNid, commitRecord.get());
+				}
+				else
+				{
 					// TODO: Prevention strategy for when component not
 					// deemed "addable" to WF
 					throw new Exception("Concept may not be added to Workflow: " + conNid);
 				}
 			}
 
-			while (sememeItr.hasNext()) {
+			while (sememeItr.hasNext())
+			{
 				int semNid = sememeItr.next();
-				if (isModifiableComponentInProcess(detail, semNid)) {
-					addComponentToWorkflow(detail, semNid);
-				} else {
+				if (isModifiableComponentInProcess(detail, semNid))
+				{
+					addComponentToWorkflow(detail, semNid, commitRecord.get());
+				}
+				else
+				{
 					// TODO: Prevention strategy for when component not
 					// deemed "addable" to WF
 					throw new Exception("Sememe may not be added to Workflow: " + semNid);
@@ -322,46 +351,54 @@ public class WorkflowUpdater {
 	}
 
 	/**
-	 * Associates a component with a process. In doing so, associates the stamp
-	 * sequence as well. Multiple stamps may be associated with any given
-	 * component in a single process.
+	 * Associates a component with a process. If the comoponent has already been associated, nothing to do. Otherwise, add the component and the
+	 * timestamp of the edit to know the last version prior to editing
 	 * 
 	 * Note: Made public to enable unit testing
 	 *
 	 * @param process
-	 *            The process to which a component/stamp pair is being added
+	 * The process to which a component/stamp pair is being added
 	 * @param compNid
-	 *            The component being added
+	 * The component being added
+	 * @param commitRecord 
 	 * @param stampSeq
-	 *            The stamp being added
+	 * The stamp being added
 	 */
-	public void addComponentToWorkflow(ProcessDetail process, int compNid) {
-		if (!process.getComponentNids().contains(compNid)) {
-			process.getComponentNids().add(compNid);
+	public void addComponentToWorkflow(ProcessDetail process, int compNid, CommitRecord commitRecord)
+	{
+		if (!process.getComponentToInitialEditMap().keySet().contains(compNid))
+		{
+			int stampSeq = commitRecord.getStampsInCommit().getIntIterator().next();
+			long time = Get.stampService().getTimeForStamp(stampSeq);
+			process.getComponentToInitialEditMap().put(compNid, time);
+			
+			workflowProvider_.getProcessDetailStore().put(process.getId(), process);
 		}
-
-		workflowProvider_.getProcessDetailStore().put(process.getId(), process);
 	}
 
-	protected void revertChanges(Collection<Integer> compNidSet, UUID processId, EditCoordinate editCoordinate)
-			throws Exception {
+	protected void revertChanges(Collection<Integer> compNidSet, UUID processId, EditCoordinate editCoordinate) throws Exception
+	{
 
-		if (editCoordinate != null) {
-			for (Integer compNid : compNidSet) {
+		if (editCoordinate != null)
+		{
+			for (Integer compNid : compNidSet)
+			{
 				StampedVersion version = workflowProvider_.getWorkflowAccessor().getVersionPriorToWorkflow(processId, compNid);
-				
+
 				// add new version identical to version associated with
 				// actualStampSeq
-				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT) {
-					ConceptChronology<?> conceptChron = ((ConceptVersion)version).getChronology();
+				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT)
+				{
+					ConceptChronology<?> conceptChron = ((ConceptVersion) version).getChronology();
 					conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
 					Get.commitService().addUncommitted(conceptChron);
 					Get.commitService().commit("Reverting concept to how it was prior to workflow");
-				} else if (Get.identifierService()
-						.getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
-					SememeChronology<?> semChron = ((SememeVersion)version).getChronology();
-					SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(
-							version.getClass(), ((SememeVersion<?>) version).getState(), editCoordinate);
+				}
+				else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME)
+				{
+					SememeChronology<?> semChron = ((SememeVersion) version).getChronology();
+					SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(version.getClass(), ((SememeVersion<?>) version).getState(),
+							editCoordinate);
 
 					createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
 					Get.commitService().addUncommitted(createdVersion.getChronology()).get();
@@ -371,51 +408,49 @@ public class WorkflowUpdater {
 		}
 	}
 
-	private SememeVersion<?> populateData(SememeVersion<?> newVer, SememeVersion<?> originalVersion) throws Exception {
-		switch (newVer.getChronology().getSememeType()) {
-		case MEMBER:
-			return newVer;
-		case COMPONENT_NID:
-			((MutableComponentNidSememe<?>) newVer)
-					.setComponentNid(((ComponentNidSememe<?>) originalVersion).getComponentNid());
-			return newVer;
-		case DESCRIPTION:
-			((MutableDescriptionSememe<?>) newVer).setText(((DescriptionSememe<?>) originalVersion).getText());
-			((MutableDescriptionSememe<?>) newVer).setDescriptionTypeConceptSequence(
-					((DescriptionSememe<?>) originalVersion).getDescriptionTypeConceptSequence());
-			((MutableDescriptionSememe<?>) newVer).setCaseSignificanceConceptSequence(
-					((DescriptionSememe<?>) originalVersion).getCaseSignificanceConceptSequence());
-			((MutableDescriptionSememe<?>) newVer)
-					.setLanguageConceptSequence(((DescriptionSememe<?>) originalVersion).getLanguageConceptSequence());
-			return newVer;
-		case DYNAMIC:
-			((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
-			return newVer;
-		case LONG:
-			((MutableLongSememe<?>) newVer).setLongValue(((LongSememe<?>) originalVersion).getLongValue());
-			return newVer;
-		case STRING:
-			((MutableStringSememe<?>) newVer).setString(((StringSememe<?>) originalVersion).getString());
-			return newVer;
-		case RELATIONSHIP_ADAPTOR:
-			throw new Exception("Cannot handle Relationship adaptors at this time");
-			/*
-			 * RelationshipVersionAdaptorImpl origRelVer =
-			 * (RelationshipVersionAdaptorImpl) originalVersion;
-			 * RelationshipAdaptorChronicleKeyImpl key = new
-			 * RelationshipAdaptorChronicleKeyImpl(
-			 * origRelVer.getOriginSequence(),
-			 * origRelVer.getDestinationSequence(),
-			 * origRelVer.getTypeSequence(), origRelVer.getGroup(),
-			 * origRelVer.getPremiseType(), origRelVer.getNodeSequence());
-			 * 
-			 * return new RelationshipVersionAdaptorImpl(key, inactiveStampSeq);
-			 */
-		case LOGIC_GRAPH:
-			((MutableLogicGraphSememe<?>) newVer).setGraphData(((LogicGraphSememe<?>) originalVersion).getGraphData());
-			return newVer;
-		case UNKNOWN:
-			throw new UnsupportedOperationException();
+	private SememeVersion<?> populateData(SememeVersion<?> newVer, SememeVersion<?> originalVersion) throws Exception
+	{
+		switch (newVer.getChronology().getSememeType())
+		{
+			case MEMBER:
+				return newVer;
+			case COMPONENT_NID:
+				((MutableComponentNidSememe<?>) newVer).setComponentNid(((ComponentNidSememe<?>) originalVersion).getComponentNid());
+				return newVer;
+			case DESCRIPTION:
+				((MutableDescriptionSememe<?>) newVer).setText(((DescriptionSememe<?>) originalVersion).getText());
+				((MutableDescriptionSememe<?>) newVer).setDescriptionTypeConceptSequence(((DescriptionSememe<?>) originalVersion).getDescriptionTypeConceptSequence());
+				((MutableDescriptionSememe<?>) newVer).setCaseSignificanceConceptSequence(((DescriptionSememe<?>) originalVersion).getCaseSignificanceConceptSequence());
+				((MutableDescriptionSememe<?>) newVer).setLanguageConceptSequence(((DescriptionSememe<?>) originalVersion).getLanguageConceptSequence());
+				return newVer;
+			case DYNAMIC:
+				((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
+				return newVer;
+			case LONG:
+				((MutableLongSememe<?>) newVer).setLongValue(((LongSememe<?>) originalVersion).getLongValue());
+				return newVer;
+			case STRING:
+				((MutableStringSememe<?>) newVer).setString(((StringSememe<?>) originalVersion).getString());
+				return newVer;
+			case RELATIONSHIP_ADAPTOR:
+				throw new Exception("Cannot handle Relationship adaptors at this time");
+				/*
+				 * RelationshipVersionAdaptorImpl origRelVer =
+				 * (RelationshipVersionAdaptorImpl) originalVersion;
+				 * RelationshipAdaptorChronicleKeyImpl key = new
+				 * RelationshipAdaptorChronicleKeyImpl(
+				 * origRelVer.getOriginSequence(),
+				 * origRelVer.getDestinationSequence(),
+				 * origRelVer.getTypeSequence(), origRelVer.getGroup(),
+				 * origRelVer.getPremiseType(), origRelVer.getNodeSequence());
+				 * 
+				 * return new RelationshipVersionAdaptorImpl(key, inactiveStampSeq);
+				 */
+			case LOGIC_GRAPH:
+				((MutableLogicGraphSememe<?>) newVer).setGraphData(((LogicGraphSememe<?>) originalVersion).getGraphData());
+				return newVer;
+			case UNKNOWN:
+				throw new UnsupportedOperationException();
 		}
 
 		return null;

@@ -132,7 +132,7 @@ public class WorkflowProcessInitializerConcluder {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
 		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Only processes that have a DEFINED status may be launched");
-		} else if (entry.getComponentNids().isEmpty()) {
+		} else if (entry.getComponentToInitialEditMap().keySet().isEmpty()) {
 			throw new Exception("Workflow can only be launched when the workflow contains components to work on");
 		}
 
@@ -210,7 +210,7 @@ public class WorkflowProcessInitializerConcluder {
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
-			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentNids(),
+			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentToInitialEditMap().keySet(),
 					processId, editCoordinate);
 		}
 	}

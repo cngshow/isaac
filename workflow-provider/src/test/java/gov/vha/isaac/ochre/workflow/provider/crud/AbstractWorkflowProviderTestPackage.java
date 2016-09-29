@@ -1,19 +1,26 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.junit.Assert;
 
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
+import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
@@ -200,10 +207,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected void addComponentsToProcess(UUID processId) {
+	protected void addComponentsToProcess(UUID processId, long time) {
 		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentNids().add(con);
+			entry.getComponentToInitialEditMap().put(con, time);
 		}
 
 		wp_.getProcessDetailStore().put(processId, entry);
@@ -366,5 +373,4 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				endType, null);
 
 	}
-
 }

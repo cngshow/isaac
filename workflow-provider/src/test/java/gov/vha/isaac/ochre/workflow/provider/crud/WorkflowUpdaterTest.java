@@ -20,16 +20,16 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
@@ -92,18 +92,20 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void testAddComponentsToProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertFalse(details.getComponentNids().contains(firstConceptNid));
+		Assert.assertFalse(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
+		details.getComponentToInitialEditMap().put(firstConceptNid, new Date().getTime());
+		wp_.getProcessDetailStore().put(processId, details);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().contains(firstConceptNid));
+		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
+		details.getComponentToInitialEditMap().put(secondConceptNid, new Date().getTime());
+		wp_.getProcessDetailStore().put(processId, details);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(2, details.getComponentNids().size());
-		Assert.assertTrue(details.getComponentNids().contains(firstConceptNid));
-		Assert.assertTrue(details.getComponentNids().contains(secondConceptNid));
+		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
 	}
 
 	/**
@@ -121,25 +123,25 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void testRemoveComponentsFromProcess() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(0, details.getComponentNids().size());
+		Assert.assertEquals(0, details.getComponentToInitialEditMap().keySet().size());
 
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, firstConceptNid);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
-		wp_.getWorkflowUpdater().addComponentToWorkflow(details, secondConceptNid);
+		details.getComponentToInitialEditMap().put(firstConceptNid, new Date().getTime());
+		wp_.getProcessDetailStore().put(processId, details);
+		details.getComponentToInitialEditMap().put(secondConceptNid, new Date().getTime());
+		wp_.getProcessDetailStore().put(processId, details);
 
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(2, details.getComponentNids().size());
+		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, firstConceptNid, null);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentNids().size());
-		Assert.assertFalse(details.getComponentNids().contains(firstConceptNid));
-		Assert.assertTrue(details.getComponentNids().contains(secondConceptNid));
+		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
+		Assert.assertFalse(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
 
 		wp_.getWorkflowUpdater().removeComponentFromWorkflow(processId, secondConceptNid, null);
 		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(0, details.getComponentNids().size());
+		Assert.assertEquals(0, details.getComponentToInitialEditMap().keySet().size());
 	}
 
 	/**
@@ -153,7 +155,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testAdvanceWorkflow() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeLaunchWorkflow(processId);
 
 		// Process in Ready to Edit state: Can execute action "Edit" by

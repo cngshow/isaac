@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
@@ -86,7 +87,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		// Initialization
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
 				firstUserId, "Main Process Name", "Main Process Description");
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 
 		// verify content in workflow is as expected
 		assertProcessDefinition(ProcessStatus.DEFINED, mainDefinitionId, processId);
@@ -120,7 +121,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 
@@ -164,7 +165,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -231,7 +232,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 			Assert.assertTrue(true);
 		}
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -278,13 +279,13 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		ProcessDetail entry = detailEntries.iterator().next();
 
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentNids().size());
-		Assert.assertTrue(entry.getComponentNids().contains(-55));
+		Assert.assertEquals(2, entry.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));
 
 		Assert.assertEquals(processStatus, entry.getStatus());
 		Assert.assertEquals(99, entry.getCreatorNid());
 		Assert.assertEquals(definitionId, entry.getDefinitionId());
-		Assert.assertTrue(entry.getComponentNids().contains(-56));
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-56));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 
 		if (processStatus == ProcessStatus.DEFINED) {

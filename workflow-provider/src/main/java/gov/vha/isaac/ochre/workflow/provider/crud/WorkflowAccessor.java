@@ -134,7 +134,7 @@ public class WorkflowAccessor {
 	public boolean isComponentInActiveWorkflow(UUID definitionId, int compNid) {
 		for (ProcessDetail proc : workflowProvider_.getProcessDetailStore().values()) {
 			if (proc.getDefinitionId().equals(definitionId) && proc.isActive()
-					&& proc.getComponentNids().contains(compNid)) {
+					&& proc.getComponentToInitialEditMap().keySet().contains(compNid)) {
 				return true;
 			}
 		}
@@ -288,7 +288,7 @@ public class WorkflowAccessor {
 	public StampedVersion getVersionPriorToWorkflow(UUID processId, int compNid) throws Exception {
 		ProcessDetail proc = getProcessDetails(processId);
 		
-		if (!proc.getComponentNids().contains(compNid)) {
+		if (!proc.getComponentToInitialEditMap().keySet().contains(compNid)) {
 			return null;
 		}
 		
