@@ -79,12 +79,6 @@ public class WorkflowUpdater
 	}
 
 	/**
-	 * A constant used to inform the user that the comment added during
-	 * cancelation is in a special location
-	 */
-	private static final String CANCELED_HISTORY_COMMENT = "See Canceled History Information";
-
-	/**
 	 * Advance an existing process with the specified action. In doing so, the
 	 * user must add an advancement comment.
 	 * 
@@ -146,17 +140,10 @@ public class WorkflowUpdater
 				}
 				else
 				{
+					// Generic Advancement.  Must still update Detail Store to automate releasing of instance
 					ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
 					entry.setOwnerNid(0);
 					workflowProvider_.getProcessDetailStore().put(processId, entry);
-				}
-
-				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action))
-				{
-					// Special case where comment added to cancel screen and
-					// cancel store
-					// TODO: Better approach?
-					comment = CANCELED_HISTORY_COMMENT;
 				}
 
 				// Add to process history
