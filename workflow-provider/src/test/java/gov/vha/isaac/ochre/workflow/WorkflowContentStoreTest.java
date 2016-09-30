@@ -227,7 +227,7 @@ public class WorkflowContentStoreTest {
 	@Test
 	public void testHistoricalWorkflowStore() throws Exception {
 		ProcessHistory createdEntry1 = new ProcessHistory(UUID.randomUUID(), 1, new Date().getTime(), "Edit", "Review",
-				"Ready for Approval", "No issues found");
+				"Ready for Approval", "No issues found", 1);
 
 		WorkflowContentStore<ProcessHistory> historicalWorkflowStore = LookupService.get().getService(WorkflowProvider.class).getProcessHistoryStore();
 
@@ -245,7 +245,7 @@ public class WorkflowContentStoreTest {
 
 		// Add second entry
 		ProcessHistory createdEntry2 = new ProcessHistory(UUID.randomUUID(), 2, new Date().getTime(), "Commit", "Edit",
-				"Ready for Review", "");
+				"Ready for Review", "", 1);
 		UUID key2 = historicalWorkflowStore.add(createdEntry2);
 		Assert.assertEquals(historicalWorkflowStore.size(), 2);
 
@@ -260,7 +260,7 @@ public class WorkflowContentStoreTest {
 		// Test update of an entry
 		ProcessHistory updatedEntry2 = new ProcessHistory(createdEntry2.getProcessId(), 2,
 				createdEntry2.getTimeAdvanced(), "Commit", "Edit", "Ready for Review",
-				"Added description I think is missing");
+				"Added description I think is missing", 2);
 		historicalWorkflowStore.put(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -274,6 +274,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getAction(), pulledEntry2.getAction());
 		Assert.assertEquals(createdEntry2.getOutcomeState(), pulledEntry2.getOutcomeState());
 		Assert.assertNotEquals(createdEntry2.getComment(), pulledEntry2.getComment());
+		Assert.assertNotEquals(createdEntry2.getHistorySequence(), pulledEntry2.getHistorySequence());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
 
@@ -321,8 +322,9 @@ public class WorkflowContentStoreTest {
 		AbstractStorableWorkflowContents pulledEntry1 = processInstanceStore.get(key1);
 
 		Assert.assertEquals(processInstanceStore.size(), 1);
+		Assert.assertEquals(createdEntry1.getOwnerNid(), createdEntry1.getCreatorNid());
 		Assert.assertEquals(createdEntry1, pulledEntry1);
-
+		
 		// Add second entry
 		ProcessDetail createdEntry2 = new ProcessDetail(UUID.randomUUID(), 3, new Date().getTime(), ProcessStatus.DEFINED, name, description);
 
@@ -351,6 +353,7 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry2.getTimeCreated(), pulledEntry2.getTimeCreated());
 		Assert.assertEquals(createdEntry2.getStatus(), pulledEntry2.getStatus());
 		Assert.assertEquals(createdEntry2.getName(), pulledEntry2.getName());
+		Assert.assertEquals(createdEntry2.getOwnerNid(), pulledEntry2.getOwnerNid());
 		Assert.assertNotEquals(createdEntry2.getDescription(), pulledEntry2.getDescription());
 
 		Assert.assertEquals(updatedEntry2, pulledEntry2);
