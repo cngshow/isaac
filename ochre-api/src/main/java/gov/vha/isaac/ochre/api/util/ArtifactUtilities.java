@@ -129,7 +129,7 @@ public class ArtifactUtilities
 		try
 		{
 			String username = "foo";
-			String password = "foo";
+			String userpd = "foo";
 			
 			LookupService.startupWorkExecutors();
 			
@@ -144,16 +144,16 @@ public class ArtifactUtilities
 			
 			File where = new File("").getAbsoluteFile();
 			URL snapshot = new URL("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/" 
-					+ makeMavenRelativePath("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/", username, password, 
+					+ makeMavenRelativePath("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/", username, userpd, 
 							"gov.vha.isaac.db", "vhat", "2016.01.07-1.0-SNAPSHOT", "all", "cradle.zip"));
-			task = new DownloadUnzipTask(username, password, snapshot, true, true, where);
+			task = new DownloadUnzipTask(username, userpd, snapshot, true, true, where);
 			Get.workExecutors().getExecutor().submit(task);
 			foo = task.get();
 			
 			snapshot = new URL("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/" 
-					+ makeMavenRelativePath("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/", username, password, 
+					+ makeMavenRelativePath("http://vadev.mantech.com:8081/nexus/content/repositories/termdatasnapshots/", username, userpd, 
 							"gov.vha.isaac.db", "vhat", "2016.01.07-1.0-SNAPSHOT", "all", "lucene.zip"));
-			task = new DownloadUnzipTask(username, password, snapshot, true, true, where);
+			task = new DownloadUnzipTask(username, userpd, snapshot, true, true, where);
 			Get.workExecutors().getExecutor().submit(task);
 			foo = task.get();
 			
