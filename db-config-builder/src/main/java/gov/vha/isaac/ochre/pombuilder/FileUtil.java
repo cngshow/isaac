@@ -53,40 +53,45 @@ public class FileUtil
 	
 	public static void writeFile(String fromFolder, String relativePath, File toFolder, HashMap<String, String> replacementValues, String append) throws IOException
 	{
-		InputStream is = FileUtil.class.getResourceAsStream("/" + fromFolder + "/" + relativePath);
-		byte[] buffer = new byte[is.available()];
-		is.read(buffer);
-
-		String temp = new String(buffer, Charset.forName("UTF-8"));
-		if (replacementValues != null)
+		
+		try (InputStream is = FileUtil.class.getResourceAsStream("/" + fromFolder + "/" + relativePath);)
 		{
-			for (Entry<String, String> item : replacementValues.entrySet())
+			byte[] buffer = new byte[is.available()];
+			is.read(buffer);
+	
+			String temp = new String(buffer, Charset.forName("UTF-8"));
+			if (replacementValues != null)
 			{
-				while (temp.contains(item.getKey()))
+				for (Entry<String, String> item : replacementValues.entrySet())
 				{
-					temp = temp.replace(item.getKey(), item.getValue());
+					while (temp.contains(item.getKey()))
+					{
+						temp = temp.replace(item.getKey(), item.getValue());
+					}
+				}
+			}
+			
+			if (relativePath.startsWith("DOT"))
+			{
+				relativePath = relativePath.replaceFirst("^DOT", ".");  //front of string
+			}
+			else if (relativePath.contains("/DOT"))
+			{
+				relativePath = relativePath.replaceFirst("/DOT", "/.");  //down in the relative path
+			}
+			
+			File targetFile = new File(toFolder, relativePath);
+			targetFile.getParentFile().mkdirs();
+			
+			try (OutputStream outStream = new FileOutputStream(targetFile);)
+			{
+				outStream.write(temp.getBytes());
+				if (StringUtils.isNotBlank(append))
+				{
+					outStream.write(append.getBytes());
 				}
 			}
 		}
-		
-		if (relativePath.startsWith("DOT"))
-		{
-			relativePath = relativePath.replaceFirst("^DOT", ".");  //front of string
-		}
-		else if (relativePath.contains("/DOT"))
-		{
-			relativePath = relativePath.replaceFirst("/DOT", "/.");  //down in the relative path
-		}
-		
-		File targetFile = new File(toFolder, relativePath);
-		targetFile.getParentFile().mkdirs();
-		OutputStream outStream = new FileOutputStream(targetFile);
-		outStream.write(temp.getBytes());
-		if (StringUtils.isNotBlank(append))
-		{
-			outStream.write(append.getBytes());
-		}
-		outStream.close();
 	}
 	
 	public static void writeFile(String fromFolder, String relativePath, File toFolder) throws IOException
@@ -114,11 +119,13 @@ public class FileUtil
 	
 	public static String readFile(String fileName) throws IOException
 	{
-		InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fileName);
-		byte[] buffer = new byte[is.available()];
-		is.read(buffer);
-
-		return new String(buffer, Charset.forName("UTF-8"));
+		try (InputStream is = DBConfigurationCreator.class.getResourceAsStream("/" + fileName);)
+		{
+			byte[] buffer = new byte[is.available()];
+			is.read(buffer);
+			
+			return new String(buffer, Charset.forName("UTF-8"));
+		}		
 	}
 	
 	public static void recursiveDelete(File file) throws IOException

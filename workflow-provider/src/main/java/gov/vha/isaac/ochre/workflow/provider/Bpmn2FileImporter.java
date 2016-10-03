@@ -410,9 +410,11 @@ public class Bpmn2FileImporter {
 	private ProcessDescriptor identifyDefinitionMetadata() throws Exception {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 
-		kbuilder.add(new InputStreamResource(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath)), ResourceType.BPMN2);
-
-		try {
+		try (InputStream inputStream = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);)
+		{
+			InputStreamResource inputStreamResource = new InputStreamResource(inputStream);
+			kbuilder.add(inputStreamResource, ResourceType.BPMN2);
+			
 			KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
 			Process process = pckg.getProcesses().iterator().next();
 
@@ -437,10 +439,10 @@ public class Bpmn2FileImporter {
 		modules.addSemanticModule(new BPMNDISemanticModule());
 		XmlProcessReader processReader = new XmlProcessReader(modules, getClass().getClassLoader());
 
-		try {
-			InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);
+		try (InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);)
+		{
 			List<Process> processes = processReader.read(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath));
-			in.close();
+
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
 			logger.error("Couldn't Find Fine: " + bpmn2ResourcePath, e);

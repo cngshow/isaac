@@ -201,28 +201,30 @@ public class DownloadUnzipTask extends Task<File>
 		httpCon.setConnectTimeout(30 * 1000);
 		httpCon.setReadTimeout(60 * 60 * 1000);
 		long fileLength = httpCon.getContentLengthLong();
-		InputStream in = httpCon.getInputStream();
 		
+
 		String temp = url.toString();
 		temp = temp.substring(temp.lastIndexOf('/') + 1, temp.length());
 		File file = new File(targetFolder_, temp);
-
-		byte[] buf = new byte[1048576];
-		FileOutputStream fos= new FileOutputStream(file);
-		int read = 0;
-		long totalRead = 0;
-		while (!cancel_ && (read = in.read(buf, 0, buf.length)) > 0)
-		{
-			totalRead += read;
-			//update every 1 MB
-			updateProgress(totalRead, fileLength);
-			float percentDone = (float)((int)(((float)totalRead / (float)fileLength) * 1000)) / 10f;
-			updateMessage("Downloading - " + url + " - " + percentDone + " % - out of " + fileLength + " bytes");
-			fos.write(buf, 0, read);
+		
+		try (InputStream in = httpCon.getInputStream();
+			FileOutputStream fos= new FileOutputStream(file);) {
+			
+			byte[] buf = new byte[1048576];
+			
+			int read = 0;
+			long totalRead = 0;
+			while (!cancel_ && (read = in.read(buf, 0, buf.length)) > 0)
+			{
+				totalRead += read;
+				//update every 1 MB
+				updateProgress(totalRead, fileLength);
+				float percentDone = (float)((int)(((float)totalRead / (float)fileLength) * 1000)) / 10f;
+				updateMessage("Downloading - " + url + " - " + percentDone + " % - out of " + fileLength + " bytes");
+				fos.write(buf, 0, read);
+			}
 		}
-		fos.flush();
-		fos.close();
-		in.close();
+		
 		
 		if (cancel_)
 		{

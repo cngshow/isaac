@@ -75,9 +75,10 @@ public class JsonUtils {
 			conn.setRequestProperty("Content-Length", "" + jsonBytes.length);
 
 			// write json body
-			OutputStream os = conn.getOutputStream();
-			os.write(jsonBytes);
-			os.close();
+			try (OutputStream os = conn.getOutputStream();)
+			{
+				os.write(jsonBytes);
+			}
 
 			int status = ((HttpURLConnection) conn).getResponseCode();
 			return status;
