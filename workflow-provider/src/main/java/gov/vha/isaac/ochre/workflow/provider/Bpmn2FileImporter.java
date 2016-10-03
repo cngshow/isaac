@@ -441,7 +441,7 @@ public class Bpmn2FileImporter {
 
 		try (InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);)
 		{
-			List<Process> processes = processReader.read(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath));
+			List<Process> processes = processReader.read(in);
 
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {

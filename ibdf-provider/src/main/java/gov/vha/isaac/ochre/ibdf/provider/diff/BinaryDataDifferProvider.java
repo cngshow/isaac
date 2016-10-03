@@ -419,8 +419,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		
 		
 
-		try (JsonWriter verificationWriter = new JsonWriter(
-				new FileOutputStream(new File(analysisFilesOutputDir + "verificationChanges.json")), args);) {
+		try (FileOutputStream fos = new FileOutputStream(new File(analysisFilesOutputDir + "verificationChanges.json")); 
+			JsonWriter verificationWriter = new JsonWriter(fos, args);)
+		{
 
 			while (!queue.isEmpty() || !reader.isFinished()) {
 				OchreExternalizable object = queue.poll(500, TimeUnit.MILLISECONDS);

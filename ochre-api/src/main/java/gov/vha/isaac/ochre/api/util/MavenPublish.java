@@ -146,19 +146,23 @@ public class MavenPublish extends Task<Integer>
 			out.flush();
 		}
 		
-		InputStream is = httpCon.getInputStream();
 		StringBuilder sb = new StringBuilder();
-		read = 0;
-		byte[] buffer = new byte[1024];
-		CharBuffer cBuffer = ByteBuffer.wrap(buffer).asCharBuffer();
-		while (read != -1)
+		
+		try (InputStream is = httpCon.getInputStream();)
 		{
-			read = is.read(buffer);
-			if (read > 0)
+			read = 0;
+			byte[] buffer = new byte[1024];
+			CharBuffer cBuffer = ByteBuffer.wrap(buffer).asCharBuffer();
+			while (read != -1)
 			{
-				sb.append(cBuffer, 0, read);
+				read = is.read(buffer);
+				if (read > 0)
+				{
+					sb.append(cBuffer, 0, read);
+				}
 			}
 		}
+		
 		httpCon.disconnect();
 		if (sb.toString().trim().length() > 0)
 		{
