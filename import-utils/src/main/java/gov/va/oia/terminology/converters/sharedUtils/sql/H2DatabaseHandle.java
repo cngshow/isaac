@@ -161,7 +161,7 @@ public class H2DatabaseHandle
 				throw new RuntimeException("Data length mismatch!");
 			}
 			
-			if (filterColumn >= 0)
+			if (sabHashSet != null && filterColumn >= 0)
 			{
 				if (!sabHashSet.contains(cols.get(filterColumn)))
 				{

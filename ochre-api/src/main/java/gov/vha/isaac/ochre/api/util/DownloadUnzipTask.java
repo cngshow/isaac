@@ -121,7 +121,7 @@ public class DownloadUnzipTask extends Task<File>
 		{
 			log.debug("Failed to get .sha1 file", e1);
 		}
-		if (calculatedSha1Value != null && !expectedSha1Value.equals(calculatedSha1Value))
+		if (calculatedSha1Value != null && !calculatedSha1Value.equals(expectedSha1Value))
 		{
 			if (failOnBadCheksum_) 
 			{
