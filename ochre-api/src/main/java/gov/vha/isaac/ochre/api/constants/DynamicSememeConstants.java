@@ -350,14 +350,12 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 						true)}) {
 	};
 	
+	//TODO rewrite this sememe with multiple columns, to store whatever interesting data is passed over the json from prisme that we choose to store.
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_PRISME_USER_ID = new MetadataDynamicSememeConstant("PRISME user ID",
-			UUID.fromString("3b5a81ce-5e0e-5587-8381-75b575df5c1f"),
+			UUID.fromString("00e6cca4-3c5b-5f2e-b2d8-2c4a6f8f6b46"),
 			"A Sememe used to store a PRISME user ID on a user/author concept",
 			new DynamicSememeColumnInfo[]{
-				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.LONG, null, true, 
-						DynamicSememeValidatorType.IS_CHILD_OF, 
-						LookupService.getService(DynamicSememeUtility.class).createDynamicUUIDData(TermAux.EXTERNAL_USER_ID.getPrimordialUuid()), 
-						true)}) {
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.STRING, null, true, true)}) {
 	};
 
 	//An organizational concept which serves as a parent concept for dynamic sememes defined in the system
