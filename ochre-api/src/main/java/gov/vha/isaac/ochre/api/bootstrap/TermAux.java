@@ -267,6 +267,10 @@ public class TermAux {
             new ConceptProxy("Is a (attribute)",
                 UUID.fromString("c93a30b9-ba77-3adb-a9b8-4589c9f8fb25"));
     
+    public static ConceptSpecification EXTERNAL_USER_ID =
+            new ConceptProxy("external user id",
+                UUID.fromString("27f5d063-be1a-54c7-bab8-3a236e1285f3"));
+
     public static int getDescriptionAssemblageConceptSequence(int languageConceptSequence) {
         if (languageConceptSequence == ENGLISH_LANGUAGE.getConceptSequence()) {
             return ENGLISH_DESCRIPTION_ASSEMBLAGE.getConceptSequence();
