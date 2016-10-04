@@ -84,6 +84,9 @@ public class ArtifactUtilities
 			File metadataFile = task.get();
 
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+			//added to avoid XXE injections
+			domFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			
 			DocumentBuilder builder;
 			Document dDoc = null;
 			XPath xPath = XPathFactory.newInstance().newXPath();
