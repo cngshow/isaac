@@ -338,7 +338,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 						LookupService.getService(DynamicSememeUtility.class).createDynamicUUIDData(TermAux.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid()), 
 						true)}) {
 	}; 
-	
+
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE = new MetadataDynamicSememeConstant("extended relationship type",
 			UUID.fromString("d41d928f-8a97-55c1-aa6c-a289b413fbfd"),
 			"A Sememe used to store non-snomed relationship types when other terminologies are imported - especially when a relationship is mapped onto a "
@@ -348,7 +348,15 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 						DynamicSememeValidatorType.IS_CHILD_OF, 
 						LookupService.getService(DynamicSememeUtility.class).createDynamicUUIDData(TermAux.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid()), 
 						true)}) {
-	}; 
+	};
+	
+	//TODO rewrite this sememe with multiple columns, to store whatever interesting data is passed over the json from prisme that we choose to store.
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_PRISME_USER_ID = new MetadataDynamicSememeConstant("PRISME user ID",
+			UUID.fromString("00e6cca4-3c5b-5f2e-b2d8-2c4a6f8f6b46"),
+			"A Sememe used to store a PRISME user ID on a user/author concept",
+			new DynamicSememeColumnInfo[]{
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(), DynamicSememeDataType.STRING, null, true, true)}) {
+	};
 
 	//An organizational concept which serves as a parent concept for dynamic sememes defined in the system
 	//(unless they choose to put them some where else, this isn't required, is only for convenience)
@@ -363,6 +371,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			addChild(DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME);
 			addChild(DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE);
 			addChild(DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE);
+			addChild(DYNAMIC_SEMEME_PRISME_USER_ID);
 			setParent(TermAux.ASSEMBLAGE);
 		}
 	};

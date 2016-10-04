@@ -266,7 +266,7 @@ public class TermAux {
     public static ConceptSpecification IS_A_ATTRIBUTE =
             new ConceptProxy("Is a (attribute)",
                 UUID.fromString("c93a30b9-ba77-3adb-a9b8-4589c9f8fb25"));
-    
+
     public static int getDescriptionAssemblageConceptSequence(int languageConceptSequence) {
         if (languageConceptSequence == ENGLISH_LANGUAGE.getConceptSequence()) {
             return ENGLISH_DESCRIPTION_ASSEMBLAGE.getConceptSequence();

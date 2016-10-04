@@ -53,8 +53,8 @@ public class WorkflowProcessInitializerConcluder {
 	}
 
 	/**
-	 * Creates a new workflow process instance. In turn, a new entry is added to
-	 * the ProcessDetails content store. The process status defaults as DEFINED.
+	 * Creates a new workflow process instance. In turn, a new entry is added to the ProcessDetails content store. The process status defaults as
+	 * DEFINED.
 	 * 
 	 * Used by users when creating a new process
 	 * 
@@ -67,8 +67,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * @param description
 	 * The description of the new process
 	 * 
-	 * @return The process id which is in turn the key to the Process Detail's
-	 * entry
+	 * @return The process id which is in turn the key to the Process Detail's entry
 	 * 
 	 * @throws Exception
 	 */
@@ -109,10 +108,8 @@ public class WorkflowProcessInitializerConcluder {
 	}
 
 	/**
-	 * Launch a process as long as a) the process is in a defined state and b)
-	 * there are components associated with the process. By launching it, the
-	 * ProcessDetails has its status updated to LAUNCHED and the time launched
-	 * gets an entry of <NOW>.
+	 * Launch a process as long as a) the process is in a defined state and b) there are components associated with the process. By launching it, the
+	 * ProcessDetails has its status updated to LAUNCHED and the time launched gets an entry of <NOW>.
 	 *
 	 * Used when a process is advanced and it is in the edit state and is has a
 	 * DEFINED status.
@@ -121,9 +118,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * the process being launched
 	 * 
 	 * @throws Exception
-	 * Thrown if a) process doesn't exist, b) process exists but is
-	 * not in the DEFINED status, or c) no components are associated
-	 * with the process
+	 * Thrown if a) process doesn't exist, b) process exists but is not in the DEFINED status, or c) no components are associated with the process
 	 */
 	public void launchProcess(UUID processId) throws Exception {
 		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
@@ -144,14 +139,9 @@ public class WorkflowProcessInitializerConcluder {
 	}
 
 	/**
-	 * Ends a workflow status either via concluding it or canceling it. In doing
-	 * so, the ProcessDetails has its status updated accordingly (either
-	 * CANCELED or CONCLUDED) and the time launched gets an entry of <NOW>. In
-	 * addition, another Process History entry is added showing the information
-	 * associated with this final advancement.
-	 *
-	 * Used when advancing a process to either a completed state or by canceling
-	 * it.
+	 * Ends a workflow instance either via concluding it or canceling it. In doing so, the ProcessDetails is updated accordingly, another Process
+	 * History entry is added showing the advancement, and in the case of "CANCEL" request, any editing changes previously associated with the
+	 * instance are reverted.
 	 *
 	 * @param processId
 	 * The process being ended
@@ -166,11 +156,8 @@ public class WorkflowProcessInitializerConcluder {
 	 * action (Canceled or Concluded)
 	 * 
 	 * @throws Exception
-	 * Thrown if the process doesn't exist or an attempt is made to
-	 * a) cancel or conclude a process which isn't active, b)
-	 * conclude a process where the process is not LAUNCHED, or c)
-	 * conclude a process where the outcome state isn't a concluded
-	 * state according to the definition
+	 * Thrown if the process doesn't exist or an attempt is made to a) cancel or conclude a process which isn't active, b) conclude a process where
+	 * the process is not LAUNCHED, or c) conclude a process where the outcome state isn't a concluded state according to the definition
 	 */
 	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment, EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
 		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
@@ -193,25 +180,26 @@ public class WorkflowProcessInitializerConcluder {
 			}
 		}
 
+		// Request is valid, update process details
+		entry.setOwnerNid(0);
+		entry.setTimeCanceledOrConcluded(new Date().getTime());
+
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			entry.setStatus(ProcessStatus.CANCELED);
 		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
 			entry.setStatus(ProcessStatus.CONCLUDED);
 		}
-		
-		entry.setOwnerNid(0);
-		entry.setTimeCanceledOrConcluded(new Date().getTime());
+
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
 
-		// Only add Cancel state in Workflow if process has already been
-		// launched
+		// Add to process's history
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(), actionToProcess.getInitialState(), actionToProcess.getAction(),
 				actionToProcess.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
+		// if a cancel has been requested, revert all changes associated with the workflow
 		if (endType.equals(EndWorkflowType.CANCELED)) {
-			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentToInitialEditMap().keySet(),
-					processId, editCoordinate);
+			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentToInitialEditMap().keySet(), processId, editCoordinate);
 		}
 	}
 }
