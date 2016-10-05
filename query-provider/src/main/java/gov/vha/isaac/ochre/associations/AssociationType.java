@@ -156,6 +156,11 @@ public class AssociationType
 		return associationInverseName_;
 	}
 	
+	public String getDescription()
+	{
+		return description_;
+	}
+	
 	
 	/**
 	 * Create and store a new mapping set in the DB.
