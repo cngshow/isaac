@@ -565,8 +565,6 @@ public class Frills implements DynamicSememeColumnUtility {
 								results.add(ds);
 							}
 						}
-					} else {
-						log.warn("Description attached to concept nid {} is not of the expected type!", conceptNid);
 					}
 				});
 		return results;
