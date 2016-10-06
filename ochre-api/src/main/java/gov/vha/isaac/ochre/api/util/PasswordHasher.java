@@ -19,8 +19,10 @@
 package gov.vha.isaac.ochre.api.util;
 
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -51,10 +53,12 @@ public class PasswordHasher
 	private static final int desiredKeyLen = 256;
 	private static final String keyFactoryAlgorithm = "PBKDF2WithHmacSHA1";
 	private static final String cipherAlgorithm = "PBEWithSHA1AndDESede";
-	private static final Random random = new Random();  //Note, it would be more secure to use SecureRandom... but the entropy issues on Linux are a nasty issue
+
+	//private static final Random random = new Random();  //Note, it would be more secure to use SecureRandom... but the entropy issues on Linux are a nasty issue
 	//and it results in SecureRandom.getInstance(...).generateSeed(...) blocking for long periods of time.  A regular random is certainly good enough
 	//for our encryption purposes.
 	
+	private static final SecureRandom secureRandom = new SecureRandom();
 	
 
 	/**
@@ -65,7 +69,7 @@ public class PasswordHasher
 	{
 		long startTime = System.currentTimeMillis();
 		byte[] salt = new byte[saltLen];
-		random.nextBytes(salt);
+		secureRandom.nextBytes(salt);
 		// store the salt with the password
 		String result = Base64.getUrlEncoder().encodeToString(salt) + "$$$" + hash(password, salt);
 		log_.debug("Compute Salted Hash time {} ms", System.currentTimeMillis() - startTime);
@@ -128,7 +132,7 @@ public class PasswordHasher
 	{
 		long startTime = System.currentTimeMillis();
 		byte[] salt = new byte[saltLen];
-		random.nextBytes(salt);
+		secureRandom.nextBytes(salt);
 		// store the salt with the password
 		String result = Base64.getUrlEncoder().encodeToString(salt) + "$$$" + encrypt(password, salt, data);
 		log_.debug("Encrypt Time {} ms", System.currentTimeMillis() - startTime);

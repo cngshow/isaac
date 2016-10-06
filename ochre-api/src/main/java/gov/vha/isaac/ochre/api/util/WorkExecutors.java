@@ -70,7 +70,7 @@ public class WorkExecutors
 	private ThreadPoolExecutor threadPoolExecutor_;
 	private static final Logger log = LogManager.getLogger();
 	
-	private static WorkExecutors nonHK2Instance_ = null;
+	private volatile static WorkExecutors nonHK2Instance_ = null;
 
 	private WorkExecutors()
 	{

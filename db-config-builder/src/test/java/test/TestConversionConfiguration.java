@@ -18,7 +18,7 @@ public class TestConversionConfiguration
 	{
 		String gitTestURL = "https://github.com/darmbrust/test.git";
 		String gitUsername = "";
-		String gitPassword = "";
+		char[] gitPassword = "".toCharArray();
 		
 		String nexusUrl = "https://vadev.mantech.com:8080/nexus/content/groups/public/";
 		String nexusUsername = "";

@@ -74,7 +74,7 @@ public class DBConfigurationCreator
 	 * @throws Exception 
 	 */
 	public static String createDBConfiguration(String name, String version, String description,  String resultClassifier, boolean classify, 
-			IBDFFile[] ibdfFiles, String metadataVersion, String gitRepositoryURL, String gitUsername, String gitPassword) throws Exception
+			IBDFFile[] ibdfFiles, String metadataVersion, String gitRepositoryURL, String gitUsername, char[] gitPassword) throws Exception
 	{
 		Model model = new Model();
 		

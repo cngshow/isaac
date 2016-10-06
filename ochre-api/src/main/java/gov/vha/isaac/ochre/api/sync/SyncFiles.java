@@ -109,7 +109,7 @@ public interface SyncFiles
 	 * @throws IllegalArgumentException - if the passed parameters are invalid
 	 * @throws AuthenticationException 
 	 */
-	public void linkAndFetchFromRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException;
+	public void linkAndFetchFromRemote(String remoteAddress, String username, char[] password) throws IllegalArgumentException, IOException, AuthenticationException;
 	
 	/**
 	 * Fix the URL to the remote service.  This call should only be used when both the local and remote repositories exist, and are a proper pair - 
@@ -124,7 +124,7 @@ public interface SyncFiles
 	 * @throws IllegalArgumentException - if the passed parameters are invalid
 	 * @throws AuthenticationException - if auth fails during remote relink 
 	 */
-	public void relinkRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException;
+	public void relinkRemote(String remoteAddress, String username, char[] password) throws IllegalArgumentException, IOException, AuthenticationException;
 	
 	/**
 	 * Mark the specified files as files that should be synchronized.  This is a local operation only - does not push to the server.
@@ -166,7 +166,7 @@ public interface SyncFiles
 	 * @return The set of files that changed during the pull from the server.
 	 * @throws AuthenticationException 
 	 */
-	public Set<String> updateCommitAndPush(String commitMessage, String username, String password, MergeFailOption mergeFailOption, String ... files) 
+	public Set<String> updateCommitAndPush(String commitMessage, String username, char[] password, MergeFailOption mergeFailOption, String ... files) 
 			throws IllegalArgumentException, IOException, MergeFailure, AuthenticationException;
 	
 	/**
@@ -181,7 +181,7 @@ public interface SyncFiles
 	 * @return The set of files that changed during the pull from the server.
 	 * @throws AuthenticationException 
 	 */
-	public Set<String> updateFromRemote(String username, String password, MergeFailOption mergeFailOption) 
+	public Set<String> updateFromRemote(String username, char[] password, MergeFailOption mergeFailOption) 
 			throws IllegalArgumentException, IOException, MergeFailure, AuthenticationException;
 
 	/**

@@ -41,7 +41,7 @@ public class SyncTesting
 		ssg.setRootLocation(localFolder);
 		
 		String username = "username";
-		String password = "password";
+		char[] password = "password".toCharArray();
 
 		ssg.linkAndFetchFromRemote("https://github.com/" + username + "/test.git", username, password);
 		ssg.linkAndFetchFromRemote("ssh://" + username + "@csfe.aceworkspace.net:29418/testrepo", username, password);
@@ -58,7 +58,7 @@ public class SyncTesting
 		System.out.println("UpdateCommitAndPush result: " + ssg.updateCommitAndPush("mergetest2", username, password, MergeFailOption.FAIL, (String[])null));
 
 		SyncServiceGIT gss = new SyncServiceGIT();
-		boolean repoCreated = gss.createRepository("http://localhost:8080/gitblit/","test/test2","gilblit test/test2","admin","admin");
+		boolean repoCreated = gss.createRepository("http://localhost:8080/gitblit/","test/test2","gilblit test/test2","admin","admin".toCharArray());
 		System.out.println("Repo created: "+ repoCreated);
 	}
 }
