@@ -59,6 +59,9 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	/** The comment added by the user when performing the workflow action. */
 	private String comment;
 
+	/** The sequence in the process which the history represents. */
+	private int historySequence;
+
 	/**
 	 * Constructor for a new process history based on specified entry fields.
 	 * 
@@ -69,9 +72,9 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 * @param action
 	 * @param outcomeState
 	 * @param comment
+	 * @param historySequence
 	 */
-	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action,
-			String outcomeState, String comment) {
+	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action, String outcomeState, String comment, int historySequence) {
 		this.processId = processId;
 		this.userNid = userNid;
 		this.timeAdvanced = timeAdvanced;
@@ -79,13 +82,14 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		this.action = action;
 		this.outcomeState = outcomeState;
 		this.comment = comment;
+		this.historySequence = historySequence;
 	}
 
 	/**
 	 * Constructor for a new process history based on serialized content.
 	 * 
 	 * @param data
-	 *            The data to deserialize into its components
+	 * The data to deserialize into its components
 	 */
 	public ProcessHistory(byte[] data) {
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
@@ -101,6 +105,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 			this.action = (String) in.readObject();
 			this.outcomeState = (String) in.readObject();
 			this.comment = (String) in.readObject();
+			this.historySequence = (Integer) in.readObject();
 		}
 		catch (Exception e)
 		{
@@ -171,6 +176,26 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		return comment;
 	}
 
+	/**
+	 * Gets the sequence within the process which the history represents.
+	 *
+	 * @return the history sequence
+	 */
+	public int getHistorySequence()
+	{
+		return historySequence;
+	}
+
+	/**
+	 * Sets the sequence within the process which the history represents.
+	 *
+	 * @return the history sequence
+	 */
+	public void setHistorySequence(int seq)
+	{
+		historySequence = seq;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -194,6 +219,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 			out.writeObject(action);
 			out.writeObject(outcomeState);
 			out.writeObject(comment);
+			out.writeObject(historySequence);
 
 			return bos.toByteArray();
 		}
@@ -211,12 +237,11 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	@Override
 	public String toString() {
 		Date date = new Date(timeAdvanced);
-		String timeAdvancedString = workflowDateFormatrer.format(date);
+		String timeAdvancedString = workflowDateFormatter.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid
-				+ "\n\t\tTime Advanced as Long: " + timeAdvanced + "\n\t\tTime Advanced: " + timeAdvancedString
-				+ "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "
-				+ outcomeState + "\n\t\tComment: " + comment;
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid + "\n\t\tTime Advanced as Long: " + timeAdvanced
+				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "
+				+ outcomeState + "\n\t\tComment: " + comment + "\n\t\tHistory Sequence: " + historySequence;
 	}
 
 	/*
@@ -228,10 +253,9 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessHistory other = (ProcessHistory) obj;
 
-		return this.processId.equals(other.processId) && this.userNid == other.userNid
-				&& this.timeAdvanced == other.timeAdvanced && this.initialState.equals(other.initialState)
-				&& this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
-				&& this.comment.equals(other.comment);
+		return this.processId.equals(other.processId) && this.userNid == other.userNid && this.timeAdvanced == other.timeAdvanced
+				&& this.initialState.equals(other.initialState) && this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
+				&& this.comment.equals(other.comment) && this.historySequence == other.historySequence;
 	}
 
 	/*
@@ -241,8 +265,8 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + userNid + new Long(timeAdvanced).hashCode() + initialState.hashCode()
-				+ action.hashCode() + outcomeState.hashCode() + comment.hashCode();
+		return processId.hashCode() + userNid + new Long(timeAdvanced).hashCode() + initialState.hashCode() + action.hashCode() + outcomeState.hashCode()
+				+ comment.hashCode() + historySequence;
 	}
 
 	/**
@@ -262,14 +286,18 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		 */
 		@Override
 		public int compare(ProcessHistory o1, ProcessHistory o2) {
-			long t1 = o1.getTimeAdvanced();
-			long t2 = o2.getTimeAdvanced();
-			if (t1 > t2)
-				return 1;
-			else if (t1 < t2)
-				return -1;
-			else
-				return (o1.getProcessId().compareTo(o2.getProcessId()));
+			if (o1.getProcessId().equals(o2.getProcessId()))
+			{
+				long seq1 = o1.getHistorySequence();
+				long seq2 = o2.getHistorySequence();
+
+				if (seq1 > seq2)
+					return 1;
+				else if (seq1 < seq2)
+					return -1;
+			}
+
+			return 0;
 		}
 	}
 }

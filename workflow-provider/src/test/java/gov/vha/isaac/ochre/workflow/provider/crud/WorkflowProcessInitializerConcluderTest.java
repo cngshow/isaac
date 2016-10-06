@@ -20,22 +20,22 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
-import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessDetailComparator;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
@@ -87,7 +87,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		// Initialization
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
 				firstUserId, "Main Process Name", "Main Process Description");
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 
 		// verify content in workflow is as expected
 		assertProcessDefinition(ProcessStatus.DEFINED, mainDefinitionId, processId);
@@ -121,7 +121,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 
@@ -165,7 +165,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -232,7 +232,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 			Assert.assertTrue(true);
 		}
 
-		addComponentsToProcess(processId);
+		addComponentsToProcess(processId, new Date().getTime());
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -274,22 +274,18 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	}
 
 	private void assertProcessDefinition(ProcessStatus processStatus, UUID definitionId, UUID processId) {
-		SortedSet<ProcessDetail> detailEntries = new TreeSet<>(new ProcessDetailComparator());
+		Set<ProcessDetail> detailEntries = new HashSet<>();
 		detailEntries.addAll(wp_.getProcessDetailStore().values());
-		ProcessDetail entry = detailEntries.last();
+		ProcessDetail entry = detailEntries.iterator().next();
 
 		Assert.assertEquals(processId, entry.getId());
-		Assert.assertEquals(2, entry.getComponentNidToStampsMap().size());
-		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-55));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(11));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-55).contains(12));
+		Assert.assertEquals(2, entry.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));
 
 		Assert.assertEquals(processStatus, entry.getStatus());
 		Assert.assertEquals(99, entry.getCreatorNid());
 		Assert.assertEquals(definitionId, entry.getDefinitionId());
-		Assert.assertTrue(entry.getComponentNidToStampsMap().containsKey(-56));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(11));
-		Assert.assertTrue(entry.getComponentNidToStampsMap().get(-56).contains(12));
+		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-56));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 
 		if (processStatus == ProcessStatus.DEFINED) {

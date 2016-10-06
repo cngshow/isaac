@@ -197,11 +197,11 @@ public class ContentConverterCreator
 			}
 			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
 			temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
-			temp = temp.replace("#ARTIFACTID#", "metadata");
+			temp = temp.replace("#ARTIFACTID#", "ochre-metadata");
 			temp = temp.replace("#CLASSIFIER#", "all");
 			temp = temp.replace("#VERSION#", VersionFinder.findProjectVersion());
 			dependencies.append(temp);
-			unpackArtifacts.append("metadata");
+			unpackArtifacts.append("ochre-metadata");
 			unpackDependencies = unpackDependencies.replace("#UNPACK_ARTIFACTS#", unpackArtifacts.toString());
 		}
 		

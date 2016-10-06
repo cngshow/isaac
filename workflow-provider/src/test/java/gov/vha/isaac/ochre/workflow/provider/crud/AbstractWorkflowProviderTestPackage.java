@@ -1,19 +1,26 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.junit.Assert;
 
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
+import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
@@ -60,7 +67,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static final int firstUserId = 99;
 	protected static final int secondUserId = 999;
-	protected static final ArrayList<Integer> stampSequenceForTesting = new ArrayList<>(Arrays.asList(11, 12));
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
@@ -133,8 +139,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
+			int historySequence = 1;
+			if (wp_.getWorkflowAccessor().getProcessHistory(processId) != null) {
+				historySequence = wp_.getWorkflowAccessor().getProcessHistory(processId).last().getHistorySequence();
+			}
 			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
-					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT);
+					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT, historySequence + 1);
 			wp_.getProcessHistoryStore().add(advanceEntry);
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
@@ -145,9 +155,13 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
+			int historySequence = 1;
+			if (wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId) != null) {
+				historySequence = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last().getHistorySequence();
+			}
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
 					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
-					SEND_TO_APPROVAL_COMMENT);
+					SEND_TO_APPROVAL_COMMENT, historySequence + 1);
 
 			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {
@@ -159,8 +173,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
+			int historySequence = 1;
+			if (wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId) != null) {
+				historySequence = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last().getHistorySequence();
+			}
 			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
-					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT);
+					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT, historySequence + 1);
 
 			wp_.getProcessHistoryStore().add(entry);
 		} catch (InterruptedException e) {
@@ -189,10 +207,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected void addComponentsToProcess(UUID processId) {
+	protected void addComponentsToProcess(UUID processId, long time) {
 		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentNidToStampsMap().put(con, stampSequenceForTesting);
+			entry.getComponentToInitialEditMap().put(con, time);
 		}
 
 		wp_.getProcessDetailStore().put(processId, entry);
@@ -280,9 +298,13 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		// Only add Cancel state in Workflow if process has already been
 		// launched
+		int historySequence = 1;
+		if (wp_.getWorkflowAccessor().getProcessHistory(processId) != null) {
+			historySequence = wp_.getWorkflowAccessor().getProcessHistory(processId).last().getHistorySequence();
+		}
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
-				comment);
+				comment, historySequence + 1);
 		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
@@ -301,7 +323,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				createOutcome, createRole);
 		ProcessHistory advanceEntry = new ProcessHistory(processId, firstUserId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
-				"");
+				"", 0);
 		wp_.getProcessHistoryStore().add(advanceEntry);
 
 		return processId;
@@ -351,5 +373,4 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				endType, null);
 
 	}
-
 }

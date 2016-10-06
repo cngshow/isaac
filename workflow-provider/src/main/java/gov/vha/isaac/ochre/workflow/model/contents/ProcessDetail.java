@@ -24,26 +24,26 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
- * include its history which is available via {@link ProcessHistory}
+ * include its Detail which is available via {@link ProcessHistory}
  * 
  * {@link ProcessDetailContentStore} {@link AbstractStorableWorkflowContents}.
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
-public class ProcessDetail extends AbstractStorableWorkflowContents {
+public class ProcessDetail extends AbstractStorableWorkflowContents
+{
 	/**
 	 * The exhaustive list of possible process statuses.
 	 */
-	public enum ProcessStatus {
+	public enum ProcessStatus
+	{
 		/** Process is being defined and has yet to be launched. */
 		DEFINED,
 		/** Process has been launched */
@@ -59,7 +59,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * 
 	 */
-	public enum EndWorkflowType {
+	public enum EndWorkflowType
+	{
 		/** Process is stopped without reaching a completed state */
 		CANCELED,
 		/** Process has been finished by reaching a completed state */
@@ -70,12 +71,11 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	private UUID definitionId;
 
 	/**
-	 * A map listing all compontent nids and each nid's associated stamps
-	 * sequences that are part of the workflow process. Therefore, if a
-	 * component has been modified multiple times within a single process, all
-	 * those stamps are persisted in order.
+	 * A map of all compontent nids modified within the workflow process to the time of initial modification.
+	 * Therefore, if a component has been modified multiple times within a
+	 * single process, only the first of those times are rquired on the map.
 	 */
-	private Map<Integer, List<Integer>> componentNidToStampsMap = new HashMap<>();
+	private Map<Integer, Long> componentToIntitialEditMap = new HashMap<>();
 
 	/** The user who originally defined (created) the workflow process. */
 	private int creatorNid;
@@ -101,6 +101,9 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	/** The workflow process's description. */
 	private String description;
 
+	/** The workflow process's current "owner". */
+	private int ownerNid;
+
 	/**
 	 * Constructor for a new process based on specified entry fields.
 	 * 
@@ -111,34 +114,37 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * @param name
 	 * @param description
 	 */
-	public ProcessDetail(UUID definitionId, int creatorNid, long timeCreated, ProcessStatus status, String name,
-			String description) {
+	public ProcessDetail(UUID definitionId, int creatorNid, long timeCreated, ProcessStatus status, String name, String description)
+	{
 		this.definitionId = definitionId;
 		this.creatorNid = creatorNid;
 		this.timeCreated = timeCreated;
 		this.status = status;
 		this.name = name;
 		this.description = description;
+		this.ownerNid = creatorNid;
 	}
 
 	/**
 	 * Constructor for a new process based on serialized content.
 	 *
 	 * @param data
-	 *            The data to deserialize into its components
+	 * The data to deserialize into its components
 	 */
-	public ProcessDetail(byte[] data) {
+	public ProcessDetail(byte[] data)
+	{
 		ByteArrayInputStream bis = new ByteArrayInputStream(data);
 		ObjectInput in;
-		try {
+		try
+		{
 			in = new ObjectInputStream(bis);
 			this.id = (UUID) in.readObject();
 			this.definitionId = (UUID) in.readObject();
 
-			//TODO these nids need to swap to UUIDs - certainly when writing to the changeset file
-			@SuppressWarnings("unchecked")
-			Map<Integer, List<Integer>> componentToStampMapReadObject = (Map<Integer, List<Integer>>) in.readObject();
-			this.componentNidToStampsMap = componentToStampMapReadObject;
+			// TODO these nids need to swap to UUIDs - certainly when writing to
+			// the changeset file
+			@SuppressWarnings("unchecked") Map<Integer, Long> componentToInitialEditMapReadObject = (Map<Integer, Long>) in.readObject();
+			this.componentToIntitialEditMap = componentToInitialEditMapReadObject;
 
 			this.creatorNid = (Integer) in.readObject();
 			this.timeCreated = (Long) in.readObject();
@@ -147,6 +153,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			this.status = (ProcessStatus) in.readObject();
 			this.name = (String) in.readObject();
 			this.description = (String) in.readObject();
+			this.ownerNid = (Integer) in.readObject();
 		}
 		catch (Exception e)
 		{
@@ -159,18 +166,19 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the key of the definition from which the process is created
 	 */
-	public UUID getDefinitionId() {
+	public UUID getDefinitionId()
+	{
 		return definitionId;
 	}
 
 	/**
-	 * Gets the process's component nids along with each component's stamp
-	 * sequences.
+	 * Gets the process's component nids.
 	 *
 	 * @return map of component nids to ordered stamp sequences
 	 */
-	public Map<Integer, List<Integer>> getComponentNidToStampsMap() {
-		return componentNidToStampsMap;
+	public Map<Integer, Long> getComponentToInitialEditMap()
+	{
+		return componentToIntitialEditMap;
 	}
 
 	/**
@@ -178,7 +186,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the process creator's nid
 	 */
-	public int getCreatorNid() {
+	public int getCreatorNid()
+	{
 		return creatorNid;
 	}
 
@@ -187,7 +196,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the time the process was created
 	 */
-	public long getTimeCreated() {
+	public long getTimeCreated()
+	{
 		return timeCreated;
 	}
 
@@ -197,7 +207,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the time the process was canceled or concluded
 	 */
-	public long getTimeCanceledOrConcluded() {
+	public long getTimeCanceledOrConcluded()
+	{
 		return timeCanceledOrConcluded;
 	}
 
@@ -206,10 +217,11 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * this isn't available during the object's construction.
 	 *
 	 * @param time
-	 *            The time the process was canceled/concluded as long primitive
-	 *            type
+	 * The time the process was canceled/concluded as long primitive
+	 * type
 	 */
-	public void setTimeCanceledOrConcluded(long time) {
+	public void setTimeCanceledOrConcluded(long time)
+	{
 		timeCanceledOrConcluded = time;
 	}
 
@@ -218,7 +230,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * 
 	 * @return the time launched
 	 */
-	public long getTimeLaunched() {
+	public long getTimeLaunched()
+	{
 		return timeLaunched;
 	}
 
@@ -227,9 +240,10 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * object's construction.
 	 *
 	 * @param time
-	 *            The time the process was launched as long primitive type
+	 * The time the process was launched as long primitive type
 	 */
-	public void setTimeLaunched(long time) {
+	public void setTimeLaunched(long time)
+	{
 		timeLaunched = time;
 	}
 
@@ -238,7 +252,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the process Status
 	 */
-	public ProcessStatus getStatus() {
+	public ProcessStatus getStatus()
+	{
 		return status;
 	}
 
@@ -247,9 +262,10 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * the process.
 	 *
 	 * @param status
-	 *            The process's current status
+	 * The process's current status
 	 */
-	public void setStatus(ProcessStatus status) {
+	public void setStatus(ProcessStatus status)
+	{
 		this.status = status;
 	}
 
@@ -258,7 +274,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * 
 	 * @return process name
 	 */
-	public String getName() {
+	public String getName()
+	{
 		return name;
 	}
 
@@ -267,8 +284,31 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * 
 	 * @return process description
 	 */
-	public String getDescription() {
+	public String getDescription()
+	{
 		return description;
+	}
+
+	/**
+	 * Retrieves the current owner of the process
+	 * 
+	 * @return if Negative Number: int current owner nid
+	 * else 0: Not owned
+	 */
+	public int getOwnerNid()
+	{
+		return ownerNid;
+	}
+
+	/**
+	 * Sets the current owner of the process
+	 * 
+	 * @param nid
+	 * The userNid obtaining a lock on the instance. Note '0' means no owner.
+	 */
+	public void setOwnerNid(int nid)
+	{
+		ownerNid = nid;
 	}
 
 	/*
@@ -279,7 +319,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * serialize()
 	 */
 	@Override
-	public byte[] serialize() {
+	public byte[] serialize()
+	{
 		try
 		{
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -288,7 +329,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			// write the object
 			out.writeObject(id);
 			out.writeObject(definitionId);
-			out.writeObject(componentNidToStampsMap);
+			out.writeObject(componentToIntitialEditMap);
 			out.writeObject(creatorNid);
 			out.writeObject(timeCreated);
 			out.writeObject(timeLaunched);
@@ -296,6 +337,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 			out.writeObject(status);
 			out.writeObject(name);
 			out.writeObject(description);
+			out.writeObject(ownerNid);
 
 			return bos.toByteArray();
 		}
@@ -305,7 +347,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 		}
 	}
 
-	public boolean isActive() {
+	public boolean isActive()
+	{
 		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
 	}
 
@@ -315,31 +358,30 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public String toString() {
+	public String toString()
+	{
 		StringBuffer buf = new StringBuffer();
 
-		for (Integer compNid : componentNidToStampsMap.keySet()) {
-			buf.append("\n\t\t\tFor Component Nid: " + compNid + " have following stamp sequences:");
-
-			for (Integer stampSeq : componentNidToStampsMap.get(compNid)) {
-				buf.append(stampSeq + ", ");
-			}
+		for (Integer compNid : componentToIntitialEditMap.keySet())
+		{
+			Date d = new Date(componentToIntitialEditMap.get(compNid));
+			
+			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at: " + workflowDateFormatter.format(d));
 		}
 
 		Date date = new Date(timeCreated);
-		String timeCreatedString = workflowDateFormatrer.format(date);
+		String timeCreatedString = workflowDateFormatter.format(date);
 
 		date = new Date(timeLaunched);
-		String timeLaunchedString = workflowDateFormatrer.format(date);
+		String timeLaunchedString = workflowDateFormatter.format(date);
 
 		date = new Date(timeCanceledOrConcluded);
-		String timeCanceledOrConcludedString = workflowDateFormatrer.format(date);
+		String timeCanceledOrConcludedString = workflowDateFormatter.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString()
-				+ "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: " + creatorNid
-				+ "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString
-				+ "\n\t\tTime Canceled or Concluded: " + timeCanceledOrConcludedString + "\n\t\tStatus: " + status
-				+ "\n\t\tName: " + name + "\n\t\tDescription: " + description;
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
+				+ creatorNid + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "
+				+ timeCanceledOrConcludedString + "\n\t\tStatus: " + status + "\n\t\tName: " + name + "\n\t\tDescription: " + description + "\n\t\tOwner Nid: "
+				+ ownerNid;
 	}
 
 	/*
@@ -348,15 +390,13 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(Object obj)
+	{
 		ProcessDetail other = (ProcessDetail) obj;
 
-		return this.definitionId.equals(other.definitionId)
-				&& this.componentNidToStampsMap.equals(other.componentNidToStampsMap)
-				&& this.creatorNid == other.creatorNid && this.timeCreated == other.timeCreated
-				&& this.timeLaunched == other.timeLaunched
-				&& this.timeCanceledOrConcluded == other.timeCanceledOrConcluded && this.status == other.status
-				&& this.name.equals(other.name) && this.description.equals(other.description);
+		return this.definitionId.equals(other.definitionId) && this.componentToIntitialEditMap.equals(other.componentToIntitialEditMap) && this.creatorNid == other.creatorNid
+				&& this.timeCreated == other.timeCreated && this.timeLaunched == other.timeLaunched && this.timeCanceledOrConcluded == other.timeCanceledOrConcluded
+				&& this.status == other.status && this.name.equals(other.name) && this.description.equals(other.description) && this.ownerNid == other.ownerNid;
 	}
 
 	/*
@@ -365,42 +405,10 @@ public class ProcessDetail extends AbstractStorableWorkflowContents {
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
-	public int hashCode() {
-		return definitionId.hashCode() + componentNidToStampsMap.hashCode() + creatorNid
-				+ new Long(timeCreated).hashCode() + new Long(timeLaunched).hashCode()
-				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode()
-				+ description.hashCode();
+	public int hashCode()
+	{
+		return definitionId.hashCode() + componentToIntitialEditMap.hashCode() + creatorNid + new Long(timeCreated).hashCode() + new Long(timeLaunched).hashCode()
+				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode() + description.hashCode() + ownerNid;
 	}
 
-	/**
-	 * A custom comparator to assist in ordering process detial information.
-	 * Based on creation time.
-	 *
-	 */
-	public static class ProcessDetailComparator implements Comparator<ProcessDetail> {
-
-		/**
-		 * Instantiates a new process detail comparator.
-		 */
-		public ProcessDetailComparator() {
-
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-		 */
-		@Override
-		public int compare(ProcessDetail o1, ProcessDetail o2) {
-			long t1 = o1.getTimeCreated();
-			long t2 = o2.getTimeCreated();
-			if (t2 > t1)
-				return 1;
-			else if (t1 > t2)
-				return -1;
-			else
-				return o1.getId().compareTo(o2.getId());
-		}
-	}
 }

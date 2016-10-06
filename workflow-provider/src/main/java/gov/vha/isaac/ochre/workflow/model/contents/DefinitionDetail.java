@@ -219,7 +219,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		}
 
 		Date date = new Date(importDate);
-		String importDateString = workflowDateFormatrer.format(date);
+		String importDateString = workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name + "\n\t\tNamespace: "
 				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString() + "\n\t\tDescription: "

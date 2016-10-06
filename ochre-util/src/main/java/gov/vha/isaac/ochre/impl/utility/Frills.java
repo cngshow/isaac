@@ -58,6 +58,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -564,8 +565,6 @@ public class Frills implements DynamicSememeColumnUtility {
 								results.add(ds);
 							}
 						}
-					} else {
-						log.warn("Description attached to concept nid {} is not of the expected type!", conceptNid);
 					}
 				});
 		return results;
@@ -792,15 +791,18 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * UUID that is set for the referenced component in an instance of this sememe.  If {@link ObjectChronologyType#UNKNOWN_NID} is passed, it is ignored, as 
 	 * if it were null.
 	 * @param referencedComponentSubRestriction - optional - may be null - subtype restriction for {@link ObjectChronologyType#SEMEME} restrictions
+	 * @param editCoord - optional - the coordinate to use during create of the sememe concept (and related descriptions) - if not provided, uses system default.
 	 * @return a reference to the newly created sememe item
 	 */
 	@SuppressWarnings("deprecation")
 	public static DynamicSememeUsageDescription createNewDynamicSememeUsageDescriptionConcept(String sememeFSN, String sememePreferredTerm, 
 			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
-			SememeType referencedComponentSubRestriction)
+			SememeType referencedComponentSubRestriction, EditCoordinate editCoord)
 	{
 		try
 		{
+			EditCoordinate localEditCoord = (editCoord == null ? Get.configurationService().getDefaultEditCoordinate() : editCoord);
+			
 			ConceptBuilderService conceptBuilderService = LookupService.getService(ConceptBuilderService.class);
 			conceptBuilderService.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
 			conceptBuilderService.setDefaultDialectAssemblageForDescriptions(MetaData.US_ENGLISH_DIALECT);
@@ -824,7 +826,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 			builder.addDescription(definitionBuilder);
 			
-			ConceptChronology<? extends ConceptVersion<?>> newCon = builder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE, new ArrayList<>()).get();
+			ConceptChronology<? extends ConceptVersion<?>> newCon = builder.build(localEditCoord, ChangeCheckerMode.ACTIVE, new ArrayList<>()).getNoThrow();
 			
 			{
 				//Set up the dynamic sememe 'special' definition
@@ -832,11 +834,11 @@ public class Frills implements DynamicSememeColumnUtility {
 						MetaData.ENGLISH_LANGUAGE);
 				definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 				@SuppressWarnings("rawtypes")
-				SememeChronology<?> definitionSememe = definitionBuilder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
+				SememeChronology<?> definitionSememe = definitionBuilder.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 				
 				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitionSememe.getNid(), 
-						DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(EditCoordinates.getDefaultUserMetadata(), 
-								ChangeCheckerMode.ACTIVE).get();
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(localEditCoord, 
+								ChangeCheckerMode.ACTIVE).getNoThrow();
 			}
 
 			if (columns != null)
@@ -850,7 +852,7 @@ public class Frills implements DynamicSememeColumnUtility {
 
 					SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
 							DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getSequence(), data)
-						.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
+						.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 				}
 			}
 			
@@ -861,7 +863,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getSequence(), data)
-					.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
+					.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 			}
 
 			Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN 

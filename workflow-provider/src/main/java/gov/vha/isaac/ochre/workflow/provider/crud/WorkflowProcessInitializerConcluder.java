@@ -20,11 +20,8 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.Date;
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
@@ -56,26 +53,25 @@ public class WorkflowProcessInitializerConcluder {
 	}
 
 	/**
-	 * Creates a new workflow process instance. In turn, a new entry is added to
-	 * the ProcessDetails content store. The process status defaults as DEFINED.
+	 * Creates a new workflow process instance. In turn, a new entry is added to the ProcessDetails content store. The process status defaults as
+	 * DEFINED.
 	 * 
 	 * Used by users when creating a new process
 	 * 
 	 * @param definitionId
-	 *            The definition for which the process should be based on
+	 * The definition for which the process should be based on
 	 * @param userNid
-	 *            The user whom is creating the new process
+	 * The user whom is creating the new process
 	 * @param name
-	 *            The name of the new process
+	 * The name of the new process
 	 * @param description
-	 *            The description of the new process
+	 * The description of the new process
 	 * 
-	 * @return The process id which is in turn the key to the Process Detail's
-	 *         entry
+	 * @return The process id which is in turn the key to the Process Detail's entry
 	 * 
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int userNid, String name, String description)
+	public UUID createWorkflowProcess(UUID definitionId, int userNid, String name, String description) 
 			throws Exception {
 		if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
 			throw new Exception("Name and Description must be filled out when creating a process");
@@ -89,8 +85,7 @@ public class WorkflowProcessInitializerConcluder {
 		 */
 
 		// Create Process Details with "DEFINED"
-		ProcessDetail details = new ProcessDetail(definitionId, userNid, new Date().getTime(), ProcessStatus.DEFINED,
-				name, description);
+		ProcessDetail details = new ProcessDetail(definitionId, userNid, new Date().getTime(), ProcessStatus.DEFINED, name, description);
 		UUID processId = workflowProvider_.getProcessDetailStore().add(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
@@ -98,38 +93,32 @@ public class WorkflowProcessInitializerConcluder {
 		// At some point, need to handle the case where multiple startActions
 		// may be defined for single DefinitionId. For now, verify only one and
 		// use it
-		if (workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size() != 1) {
-			throw new Exception(
-					"Currently only able to handle single startAction within a definition. This definition found: "
-							+ workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size());
+		if (workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size() != 1)
+		{
+			throw new Exception("Currently only able to handle single startAction within a definition. This definition found: "
+					+ workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).size());
 		}
 
-		AvailableAction startAdvancement = workflowProvider_.getBPMNInfo().getDefinitionStartActionMap()
-				.get(definitionId).iterator().next();
-		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
-				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
-				"");
+		AvailableAction startAdvancement = workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).iterator().next();
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(), startAdvancement.getInitialState(), startAdvancement.getAction(),
+				startAdvancement.getOutcomeState(), "", 1);
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
 		return processId;
 	}
 
 	/**
-	 * Launch a process as long as a) the process is in a defined state and b)
-	 * there are components associated with the process. By launching it, the
-	 * ProcessDetails has its status updated to LAUNCHED and the time launched
-	 * gets an entry of <NOW>.
+	 * Launch a process as long as a) the process is in a defined state and b) there are components associated with the process. By launching it, the
+	 * ProcessDetails has its status updated to LAUNCHED and the time launched gets an entry of <NOW>.
 	 *
 	 * Used when a process is advanced and it is in the edit state and is has a
 	 * DEFINED status.
 	 * 
 	 * @param processId
-	 *            the process being launched
+	 * the process being launched
 	 * 
 	 * @throws Exception
-	 *             Thrown if a) process doesn't exist, b) process exists but is
-	 *             not in the DEFINED status, or c) no components are associated
-	 *             with the process
+	 * Thrown if a) process doesn't exist, b) process exists but is not in the DEFINED status, or c) no components are associated with the process
 	 */
 	public void launchProcess(UUID processId) throws Exception {
 		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
@@ -138,48 +127,41 @@ public class WorkflowProcessInitializerConcluder {
 			throw new Exception("Cannot launch workflow that hasn't been defined first");
 		} else if (entry.getStatus() != ProcessStatus.DEFINED) {
 			throw new Exception("Only processes that have a DEFINED status may be launched");
-		} else if (entry.getComponentNidToStampsMap().isEmpty()) {
+		} else if (entry.getComponentToInitialEditMap().keySet().isEmpty()) {
 			throw new Exception("Workflow can only be launched when the workflow contains components to work on");
 		}
 
 		// Update Process Details with "LAUNCHED"
+		entry.setOwnerNid(0);
 		entry.setStatus(ProcessStatus.LAUNCHED);
 		entry.setTimeLaunched(new Date().getTime());
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
 	}
 
 	/**
-	 * Ends a workflow status either via concluding it or canceling it. In doing
-	 * so, the ProcessDetails has its status updated accordingly (either
-	 * CANCELED or CONCLUDED) and the time launched gets an entry of <NOW>. In
-	 * addition, another Process History entry is added showing the information
-	 * associated with this final advancement.
-	 *
-	 * Used when advancing a process to either a completed state or by canceling
-	 * it.
+	 * Ends a workflow instance either via concluding it or canceling it. In doing so, the ProcessDetails is updated accordingly, another Process
+	 * History entry is added showing the advancement, and in the case of "CANCEL" request, any editing changes previously associated with the
+	 * instance are reverted.
 	 *
 	 * @param processId
-	 *            The process being ended
+	 * The process being ended
 	 * @param actionToProcess
-	 *            The AvailableAction the user requested
+	 * The AvailableAction the user requested
 	 * @param userNid
-	 *            The user ending the workflow
+	 * The user ending the workflow
 	 * @param comment
-	 *            The user added comment associated with the advancement
+	 * The user added comment associated with the advancement
 	 * @param endType
-	 *            The type of END-ADVANCEMENT associated with the selected
-	 *            action (Canceled or Concluded)
+	 * The type of END-ADVANCEMENT associated with the selected
+	 * action (Canceled or Concluded)
 	 * 
 	 * @throws Exception
-	 *             Thrown if the process doesn't exist or an attempt is made to
-	 *             a) cancel or conclude a process which isn't active, b)
-	 *             conclude a process where the process is not LAUNCHED, or c)
-	 *             conclude a process where the outcome state isn't a concluded
-	 *             state according to the definition
+	 * Thrown if the process doesn't exist or an attempt is made to a) cancel or conclude a process which isn't active, b) conclude a process where
+	 * the process is not LAUNCHED, or c) conclude a process where the outcome state isn't a concluded state according to the definition
 	 */
-	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
-			EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
+	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment, EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
 		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
+		ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
 
 		if (entry == null) {
 			throw new Exception("Cannot cancel nor conclude a workflow that hasn't been defined yet");
@@ -189,35 +171,35 @@ public class WorkflowProcessInitializerConcluder {
 			if (entry.getStatus() != ProcessStatus.LAUNCHED) {
 				throw new Exception("Cannot conclude workflow that is in the following state: " + entry.getStatus());
 			} else {
-				ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
-				if (!workflowProvider_.getBPMNInfo().isConcludedState(hx.getOutcomeState())) {
-					DefinitionDetail defEntry = workflowProvider_.getDefinitionDetailStore()
-							.get(entry.getDefinitionId());
-					throw new Exception(
-							"Cannot perform Conclude action on the definition: " + defEntry.getName() + " version: "
-									+ defEntry.getVersion() + " when the workflow state is: " + hx.getOutcomeState());
+				if (!workflowProvider_.getBPMNInfo().isConcludedState(hx.getOutcomeState()))
+				{
+					DefinitionDetail defEntry = workflowProvider_.getDefinitionDetailStore().get(entry.getDefinitionId());
+					throw new Exception("Cannot perform Conclude action on the definition: " + defEntry.getName() + " version: " + defEntry.getVersion()
+							+ " when the workflow state is: " + hx.getOutcomeState());
 				}
 			}
 		}
+
+		// Request is valid, update process details
+		entry.setOwnerNid(0);
+		entry.setTimeCanceledOrConcluded(new Date().getTime());
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
 			entry.setStatus(ProcessStatus.CANCELED);
 		} else if (endType.equals(EndWorkflowType.CONCLUDED)) {
 			entry.setStatus(ProcessStatus.CONCLUDED);
 		}
-		entry.setTimeCanceledOrConcluded(new Date().getTime());
+
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
 
-		// Only add Cancel state in Workflow if process has already been
-		// launched
-		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(),
-				actionToProcess.getInitialState(), actionToProcess.getAction(), actionToProcess.getOutcomeState(),
-				comment);
+		// Add to process's history
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(), actionToProcess.getInitialState(), actionToProcess.getAction(),
+				actionToProcess.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
+		// if a cancel has been requested, revert all changes associated with the workflow
 		if (endType.equals(EndWorkflowType.CANCELED)) {
-			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentNidToStampsMap().keySet(),
-					entry.getTimeCreated(), editCoordinate);
+			workflowProvider_.getWorkflowUpdater().revertChanges(entry.getComponentToInitialEditMap().keySet(), processId, editCoordinate);
 		}
 	}
 }

@@ -39,7 +39,7 @@ public abstract class AbstractStorableWorkflowContents {
 	protected final Logger logger = LogManager.getLogger();
 
 	/** A universal means of expressing a workflow time stamp */
-	public SimpleDateFormat workflowDateFormatrer = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
+	public SimpleDateFormat workflowDateFormatter = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
 
 	/**
 	 * As every content store entry is key-value based and as all keys are of

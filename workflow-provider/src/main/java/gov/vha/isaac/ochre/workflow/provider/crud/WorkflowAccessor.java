@@ -21,13 +21,18 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
@@ -78,7 +83,7 @@ public class WorkflowAccessor {
 	 * @param processId
 	 *            The key the the Process Detail entry
 	 * 
-	 * @return The process details entry requested
+	 * @return The process details entry requested.  If none exists, return null
 	 */
 	public ProcessDetail getProcessDetails(UUID processId) {
 		return workflowProvider_.getProcessDetailStore().get(processId);
@@ -129,7 +134,7 @@ public class WorkflowAccessor {
 	public boolean isComponentInActiveWorkflow(UUID definitionId, int compNid) {
 		for (ProcessDetail proc : workflowProvider_.getProcessDetailStore().values()) {
 			if (proc.getDefinitionId().equals(definitionId) && proc.isActive()
-					&& proc.getComponentNidToStampsMap().containsKey(compNid)) {
+					&& proc.getComponentToInitialEditMap().keySet().contains(compNid)) {
 				return true;
 			}
 		}
@@ -218,15 +223,18 @@ public class WorkflowAccessor {
 	 */
 	public Set<AvailableAction> getUserPermissibleActionsForProcess(UUID processId, int userNid) {
 		ProcessDetail processDetail = getProcessDetails(processId);
-		ProcessHistory processLatest = getProcessHistory(processId).last();
-
-		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
-				processDetail.getDefinitionId(), userNid);
-
-		if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
-			return actionsByInitialState.get(processLatest.getOutcomeState());
+		
+		if (processDetail != null) {
+			ProcessHistory processLatest = getProcessHistory(processId).last();
+	
+			Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
+					processDetail.getDefinitionId(), userNid);
+	
+			if (actionsByInitialState.containsKey(processLatest.getOutcomeState())) {
+				return actionsByInitialState.get(processLatest.getOutcomeState());
+			}
 		}
-
+		
 		return new HashSet<AvailableAction>();
 	}
 
@@ -264,5 +272,56 @@ public class WorkflowAccessor {
 		}
 
 		return applicableActions;
+	}
+	
+	/**
+	 * Identify the version of the component prior to workflow process being launched
+	 * 
+	 * @param processId
+	 *            The process being examined
+	 * @param compNid
+	 *            The component to be investigated
+	 * @return The version of the component prior to it entering into workflow. If no version is found, the chronology was created within this workflow process
+	 * 
+	 * @throws Exception
+	 */
+	public StampedVersion getVersionPriorToWorkflow(UUID processId, int compNid) throws Exception {
+		ProcessDetail proc = getProcessDetails(processId);
+		
+		if (!proc.getComponentToInitialEditMap().keySet().contains(compNid)) {
+			return null;
+		}
+		
+		long timeLaunched = proc.getTimeCreated();
+		
+		ObjectChronology<?>  objChron;
+		if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT) {
+			objChron = Get.conceptService().getConcept(compNid);
+		} else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
+			objChron = Get.sememeService().getSememe(compNid);
+		} else {
+			throw new Exception("Cannot reconcile NID with Identifier Service for nid: " + compNid);
+		}
+
+		OfInt stampSequencesItr = objChron.getVersionStampSequences().iterator();
+		
+		int stampSeq = -1;
+		long stampTime = 0;
+		while (stampSequencesItr.hasNext() && stampTime < timeLaunched) {
+			int currentStampSeq = stampSequencesItr.next();
+			long currentStampTime = Get.stampService().getTimeForStamp(currentStampSeq);
+			if (currentStampTime < timeLaunched) {
+				stampTime = currentStampTime;
+				stampSeq = currentStampSeq;
+			}
+		}
+
+		for (StampedVersion version : objChron.getVersionList()) {
+			if (version.getStampSequence() == stampSeq) {
+				return version;
+			}
+		}
+		
+		return null;
 	}
 }
