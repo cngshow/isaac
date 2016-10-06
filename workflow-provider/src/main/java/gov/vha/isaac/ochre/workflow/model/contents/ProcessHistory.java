@@ -21,13 +21,14 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * A single advancement (history) of a given workflow process. A new entry is
  * added for every workflow action a user takes.
  * 
- * {@link ProcessHistoryContentStore} {@link AbstractStorableWorkflowContents}
+ * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -37,7 +38,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	private UUID processId;
 
 	/** The user who advanced the process. */
-	private int userNid;
+	private UUID userId;
 
 	/** The time the workflow was advanced. */
 	private long timeAdvanced;
@@ -58,20 +59,30 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	private int historySequence;
 
     /**
-     * Process uuid most significant bits for this component
+     * Process uuid most significant bits
      */
 	private long processIdMsb;
     
 	/**
-     * Process uuid least significant bits for this component
+     * Process uuid least significant bits
      */
     private long processIdLsb;
+
+    /**
+     * User uuid most significant bits
+     */
+	private long userIdMsb;
+    
+	/**
+     * User uuid least significant bits
+     */
+    private long userIdLsb;
 
     /**
 	 * Constructor for a new process history based on specified entry fields.
 	 * 
 	 * @param processId
-	 * @param userNid
+	 * @param userId
 	 * @param timeAdvanced
 	 * @param initialState
 	 * @param action
@@ -79,17 +90,20 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 * @param comment
 	 * @param historySequence
 	 */
-	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action, String outcomeState, String comment, int historySequence) {
+	public ProcessHistory(UUID processId, UUID userId, long timeAdvanced, String initialState, String action, String outcomeState, String comment, int historySequence) {
 		this.processId = processId;
-        this.processIdMsb = processId.getMostSignificantBits();
-        this.processIdLsb = processId.getLeastSignificantBits();
-		this.userNid = userNid;
+		this.userId = userId;
 		this.timeAdvanced = timeAdvanced;
 		this.initialState = initialState;
 		this.action = action;
 		this.outcomeState = outcomeState;
 		this.comment = comment;
 		this.historySequence = historySequence;
+
+        this.processIdMsb = processId.getMostSignificantBits();
+        this.processIdLsb = processId.getLeastSignificantBits();
+        this.userIdMsb = userId.getMostSignificantBits();
+        this.userIdLsb = userId.getLeastSignificantBits();
 	}
 
 	/**
@@ -112,12 +126,12 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	}
 
 	/**
-	 * Gets the user's nid that advanced the workflow process.
+	 * Gets the user's id that advanced the workflow process.
 	 *
 	 * @return the user nid
 	 */
-	public int getUserNid() {
-		return userNid;
+	public UUID getUserId() {
+		return userId;
 	}
 
 	/**
@@ -189,7 +203,8 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
 		out.putLong(processIdMsb);
 		out.putLong(processIdLsb);
-		out.putNid(userNid);
+		out.putLong(userIdMsb);
+		out.putLong(userIdLsb);
 		out.putLong(timeAdvanced);
 		out.putByteArrayField(initialState.getBytes());
 		out.putByteArrayField(action.getBytes());
@@ -202,21 +217,25 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
 		processIdMsb = in.getLong();
 		processIdLsb = in.getLong();
-		processId = new UUID(processIdMsb, processIdLsb);
-		userNid = in.getNid();
+		userIdMsb = in.getLong();
+		userIdLsb = in.getLong();
 		timeAdvanced = in.getLong();
 		initialState = new String(in.getByteArrayField());
 		action = new String(in.getByteArrayField());
 		outcomeState = new String(in.getByteArrayField());
 		comment = new String(in.getByteArrayField());
 		historySequence = in.getInt();
+
+		processId = new UUID(processIdMsb, processIdLsb);
+		userId = new UUID(userIdMsb, userIdLsb);
 	}
 
 	@Override
 	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
 		in.getLong();
 		in.getLong();
-		in.getNid();
+		in.getLong();
+		in.getLong();
 		in.getLong();
 		in.getByteArrayField();
 		in.getByteArrayField();
@@ -235,7 +254,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		Date date = new Date(timeAdvanced);
 		String timeAdvancedString = workflowDateFormatter.format(date);
 
-		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userNid + "\n\t\tTime Advanced as Long: " + timeAdvanced
+		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userId + "\n\t\tTime Advanced as Long: " + timeAdvanced
 				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "
 				+ outcomeState + "\n\t\tComment: " + comment + "\n\t\tHistory Sequence: " + historySequence;
 	}
@@ -249,7 +268,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	public boolean equals(Object obj) {
 		ProcessHistory other = (ProcessHistory) obj;
 
-		return this.processId.equals(other.processId) && this.userNid == other.userNid && this.timeAdvanced == other.timeAdvanced
+		return this.processId.equals(other.processId) && this.userId.equals(other.userId) && this.timeAdvanced == other.timeAdvanced
 				&& this.initialState.equals(other.initialState) && this.action.equals(other.action) && this.outcomeState.equals(other.outcomeState)
 				&& this.comment.equals(other.comment) && this.historySequence == other.historySequence;
 	}
@@ -261,7 +280,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return processId.hashCode() + userNid + new Long(timeAdvanced).hashCode() + initialState.hashCode() + action.hashCode() + outcomeState.hashCode()
+		return processId.hashCode() + userId.hashCode() + new Long(timeAdvanced).hashCode() + initialState.hashCode() + action.hashCode() + outcomeState.hashCode()
 				+ comment.hashCode() + historySequence;
 	}
 

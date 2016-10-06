@@ -20,10 +20,14 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.util.Date;
 import java.util.UUID;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
@@ -37,6 +41,8 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
  * Contains methods necessary to start, launch, cancel, or conclude a workflow
  * process
  * 
+ * 
+ * {@link WorkflowContentStore} {@link WorkflowProvider}
  * {@link BPMNInfo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -60,7 +66,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * 
 	 * @param definitionId
 	 * The definition for which the process should be based on
-	 * @param userNid
+	 * @param userId
 	 * The user whom is creating the new process
 	 * @param name
 	 * The name of the new process
@@ -71,7 +77,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * 
 	 * @throws Exception
 	 */
-	public UUID createWorkflowProcess(UUID definitionId, int userNid, String name, String description) 
+	public UUID createWorkflowProcess(UUID definitionId, UUID userId, String name, String description) 
 			throws Exception {
 		if (name == null || name.isEmpty() || description == null || description.isEmpty()) {
 			throw new Exception("Name and Description must be filled out when creating a process");
@@ -85,7 +91,7 @@ public class WorkflowProcessInitializerConcluder {
 		 */
 
 		// Create Process Details with "DEFINED"
-		ProcessDetail details = new ProcessDetail(definitionId, userNid, new Date().getTime(), ProcessStatus.DEFINED, name, description);
+		ProcessDetail details = new ProcessDetail(definitionId, userId, new Date().getTime(), ProcessStatus.DEFINED, name, description);
 		UUID processId = workflowProvider_.getProcessDetailStore().add(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
@@ -100,7 +106,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		AvailableAction startAdvancement = workflowProvider_.getBPMNInfo().getDefinitionStartActionMap().get(definitionId).iterator().next();
-		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(), startAdvancement.getInitialState(), startAdvancement.getAction(),
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(), startAdvancement.getInitialState(), startAdvancement.getAction(),
 				startAdvancement.getOutcomeState(), "", 1);
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 
@@ -132,7 +138,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		// Update Process Details with "LAUNCHED"
-		entry.setOwnerNid(0);
+		entry.setOwnerId(null);
 		entry.setStatus(ProcessStatus.LAUNCHED);
 		entry.setTimeLaunched(new Date().getTime());
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
@@ -147,7 +153,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * The process being ended
 	 * @param actionToProcess
 	 * The AvailableAction the user requested
-	 * @param userNid
+	 * @param userId
 	 * The user ending the workflow
 	 * @param comment
 	 * The user added comment associated with the advancement
@@ -159,7 +165,7 @@ public class WorkflowProcessInitializerConcluder {
 	 * Thrown if the process doesn't exist or an attempt is made to a) cancel or conclude a process which isn't active, b) conclude a process where
 	 * the process is not LAUNCHED, or c) conclude a process where the outcome state isn't a concluded state according to the definition
 	 */
-	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment, EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
+	public void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, UUID userId, String comment, EndWorkflowType endType, EditCoordinate editCoordinate) throws Exception {
 		ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
 		ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
 
@@ -181,7 +187,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		// Request is valid, update process details
-		entry.setOwnerNid(0);
+		entry.setOwnerId(null);
 		entry.setTimeCanceledOrConcluded(new Date().getTime());
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {
@@ -193,7 +199,7 @@ public class WorkflowProcessInitializerConcluder {
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
 
 		// Add to process's history
-		ProcessHistory advanceEntry = new ProcessHistory(processId, userNid, new Date().getTime(), actionToProcess.getInitialState(), actionToProcess.getAction(),
+		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(), actionToProcess.getInitialState(), actionToProcess.getAction(),
 				actionToProcess.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 		workflowProvider_.getProcessHistoryStore().add(advanceEntry);
 

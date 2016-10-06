@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**

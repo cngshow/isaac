@@ -19,11 +19,14 @@
 package gov.vha.isaac.ochre.workflow.provider;
 
 import java.util.UUID;
+
 import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.OchreCache;

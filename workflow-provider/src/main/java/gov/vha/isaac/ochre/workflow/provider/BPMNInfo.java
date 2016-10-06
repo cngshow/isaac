@@ -22,11 +22,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 
 /**
  * A class that stores various info about the BPMN workflow.
+ * 
+ * {@link Bpmn2FileImporter} {@link WorkflowProvider}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */

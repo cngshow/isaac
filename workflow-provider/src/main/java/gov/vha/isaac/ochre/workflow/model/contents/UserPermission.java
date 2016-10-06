@@ -19,12 +19,13 @@
 package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * Workflow roles available for each user for a given workflow definition
  * 
- * {@link UserPermissionContentStore} {@link AbstractStorableWorkflowContents}
+ * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -35,7 +36,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	private UUID definitionId;
 
 	/** The user whose Workflow Permission is being defined. */
-	private int userNid;
+	private UUID userId;
 
 	/**
 	 * The workflow role available to the user for the associated definition. A
@@ -53,19 +54,26 @@ public class UserPermission extends AbstractStorableWorkflowContents {
      */
     private long definitionIdLsb;
 
+	private long userIdMsb;
+
+	private long userIdLsb;
+
 	/**
 	 * Constructor for a new user permission based on specified entry fields.
 	 * 
 	 * @param definitionId
-	 * @param userNid
+	 * @param userId
 	 * @param role
 	 */
-	public UserPermission(UUID definitionId, int userNid, String role) {
+	public UserPermission(UUID definitionId, UUID userId, String role) {
 		this.definitionId = definitionId;
+		this.userId = userId;
+		this.role = role;
+
         this.definitionIdMsb = definitionId.getMostSignificantBits();
         this.definitionIdLsb = definitionId.getLeastSignificantBits();
-		this.userNid = userNid;
-		this.role = role;
+        this.userIdMsb = userId.getMostSignificantBits();
+        this.userIdLsb = userId.getLeastSignificantBits();
 	}
 
 	/**
@@ -90,10 +98,10 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	/**
 	 * Gets the user whose permission is being defined
 	 * 
-	 * @return the user nid
+	 * @return the user id
 	 */
-	public int getUserNid() {
-		return userNid;
+	public UUID getUserId() {
+		return userId;
 	}
 
 	/**
@@ -109,7 +117,8 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
 		out.putLong(definitionIdMsb);
 		out.putLong(definitionIdLsb);
-		out.putNid(userNid);
+		out.putLong(userIdMsb);
+		out.putLong(userIdLsb);
 		out.putByteArrayField(role.getBytes());
 	}
 
@@ -117,17 +126,21 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
 		definitionIdMsb = in.getLong();
 		definitionIdLsb = in.getLong();
-		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
-
-		userNid = in.getNid();
+		userIdMsb = in.getLong();
+		userIdLsb = in.getLong();
+		
 		role = new String(in.getByteArrayField());
+
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
 	}
 
 	@Override
 	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
 		in.getLong();
 		in.getLong();
-		in.getNid();
+		in.getLong();
+		in.getLong();
 		in.getByteArrayField();
 	}
 
@@ -138,7 +151,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userNid
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userId
 				+ "\n\t\tRole: " + role;
 	}
 
@@ -151,7 +164,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	public boolean equals(Object obj) {
 		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.userNid == other.userNid
+		return this.definitionId.equals(other.definitionId) && this.userId.equals(other.userId)
 				&& this.role.equals(other.role);
 
 	}
@@ -163,6 +176,6 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + userNid + role.hashCode();
+		return definitionId.hashCode() + userId.hashCode() + role.hashCode();
 	}
 }

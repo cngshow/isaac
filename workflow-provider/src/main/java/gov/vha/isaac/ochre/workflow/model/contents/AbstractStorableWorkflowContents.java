@@ -20,8 +20,10 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.text.SimpleDateFormat;
 import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.model.WaitFreeComparable;
 
