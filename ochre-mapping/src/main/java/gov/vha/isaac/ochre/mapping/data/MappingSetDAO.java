@@ -111,11 +111,6 @@ public class MappingSetDAO extends MappingDAO
 						(StringUtils.isBlank(purpose) ? null : new DynamicSememeStringImpl(purpose))}).build(
 				editCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 
-		
-		Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(rdud.getDynamicSememeUsageDescriptorSequence()),
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).build(
-				editCoord, ChangeCheckerMode.ACTIVE);
-		
 		try
 		{
 			Get.commitService().commit("update mapping item").get();
