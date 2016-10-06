@@ -62,12 +62,12 @@ public class AssociationUtilities
 	public static List<AssociationInstance> getSourceAssociations(int componentNid, StampCoordinate stamp)
 	{
 		ArrayList<AssociationInstance> results = new ArrayList<>();
+		StampCoordinate localStamp = stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp;
 		Get.sememeService().getSememesForComponentFromAssemblage(componentNid, getAssociationSequence())
 			.forEach(associationC -> 
 				{
 					@SuppressWarnings({ "unchecked", "rawtypes" })
-					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, 
-							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
+					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, localStamp);
 					if (latest.isPresent())
 					{
 						results.add(AssociationInstance.read(latest.get().value(), stamp));
@@ -130,12 +130,12 @@ public class AssociationUtilities
 	public static List<AssociationInstance> getAssociationsOfType(int associationTypeConceptNid, StampCoordinate stamp)
 	{
 		ArrayList<AssociationInstance> results = new ArrayList<>();
+		StampCoordinate localStamp = stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp;
 		Get.sememeService().getSememesFromAssemblage(associationTypeConceptNid)
 			.forEach(associationC -> 
 				{
 					@SuppressWarnings({ "unchecked", "rawtypes" })
-					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, 
-							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
+					Optional<LatestVersion<DynamicSememe<?>>> latest = ((SememeChronology)associationC).getLatestVersion(DynamicSememe.class, localStamp);
 					if (latest.isPresent())
 					{
 						results.add(AssociationInstance.read(latest.get().value(), stamp));
