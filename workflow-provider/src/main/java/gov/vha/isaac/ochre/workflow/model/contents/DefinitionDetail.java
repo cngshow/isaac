@@ -18,20 +18,15 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * The metadata defining a given workflow definition.
  * 
- * {@link DefinitionDetailContentStore} {@link AbstractStorableWorkflowContents}
+ * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -84,29 +79,8 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * @param data
 	 *            The data to deserialize into its components
 	 */
-	@SuppressWarnings("unchecked")
 	public DefinitionDetail(byte[] data) {
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		try {
-			
-			//TODO Jesse - these serializers / deserializers don't have version numbers (so changing their format is hard)
-			//and they rely on the java serializer, which is extremely inefficient - and fragile, should any of the serialized classes change.
-			//these should likely be redone at a much lower level as they are in other places in ISAAC
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.bpmn2Id = (String) in.readObject();
-			this.name = (String) in.readObject();
-			this.namespace = (String) in.readObject();
-			this.version = (String) in.readObject();
-			this.roles = (Set<String>) in.readObject();
-			this.description = (String) in.readObject();
-			this.importDate = (long) in.readObject();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into Definition Detail", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -173,36 +147,54 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		return importDate;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
 	@Override
-	public byte[] serialize() {
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
+	protected void putAdditionalWorkflowFields (ByteArrayDataBuffer out) {
+		out.putByteArrayField(bpmn2Id.getBytes());
+		out.putByteArrayField(name.getBytes());
+		out.putByteArrayField(namespace.getBytes());
+		out.putByteArrayField(version.getBytes());
 
-			// write the object
-			out.writeObject(id);
-			out.writeObject(bpmn2Id);
-			out.writeObject(name);
-			out.writeObject(namespace);
-			out.writeObject(version);
-			out.writeObject(roles);
-			out.writeObject(description);
-			out.writeObject(importDate);
+		out.putInt(roles.size());
+		for (String s : roles) {
+			out.putByteArrayField(s.getBytes());
+		}
+		
+		out.putByteArrayField(description.getBytes());
+		out.putLong(importDate);
+	}
 
-			return bos.toByteArray();
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		bpmn2Id = new String(in.getByteArrayField());
+		name = new String(in.getByteArrayField());
+		namespace = new String(in.getByteArrayField());
+		version = new String(in.getByteArrayField());
+
+		int colCount = in.getInt();
+		roles = new HashSet<>();
+		for (int i = 0; i < colCount; i++) {
+			roles.add(new String(in.getByteArrayField()));
 		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
+		
+		description = new String(in.getByteArrayField());
+		importDate  = in.getLong();
+		
+	}
+
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+
+		int collectionCount = in.getInt();
+		for (int i = 0; i < collectionCount; i++) {
+			in.getByteArrayField();
 		}
+		
+		in.getByteArrayField();
+		in.getLong();
 	}
 
 	/*

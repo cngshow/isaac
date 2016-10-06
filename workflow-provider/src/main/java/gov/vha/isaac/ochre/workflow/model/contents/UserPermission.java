@@ -18,13 +18,8 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * Workflow roles available for each user for a given workflow definition
@@ -48,6 +43,16 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	private String role;
 
+    /**
+     * Definition uuid most significant bits for this component
+     */
+	private long definitionIdMsb;
+    
+	/**
+     * Definition uuid least significant bits for this component
+     */
+    private long definitionIdLsb;
+
 	/**
 	 * Constructor for a new user permission based on specified entry fields.
 	 * 
@@ -57,6 +62,8 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	public UserPermission(UUID definitionId, int userNid, String role) {
 		this.definitionId = definitionId;
+        this.definitionIdMsb = definitionId.getMostSignificantBits();
+        this.definitionIdLsb = definitionId.getLeastSignificantBits();
 		this.userNid = userNid;
 		this.role = role;
 	}
@@ -68,19 +75,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 *            The data to deserialize into its components
 	 */
 	public UserPermission(byte[] data) {
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		try {
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.definitionId = (UUID) in.readObject();
-			this.userNid = (Integer) in.readObject();  //swap nids
-			this.role = (String) in.readObject();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into UserPermission", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -110,32 +105,30 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 		return role;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
 	@Override
-	public byte[] serialize() {
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
-	
-			// write the object
-			out.writeObject(id);
-			out.writeObject(definitionId);
-			out.writeObject(userNid);
-			out.writeObject(role);
-	
-			return bos.toByteArray();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
+	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
+		out.putLong(definitionIdMsb);
+		out.putLong(definitionIdLsb);
+		out.putNid(userNid);
+		out.putByteArrayField(role.getBytes());
+	}
+
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		definitionIdMsb = in.getLong();
+		definitionIdLsb = in.getLong();
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+
+		userNid = in.getNid();
+		role = new String(in.getByteArrayField());
+	}
+
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		in.getLong();
+		in.getLong();
+		in.getNid();
+		in.getByteArrayField();
 	}
 
 	/*

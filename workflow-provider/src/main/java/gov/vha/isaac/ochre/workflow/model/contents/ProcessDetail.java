@@ -18,16 +18,11 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
@@ -105,6 +100,16 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	private int ownerNid;
 
 	/**
+     * Definition uuid most significant bits for this component
+     */
+	private long definitionIdMsb;
+    
+	/**
+     * Definition uuid least significant bits for this component
+     */
+    private long definitionIdLsb;
+
+	/**
 	 * Constructor for a new process based on specified entry fields.
 	 * 
 	 * @param definitionId
@@ -117,6 +122,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	public ProcessDetail(UUID definitionId, int creatorNid, long timeCreated, ProcessStatus status, String name, String description)
 	{
 		this.definitionId = definitionId;
+        this.definitionIdMsb = definitionId.getMostSignificantBits();
+        this.definitionIdLsb = definitionId.getLeastSignificantBits();
 		this.creatorNid = creatorNid;
 		this.timeCreated = timeCreated;
 		this.status = status;
@@ -133,32 +140,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	 */
 	public ProcessDetail(byte[] data)
 	{
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		try
-		{
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.definitionId = (UUID) in.readObject();
-
-			// TODO these nids need to swap to UUIDs - certainly when writing to
-			// the changeset file
-			@SuppressWarnings("unchecked") Map<Integer, Long> componentToInitialEditMapReadObject = (Map<Integer, Long>) in.readObject();
-			this.componentToIntitialEditMap = componentToInitialEditMapReadObject;
-
-			this.creatorNid = (Integer) in.readObject();
-			this.timeCreated = (Long) in.readObject();
-			this.timeLaunched = (Long) in.readObject();
-			this.timeCanceledOrConcluded = (Long) in.readObject();
-			this.status = (ProcessStatus) in.readObject();
-			this.name = (String) in.readObject();
-			this.description = (String) in.readObject();
-			this.ownerNid = (Integer) in.readObject();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into ProcessDetail", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -311,45 +293,75 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		ownerNid = nid;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
-	@Override
-	public byte[] serialize()
-	{
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
-
-			// write the object
-			out.writeObject(id);
-			out.writeObject(definitionId);
-			out.writeObject(componentToIntitialEditMap);
-			out.writeObject(creatorNid);
-			out.writeObject(timeCreated);
-			out.writeObject(timeLaunched);
-			out.writeObject(timeCanceledOrConcluded);
-			out.writeObject(status);
-			out.writeObject(name);
-			out.writeObject(description);
-			out.writeObject(ownerNid);
-
-			return bos.toByteArray();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
-
 	public boolean isActive()
 	{
 		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
+	}
+
+	@Override
+	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
+		out.putLong(definitionIdMsb);
+		out.putLong(definitionIdLsb);
+		
+		out.putInt(componentToIntitialEditMap.size());
+		for (Integer componentNid : componentToIntitialEditMap.keySet()) {
+			out.putNid(componentNid);
+			out.putLong(componentToIntitialEditMap.get(componentNid));
+		}
+		
+		out.putNid(creatorNid);
+		out.putLong(timeCreated);
+		out.putLong(timeLaunched);
+		out.putLong(timeCanceledOrConcluded);
+		out.putByteArrayField(status.name().getBytes());
+		out.putByteArrayField(name.getBytes());
+		out.putByteArrayField(description.getBytes());
+		out.putNid(ownerNid);
+	}
+
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		definitionIdMsb = in.getLong();
+		definitionIdLsb = in.getLong();
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+		
+		int collectionCount = in.getInt();
+		for (int i = 0; i < collectionCount; i++) {
+			int compNid = in.getNid();
+			long timestamp = in.getLong();
+			componentToIntitialEditMap.put(compNid, timestamp);
+		}
+
+		creatorNid = in.getNid();
+		timeCreated = in.getLong();
+		timeLaunched = in.getLong();
+		timeCanceledOrConcluded = in.getLong();
+		status = ProcessStatus.valueOf(new String(in.getByteArrayField()));
+		name = new String(in.getByteArrayField());
+		description = new String(in.getByteArrayField());
+		ownerNid = in.getNid();
+
+	}
+
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		in.getLong();
+		in.getLong();
+		
+		int collectionCount = in.getInt();
+		for (int i = 0; i < collectionCount; i++) {
+			in.getNid();
+			in.getLong();
+		}
+		
+		in.getNid();
+		in.getLong();
+		in.getLong();
+		in.getLong();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getNid();
 	}
 
 	/*
@@ -410,5 +422,4 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		return definitionId.hashCode() + componentToIntitialEditMap.hashCode() + creatorNid + new Long(timeCreated).hashCode() + new Long(timeLaunched).hashCode()
 				+ new Long(timeCanceledOrConcluded).hashCode() + status.hashCode() + name.hashCode() + description.hashCode() + ownerNid;
 	}
-
 }

@@ -84,7 +84,7 @@ public class WorkflowContentStore<T extends AbstractStorableWorkflowContents> im
 			entry.setId(UUID.randomUUID());
 		}
 		
-		map.put(entry.getId(), entry.serialize());
+		map.put(entry.getId(), entry.getDataToWrite());
 		return entry.getId();
 	}
 
@@ -188,7 +188,7 @@ public class WorkflowContentStore<T extends AbstractStorableWorkflowContents> im
 		{
 			throw new RuntimeException("Attempt to store an object with a mis-matched key");
 		}
-		return deserializer_.apply(map.put(key, value.serialize()));
+		return deserializer_.apply(map.put(key, value.getDataToWrite()));
 	}
 
 	/**

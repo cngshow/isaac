@@ -18,15 +18,10 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * A single advancement (history) of a given workflow process. A new entry is
@@ -62,7 +57,17 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	/** The sequence in the process which the history represents. */
 	private int historySequence;
 
+    /**
+     * Process uuid most significant bits for this component
+     */
+	private long processIdMsb;
+    
 	/**
+     * Process uuid least significant bits for this component
+     */
+    private long processIdLsb;
+
+    /**
 	 * Constructor for a new process history based on specified entry fields.
 	 * 
 	 * @param processId
@@ -76,6 +81,8 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 */
 	public ProcessHistory(UUID processId, int userNid, long timeAdvanced, String initialState, String action, String outcomeState, String comment, int historySequence) {
 		this.processId = processId;
+        this.processIdMsb = processId.getMostSignificantBits();
+        this.processIdLsb = processId.getLeastSignificantBits();
 		this.userNid = userNid;
 		this.timeAdvanced = timeAdvanced;
 		this.initialState = initialState;
@@ -92,25 +99,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 * The data to deserialize into its components
 	 */
 	public ProcessHistory(byte[] data) {
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		//TODO swap nids to UUIDs....
-		try {
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.processId = (UUID) in.readObject();
-			this.userNid = (Integer) in.readObject();
-			this.timeAdvanced = (Long) in.readObject();
-			this.initialState = (String) in.readObject();
-			this.action = (String) in.readObject();
-			this.outcomeState = (String) in.readObject();
-			this.comment = (String) in.readObject();
-			this.historySequence = (Integer) in.readObject();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into ProcessHistory", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -196,37 +185,44 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		historySequence = seq;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
 	@Override
-	public byte[] serialize() {
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
+	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
+		out.putLong(processIdMsb);
+		out.putLong(processIdLsb);
+		out.putNid(userNid);
+		out.putLong(timeAdvanced);
+		out.putByteArrayField(initialState.getBytes());
+		out.putByteArrayField(action.getBytes());
+		out.putByteArrayField(outcomeState.getBytes());
+		out.putByteArrayField(comment.getBytes());
+		out.putInt(historySequence);
+	}
 
-			// write the object
-			out.writeObject(id);
-			out.writeObject(processId);
-			out.writeObject(userNid);
-			out.writeObject(timeAdvanced);
-			out.writeObject(initialState);
-			out.writeObject(action);
-			out.writeObject(outcomeState);
-			out.writeObject(comment);
-			out.writeObject(historySequence);
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		processIdMsb = in.getLong();
+		processIdLsb = in.getLong();
+		processId = new UUID(processIdMsb, processIdLsb);
+		userNid = in.getNid();
+		timeAdvanced = in.getLong();
+		initialState = new String(in.getByteArrayField());
+		action = new String(in.getByteArrayField());
+		outcomeState = new String(in.getByteArrayField());
+		comment = new String(in.getByteArrayField());
+		historySequence = in.getInt();
+	}
 
-			return bos.toByteArray();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		in.getLong();
+		in.getLong();
+		in.getNid();
+		in.getLong();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getInt();
 	}
 
 	/*
