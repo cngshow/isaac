@@ -285,7 +285,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));
 
 		Assert.assertEquals(processStatus, entry.getStatus());
-		Assert.assertEquals(99, entry.getCreatorId());
+		Assert.assertNotNull(entry.getCreatorId());
 		Assert.assertEquals(definitionId, entry.getDefinitionId());
 		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-56));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));

@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
+import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
@@ -98,7 +99,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	private String description;
 
 	/** The workflow process's current "owner". */
-	private UUID ownerId;
+	private UUID ownerId = BPMNInfo.UNOWNED_PROCESS;
 
 	/**
      * Definition uuid most significant bits
@@ -300,7 +301,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	/**
 	 * Retrieves the current owner of the process
 	 * 
-	 * @return Null: Process is not owned.  
+	 * @return 0-based UUID: Process is not owned.  
 	 * Otherwise, return the process's current owner id
 	 */
 	public UUID getOwnerId()
@@ -317,6 +318,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	public void setOwnerId(UUID nid)
 	{
 		ownerId = nid;
+		ownerIdMsb = ownerId.getMostSignificantBits();
+		ownerIdLsb = ownerId.getLeastSignificantBits();
 	}
 
 	public boolean isActive()

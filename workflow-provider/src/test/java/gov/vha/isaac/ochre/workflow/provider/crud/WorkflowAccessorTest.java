@@ -116,7 +116,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
-		Assert.assertEquals(99, entry.getCreatorId());
+		Assert.assertNotNull(entry.getCreatorId());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());

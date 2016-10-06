@@ -40,7 +40,6 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
-import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
@@ -48,7 +47,6 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
  * metacontent-store
  * 
  * {@link WorkflowContentStore} {@link WorkflowProvider}
- * {@link BPMNInfo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */

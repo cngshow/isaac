@@ -138,7 +138,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		// Update Process Details with "LAUNCHED"
-		entry.setOwnerId(null);
+		entry.setOwnerId(BPMNInfo.UNOWNED_PROCESS);
 		entry.setStatus(ProcessStatus.LAUNCHED);
 		entry.setTimeLaunched(new Date().getTime());
 		workflowProvider_.getProcessDetailStore().put(processId, entry);
@@ -187,7 +187,7 @@ public class WorkflowProcessInitializerConcluder {
 		}
 
 		// Request is valid, update process details
-		entry.setOwnerId(null);
+		entry.setOwnerId(BPMNInfo.UNOWNED_PROCESS);
 		entry.setTimeCanceledOrConcluded(new Date().getTime());
 
 		if (endType.equals(EndWorkflowType.CANCELED)) {

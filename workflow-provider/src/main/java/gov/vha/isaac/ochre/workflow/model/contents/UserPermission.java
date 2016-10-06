@@ -132,7 +132,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 		role = new String(in.getByteArrayField());
 
 		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
-		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+		userId = new UUID(userIdMsb, userIdLsb);
 	}
 
 	@Override
@@ -151,7 +151,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userId
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userId.toString()
 				+ "\n\t\tRole: " + role;
 	}
 

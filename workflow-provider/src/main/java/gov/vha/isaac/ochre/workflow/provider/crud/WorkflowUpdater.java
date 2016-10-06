@@ -147,7 +147,7 @@ public class WorkflowUpdater
 				{
 					// Generic Advancement.  Must still update Detail Store to automate releasing of instance
 					ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
-					entry.setOwnerId(null);
+					entry.setOwnerId(BPMNInfo.UNOWNED_PROCESS);
 					workflowProvider_.getProcessDetailStore().put(processId, entry);
 				}
 

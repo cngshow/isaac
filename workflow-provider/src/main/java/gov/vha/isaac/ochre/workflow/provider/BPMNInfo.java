@@ -41,6 +41,8 @@ public class BPMNInfo {
 	 */
 	public static final String AUTOMATED_ROLE = "Automated By System";
 
+	public static final UUID UNOWNED_PROCESS = new UUID(0,0);
+	
 	/** A map of available actions per type of ending workflow */
 	private Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap;
 
