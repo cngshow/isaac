@@ -19,8 +19,10 @@
 package gov.vha.isaac.ochre.associations;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -63,7 +65,7 @@ public class AssociationUtilities
 	{
 		ArrayList<AssociationInstance> results = new ArrayList<>();
 		StampCoordinate localStamp = stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp;
-		Get.sememeService().getSememesForComponentFromAssemblage(componentNid, getAssociationSequence())
+		Get.sememeService().getSememesForComponentFromAssemblages(componentNid, getAssociationConceptSequences())
 			.forEach(associationC -> 
 				{
 					@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -93,30 +95,35 @@ public class AssociationUtilities
 			throw new RuntimeException("Required index is not available");
 		}
 		
+		UUID uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);
+		ArrayList<Integer> associationTypes = new ArrayList<>();
+//		ArrayList<Integer> colIndex = new ArrayList<>();
 		for (Integer associationTypeSequenece : getAssociationConceptSequences())
 		{
-			try
+			associationTypes.add(associationTypeSequenece);
+//			colIndex.add(findTargetColumnIndex(associationTypeSequenece));
+		}
+		
+		try
+		{
+			//TODO when issue with colIndex restrictions is fixed, put it back.
+			List<SearchResult> refexes = indexer.query(new DynamicSememeStringImpl(componentNid + (uuid == null ? "" : " OR " + uuid)),
+					false, associationTypes.toArray(new Integer[associationTypes.size()]), null, Integer.MAX_VALUE, null);
+			for (SearchResult sr : refexes)
 			{
-				int colIndex = findTargetColumnIndex(associationTypeSequenece);
-				UUID uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);
-				List<SearchResult> refexes = indexer.query(new DynamicSememeStringImpl(componentNid + (uuid == null ? "" : " OR " + uuid)),
-						false, new Integer[] {associationTypeSequenece}, new Integer[] {colIndex}, Integer.MAX_VALUE, null);
-				for (SearchResult sr : refexes)
+				@SuppressWarnings("rawtypes")
+				Optional<LatestVersion<DynamicSememe>> latest = Get.sememeService().getSnapshot(DynamicSememe.class, 
+						stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp).getLatestSememeVersion(sr.getNid());
+				
+				if (latest.isPresent())
 				{
-					@SuppressWarnings("rawtypes")
-					Optional<LatestVersion<DynamicSememe>> latest = Get.sememeService().getSnapshot(DynamicSememe.class, 
-							stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp).getLatestSememeVersion(sr.getNid());
-					
-					if (latest.isPresent())
-					{
-						result.add(AssociationInstance.read(latest.get().value(), stamp));
-					}
+					result.add(AssociationInstance.read(latest.get().value(), stamp));
 				}
 			}
-			catch (Exception e)
-			{
-				throw new RuntimeException(e);
-			}
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException(e);
 		}
 		return result;
 	}
@@ -149,11 +156,11 @@ public class AssociationUtilities
 	 * Get a list of all of the concepts that identify a type of association - returning their concept sequence identifier.
 	 * @return
 	 */
-	public static List<Integer> getAssociationConceptSequences()
+	public static Set<Integer> getAssociationConceptSequences()
 	{
-		ArrayList<Integer> result = new ArrayList<>();
+		HashSet<Integer> result = new HashSet<>();
 
-		Get.sememeService().getSememesFromAssemblage(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getSequence()).forEach(associationC ->
+		Get.sememeService().getSememesFromAssemblage(getAssociationSequence()).forEach(associationC ->
 		{
 			result.add(Get.identifierService().getConceptSequence(associationC.getReferencedComponentNid()));
 		});
