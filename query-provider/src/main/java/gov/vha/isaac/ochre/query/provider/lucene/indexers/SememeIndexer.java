@@ -396,6 +396,7 @@ public class SememeIndexer extends LuceneIndexer
 	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
 	 * @return
 	 */
+	//TODO fix this limitation on the column restriction...
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
 			Integer[] searchColumns, int sizeLimit, Long targetGeneration)
 	{
