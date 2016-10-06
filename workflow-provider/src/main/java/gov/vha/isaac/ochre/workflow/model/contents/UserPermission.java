@@ -18,18 +18,14 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.UUID;
+
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * Workflow roles available for each user for a given workflow definition
  * 
- * {@link UserPermissionContentStore} {@link AbstractStorableWorkflowContents}
+ * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -40,7 +36,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	private UUID definitionId;
 
 	/** The user whose Workflow Permission is being defined. */
-	private int userNid;
+	private UUID userId;
 
 	/**
 	 * The workflow role available to the user for the associated definition. A
@@ -48,17 +44,36 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	private String role;
 
+    /**
+     * Definition uuid most significant bits for this component
+     */
+	private long definitionIdMsb;
+    
+	/**
+     * Definition uuid least significant bits for this component
+     */
+    private long definitionIdLsb;
+
+	private long userIdMsb;
+
+	private long userIdLsb;
+
 	/**
 	 * Constructor for a new user permission based on specified entry fields.
 	 * 
 	 * @param definitionId
-	 * @param userNid
+	 * @param userId
 	 * @param role
 	 */
-	public UserPermission(UUID definitionId, int userNid, String role) {
+	public UserPermission(UUID definitionId, UUID userId, String role) {
 		this.definitionId = definitionId;
-		this.userNid = userNid;
+		this.userId = userId;
 		this.role = role;
+
+        this.definitionIdMsb = definitionId.getMostSignificantBits();
+        this.definitionIdLsb = definitionId.getLeastSignificantBits();
+        this.userIdMsb = userId.getMostSignificantBits();
+        this.userIdLsb = userId.getLeastSignificantBits();
 	}
 
 	/**
@@ -68,19 +83,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 *            The data to deserialize into its components
 	 */
 	public UserPermission(byte[] data) {
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		try {
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.definitionId = (UUID) in.readObject();
-			this.userNid = (Integer) in.readObject();  //swap nids
-			this.role = (String) in.readObject();
-		}
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into UserPermission", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -95,10 +98,10 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	/**
 	 * Gets the user whose permission is being defined
 	 * 
-	 * @return the user nid
+	 * @return the user id
 	 */
-	public int getUserNid() {
-		return userNid;
+	public UUID getUserId() {
+		return userId;
 	}
 
 	/**
@@ -110,32 +113,35 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 		return role;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
 	@Override
-	public byte[] serialize() {
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
-	
-			// write the object
-			out.writeObject(id);
-			out.writeObject(definitionId);
-			out.writeObject(userNid);
-			out.writeObject(role);
-	
-			return bos.toByteArray();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
+	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
+		out.putLong(definitionIdMsb);
+		out.putLong(definitionIdLsb);
+		out.putLong(userIdMsb);
+		out.putLong(userIdLsb);
+		out.putByteArrayField(role.getBytes());
+	}
+
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		definitionIdMsb = in.getLong();
+		definitionIdLsb = in.getLong();
+		userIdMsb = in.getLong();
+		userIdLsb = in.getLong();
+		
+		role = new String(in.getByteArrayField());
+
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+		userId = new UUID(userIdMsb, userIdLsb);
+	}
+
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		in.getLong();
+		in.getLong();
+		in.getLong();
+		in.getLong();
+		in.getByteArrayField();
 	}
 
 	/*
@@ -145,7 +151,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userNid
+		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tUser: " + userId.toString()
 				+ "\n\t\tRole: " + role;
 	}
 
@@ -158,7 +164,7 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	public boolean equals(Object obj) {
 		UserPermission other = (UserPermission) obj;
 
-		return this.definitionId.equals(other.definitionId) && this.userNid == other.userNid
+		return this.definitionId.equals(other.definitionId) && this.userId.equals(other.userId)
 				&& this.role.equals(other.role);
 
 	}
@@ -170,6 +176,6 @@ public class UserPermission extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public int hashCode() {
-		return definitionId.hashCode() + userNid + role.hashCode();
+		return definitionId.hashCode() + userId.hashCode() + role.hashCode();
 	}
 }

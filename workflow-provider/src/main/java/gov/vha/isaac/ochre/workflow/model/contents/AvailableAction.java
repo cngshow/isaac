@@ -18,13 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.UUID;
+
+import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
  * The available workflow actions as defined via the workflow definition. Each
@@ -34,7 +30,7 @@ import java.util.UUID;
  * The workflow must be in the initial state and a user must have the workflow
  * role to be able to perform the action.
  * 
- * {@link AvailableActionContentStore} {@link AbstractStorableWorkflowContents}
+ * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -56,6 +52,16 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	/** The workflow role which may perform the action on the initial state. */
 	private String role;
 
+    /**
+     * Definition uuid most significant bits for this component
+     */
+	private long definitionIdMsb;
+    
+	/**
+     * Definition uuid least significant bits for this component
+     */
+    private long definitionIdLsb;
+
 	/**
 	 * Constructor for a new available action on specified entry fields.
 	 * 
@@ -67,6 +73,9 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 */
 	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, String role) {
 		this.definitionId = definitionId;
+        this.definitionIdMsb = definitionId.getMostSignificantBits();
+        this.definitionIdLsb = definitionId.getLeastSignificantBits();
+
 		this.initialState = initialState;
 		this.action = action;
 		this.outcomeState = outcomeState;
@@ -80,21 +89,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 *            The data to deserialize into its components
 	 */
 	public AvailableAction(byte[] data) {
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		ObjectInput in;
-		try {
-			in = new ObjectInputStream(bis);
-			this.id = (UUID) in.readObject();
-			this.definitionId = (UUID) in.readObject();
-			this.initialState = (String) in.readObject();
-			this.action = (String) in.readObject();
-			this.outcomeState = (String) in.readObject();
-			this.role = (String) in.readObject();
-		} 
-		catch (Exception e)
-		{
-			throw new RuntimeException("Failure to deserialize data into Available Action", e);
-		}
+		readData(new ByteArrayDataBuffer(data));
 	}
 
 	/**
@@ -142,34 +137,36 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 		return role;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * gov.vha.isaac.ochre.api.metacontent.workflow.StorableWorkflowContents#
-	 * serialize()
-	 */
 	@Override
-	public byte[] serialize() {
-		try
-		{
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out = new ObjectOutputStream(bos);
+	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out)	{
+		out.putLong(definitionIdMsb);
+		out.putLong(definitionIdLsb);
+		out.putByteArrayField(initialState.getBytes());
+		out.putByteArrayField(action.getBytes());
+		out.putByteArrayField(outcomeState.getBytes());
+		out.putByteArrayField(role.getBytes());
+	}
 
-			// write the object
-			out.writeObject(id);
-			out.writeObject(definitionId);
-			out.writeObject(initialState);
-			out.writeObject(action);
-			out.writeObject(outcomeState);
-			out.writeObject(role);
+	@Override
+	protected void getAdditionalWorkflowFields(ByteArrayDataBuffer in) {
+		definitionIdMsb = in.getLong();
+		definitionIdLsb = in.getLong();
+		initialState = new String(in.getByteArrayField());
+		action = new String(in.getByteArrayField());
+		outcomeState = new String(in.getByteArrayField());
+		role = new String(in.getByteArrayField());
 
-			return bos.toByteArray();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
+		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
+	}
+
+	@Override
+	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in)	{
+		in.getLong();
+		in.getLong();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
+		in.getByteArrayField();
 	}
 
 	/*

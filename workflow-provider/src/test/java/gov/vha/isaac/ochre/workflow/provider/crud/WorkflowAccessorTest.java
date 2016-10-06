@@ -27,11 +27,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
@@ -114,7 +116,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(processId, entry.getId());
 		Assert.assertEquals(ProcessStatus.DEFINED, entry.getStatus());
-		Assert.assertEquals(99, entry.getCreatorNid());
+		Assert.assertNotNull(entry.getCreatorId());
 		Assert.assertEquals(mainDefinitionId, entry.getDefinitionId());
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());

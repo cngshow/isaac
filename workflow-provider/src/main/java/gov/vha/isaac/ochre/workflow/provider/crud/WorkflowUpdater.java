@@ -25,8 +25,11 @@ import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -49,6 +52,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
@@ -61,6 +65,7 @@ import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
  * Contains methods necessary to update existing workflow content after
  * initialization aside from launching or ending them.
  * 
+ * {@link WorkflowContentStore} {@link WorkflowProvider}
  * {@link BPMNInfo}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -87,7 +92,7 @@ public class WorkflowUpdater
 	 * 
 	 * @param processId
 	 * The process being advanced.
-	 * @param userNid
+	 * @param userId
 	 * The user advancing the process.
 	 * @param actionRequested
 	 * The advancement action the user requested.
@@ -102,10 +107,10 @@ public class WorkflowUpdater
 	 * and while updating the process accordingly, an execption
 	 * occurred
 	 */
-	public boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment, EditCoordinate editCoordinate) throws Exception
+	public boolean advanceWorkflow(UUID processId, UUID userId, String actionRequested, String comment, EditCoordinate editCoordinate) throws Exception
 	{
 		// Get User Permissible actions
-		Set<AvailableAction> userPermissableActions = workflowProvider_.getWorkflowAccessor().getUserPermissibleActionsForProcess(processId, userNid);
+		Set<AvailableAction> userPermissableActions = workflowProvider_.getWorkflowAccessor().getUserPermissibleActionsForProcess(processId, userId);
 
 		// Advance Workflow
 		for (AvailableAction action : userPermissableActions)
@@ -118,7 +123,7 @@ public class WorkflowUpdater
 				if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CANCELED).contains(action))
 				{
 					// Request to cancel workflow
-					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CANCELED,
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userId, comment, EndWorkflowType.CANCELED,
 							editCoordinate);
 				}
 				else if (process.getStatus().equals(ProcessStatus.DEFINED))
@@ -136,19 +141,19 @@ public class WorkflowUpdater
 				else if (workflowProvider_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).contains(action))
 				{
 					// Conclude Request made
-					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userNid, comment, EndWorkflowType.CONCLUDED, null);
+					workflowProvider_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, action, userId, comment, EndWorkflowType.CONCLUDED, null);
 				}
 				else
 				{
 					// Generic Advancement.  Must still update Detail Store to automate releasing of instance
 					ProcessDetail entry = workflowProvider_.getProcessDetailStore().get(processId);
-					entry.setOwnerNid(0);
+					entry.setOwnerId(BPMNInfo.UNOWNED_PROCESS);
 					workflowProvider_.getProcessDetailStore().put(processId, entry);
 				}
 
 				// Add to process history
 				ProcessHistory hx = workflowProvider_.getWorkflowAccessor().getProcessHistory(processId).last();
-				ProcessHistory entry = new ProcessHistory(processId, userNid, new Date().getTime(), action.getInitialState(), action.getAction(),
+				ProcessHistory entry = new ProcessHistory(processId, userId, new Date().getTime(), action.getInitialState(), action.getAction(),
 						action.getOutcomeState(), comment, hx.getHistorySequence() + 1);
 
 				workflowProvider_.getProcessHistoryStore().add(entry);

@@ -26,8 +26,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowContents;
 
 /**
@@ -36,9 +38,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowConte
  * 
  * Implements the Map interface, plus a couple of other convenience methods
  * 
- * {@link UserPermissionContentStore} {@link AvailableActionContentStore}
- * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
- * {@link DefinitionDetailContentStore} {@link DomainStandardContentStore}
+ * {@link AbstractStorableWorkflowContents}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -84,7 +84,7 @@ public class WorkflowContentStore<T extends AbstractStorableWorkflowContents> im
 			entry.setId(UUID.randomUUID());
 		}
 		
-		map.put(entry.getId(), entry.serialize());
+		map.put(entry.getId(), entry.getDataToWrite());
 		return entry.getId();
 	}
 
@@ -188,7 +188,7 @@ public class WorkflowContentStore<T extends AbstractStorableWorkflowContents> im
 		{
 			throw new RuntimeException("Attempt to store an object with a mis-matched key");
 		}
-		return deserializer_.apply(map.put(key, value.serialize()));
+		return deserializer_.apply(map.put(key, value.getDataToWrite()));
 	}
 
 	/**
