@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +35,7 @@ import org.junit.Test;
 
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
@@ -120,7 +120,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(-1L, entry.getTimeCanceledOrConcluded());
 		Assert.assertEquals(0, entry.getComponentToInitialEditMap().keySet().size());
 
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 		entry = wp_.getWorkflowAccessor().getProcessDetails(processId);
 		Assert.assertEquals(2, entry.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));

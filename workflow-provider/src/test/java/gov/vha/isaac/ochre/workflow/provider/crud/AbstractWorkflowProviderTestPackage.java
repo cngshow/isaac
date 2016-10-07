@@ -12,7 +12,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
@@ -60,6 +63,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static final UUID firstUserId = MockWorkflowUserRoleService.getFirstTestUser();
 	protected static final UUID secondUserId = MockWorkflowUserRoleService.getSecondTestUser();
+	protected static final int firstUserSeq = MockWorkflowUserRoleService.getFirstTestUserSeq();
+	protected static final int secondUserSeq = MockWorkflowUserRoleService.getSecondTestUserSeq();
+
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
@@ -79,6 +85,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected static final String CONCLUDED_WORKFLOW_COMMENT = "Concluded Workflow";
 	protected static final String CANCELED_WORKFLOW_COMMENT = "Canceled Workflow";
+	
+	private static int moduleSeq = 99;
+	private static int pathSeq = 999;
 
 	protected static void globalSetup() {
 		wp_ = LookupService.get().getService(WorkflowProvider.class);
@@ -189,10 +198,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		}
 	}
 
-	protected void addComponentsToProcess(UUID processId, long time) {
+	protected void addComponentsToProcess(UUID processId, int userSeq, State state) {
 		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
+		Stamp s = createStamp(userSeq, state);
+
 		for (Integer con : conceptsForTesting) {
-			entry.getComponentToInitialEditMap().put(con, time);
+			entry.getComponentToInitialEditMap().put(con, s);
 		}
 
 		wp_.getProcessDetailStore().put(processId, entry);
@@ -343,6 +354,9 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			EndWorkflowType endType) throws Exception {
 		wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, actionToProcess, userId, comment,
 				endType, null);
+	}
 
+	protected Stamp createStamp(int userSeq, State state) {
+		return new Stamp(state, new Date().getTime(), userSeq, moduleSeq, pathSeq);
 	}
 }

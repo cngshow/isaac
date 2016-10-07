@@ -79,4 +79,12 @@ public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
 	public static UUID getFullRoleTestUser() {
 		return fullRoleUserId;
 	}
+
+	public static int getFirstTestUserSeq() {
+		return 1;
+	}
+
+	public static int getSecondTestUserSeq() {
+		return 2;
+	}
 }

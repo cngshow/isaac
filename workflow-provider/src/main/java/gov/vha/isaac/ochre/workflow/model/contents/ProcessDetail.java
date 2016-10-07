@@ -18,12 +18,19 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
+import gov.vha.isaac.ochre.stamp.provider.StampSerializer;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
 /**
@@ -72,7 +79,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	 * Therefore, if a component has been modified multiple times within a
 	 * single process, only the first of those times are required on the map.
 	 */
-	private Map<Integer, Long> componentToIntitialEditMap = new HashMap<>();
+	private Map<Integer, Stamp> componentToIntitialEditMap = new HashMap<>();
 
 	/** The user who originally defined (created) the workflow process. */
 	private UUID creatorId;
@@ -130,6 +137,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
      * Owner uuid least significant bits
      */
     private long ownerIdLsb;
+	
+    private StampSerializer stampSerializer = new StampSerializer();
 
 	/**
 	 * Constructor for a new process based on specified entry fields.
@@ -185,7 +194,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	 *
 	 * @return map of component nids to ordered stamp sequences
 	 */
-	public Map<Integer, Long> getComponentToInitialEditMap()
+	public Map<Integer, Stamp> getComponentToInitialEditMap()
 	{
 		return componentToIntitialEditMap;
 	}
@@ -331,11 +340,17 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
 		out.putLong(definitionIdMsb);
 		out.putLong(definitionIdLsb);
-		
+
 		out.putInt(componentToIntitialEditMap.size());
 		for (Integer componentNid : componentToIntitialEditMap.keySet()) {
 			out.putNid(componentNid);
-			out.putLong(componentToIntitialEditMap.get(componentNid));
+			
+	        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+	        	stampSerializer.serialize(new DataOutputStream(baos), componentToIntitialEditMap.get(componentNid));
+	        	out.putByteArrayField(baos.toByteArray());
+	        } catch (IOException e) {
+	            throw new RuntimeException(e);
+	        }
 		}
 		
 		out.putLong(creatorIdMsb);
@@ -359,8 +374,12 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		int collectionCount = in.getInt();
 		for (int i = 0; i < collectionCount; i++) {
 			int compNid = in.getNid();
-			long timestamp = in.getLong();
-			componentToIntitialEditMap.put(compNid, timestamp);
+			
+	        try (ByteArrayInputStream baos = new ByteArrayInputStream(in.getByteArrayField())) {
+	        	componentToIntitialEditMap.put(compNid, stampSerializer.deserialize(new DataInputStream(baos)));
+	        } catch (IOException e) {
+	            throw new RuntimeException(e);
+	        }
 		}
 
 		creatorIdMsb = in.getLong();
@@ -389,9 +408,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 		for (Integer compNid : componentToIntitialEditMap.keySet())
 		{
-			Date d = new Date(componentToIntitialEditMap.get(compNid));
-			
-			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at: " + workflowDateFormatter.format(d));
+			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at Stamp: " + componentToIntitialEditMap.get(compNid));
 		}
 
 		Date date = new Date(timeCreated);

@@ -18,6 +18,7 @@ import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -79,6 +80,10 @@ public class WorkflowFrameworkTest {
 
 	private EditCoordinate defaultEditCoordinate;
 	private StampCoordinate defaultStampCoordinate;
+
+	private int moduleSeq;
+
+	private int pathSeq;
 
 	@Test(groups = { "wf" }, dependsOnGroups = { "load" })
 	public void testLoadWorkflow() {
@@ -529,28 +534,47 @@ public class WorkflowFrameworkTest {
 		Assert.assertFalse(details.getComponentToInitialEditMap().keySet().contains(firstTestConceptNid));
 
 		Optional<CommitRecord> commitRecord = createNewVersion(firstTestConceptNid, null);
-		int stampSeq = commitRecord.get().getStampsInCommit().getIntIterator().next();
-		long originalCommit = Get.stampService().getTimeForStamp(stampSeq);
+		Stamp commitRecordStamp = createStampFromCommitRecord(commitRecord);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstTestConceptNid));
 		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
-		Assert.assertTrue(originalCommit == details.getComponentToInitialEditMap().get(firstTestConceptNid));
+		Assert.assertTrue(commitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
 
 		commitRecord = createNewVersion(firstTestConceptNid, null);
+		Stamp updatedCommitRecordStamp = createStampFromCommitRecord(commitRecord);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstTestConceptNid));
-		Assert.assertTrue(originalCommit == details.getComponentToInitialEditMap().get(firstTestConceptNid));
+		Assert.assertTrue(commitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
+		Assert.assertFalse(updatedCommitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
 
 		commitRecord = createNewVersion(secondTestConceptNid, null);
+		Stamp secondCommitRecordStamp = createStampFromCommitRecord(commitRecord);
 		wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstTestConceptNid));
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondTestConceptNid));
+		Assert.assertTrue(commitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
+		Assert.assertFalse(updatedCommitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
+		Assert.assertFalse(secondCommitRecordStamp.equals(details.getComponentToInitialEditMap().get(firstTestConceptNid)));
+		Assert.assertFalse(commitRecordStamp.equals(details.getComponentToInitialEditMap().get(secondTestConceptNid)));
+		Assert.assertFalse(updatedCommitRecordStamp.equals(details.getComponentToInitialEditMap().get(secondTestConceptNid)));
+		Assert.assertTrue(secondCommitRecordStamp.equals(details.getComponentToInitialEditMap().get(secondTestConceptNid)));
+	}
+
+	private Stamp createStampFromCommitRecord(Optional<CommitRecord> commitRecord) {
+		int stampSeq = commitRecord.get().getStampsInCommit().getIntIterator().next();
+		State status = Get.stampService().getStatusForStamp(stampSeq);
+		long time = Get.stampService().getTimeForStamp(stampSeq);
+		int author = Get.stampService().getAuthorSequenceForStamp(stampSeq);
+		int module = Get.stampService().getModuleSequenceForStamp(stampSeq);
+		int path = Get.stampService().getPathSequenceForStamp(stampSeq);
+
+		return new Stamp(status, time, author, module, path);
 	}
 
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
@@ -973,5 +997,18 @@ public class WorkflowFrameworkTest {
 		Optional<LatestVersion<DescriptionSememe<?>>> latestDescVersion = ((SememeChronology) semChron)
 				.getLatestVersion(DescriptionSememe.class, defaultStampCoordinate);
 		Assert.assertEquals(latestDescVersion.get().value().getState(), state);
+	}
+
+	private Stamp createStamp(int userSeq, State state) {
+		if (moduleSeq < 0 || pathSeq < 0) {
+			
+			if (Get.configurationService().getDefaultStampCoordinate().getModuleSequences().size() != 1) {
+				return null;
+			}
+			
+			moduleSeq = Get.configurationService().getDefaultStampCoordinate().getModuleSequences().getIntIterator().nextInt();
+			pathSeq = Get.configurationService().getDefaultStampCoordinate().getStampPosition().getStampPathSequence();		
+		}
+		return new Stamp(state, new Date().getTime(), moduleSeq, userSeq, pathSeq);
 	}
 }

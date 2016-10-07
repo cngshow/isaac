@@ -32,8 +32,10 @@ import org.jvnet.hk2.annotations.Service;
 
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -361,8 +363,14 @@ public class WorkflowUpdater
 		if (!process.getComponentToInitialEditMap().keySet().contains(compNid))
 		{
 			int stampSeq = commitRecord.getStampsInCommit().getIntIterator().next();
+			State status = Get.stampService().getStatusForStamp(stampSeq);
 			long time = Get.stampService().getTimeForStamp(stampSeq);
-			process.getComponentToInitialEditMap().put(compNid, time);
+			int author = Get.stampService().getAuthorSequenceForStamp(stampSeq);
+			int module = Get.stampService().getModuleSequenceForStamp(stampSeq);
+			int path = Get.stampService().getPathSequenceForStamp(stampSeq);
+			
+			Stamp componentStamp = new Stamp(status, time, author, module, path);
+			process.getComponentToInitialEditMap().put(compNid, componentStamp);			
 			
 			workflowProvider_.getProcessDetailStore().put(process.getId(), process);
 		}
