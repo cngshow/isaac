@@ -182,22 +182,6 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		
 	}
 
-	@Override
-	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-
-		int collectionCount = in.getInt();
-		for (int i = 0; i < collectionCount; i++) {
-			in.getByteArrayField();
-		}
-		
-		in.getByteArrayField();
-		in.getLong();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 

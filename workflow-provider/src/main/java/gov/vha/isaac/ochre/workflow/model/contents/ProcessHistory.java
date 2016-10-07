@@ -230,20 +230,6 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		userId = new UUID(userIdMsb, userIdLsb);
 	}
 
-	@Override
-	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getInt();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 

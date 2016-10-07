@@ -377,29 +377,6 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		ownerId = new UUID(ownerIdMsb, ownerIdLsb);
 	}
 
-	@Override
-	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in) {
-		in.getLong();
-		in.getLong();
-		
-		int collectionCount = in.getInt();
-		for (int i = 0; i < collectionCount; i++) {
-			in.getNid();
-			in.getLong();
-		}
-		
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getLong();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getLong();
-		in.getLong();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 

@@ -67,8 +67,6 @@ public abstract class AbstractStorableWorkflowContents implements WaitFreeCompar
 
 	protected abstract void getAdditionalWorkflowFields(ByteArrayDataBuffer in);
 
-	protected abstract void skipAdditionalWorkflowFields(ByteArrayDataBuffer in);
-
 	/**
 	 * Set an entry's key
 	 * 

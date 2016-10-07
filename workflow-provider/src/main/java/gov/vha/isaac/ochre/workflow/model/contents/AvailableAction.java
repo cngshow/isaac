@@ -159,16 +159,6 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
 	}
 
-	@Override
-	protected void skipAdditionalWorkflowFields(ByteArrayDataBuffer in)	{
-		in.getLong();
-		in.getLong();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-		in.getByteArrayField();
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
