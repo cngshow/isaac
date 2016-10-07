@@ -21,7 +21,8 @@ public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
 	protected static final UUID firstUserId = UUID.randomUUID();
 	protected static final UUID secondUserId = UUID.randomUUID();
 	protected static final UUID fullRoleUserId = UUID.randomUUID();
-
+	protected static final UUID restTestingUserId = UUID.fromString("85af9e52-8cce-11e6-ae22-56b6b6499611");
+	
 	Map<UUID, Set<String>> userRoleMap = new HashMap<>();
 
 	Set<String> definitionRoles = new HashSet<>();
@@ -44,6 +45,11 @@ public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
 		userRoleMap.get(fullRoleUserId).add("Editor");
 		userRoleMap.get(fullRoleUserId).add("Reviewer");
 		userRoleMap.get(fullRoleUserId).add("Approver");
+
+    	userRoleMap.put(restTestingUserId, new HashSet<>());
+    	userRoleMap.get(restTestingUserId).add("Editor");
+    	userRoleMap.get(restTestingUserId).add("Reviewer");
+    	userRoleMap.get(restTestingUserId).add("Approver");
 	}
 
 	@Override
@@ -78,6 +84,13 @@ public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
 	 */
 	public static UUID getFullRoleTestUser() {
 		return fullRoleUserId;
+	}
+
+	/*
+	 * For Integration Test
+	 */
+	public static UUID getRestTestingUserId() {
+		return restTestingUserId;
 	}
 
 	public static int getFirstTestUserSeq() {
