@@ -104,8 +104,8 @@ public class SyncServiceGIT implements SyncFiles
 {
 	private static Logger log = LoggerFactory.getLogger(SyncServiceGIT.class);
 
-	//private final String eol = System.getProperty("line.separator");
-	private final String DELIMITER = "; ";
+	private final char[] fortifyFun = System.getProperty("line.separator").toCharArray();
+	private final String DELIMITER = new String(fortifyFun);
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_REMOTE = "Conflicted merge happened during remote merge";
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_STASH = "Conflicted merge happened during stash merge";
 	private final String STASH_MARKER = ":STASH-";

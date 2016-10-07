@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
 import com.cedarsoftware.util.io.JsonWriter;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -35,24 +37,41 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
+@Service
+@PerLookup
 public class JsonDataWriterService implements BinaryDataWriterService
 {
 	private JsonWriter json_;
 	
+	private JsonDataWriterService() throws IOException
+	{
+		//For HK2
+	}
+	
+	//To support non HK2 useage
 	public JsonDataWriterService(Path path) throws IOException
 	{
+		this();
+		configure(path);
+	}
+	
+	public JsonDataWriterService(File path) throws IOException
+	{
+		this();
+		configure(path.toPath());
+	}
+	
+	public void configure(Path path) throws IOException
+	{
+		if (json_ != null)
+		{
+			throw new IOException("Reconfiguration not supported");
+		}
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 		json_ = new JsonWriter(new FileOutputStream(path.toFile()), args);
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
-	}
-
-	public JsonDataWriterService(File path) throws IOException
-	{
-		Map<String, Object> args = new HashMap<>();
-		args.put(JsonWriter.PRETTY_PRINT, true);
-		json_ = new JsonWriter(new FileOutputStream(path), args);
 	}
 
 	@Override
