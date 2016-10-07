@@ -40,7 +40,7 @@ public class GitPublish
 	 * commit the changes to master, then tag it - then push the tag (but not the changes to master) so the upstream repo only 
 	 * receives the tag. 
 	 */
-	public static void publish(File folderWithProject, String gitRepository, String gitUserName, String gitPassword, String tagToCreate) throws Exception
+	public static void publish(File folderWithProject, String gitRepository, String gitUserName, char[] gitPassword, String tagToCreate) throws Exception
 	{
 		SyncServiceGIT svc = new SyncServiceGIT();
 		svc.setReadmeFileContent("ISAAC Dataprocessing Configuration Storage\n====\nIt is highly recommended you do not manually interact with this repository.");
@@ -65,7 +65,7 @@ public class GitPublish
 		//Notice, I do NOT push the updates to the branch
 	}
 	
-	public static ArrayList<String> readTags(String gitRepository, String gitUserName, String gitPassword) throws Exception
+	public static ArrayList<String> readTags(String gitRepository, String gitUserName, char[] gitPassword) throws Exception
 	{
 		SyncServiceGIT svc = new SyncServiceGIT();
 		

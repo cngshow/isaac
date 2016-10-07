@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**

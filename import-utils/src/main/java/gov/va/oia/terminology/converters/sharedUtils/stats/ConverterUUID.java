@@ -191,17 +191,19 @@ public class ConverterUUID
 	 */
 	public static void dump(File outputDirectory, String prefix) throws IOException
 	{
-		BufferedWriter br = new BufferedWriter(new FileWriter(new File(outputDirectory, prefix + "DebugMap.txt")));
-		if (disableUUIDMap_)
+		try (BufferedWriter br = new BufferedWriter(new FileWriter(new File(outputDirectory, prefix + "DebugMap.txt")));)
 		{
-			ConsoleUtil.println("UUID Debug map was disabled");
-			br.write("Note - the UUID debug feature was disabled, this file is incomplete" + System.getProperty("line.separator"));
+			if (disableUUIDMap_)
+			{
+				ConsoleUtil.println("UUID Debug map was disabled");
+				br.write("Note - the UUID debug feature was disabled, this file is incomplete" + System.getProperty("line.separator"));
+			}
+			for (Map.Entry<UUID, String> entry : masterUUIDMap_.entrySet())
+			{
+				br.write(entry.getKey() + " - " + entry.getValue() + System.getProperty("line.separator"));
+			}
 		}
-		for (Map.Entry<UUID, String> entry : masterUUIDMap_.entrySet())
-		{
-			br.write(entry.getKey() + " - " + entry.getValue() + System.getProperty("line.separator"));
-		}
-		br.close();
+		
 	}
 
 	public static void clearCache()

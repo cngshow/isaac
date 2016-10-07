@@ -15,6 +15,8 @@
  */
 package gov.vha.isaac.ochre.model.configuration;
 
+import java.util.Locale;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
@@ -85,7 +87,7 @@ public class LanguageCoordinates {
     }
     
     public static int iso639toConceptNid(String iso639text) {
-        switch (iso639text.toLowerCase()) {
+        switch (iso639text.toLowerCase(Locale.ENGLISH)) {
             case "en":
                 return Get.identifierService().getNidForUuids(TermAux.ENGLISH_LANGUAGE.getUuids());
             case "es":
@@ -111,7 +113,7 @@ public class LanguageCoordinates {
         }
     }
     public static int iso639toConceptSequence(String iso639text) {
-        switch (iso639text.toLowerCase()) {
+        switch (iso639text.toLowerCase(Locale.ENGLISH)) {
             case "en":
                 return Get.identifierService().getConceptSequenceForUuids(TermAux.ENGLISH_LANGUAGE.getUuids());
             case "es":

@@ -5,6 +5,7 @@ import org.apache.mahout.math.map.OpenIntObjectHashMap;
 
 import java.io.*;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import gov.vha.isaac.ochre.api.DataSerializer;
 
@@ -12,7 +13,10 @@ import gov.vha.isaac.ochre.api.DataSerializer;
  * Created by kec on 12/18/14.
  */
 public class ConcurrentIntObjectMap<T> {
-    ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	
+	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final Lock read = rwl.readLock();
+	private final Lock write = rwl.writeLock();
 
     OpenIntObjectHashMap<byte[]> map = new OpenIntObjectHashMap<>();
 
@@ -25,21 +29,23 @@ public class ConcurrentIntObjectMap<T> {
     }
 
     public boolean containsKey(int key) {
-        rwl.readLock().lock();
         try {
+        	read.lock();
             return map.containsKey(key);
         } finally {
-            rwl.readLock().unlock();
+        	if (read != null)
+        		read.unlock();
         }
     }
 
     public Optional<T> get(int key) {
         byte[] data;
-        rwl.readLock().lock();
         try {
+        	read.lock();
             data = map.get(key);
         } finally {
-            rwl.readLock().unlock();
+            if (read != null)
+            	read.unlock();
         }
         if (data == null) {
             return Optional.empty();
@@ -55,11 +61,13 @@ public class ConcurrentIntObjectMap<T> {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             serializer.serialize(new DataOutputStream(baos), value);
             changed = true;
-            rwl.writeLock().lock();
+            
             try {
+            	write.lock();
                 return map.put(key, baos.toByteArray());
             } finally {
-                rwl.writeLock().unlock();
+            	if (write != null)
+            		write.unlock();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

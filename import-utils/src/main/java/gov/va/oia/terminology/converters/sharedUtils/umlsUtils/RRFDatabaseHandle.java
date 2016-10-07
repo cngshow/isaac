@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import org.codehaus.plexus.util.StringUtils;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
@@ -45,23 +46,22 @@ public class RRFDatabaseHandle extends H2DatabaseHandle
 		ArrayList<String[]> mrFile = new ArrayList<>();
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(MRFILES));
-		String line = br.readLine();
-		while (line != null)
-		{
-			String[] temp = line.split("\\|");
-			if (temp.length > 0)
-			{
-				mrFile.add(temp);
-			}
-			line = br.readLine();
-		}
+		br.lines()
+			.map(line -> line.trim())
+			.filter(line -> !StringUtils.isBlank(line))
+			.forEach(line -> {
+				String[] temp = line.split("\\|");
+				if (temp.length > 0) 
+					mrFile.add(temp);
+			});
+		
 		br.close();
 		
 		//Filename -> col -> datatype
 		HashMap<String, HashMap<String, String>> mrCol = new HashMap<>();
 		
 		br = new BufferedReader(new InputStreamReader(MRCOLS));
-		line = br.readLine();
+		String line = br.readLine();
 		while (line != null)
 		{
 			String[] temp = line.split("\\|");

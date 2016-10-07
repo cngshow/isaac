@@ -258,12 +258,16 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
                                         DynamicSememeArray<? extends DynamicSememeData> readValidatorsData
                                                 = (DynamicSememeArray<? extends DynamicSememeData>) refexDefinitionData[6];
                                         validatorsData = new DynamicSememeData[readValidatorsData.getDataArray().length];
-                                        for (int i = 0; i < validators.length; i++) {
-                                            if (readValidatorsData.getDataArray()[i] != null) {
-                                                validatorsData[i] = readValidatorsData.getDataArray()[i];
-                                            } else {
-                                                validatorsData[i] = null;
-                                            }
+                                        
+                                        if (validators != null)
+                                        {
+	                                        for (int i = 0; i < validators.length; i++) {
+	                                            if (readValidatorsData.getDataArray()[i] != null) {
+	                                                validatorsData[i] = readValidatorsData.getDataArray()[i];
+	                                            } else {
+	                                                validatorsData[i] = null;
+	                                            }
+	                                        }
                                         }
                                     }
                                 }

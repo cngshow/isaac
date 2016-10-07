@@ -16,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -29,7 +30,9 @@ import org.apache.mahout.math.map.OpenIntObjectHashMap;
  */
 public class StampCommentMap {
 
-    ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final Lock read = rwl.readLock();
+	private final Lock write = rwl.writeLock();
 
     OpenIntObjectHashMap<String> stampCommentMap = new OpenIntObjectHashMap();
 
@@ -38,8 +41,9 @@ public class StampCommentMap {
     }
 
     public void addComment(int stamp, String comment) {
-        rwl.writeLock().lock();
+        
         try {
+        	write.lock();
             if (comment != null) {
                 stampCommentMap.put(stamp, comment);
             } else {
@@ -47,7 +51,8 @@ public class StampCommentMap {
             }
 
         } finally {
-            rwl.writeLock().unlock();
+        	if (write != null)
+        		write.unlock();
         }
     }
 
@@ -57,11 +62,12 @@ public class StampCommentMap {
      * @return Comment associated with the stamp.
      */
     public Optional<String> getComment(int stamp) {
-        rwl.readLock().lock();
         try {
+        	read.lock();
             return Optional.ofNullable(stampCommentMap.get(stamp));
         } finally {
-            rwl.readLock().unlock();
+        	if (read != null)
+        		read.unlock();
         }
     }
 

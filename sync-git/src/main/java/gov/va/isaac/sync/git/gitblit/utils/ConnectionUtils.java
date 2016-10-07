@@ -3,9 +3,13 @@ package gov.va.isaac.sync.git.gitblit.utils;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -13,6 +17,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 
 /**
@@ -47,11 +53,24 @@ public class ConnectionUtils {
 
 	public static void setAuthorization(URLConnection conn, String username, char[] password) {
 		if (!StringUtils.isEmpty(username) && (password != null && password.length > 0)) {
+			
 			conn.setRequestProperty(
 					"Authorization",
 					"Basic "
-							+ Base64.encodeBytes((username + ":" + new String(password)).getBytes()));
+							+ Base64.encodeBytes(toBytes(
+									ArrayUtils.addAll(
+											new String(username + ":").toCharArray(), password))));
 		}
+	}
+	
+	private static byte[] toBytes(char[] chars) {
+	    CharBuffer charBuffer = CharBuffer.wrap(chars);
+	    ByteBuffer byteBuffer = Charset.forName("UTF-8").encode(charBuffer);
+	    byte[] bytes = Arrays.copyOfRange(byteBuffer.array(),
+	            byteBuffer.position(), byteBuffer.limit());
+	    Arrays.fill(charBuffer.array(), '\u0000'); // clear sensitive data
+	    Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
+	    return bytes;
 	}
 
 

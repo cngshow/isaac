@@ -104,7 +104,8 @@ public class SyncServiceGIT implements SyncFiles
 {
 	private static Logger log = LoggerFactory.getLogger(SyncServiceGIT.class);
 
-	private final String eol = System.getProperty("line.separator");
+	//private final String eol = System.getProperty("line.separator");
+	private final String DELIMITER = "; ";
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_REMOTE = "Conflicted merge happened during remote merge";
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_STASH = "Conflicted merge happened during stash merge";
 	private final String STASH_MARKER = ":STASH-";
@@ -223,7 +224,7 @@ public class SyncServiceGIT implements SyncFiles
 	 * @see gov.vha.isaac.ochre.api.sync.SyncFiles#linkAndFetchFromRemote(java.io.File, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void linkAndFetchFromRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException
+	public void linkAndFetchFromRemote(String remoteAddress, String username, char[] password) throws IllegalArgumentException, IOException, AuthenticationException
 	{
 		log.info("linkAndFetchFromRemote called - folder: {}, remoteAddress: {}, username: {}", localFolder, remoteAddress, username);
 		Repository r = null;
@@ -243,7 +244,7 @@ public class SyncServiceGIT implements SyncFiles
 
 			git = new Git(r);
 
-			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password));
 
 			log.debug("Fetching");
 			FetchResult fr = git.fetch().setCheckFetchedObjects(true).setCredentialsProvider(cp).call();
@@ -348,7 +349,7 @@ public class SyncServiceGIT implements SyncFiles
 	 * @see gov.vha.isaac.ochre.api.sync.SyncFiles#relinkRemote(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void relinkRemote(String remoteAddress, String username, String password) throws IllegalArgumentException, IOException
+	public void relinkRemote(String remoteAddress, String username, char[] password) throws IllegalArgumentException, IOException
 	{
 		try (Git git = getGit())
 		{
@@ -450,7 +451,7 @@ public class SyncServiceGIT implements SyncFiles
 	 * java.lang.String[])
 	 */
 	@Override
-	public Set<String> updateCommitAndPush(String commitMessage, String username, String password, MergeFailOption mergeFailOption, String... files)
+	public Set<String> updateCommitAndPush(String commitMessage, String username, char[] password, MergeFailOption mergeFailOption, String... files)
 			throws IllegalArgumentException, IOException, MergeFailure, AuthenticationException
 	{
 		log.info("Commit Files called {}", (files == null ? "-null-" : Arrays.toString(files)));
@@ -491,7 +492,7 @@ public class SyncServiceGIT implements SyncFiles
 			Set<String> result = updateFromRemote(username, password, mergeFailOption);
 
 			log.debug("Pushing");
-			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password));
 
 			Iterable<PushResult> pr = git.push().setCredentialsProvider(cp).call();
 			pr.forEach(new Consumer<PushResult>()
@@ -533,7 +534,7 @@ public class SyncServiceGIT implements SyncFiles
 	 * gov.vha.isaac.ochre.api.sync.MergeFailOption)
 	 */
 	@Override
-	public Set<String> updateFromRemote(String username, String password, MergeFailOption mergeFailOption) throws IllegalArgumentException, IOException,
+	public Set<String> updateFromRemote(String username, char[] password, MergeFailOption mergeFailOption) throws IllegalArgumentException, IOException,
 			MergeFailure, AuthenticationException
 	{
 		log.info("update from remote called ");
@@ -548,7 +549,7 @@ public class SyncServiceGIT implements SyncFiles
 				throw new MergeFailure(git.status().call().getConflicting(), new HashSet<>());
 			}
 			
-			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password));
 			log.debug("Fetch Message" + git.fetch().setCredentialsProvider(cp).call().getMessages());
 			
 			ObjectId masterIdBeforeMerge = git.getRepository().findRef("master").getObjectId();
@@ -897,17 +898,17 @@ public class SyncServiceGIT implements SyncFiles
 	private String statusToString(Status status)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("Is clean: " + status.isClean() + eol);
-		sb.append("Changed: " + status.getChanged() + eol);
-		sb.append("Added: " + status.getAdded() + eol);
-		sb.append("Conflicting: " + status.getConflicting() + eol);
-		sb.append("Ignored, unindexed: " + status.getIgnoredNotInIndex() + eol);
-		sb.append("Missing: " + status.getMissing() + eol);
-		sb.append("Modified: " + status.getModified() + eol);
-		sb.append("Removed: " + status.getRemoved() + eol);
-		sb.append("UncomittedChanges: " + status.getUncommittedChanges() + eol);
-		sb.append("Untracked: " + status.getUntracked() + eol);
-		sb.append("UntrackedFolders: " + status.getUntrackedFolders() + eol);
+		sb.append(" Is clean: ").append(status.isClean()).append(DELIMITER);
+		sb.append(" Changed: ").append(status.getChanged()).append(DELIMITER);
+		sb.append(" Added: ").append(status.getAdded()).append(DELIMITER);
+		sb.append(" Conflicting: ").append(status.getConflicting()).append(DELIMITER);
+		sb.append(" Ignored, unindexed: ").append(status.getIgnoredNotInIndex()).append(DELIMITER);
+		sb.append(" Missing: ").append(status.getMissing()).append(DELIMITER);
+		sb.append(" Modified: ").append(status.getModified()).append(DELIMITER);
+		sb.append(" Removed: ").append(status.getRemoved()).append(DELIMITER);
+		sb.append(" UncomittedChanges: ").append(status.getUncommittedChanges()).append(DELIMITER);
+		sb.append(" Untracked: ").append(status.getUntracked()).append(DELIMITER);
+		sb.append(" UntrackedFolders: ").append(status.getUntrackedFolders()).append(DELIMITER);
 		return sb.toString();
 	}
 
@@ -1054,11 +1055,11 @@ public class SyncServiceGIT implements SyncFiles
 		}
 	}
 	
-	public void pushTag(final String tagName, String username, String password) throws IllegalArgumentException, IOException, AuthenticationException 
+	public void pushTag(final String tagName, String username, char[] password) throws IllegalArgumentException, IOException, AuthenticationException 
 	{
 		try (Git git = getGit())
 		{
-			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password));
 	
 			Iterable<PushResult> pr = git.push().setRefSpecs(new RefSpec("refs/tags/" + tagName)).setCredentialsProvider(cp).call();
 			final StringBuilder failures = new StringBuilder();
@@ -1094,12 +1095,12 @@ public class SyncServiceGIT implements SyncFiles
 		}
 	}
 	
-	public ArrayList<String> readTags(String username, String password) throws IllegalArgumentException, IOException, AuthenticationException
+	public ArrayList<String> readTags(String username, char[] password) throws IllegalArgumentException, IOException, AuthenticationException
 	{
 		try (Git git = getGit())
 		{
 			ArrayList<String> results = new ArrayList<>();
-			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password.toCharArray()));
+			CredentialsProvider cp = new UsernamePasswordCredentialsProvider(username, (password == null ? new char[] {} : password));
 			
 			git.fetch().setTagOpt(TagOpt.FETCH_TAGS).setCredentialsProvider(cp).call();
 			
@@ -1136,11 +1137,11 @@ public class SyncServiceGIT implements SyncFiles
 	 * @return true if the action succeeded
 	 * @throws IOException
 	 */	
-	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, String password) throws IOException
+	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password) throws IOException
 	{
 		try
 		{
-			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password.toCharArray());
+			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password);
 			log.info("Repository: "+repoName +", create successfully: " + status);
 			return status;
 		}

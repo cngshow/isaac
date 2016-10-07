@@ -20,8 +20,10 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.text.SimpleDateFormat;
 import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.model.WaitFreeComparable;
 
@@ -29,7 +31,7 @@ import gov.vha.isaac.ochre.model.WaitFreeComparable;
  * An abstract class extended by all Workflow Content Store Entry classes.
  * Contains fields and methods shared by all such Entries.
  * 
- * {@link UserPermission} {@link AvailableAction} {@link ProcessHistory}
+ * {@link AvailableAction} {@link ProcessHistory}
  * {@link ProcessDetail} {@link DefinitionDetail}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>

@@ -1,5 +1,7 @@
 package gov.va.oia.terminology.converters.sharedUtils.sql;
 
+import java.util.Locale;
+
 public class DataType
 {
 	public enum SUPPORTED_DATA_TYPE {STRING, INTEGER, LONG, BOOLEAN, BIGDECIMAL;
@@ -8,7 +10,7 @@ public class DataType
 	{
 		for (SUPPORTED_DATA_TYPE s : SUPPORTED_DATA_TYPE.values())
 		{
-			if (value.toUpperCase().equals(s.name())) {
+			if (value.toUpperCase(Locale.ENGLISH).equals(s.name())) {
 				return s;
 			}
 		}

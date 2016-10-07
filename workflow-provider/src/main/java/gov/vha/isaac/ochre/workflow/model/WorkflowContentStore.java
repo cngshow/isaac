@@ -26,8 +26,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowContents;
 
 /**
@@ -36,9 +38,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowConte
  * 
  * Implements the Map interface, plus a couple of other convenience methods
  * 
- * {@link UserPermissionContentStore} {@link AvailableActionContentStore}
- * {@link ProcessHistoryContentStore} {@link ProcessDetailContentStore}
- * {@link DefinitionDetailContentStore} {@link DomainStandardContentStore}
+ * {@link AbstractStorableWorkflowContents}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */

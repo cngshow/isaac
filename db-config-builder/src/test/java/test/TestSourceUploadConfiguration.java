@@ -19,7 +19,7 @@ public class TestSourceUploadConfiguration
 	{
 		String gitTestURL = "https://github.com/darmbrust/test.git";
 		String gitUsername = "";
-		String gitPassword = "";
+		char[] gitPassword = "".toCharArray();
 		
 		String artifactRepository = "https://vadev.mantech.com:8080/nexus/content/sites/ets_tooling_snapshot/";
 		String repositoryUsername = "";

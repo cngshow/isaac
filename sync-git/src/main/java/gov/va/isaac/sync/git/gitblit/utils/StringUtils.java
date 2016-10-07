@@ -1,5 +1,7 @@
 package gov.va.isaac.sync.git.gitblit.utils;
 
+import java.util.Locale;
+
 /**
  * Utility class of string functions.
  *
@@ -26,8 +28,8 @@ public class StringUtils {
 	public static int compareRepositoryNames(String r1, String r2) {
 		// sort root repositories first, alphabetically
 		// then sort grouped repositories, alphabetically
-		r1 = r1.toLowerCase();
-		r2 = r2.toLowerCase();
+		r1 = r1.toLowerCase(Locale.ENGLISH);
+		r2 = r2.toLowerCase(Locale.ENGLISH);
 		int s1 = r1.indexOf('/');
 		int s2 = r2.indexOf('/');
 		if (s1 == -1 && s2 == -1) {
@@ -51,7 +53,7 @@ public class StringUtils {
 	 * @return a stripped value or the original value if .git is not found
 	 */
 	public static String stripDotGit(String value) {
-		if (value.toLowerCase().endsWith(".git")) {
+		if (value.toLowerCase(Locale.ENGLISH).endsWith(".git")) {
 			return value.substring(0, value.length() - 4);
 		}
 		return value;

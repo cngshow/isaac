@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.io.impl.InputStreamResource;
@@ -56,6 +57,7 @@ import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
+
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
@@ -63,7 +65,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType
 /**
  * Routines enabling access of content built when importing a bpmn2 file
  * 
- * {@link BPMNInfo} {@link Bpmn2FileImporter}
+ * {@link BPMNInfo} {@link WorkflowProvider}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -410,9 +412,11 @@ public class Bpmn2FileImporter {
 	private ProcessDescriptor identifyDefinitionMetadata() throws Exception {
 		KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
 
-		kbuilder.add(new InputStreamResource(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath)), ResourceType.BPMN2);
-
-		try {
+		try (InputStream inputStream = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);)
+		{
+			InputStreamResource inputStreamResource = new InputStreamResource(inputStream);
+			kbuilder.add(inputStreamResource, ResourceType.BPMN2);
+			
 			KnowledgePackage pckg = kbuilder.getKnowledgePackages().iterator().next();
 			Process process = pckg.getProcesses().iterator().next();
 
@@ -437,10 +441,10 @@ public class Bpmn2FileImporter {
 		modules.addSemanticModule(new BPMNDISemanticModule());
 		XmlProcessReader processReader = new XmlProcessReader(modules, getClass().getClassLoader());
 
-		try {
-			InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);
-			List<Process> processes = processReader.read(Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath));
-			in.close();
+		try (InputStream in = Bpmn2FileImporter.class.getResourceAsStream(bpmn2ResourcePath);)
+		{
+			List<Process> processes = processReader.read(in);
+
 			return (RuleFlowProcess) processes.get(0);
 		} catch (FileNotFoundException e) {
 			logger.error("Couldn't Find Fine: " + bpmn2ResourcePath, e);
@@ -559,7 +563,7 @@ public class Bpmn2FileImporter {
 	 * @param node
 	 *            The HumanTaskNode being investigated
 	 * 
-	 * @return The set of workflow roles which defining the user permission
+	 * @return The set of workflow roles which defining the user role
 	 *         which can execute the task
 	 */
 	private Set<String> getActorFromHumanTask(HumanTaskNode node) {

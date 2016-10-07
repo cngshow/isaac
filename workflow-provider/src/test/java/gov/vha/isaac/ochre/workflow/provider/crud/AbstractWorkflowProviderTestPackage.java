@@ -1,41 +1,34 @@
 package gov.vha.isaac.ochre.workflow.provider.crud;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.junit.Assert;
 
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
-import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
-import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
+import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
  * 
  * {@link WorkflowProcessInitializerConcluderTest}.
- * {@link WorkflowStatusAccessorTest}. {@link WorkflowHistoryAccessorTest}.
- * {@link WorkflowActionsPermissionsAccessorTest}.
+ * {@link WorkflowAccessorTest}.
+ * {@link WorkflowUpdaterTest}.
+ * 
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -65,8 +58,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	/* Constants throughout testclasses to simplify process */
 	private static final long TEST_START_TIME = new Date().getTime();
 
-	protected static final int firstUserId = 99;
-	protected static final int secondUserId = 999;
+	protected static final UUID firstUserId = MockWorkflowUserRoleService.getFirstTestUser();
+	protected static final UUID secondUserId = MockWorkflowUserRoleService.getSecondTestUser();
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
@@ -102,17 +95,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		concludeAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 	}
 
-	protected static void setupUserRoles() {
-		UserPermission perm = new UserPermission(mainDefinitionId, firstUserId, "Editor");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(mainDefinitionId, secondUserId, "Reviewer");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(mainDefinitionId, firstUserId, "Approver");
-		wp_.getUserPermissionStore().add(perm);
-	}
-
 	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
 		return createWorkflowProcess(requestedDefinitionId, "Main Process Name", "Main Process Description");
 	}
@@ -143,7 +125,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			if (wp_.getWorkflowAccessor().getProcessHistory(processId) != null) {
 				historySequence = wp_.getWorkflowAccessor().getProcessHistory(processId).last().getHistorySequence();
 			}
-			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorNid(), new Date().getTime(),
+			ProcessHistory advanceEntry = new ProcessHistory(processId, entry.getCreatorId(), new Date().getTime(),
 					LAUNCH_STATE, LAUNCH_ACTION, LAUNCH_OUTCOME, LAUNCH_COMMENT, historySequence + 1);
 			wp_.getProcessHistoryStore().add(advanceEntry);
 		} catch (InterruptedException e) {
@@ -233,7 +215,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		for (ProcessHistory entry : allProcessHistory) {
 			if (counter == 0) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserNid());
+				Assert.assertEquals(firstUserId, entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(createState, entry.getInitialState());
 				Assert.assertEquals(createAction, entry.getAction());
@@ -241,7 +223,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals("", entry.getComment());
 			} else if (counter == 1) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserNid());
+				Assert.assertEquals(firstUserId, entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
 				Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
@@ -249,7 +231,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
 			} else if (counter == 2) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserNid());
+				Assert.assertEquals(firstUserId, entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
 				Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
@@ -263,7 +245,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertCancelHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getUserNid());
+		Assert.assertEquals(firstUserId, entry.getUserId());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
@@ -274,7 +256,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertConcludeHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getUserNid());
+		Assert.assertEquals(firstUserId, entry.getUserId());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
@@ -283,7 +265,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(CONCLUDED_WORKFLOW_COMMENT, entry.getComment());
 	}
 
-	private void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userId, String comment,
+	private void finishWorkflowProcess(UUID processId, AvailableAction actionToProcess, UUID userId, String comment,
 			EndWorkflowType endType) throws Exception {
 		// Mimick the initConcluder's finish workflow process
 		ProcessDetail entry = wp_.getProcessDetailStore().get(processId);
@@ -338,16 +320,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				"Description of BPMN2 ID-X");
 		UUID defId = wp_.getDefinitionDetailStore().add(createdEntry);
 
-		// Duplicate Permissions
-		Set<UserPermission> permsToAdd = new HashSet<>();
-		for (UserPermission perm : wp_.getUserPermissionStore().values()) {
-			permsToAdd.add(new UserPermission(defId, perm.getUserNid(), perm.getRole()));
-		}
-
-		for (UserPermission perm : permsToAdd) {
-			wp_.getUserPermissionStore().add(perm);
-		}
-
 		// Duplicate AvailableActions
 		Set<AvailableAction> actionsToAdd = new HashSet<>();
 		for (AvailableAction action : wp_.getAvailableActionStore().values()) {
@@ -362,14 +334,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		return defId;
 	}
 
-	protected boolean advanceWorkflow(UUID processId, int userNid, String actionRequested, String comment)
+	protected boolean advanceWorkflow(UUID processId, UUID userId, String actionRequested, String comment)
 			throws Exception {
-		return wp_.getWorkflowUpdater().advanceWorkflow(processId, userNid, actionRequested, comment, null);
+		return wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, actionRequested, comment, null);
 	}
 
-	protected void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, int userNid, String comment,
+	protected void endWorkflowProcess(UUID processId, AvailableAction actionToProcess, UUID userId, String comment,
 			EndWorkflowType endType) throws Exception {
-		wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, actionToProcess, userNid, comment,
+		wp_.getWorkflowProcessInitializerConcluder().endWorkflowProcess(processId, actionToProcess, userId, comment,
 				endType, null);
 
 	}

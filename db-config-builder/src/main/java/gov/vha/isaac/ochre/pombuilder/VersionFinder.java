@@ -37,13 +37,15 @@ public class VersionFinder
 {
 	public static String findProjectVersion()
 	{
-		try
+		try (InputStream is = VersionFinder.class.getResourceAsStream("/META-INF/maven/gov.vha.isaac.ochre.modules/db-config-builder/pom.xml");)
 		{
 			DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+			//added to avoid XXE injections
+			domFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			
 			DocumentBuilder builder = domFactory.newDocumentBuilder();
 
 			Document dDoc;
-			InputStream is = VersionFinder.class.getResourceAsStream("/META-INF/maven/gov.vha.isaac.ochre.modules/db-config-builder/pom.xml");
 			
 			if (is != null)
 			{

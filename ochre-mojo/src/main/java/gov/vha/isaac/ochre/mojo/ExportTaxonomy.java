@@ -55,17 +55,20 @@ public class ExportTaxonomy extends AbstractMojo {
             //and I don't want to have duplicate constants in the system
             File bindingFile = new File(javaDir, bindingFileDirectory + ".java");
             bindingFile.getParentFile().mkdirs();
-            try (Writer writer = new BufferedWriter(new FileWriter(bindingFile));
+            
+            try ( Writer writer = new BufferedWriter(new FileWriter(bindingFile));
 
-                 DataOutputStream xmlData = new DataOutputStream(
-                         new BufferedOutputStream(new FileOutputStream(metadataXmlDataFile)))) {
-                
-                taxonomy.exportJavaBinding(writer, bindingPackage,  bindingClass);
-                taxonomy.exportYamlBinding(new FileWriter(new File(metadataDirectory.getAbsolutePath(), taxonomy.getClass().getSimpleName() + ".yaml")), 
-                    bindingPackage, bindingClass);
-
-                //taxonomy.exportJaxb(xmlData);
-            }
+                    DataOutputStream xmlData = new DataOutputStream(
+                            new BufferedOutputStream(new FileOutputStream(metadataXmlDataFile)));
+               		
+                    FileWriter file = new FileWriter(new File(metadataDirectory.getAbsolutePath(), 
+                   		 taxonomy.getClass().getSimpleName() + ".yaml"));)
+               {
+                   
+                   taxonomy.exportJavaBinding(writer, bindingPackage,  bindingClass);
+                   taxonomy.exportYamlBinding(file, bindingPackage, bindingClass);
+                   //taxonomy.exportJaxb(xmlData);
+               }
             
             //Read in the MetadataConceptConstant constant objects
             for (ModuleProvidedConstants mpc : LookupService.get().getAllServices(ModuleProvidedConstants.class))

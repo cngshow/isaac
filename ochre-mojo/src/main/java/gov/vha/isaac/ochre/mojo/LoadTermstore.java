@@ -299,6 +299,6 @@ public class LoadTermstore extends AbstractMojo
 					latestVersion = version;
 			}
 		}
-		return latestVersion.getLogicalExpression();
+		return (latestVersion != null) ? latestVersion.getLogicalExpression() : null ;
 	}
 }

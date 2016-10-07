@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -386,12 +387,12 @@ public class SearchHandler
 										String matchingString = ((DescriptionSememe<?>) io.get()).getText();
 										float adjustValue = 0f;
 
-										if (matchingString.toLowerCase().equals(localQuery.trim().toLowerCase()))
+										if (matchingString.toLowerCase(Locale.ENGLISH).equals(localQuery.trim().toLowerCase(Locale.ENGLISH)))
 										{
 											// "exact match, bump by 2"
 											adjustValue = 2.0f;
 										}
-										else if (matchingString.toLowerCase().startsWith(localQuery.trim().toLowerCase()))
+										else if (matchingString.toLowerCase(Locale.ENGLISH).startsWith(localQuery.trim().toLowerCase(Locale.ENGLISH)))
 										{
 											// "add 1, plus a bit more boost based on the length of the matches (shorter matches get more boost)"
 											adjustValue = 1.0f + (1.0f - ((float) (matchingString.length() - localQuery.trim().length()) / (float) matchingString
