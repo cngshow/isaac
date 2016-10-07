@@ -37,9 +37,9 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
+import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
 
 /**
  * Created by kec on 1/2/16.
@@ -69,7 +69,7 @@ public class WorkflowFrameworkTest {
 	/** The bpmn file path. */
 	private static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
-	private static UUID userId = UUID.randomUUID();
+	private static UUID userId = MockWorkflowUserRoleService.getFullRoleTestUser();
 	private static int firstTestConceptNid;
 	private static int secondTestConceptNid;
 
@@ -99,9 +99,6 @@ public class WorkflowFrameworkTest {
 
 		firstTestConceptNid = MetaData.EL_PLUS_PLUS_INFERRED_FORM_ASSEMBLAGE.getNid();
 		secondTestConceptNid = MetaData.ACCEPTABLE.getNid();
-
-		setupUserRoles();
-
 	}
 
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
@@ -677,17 +674,6 @@ public class WorkflowFrameworkTest {
 		wp_.getProcessHistoryStore().clear();
 	}
 
-	protected void setupUserRoles() {
-		UserPermission perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Editor");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Reviewer");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(wp_.getBPMNInfo().getDefinitionId(), userId, "Approver");
-		wp_.getUserPermissionStore().add(perm);
-	}
-
 	private boolean isStartState(UUID defId, String state) {
 		for (AvailableAction action : wp_.getBPMNInfo().getDefinitionStartActionMap().get(defId)) {
 			if (action.getInitialState().equals(state)) {
@@ -940,7 +926,6 @@ public class WorkflowFrameworkTest {
 
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
 
-//			Assert.assertNotEquals(originalText, createdVersion.getText());
 			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
 					"Canceling Workflow for Testing", defaultEditCoordinate);
 

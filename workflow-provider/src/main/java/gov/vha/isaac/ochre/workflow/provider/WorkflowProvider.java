@@ -38,7 +38,6 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
-import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
 import gov.vha.isaac.ochre.workflow.user.WorkflowUserRoleService;
 
 /**
@@ -121,9 +120,7 @@ public class WorkflowProvider implements OchreCache
 		processHistoryContentStore_ = new WorkflowContentStore<ProcessHistory>(
 				Get.metaContentService().<UUID, byte[]> openStore(WorkflowContentStoreType.HISTORICAL_WORKFLOW.toString()),
 				(bytes) -> bytes == null ? null : new ProcessHistory(bytes));
-		
-		// TODO: ASK HK2 for one, rather than way userPerms is called today
-		userRoleContentStore_ = new MockWorkflowUserRoleService();
+		userRoleContentStore_ = LookupService.getService(WorkflowUserRoleService.class);
 
 		// this needs rework to load 1 (or more) BPMN2 Files from the classpath
 			if (BPMN_PATH != null)  //Null is to support a test case where it doesn't want the file loaded by default
