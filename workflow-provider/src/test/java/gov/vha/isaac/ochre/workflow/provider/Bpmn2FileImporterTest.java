@@ -74,7 +74,6 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 	{
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
 	}
 
 	/**

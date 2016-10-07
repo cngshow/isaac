@@ -74,7 +74,6 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void beforeTest() {
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
 	}
 
 	/**

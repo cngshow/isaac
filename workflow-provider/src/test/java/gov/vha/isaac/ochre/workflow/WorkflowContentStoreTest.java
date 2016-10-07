@@ -39,7 +39,6 @@ import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
 /**
@@ -70,75 +69,6 @@ public class WorkflowContentStoreTest {
 	public void tearDown() throws IOException {
 		LookupService.shutdownIsaac();
 		RecursiveDelete.delete(new File("target/store"));
-	}
-
-	/**
-	 * Test user permission store.
-	 *
-	 * @throws Exception
-	 *             the exception
-	 */
-	@Test
-	public void testUserPermissionStore() throws Exception {
-		UserPermission createdEntry1 = new UserPermission(UUID.randomUUID(), UUID.randomUUID(), "Role A");
-
-		// Add new entry
-		UUID key1 = LookupService.get().getService(WorkflowProvider.class).getUserPermissionStore().add(createdEntry1);
-		LookupService.setRunLevel(LookupService.WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
-		LookupService.startupMetadataStore();
-
-		// Get entry with new store
-		WorkflowContentStore<UserPermission> availableActionStore = LookupService.get().getService(WorkflowProvider.class).getUserPermissionStore();
-		UserPermission pulledEntry1 = availableActionStore.get(key1);
-
-		Assert.assertEquals(availableActionStore.size(), 1);
-		Assert.assertEquals(createdEntry1, pulledEntry1);
-
-		// Add second entry
-		UserPermission createdEntry2 = new UserPermission(UUID.randomUUID(), UUID.randomUUID(), "Role B");
-
-		UUID key2 = availableActionStore.add(createdEntry2);
-		Assert.assertEquals(availableActionStore.size(), 2);
-
-		// Verify entries are as expected
-		UserPermission pulledEntry2 = availableActionStore.get(key2);
-		Assert.assertEquals(createdEntry2, pulledEntry2);
-		Collection<UserPermission> allEntries = availableActionStore.values();
-		Assert.assertEquals(allEntries.size(), 2);
-		Assert.assertTrue(allEntries.contains(createdEntry1));
-		Assert.assertTrue(allEntries.contains(createdEntry2));
-
-		// Test update of an entry
-		UserPermission updatedEntry2 = new UserPermission(createdEntry2.getDefinitionId(), createdEntry2.getUserId(), "Role C");
-		availableActionStore.put(key2, updatedEntry2);
-		Assert.assertEquals(allEntries.size(), 2);
-
-		pulledEntry2 = availableActionStore.get(key2);
-		Assert.assertNotEquals(createdEntry2, pulledEntry2);
-
-		Assert.assertEquals(createdEntry2.getDefinitionId(), pulledEntry2.getDefinitionId());
-		Assert.assertEquals(createdEntry2.getUserId(), pulledEntry2.getUserId());
-		Assert.assertNotEquals(createdEntry2.getRole(), pulledEntry2.getRole());
-
-		Assert.assertEquals(updatedEntry2, pulledEntry2);
-
-		// Test Removing single entry
-		availableActionStore.remove(key2);
-		Assert.assertEquals(availableActionStore.size(), 1);
-		allEntries = availableActionStore.values();
-		Assert.assertEquals(allEntries.size(), 1);
-		Assert.assertFalse(allEntries.contains(createdEntry2));
-		Assert.assertTrue(allEntries.contains(createdEntry1));
-
-		// Add second entry again
-		key2 = availableActionStore.add(createdEntry2);
-		Assert.assertEquals(availableActionStore.size(), 2);
-
-		// Test Removing all entries
-		availableActionStore.clear();
-		Assert.assertEquals(availableActionStore.size(), 0);
-		allEntries = availableActionStore.values();
-		Assert.assertEquals(allEntries.size(), 0);
 	}
 
 	/**

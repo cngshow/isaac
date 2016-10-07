@@ -42,7 +42,6 @@ import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
 
@@ -150,33 +149,7 @@ public class WorkflowAccessor {
 	}
 
 	/**
-	 * Gets the exhaustive list of workflow roles available for a user for a
-	 * given definition.
-	 * 
-	 * Used to identify what processes are relevant to a user based on a given
-	 * definition.
-	 * 
-	 * @param definitionId
-	 *            The key the the Definition Detail entry
-	 * @param userId
-	 *            The user for whom relevant processes are being determined
-	 * 
-	 * @return The list of pertinent workflow roles
-	 */
-	public Set<String> getUserRoles(UUID definitionId, UUID userId) {
-		Set<String> userRoles = new HashSet<>();
-
-		for (UserPermission permission : workflowProvider_.getUserPermissionStore().values()) {
-			if (permission.getUserId().equals(userId) && permission.getDefinitionId().equals(definitionId)) {
-				userRoles.add(permission.getRole());
-			}
-		}
-
-		return userRoles;
-	}
-
-	/**
-	 * Map the process history to each process for which the user's permissions
+	 * Map the process history to each process for which the user's roles
 	 * enable them to advance workflow based on the process's current state.
 	 * Only active processes can be advanced thus only those processes with such
 	 * a status are returned.
@@ -246,7 +219,7 @@ public class WorkflowAccessor {
 	}
 
 	/**
-	 * Returns the of available actions a user has permissions based on the
+	 * Returns the of available actions a user has roles based on the
 	 * definition's possible initial-states
 	 * 
 	 * Used to support the getAdvanceableProcessInformation() and
@@ -264,7 +237,7 @@ public class WorkflowAccessor {
 		Map<String, Set<AvailableAction>> applicableActions = new HashMap<>();
 
 		// Get User Roles
-		Set<String> userRoles = getUserRoles(definitionId, userId);
+		Set<String> userRoles = workflowProvider_.getUserRoleStore().getUserRoles(userId);
 
 		// Get Map of available actions (by initialState) that can be executed
 		// based on userRoles

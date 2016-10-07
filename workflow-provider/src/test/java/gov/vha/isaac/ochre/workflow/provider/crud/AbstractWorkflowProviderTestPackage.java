@@ -19,8 +19,8 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
+import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
@@ -58,8 +58,8 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	/* Constants throughout testclasses to simplify process */
 	private static final long TEST_START_TIME = new Date().getTime();
 
-	protected static final UUID firstUserId = UUID.randomUUID();
-	protected static final UUID secondUserId = UUID.randomUUID();
+	protected static final UUID firstUserId = MockWorkflowUserRoleService.getFirstTestUser();
+	protected static final UUID secondUserId = MockWorkflowUserRoleService.getSecondTestUser();
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
 	private static final String LAUNCH_STATE = "Ready for Edit";
@@ -93,17 +93,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 		cancelAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 		concludeAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
-	}
-
-	protected static void setupUserRoles() {
-		UserPermission perm = new UserPermission(mainDefinitionId, firstUserId, "Editor");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(mainDefinitionId, secondUserId, "Reviewer");
-		wp_.getUserPermissionStore().add(perm);
-
-		perm = new UserPermission(mainDefinitionId, firstUserId, "Approver");
-		wp_.getUserPermissionStore().add(perm);
 	}
 
 	protected UUID createFirstWorkflowProcess(UUID requestedDefinitionId) {
@@ -330,16 +319,6 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
 				"Description of BPMN2 ID-X");
 		UUID defId = wp_.getDefinitionDetailStore().add(createdEntry);
-
-		// Duplicate Permissions
-		Set<UserPermission> permsToAdd = new HashSet<>();
-		for (UserPermission perm : wp_.getUserPermissionStore().values()) {
-			permsToAdd.add(new UserPermission(defId, perm.getUserId(), perm.getRole()));
-		}
-
-		for (UserPermission perm : permsToAdd) {
-			wp_.getUserPermissionStore().add(perm);
-		}
 
 		// Duplicate AvailableActions
 		Set<AvailableAction> actionsToAdd = new HashSet<>();

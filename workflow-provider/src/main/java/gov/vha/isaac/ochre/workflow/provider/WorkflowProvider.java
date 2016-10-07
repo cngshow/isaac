@@ -35,10 +35,11 @@ import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
-import gov.vha.isaac.ochre.workflow.model.contents.UserPermission;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowAccessor;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowProcessInitializerConcluder;
 import gov.vha.isaac.ochre.workflow.provider.crud.WorkflowUpdater;
+import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
+import gov.vha.isaac.ochre.workflow.user.WorkflowUserRoleService;
 
 /**
  * {@link WorkflowProvider}
@@ -86,16 +87,16 @@ public class WorkflowProvider implements OchreCache
 	private WorkflowContentStore<ProcessHistory> processHistoryContentStore_;
 	
 	/**
-	 * Workflow-based Data Store containing the workflow User Permission entries.
+	 * Workflow-based Data Store containing the workflow User Role entries.
 	 * Initialized during reading of WF Definition only and static from then on.
 	 */
-	private WorkflowContentStore<UserPermission> userPermissionContentStore_;
+	private WorkflowUserRoleService userRoleContentStore_;
 	
 	private BPMNInfo bpmnInfo_;
 	
 	private enum WorkflowContentStoreType
 	{
-		USER_PERMISSION, AVAILABLE_ACTION, DEFINITION_DETAIL, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
+		AVAILABLE_ACTION, DEFINITION_DETAIL, HISTORICAL_WORKFLOW, PROCESS_DEFINITION
 	}
 	
 	//For HK2 only
@@ -120,11 +121,12 @@ public class WorkflowProvider implements OchreCache
 		processHistoryContentStore_ = new WorkflowContentStore<ProcessHistory>(
 				Get.metaContentService().<UUID, byte[]> openStore(WorkflowContentStoreType.HISTORICAL_WORKFLOW.toString()),
 				(bytes) -> bytes == null ? null : new ProcessHistory(bytes));
-		userPermissionContentStore_ = new WorkflowContentStore<UserPermission>(
-				Get.metaContentService().<UUID, byte[]> openStore(WorkflowContentStoreType.USER_PERMISSION.toString()),
-				(bytes) -> bytes == null ? null : new UserPermission(bytes));
-		//TODO this needs rework to load 1 (or more) from the classpath
-		if (BPMN_PATH != null)  //Null is to support a test case where it doesn't want the file loaded by default
+		
+		// TODO: ASK HK2 for one, rather than way userPerms is called today
+		userRoleContentStore_ = new MockWorkflowUserRoleService();
+
+		// this needs rework to load 1 (or more) BPMN2 Files from the classpath
+			if (BPMN_PATH != null)  //Null is to support a test case where it doesn't want the file loaded by default
 		{
 			bpmnInfo_ = new Bpmn2FileImporter(BPMN_PATH, this).getBPMNInfo();
 		}
@@ -173,13 +175,13 @@ public class WorkflowProvider implements OchreCache
 		return processHistoryContentStore_;
 	}
 	
-	public WorkflowContentStore<UserPermission> getUserPermissionStore()
+	public WorkflowUserRoleService getUserRoleStore()
 	{
-		if (userPermissionContentStore_ == null)
+		if (userRoleContentStore_ == null)
 		{
 			reCacheStoreRefs();
 		}
-		return userPermissionContentStore_;
+		return userRoleContentStore_;
 	}
 	
 	public BPMNInfo getBPMNInfo()
@@ -217,7 +219,7 @@ public class WorkflowProvider implements OchreCache
 		definitionDetailContentStore_ = null;
 		processDetailContentStore_ = null;
 		processHistoryContentStore_ = null;
-		userPermissionContentStore_ = null;
+		userRoleContentStore_ = null;
 		bpmnInfo_ = null;
 	}
 }

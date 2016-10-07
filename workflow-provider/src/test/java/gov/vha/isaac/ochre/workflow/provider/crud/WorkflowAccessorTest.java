@@ -76,8 +76,6 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	{
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
-		setupUserRoles();
 	}
 
 	/**
@@ -187,14 +185,14 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetUserRoles() throws Exception {
-		Set<String> roles = wp_.getWorkflowAccessor().getUserRoles(mainDefinitionId, firstUserId);
+		Set<String> roles = wp_.getUserRoleStore().getUserRoles(firstUserId);
 		Assert.assertEquals(2, roles.size());
 
 		for (String role : roles) {
 			Assert.assertTrue(role.equals("Editor") || role.equals("Approver"));
 		}
 
-		roles = wp_.getWorkflowAccessor().getUserRoles(mainDefinitionId, secondUserId);
+		roles = wp_.getUserRoleStore().getUserRoles(secondUserId);
 		Assert.assertEquals(1, roles.size());
 
 		String role = roles.iterator().next();
@@ -315,7 +313,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 
 	/**
 	 * Test that as advance workflow, different users are able to advance
-	 * workflow based on the user permissions and the process's current state
+	 * workflow based on the user roles and the process's current state
 	 *
 	 * @throws Exception
 	 *             Thrown if test fails
@@ -462,7 +460,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(0, firstProcessFirstUserActions.size());
 		Assert.assertEquals(3, firstProcessSecondUserActions.size());
 
-		// Cancel first process so should have zero permissions available
+		// Cancel first process so should have zero roles available
 		cancelWorkflow(firstProcessId);
 		Assert.assertEquals(0, wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, firstUserId).size());
 		Assert.assertEquals(0, wp_.getWorkflowAccessor().getUserPermissibleActionsForProcess(firstProcessId, secondUserId).size());

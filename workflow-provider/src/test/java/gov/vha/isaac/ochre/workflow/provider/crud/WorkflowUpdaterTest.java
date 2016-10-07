@@ -74,8 +74,6 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void beforeTest() {
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
-		setupUserRoles();
 	}
 
 	/**
@@ -148,7 +146,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	/**
 	 * Test that advancing process not only works, but only is permitted based
 	 * on current state (modified while advancing) only available actions based
-	 * on user permissions can advance process.
+	 * on user roles can advance process.
 	 *
 	 * @throws Exception
 	 *             Thrown if test fails

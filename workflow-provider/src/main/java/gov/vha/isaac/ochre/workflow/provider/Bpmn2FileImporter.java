@@ -563,7 +563,7 @@ public class Bpmn2FileImporter {
 	 * @param node
 	 *            The HumanTaskNode being investigated
 	 * 
-	 * @return The set of workflow roles which defining the user permission
+	 * @return The set of workflow roles which defining the user role
 	 *         which can execute the task
 	 */
 	private Set<String> getActorFromHumanTask(HumanTaskNode node) {
