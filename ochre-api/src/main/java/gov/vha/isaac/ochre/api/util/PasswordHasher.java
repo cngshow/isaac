@@ -189,6 +189,7 @@ public class PasswordHasher
 		}
 		if (decrypted.length >= 40)
 		{
+			Locale.setDefault(Locale.US); //ensure .equals below is using same Locale. (Fortify)
 			//The last 40 bytes should be the SHA1 Sum
 			String checkSum = new String(Arrays.copyOfRange(decrypted, decrypted.length - 40, decrypted.length));
 			byte[] userData = Arrays.copyOf(decrypted, decrypted.length - 40);
