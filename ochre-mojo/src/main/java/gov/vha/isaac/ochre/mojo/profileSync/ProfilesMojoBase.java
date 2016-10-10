@@ -124,7 +124,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 
 	protected boolean skipRun()
 	{
-		if (Boolean.getBoolean(PROFILE_SYNC_DISABLE))
+		if (Boolean.valueOf(System.getProperty(PROFILE_SYNC_DISABLE)))
 		{
 			return true;
 		}
@@ -193,7 +193,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 			}
 			
 			//still no username, prompt if allowed
-			if (StringUtils.isBlank(username) && !Boolean.getBoolean(PROFILE_SYNC_NO_PROMPTS))
+			if (StringUtils.isBlank(username) && !Boolean.valueOf(System.getProperty(PROFILE_SYNC_NO_PROMPTS)))
 			{
 				Callable<Void> callable = new Callable<Void>()
 				{
@@ -261,7 +261,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 			}
 			
 			//still no password, prompt if allowed
-			if (pwd.length == 0 && !Boolean.getBoolean(PROFILE_SYNC_NO_PROMPTS)) //(StringUtils.isBlank(pwd) && !Boolean.valueOf(PROFILE_SYNC_NO_PROMPTS))
+			if (pwd.length == 0 && !Boolean.valueOf(System.getProperty(PROFILE_SYNC_NO_PROMPTS)))
 			{
 				Callable<Void> callable = new Callable<Void>()
 				{
