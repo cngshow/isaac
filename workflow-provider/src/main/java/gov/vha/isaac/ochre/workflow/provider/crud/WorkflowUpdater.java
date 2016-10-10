@@ -456,4 +456,22 @@ public class WorkflowUpdater
 		return null;
 	}
 
+	/**
+	 * Sets the process owner. When the owner equals BPMNInfo.UNOWNED_PROCESS,
+	 * means process not owned by anyone
+	 *
+	 * @param processId
+	 *            the process id to be updated
+	 * @param newOwner
+	 *            the new owner. If lock is being acquired, send userId. If
+	 *            being released, to BPMNInfo.UNOWNED_PROCESS
+	 */
+	public void setProcessOwner(UUID processId, UUID newOwner)
+	{
+		ProcessDetail process = workflowProvider_.getProcessDetailStore().get(processId);
+		
+		process.setOwnerId(newOwner);
+		
+		workflowProvider_.getProcessDetailStore().put(process.getId(), process);
+	}
 }
