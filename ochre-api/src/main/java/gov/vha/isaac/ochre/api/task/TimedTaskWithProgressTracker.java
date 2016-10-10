@@ -18,7 +18,7 @@ package gov.vha.isaac.ochre.api.task;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import gov.vha.isaac.ochre.api.ProgressTracker;
 import gov.vha.isaac.ochre.api.ticker.Ticker;
-
+import gov.vha.isaac.ochre.api.util.FortifyFun;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,15 +41,15 @@ public abstract class TimedTaskWithProgressTracker<T> extends TimedTask<T> imple
     static {
         try {
             Method setTotalWork = Task.class.getDeclaredMethod("setTotalWork", double.class);
-            setTotalWork.setAccessible(true);
+            FortifyFun.fixAccessible(setTotalWork); // setTotalWork.setAccessible(true);
             MH_SET_TOTAL_WORK = publicLookup().unreflect(setTotalWork);
 
             Method setProgress = Task.class.getDeclaredMethod("setProgress", double.class);
-            setProgress.setAccessible(true);
+            FortifyFun.fixAccessible(setProgress); //setProgress.setAccessible(true);
             MH_SET_PROGRESS = publicLookup().unreflect(setProgress);
             
             Method setWorkDone = Task.class.getDeclaredMethod("setWorkDone", double.class);
-            setWorkDone.setAccessible(true);
+            FortifyFun.fixAccessible(setWorkDone); //setWorkDone.setAccessible(true);
             MH_SET_WORK_DONE = publicLookup().unreflect(setWorkDone);
         } catch (IllegalAccessException | NoSuchMethodException | SecurityException ex) {
             throw new RuntimeException(ex);

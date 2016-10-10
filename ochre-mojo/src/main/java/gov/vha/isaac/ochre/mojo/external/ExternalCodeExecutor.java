@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.mojo.external;
 
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.util.FortifyFun;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Iterator;
@@ -121,7 +122,7 @@ public class ExternalCodeExecutor extends AbstractMojo
 					{
 						throw new MojoExecutionException("No field in " + quasiMojo + " to place the parameter " + name + " : " + value);
 					}
-					myField.setAccessible(true);
+					FortifyFun.fixAccessible(myField); // myField.setAccessible(true);
 
 					if (myField.getType().equals(String.class))
 					{
