@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.workflow.user;
+package gov.vha.isaac.ochre.api;
 
 import java.util.Set;
 import java.util.UUID;
@@ -24,14 +24,28 @@ import java.util.UUID;
 import org.jvnet.hk2.annotations.Contract;
 
 /**
- * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
+ * The Interface WorkflowUserRoleService. The service is used for accessing the
+ * roles available to users. They can be defined in prism or hard coded for
+ * testing
  *
+ * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @Contract
 public interface WorkflowUserRoleService {
-	// Return all user roles based on userId
+
+	/**
+	 * Return all user roles available for a given user
+	 *
+	 * @param userId
+	 *            the user's id represented as a UUID
+	 * @return the user roles available to the user in question
+	 */
 	Set<String> getUserRoles(UUID userId);
 
-	// Not necessarily required.  May be useful in future though so leaving in place.
-	Set<String> getAllDefinitionRoles(UUID definitionId);
+	/**
+	 * List out all user roles defined in prism
+	 *
+	 * @return all user roles defined in prism
+	 */
+	Set<String> getAllUserRoles();
 }
