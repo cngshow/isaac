@@ -68,7 +68,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 	public static final String PROFILE_SYNC_USERNAME_PROPERTY = "profileSyncUsername";
 	
 	// Allow setting the password via a system property
-	public static final String PROFILE_SYNC_PASSWORD_PROPERTY = "profileSyncPassword";
+	public static final String PROFILE_SYNC_PWD_PROPERTY = "profileSyncPassword";
 	
 	private boolean disableHintGiven = false;
 	
@@ -103,7 +103,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 	private String profileSyncPassword = null;
 	
 	private static String username = null;
-	private static String password = null;
+	private static char[] pwd = null;
 
 	public ProfilesMojoBase() throws MojoExecutionException
 	{
@@ -248,20 +248,20 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 		return username;
 	}
 	
-	protected String getPassword() throws MojoExecutionException
+	protected char[] getPassword() throws MojoExecutionException //protected String getPassword() throws MojoExecutionException
 	{
-		if (password == null)
+		if (pwd == null)
 		{
-			password = System.getProperty(PROFILE_SYNC_PASSWORD_PROPERTY);
+			pwd = System.getProperty(PROFILE_SYNC_PWD_PROPERTY).toCharArray();
 			
 			//still blank, try the passed in param
-			if (StringUtils.isBlank(password))
+			if (pwd.length == 0) //if (StringUtils.isBlank(pwd))
 			{
-				password = profileSyncPassword;
+				pwd = profileSyncPassword.toCharArray();
 			}
 			
 			//still no password, prompt if allowed
-			if (StringUtils.isBlank(password) && !Boolean.getBoolean(PROFILE_SYNC_NO_PROMPTS))
+			if (pwd.length == 0 && !Boolean.getBoolean(PROFILE_SYNC_NO_PROMPTS)) //(StringUtils.isBlank(pwd) && !Boolean.valueOf(PROFILE_SYNC_NO_PROMPTS))
 			{
 				Callable<Void> callable = new Callable<Void>()
 				{
@@ -282,12 +282,12 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 							Console console = System.console();
 							if (console != null)
 							{
-								password = new String(console.readPassword());
+								pwd = console.readPassword();
 							}
 							else
 							{
 								BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-								password = br.readLine();
+								pwd = br.readLine().toCharArray();
 							}
 						}
 						catch (IOException e)
@@ -322,6 +322,6 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 				}
 			}
 		}
-		return password;
+		return pwd;
 	}
 }

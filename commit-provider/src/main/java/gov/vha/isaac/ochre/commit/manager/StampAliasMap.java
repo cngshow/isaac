@@ -21,6 +21,8 @@ import static java.util.Spliterator.DISTINCT;
 import static java.util.Spliterator.IMMUTABLE;
 import static java.util.Spliterator.NONNULL;
 import static java.util.Spliterator.SIZED;
+
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -34,7 +36,9 @@ import org.apache.mahout.math.list.IntArrayList;
  */
 public class StampAliasMap {
 
-    ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final Lock read = rwl.readLock();
+	private final Lock write = rwl.writeLock();
 
     NativeIntIntHashMap stampAliasMap = new NativeIntIntHashMap();
     NativeIntIntHashMap aliasStampMap = new NativeIntIntHashMap();
@@ -46,8 +50,8 @@ public class StampAliasMap {
     }
 
     public void addAlias(int stamp, int alias) {
-        rwl.writeLock().lock();
         try {
+        	write.lock();
             if (!stampAliasMap.containsKey(stamp)) {
                 stampAliasMap.put(stamp, alias);
                 aliasStampMap.put(alias, stamp);
@@ -58,7 +62,8 @@ public class StampAliasMap {
                 aliasStampMap.put(alias, stamp);
             }
         } finally {
-            rwl.writeLock().unlock();
+        	if (write != null)
+        		write.unlock();
         }
     }
 
@@ -68,14 +73,15 @@ public class StampAliasMap {
      * @return array of unique aliases, which do not include the stamp itself. 
      */
     public int[] getAliases(int stamp) {
-        rwl.readLock().lock();
         try {
+        	read.lock();
             IntStream.Builder builder = IntStream.builder();
             getAliasesForward(stamp, builder);
             getAliasesReverse(stamp, builder);
             return builder.build().distinct().toArray();
         } finally {
-            rwl.readLock().unlock();
+        	if (read != null)
+        		read.unlock();
         }
     }
 

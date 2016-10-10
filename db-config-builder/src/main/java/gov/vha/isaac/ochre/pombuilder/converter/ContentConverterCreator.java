@@ -133,7 +133,7 @@ public class ContentConverterCreator
 	 * @throws Exception
 	 */
 	public static String createContentConverter(SDOSourceContent sourceContent, String converterVersion, SDOSourceContent[] additionalSourceDependencies, 
-		IBDFFile[] additionalIBDFDependencies, Map<ConverterOptionParam, Set<String>> converterOptionValues, String gitRepositoryURL, String gitUsername, String gitPassword) 
+		IBDFFile[] additionalIBDFDependencies, Map<ConverterOptionParam, Set<String>> converterOptionValues, String gitRepositoryURL, String gitUsername, char[] gitPassword) 
 				throws Exception
 	{
 		File f = Files.createTempDirectory("converter-builder").toFile();

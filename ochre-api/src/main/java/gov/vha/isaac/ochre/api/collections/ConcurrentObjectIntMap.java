@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.api.collections;
 import org.apache.mahout.math.map.OpenObjectIntHashMap;
 
 import java.util.OptionalInt;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.ObjIntConsumer;
 import org.apache.mahout.math.function.ObjectIntProcedure;
@@ -12,7 +13,11 @@ import org.apache.mahout.math.function.ObjectIntProcedure;
  * @param <T> Type of object in map. 
  */
 public class ConcurrentObjectIntMap<T> {
-    ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+    
+	
+	private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
+	private final Lock read = rwl.readLock();
+	private final Lock write = rwl.writeLock();
 
     OpenObjectIntHashMap<T> backingMap = new OpenObjectIntHashMap<>();
 
@@ -25,34 +30,35 @@ public class ConcurrentObjectIntMap<T> {
     }
 
     public boolean containsKey(T key) {
-        rwl.readLock().lock();
         try {
+        	read.lock();
             return backingMap.containsKey(key);
         } finally {
-            rwl.readLock().unlock();
+        	if (read != null)
+        		read.unlock();
         }
     }
 
     public OptionalInt get(T key) {
-        int value;
-        rwl.readLock().lock();
         try {
+        	read.lock();
             if (backingMap.containsKey(key)) {
                 return OptionalInt.of(backingMap.get(key));
             }
             return OptionalInt.empty();
         } finally {
-            rwl.readLock().unlock();
+        	if (read != null)
+        		read.unlock();
         }
     }
 
     public boolean put(T key, int value) {
-
-        rwl.writeLock().lock();
         try {
+        	write.lock();
             return backingMap.put(key, value);
         } finally {
-            rwl.writeLock().unlock();
+        	if (write != null)
+        		write.unlock();
         }
     }
 

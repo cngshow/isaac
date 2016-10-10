@@ -25,15 +25,18 @@ public class Classify {
 
         AxiomCollector axiomCollector = new AxiomCollector(conceptSequences, roleSequences,
                 neverGroupRoleSequences, roleGroupConceptSequence);
-        Set<Axiom> axioms = logicGraphStream.collect(axiomCollector);
-
-        // Create a classifier and classify the axioms
-        IReasoner r = new SnorocketReasoner();
-        r.loadAxioms(axioms);
-        r = r.classify();
-
-        // Get only the taxonomy
-        Ontology res = r.getClassifiedOntology();
-
+        
+        if (logicGraphStream != null)
+        {
+	        Set<Axiom> axioms = logicGraphStream.collect(axiomCollector);
+	
+	        // Create a classifier and classify the axioms
+	        IReasoner r = new SnorocketReasoner();
+	        r.loadAxioms(axioms);
+	        r = r.classify();
+	
+	        // Get only the taxonomy
+	        Ontology res = r.getClassifiedOntology();
+        }
     }
 }

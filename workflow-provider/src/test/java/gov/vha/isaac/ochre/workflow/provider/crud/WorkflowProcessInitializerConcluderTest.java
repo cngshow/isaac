@@ -26,13 +26,16 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
@@ -72,7 +75,6 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void beforeTest() {
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
 	}
 
 	/**
@@ -87,7 +89,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		// Initialization
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
 				firstUserId, "Main Process Name", "Main Process Description");
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 
 		// verify content in workflow is as expected
 		assertProcessDefinition(ProcessStatus.DEFINED, mainDefinitionId, processId);
@@ -121,7 +123,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 
@@ -165,7 +167,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 				firstUserId, "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -232,7 +234,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 			Assert.assertTrue(true);
 		}
 
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -283,7 +285,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-55));
 
 		Assert.assertEquals(processStatus, entry.getStatus());
-		Assert.assertEquals(99, entry.getCreatorNid());
+		Assert.assertNotNull(entry.getCreatorId());
 		Assert.assertEquals(definitionId, entry.getDefinitionId());
 		Assert.assertTrue(entry.getComponentToInitialEditMap().keySet().contains(-56));
 		Assert.assertTrue(timeSinceYesterdayBeforeTomorrow(entry.getTimeCreated()));

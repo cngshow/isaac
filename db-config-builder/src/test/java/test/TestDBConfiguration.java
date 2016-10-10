@@ -10,7 +10,7 @@ public class TestDBConfiguration
 	{
 		String testURL = "https://github.com/darmbrust/test.git";
 		String username = "";
-		String password = "";
+		char[] password = "".toCharArray();
 		
 		System.setProperty("java.awt.headless", "true");
 		

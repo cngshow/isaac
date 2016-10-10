@@ -71,7 +71,7 @@ public class SrcUploadCreator
 	 * @throws Throwable 
 	 */
 	public static Task<String> createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, List<File> filesToUpload, 
-			String gitRepositoryURL, String gitUsername, String gitPassword,
+			String gitRepositoryURL, String gitUsername, char[] gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
 		LOG.info("Building the task to create a source upload configuration...");

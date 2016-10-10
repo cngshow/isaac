@@ -22,14 +22,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
@@ -73,8 +75,6 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	public void beforeTest() {
 		wp_.getProcessDetailStore().clear();
 		wp_.getProcessHistoryStore().clear();
-		wp_.getUserPermissionStore().clear();
-		setupUserRoles();
 	}
 
 	/**
@@ -94,18 +94,22 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertFalse(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 
-		details.getComponentToInitialEditMap().put(firstConceptNid, new Date().getTime());
-		wp_.getProcessDetailStore().put(processId, details);
-		details = wp_.getProcessDetailStore().get(processId);
-		Assert.assertEquals(1, details.getComponentToInitialEditMap().keySet().size());
-		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 
-		details.getComponentToInitialEditMap().put(secondConceptNid, new Date().getTime());
-		wp_.getProcessDetailStore().put(processId, details);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
+		Assert.assertEquals(firstUserSeq, details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
+		Assert.assertEquals(firstUserSeq, details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
+
+		addComponentsToProcess(processId, secondUserSeq, State.ACTIVE);
+		details = wp_.getProcessDetailStore().get(processId);
+		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
+		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
+		Assert.assertEquals(secondUserSeq, details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
+		Assert.assertEquals(secondUserSeq, details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
 	}
 
 	/**
@@ -125,11 +129,9 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(0, details.getComponentToInitialEditMap().keySet().size());
 
-		details.getComponentToInitialEditMap().put(firstConceptNid, new Date().getTime());
-		wp_.getProcessDetailStore().put(processId, details);
-		details.getComponentToInitialEditMap().put(secondConceptNid, new Date().getTime());
-		wp_.getProcessDetailStore().put(processId, details);
-
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, secondUserSeq, State.ACTIVE);
+		
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 
@@ -147,7 +149,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	/**
 	 * Test that advancing process not only works, but only is permitted based
 	 * on current state (modified while advancing) only available actions based
-	 * on user permissions can advance process.
+	 * on user roles can advance process.
 	 *
 	 * @throws Exception
 	 *             Thrown if test fails
@@ -155,7 +157,7 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testAdvanceWorkflow() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		addComponentsToProcess(processId, new Date().getTime());
+		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
 		executeLaunchWorkflow(processId);
 
 		// Process in Ready to Edit state: Can execute action "Edit" by

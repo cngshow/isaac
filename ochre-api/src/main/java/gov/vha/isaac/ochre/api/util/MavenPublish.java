@@ -125,38 +125,44 @@ public class MavenPublish extends Task<Integer>
 		httpCon.setReadTimeout(60 * 60 * 1000);
 		long fileLength = file.length();
 		httpCon.setFixedLengthStreamingMode(fileLength);
-		OutputStream out = httpCon.getOutputStream();
-
+		
 		byte[] buf = new byte[8192];
 		long loopCount = 0;
-		FileInputStream fis = new FileInputStream(file);
 		int read = 0;
-		while ((read = fis.read(buf, 0, buf.length)) > 0)
+		
+		try (OutputStream out = httpCon.getOutputStream();
+			FileInputStream fis = new FileInputStream(file);)
 		{
-			//update every MB
-			if (loopCount++ % 128 == 0)
+			while ((read = fis.read(buf, 0, buf.length)) > 0)
 			{
-				updateProgress((loopCount * 8192l), fileLength);
-				updateMessage("Uploading " + file.getName() + " - " + (loopCount * 8192l) + " / " + fileLength);
+				//update every MB
+				if (loopCount++ % 128 == 0)
+				{
+					updateProgress((loopCount * 8192l), fileLength);
+					updateMessage("Uploading " + file.getName() + " - " + (loopCount * 8192l) + " / " + fileLength);
+				}
+				out.write(buf, 0, read);
 			}
-			out.write(buf, 0, read);
+			out.flush();
 		}
-		out.flush();
-		out.close();
-		fis.close();
-		InputStream is = httpCon.getInputStream();
+		
 		StringBuilder sb = new StringBuilder();
-		read = 0;
-		byte[] buffer = new byte[1024];
-		CharBuffer cBuffer = ByteBuffer.wrap(buffer).asCharBuffer();
-		while (read != -1)
+		
+		try (InputStream is = httpCon.getInputStream();)
 		{
-			read = is.read(buffer);
-			if (read > 0)
+			read = 0;
+			byte[] buffer = new byte[1024];
+			CharBuffer cBuffer = ByteBuffer.wrap(buffer).asCharBuffer();
+			while (read != -1)
 			{
-				sb.append(cBuffer, 0, read);
+				read = is.read(buffer);
+				if (read > 0)
+				{
+					sb.append(cBuffer, 0, read);
+				}
 			}
 		}
+		
 		httpCon.disconnect();
 		if (sb.toString().trim().length() > 0)
 		{

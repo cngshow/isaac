@@ -40,55 +40,72 @@ public class Unzip
 {
 	public final static void unzip(File zipFile, File rootDir) throws IOException
 	{
-		ZipFile zip = new ZipFile(zipFile);
-		@SuppressWarnings("unchecked") Enumeration<ZipEntry> entries = (Enumeration<ZipEntry>) zip.entries();
-		while (entries.hasMoreElements())
-		{
-			ZipEntry entry = entries.nextElement();
-			java.io.File f = new java.io.File(rootDir, entry.getName());
-			if (entry.isDirectory())
+		ZipFile zip = null; 
+				
+		try {
+			zip = new ZipFile(zipFile);
+			@SuppressWarnings("unchecked") Enumeration<ZipEntry> entries = (Enumeration<ZipEntry>) zip.entries();
+			
+			while (entries.hasMoreElements())
 			{
-				f.mkdirs();
-				continue;
-			}
-			else
-			{
-				f.createNewFile();
-			}
-			InputStream is = null;
-			OutputStream os = null;
-			try
-			{
-				is = zip.getInputStream(entry);
-				os = new FileOutputStream(f);
-				IOUtils.copy(is, os);
-			}
-			finally
-			{
-				if (is != null)
+				ZipEntry entry = entries.nextElement();
+				java.io.File f = new java.io.File(rootDir, entry.getName());
+				if (entry.isDirectory())
 				{
-					try
-					{
-						is.close();
-					}
-					catch (Exception e)
-					{
-						// noop
-					}
+					f.mkdirs();
+					continue;
 				}
-				if (os != null)
+				else
 				{
-					try
+					f.createNewFile();
+				}
+				InputStream is = null;
+				OutputStream os = null;
+				try
+				{
+					is = zip.getInputStream(entry);
+					os = new FileOutputStream(f);
+					IOUtils.copy(is, os);
+				}
+				finally
+				{
+					if (is != null)
 					{
-						os.close();
+						try
+						{
+							is.close();
+						}
+						catch (Exception e)
+						{
+							// noop
+						}
 					}
-					catch (Exception e)
+					if (os != null)
 					{
-						// noop
+						try
+						{
+							os.close();
+						}
+						catch (Exception e)
+						{
+							// noop
+						}
 					}
 				}
 			}
 		}
-		zip.close();
+		finally {
+			if (zip != null)
+			{
+				try
+				{
+					zip.close();
+				}
+				catch (Exception e)
+				{
+					// noop
+				}
+			}
+		}
 	}
 }

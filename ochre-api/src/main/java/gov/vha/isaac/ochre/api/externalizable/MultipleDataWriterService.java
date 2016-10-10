@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
 
 /**
@@ -39,7 +40,10 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 	{
 		if (jsonPath.isPresent())
 		{
-			writers_.add(new JsonDataWriterService(jsonPath.get()));
+			//Use HK2 here to make fortify stop false-flagging an open resource error
+			JsonDataWriterService writer = LookupService.get().getService(JsonDataWriterService.class);
+			writer.configure(jsonPath.get());
+			writers_.add(writer);
 		}
 		if (ibdfPath.isPresent())
 		{

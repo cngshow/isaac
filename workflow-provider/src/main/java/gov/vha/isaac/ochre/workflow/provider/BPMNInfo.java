@@ -22,11 +22,14 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
 
 /**
  * A class that stores various info about the BPMN workflow.
+ * 
+ * {@link Bpmn2FileImporter} {@link WorkflowProvider}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
@@ -38,6 +41,8 @@ public class BPMNInfo {
 	 */
 	public static final String AUTOMATED_ROLE = "Automated By System";
 
+	public static final UUID UNOWNED_PROCESS = new UUID(0,0);
+	
 	/** A map of available actions per type of ending workflow */
 	private Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap;
 
