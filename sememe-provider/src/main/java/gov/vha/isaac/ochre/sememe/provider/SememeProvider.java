@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -359,7 +360,7 @@ public class SememeProvider implements SememeService {
         {
             Optional<? extends SememeChronology<?>> sememe = getOptionalSememe(sememeSequence);
             if (sememe.isPresent() && sememe.get().getSememeType() == SememeType.DESCRIPTION) {
-            	return true;
+                return true;
             }
             return false;
         }).mapToObj(mapper);
@@ -378,15 +379,30 @@ public class SememeProvider implements SememeService {
     }
 
     @Override
-    public boolean hasSememe(int conceptId) {
-        if (conceptId < 0) {
-            conceptId = Get.identifierService().getSememeSequence(conceptId);
+    public boolean hasSememe(int sememeId) {
+        if (sememeId < 0) {
+            sememeId = Get.identifierService().getSememeSequence(sememeId);
         }
-        return sememeMap.containsKey(conceptId);
+        return sememeMap.containsKey(sememeId);
     }
 
     @Override
     public Stream<Integer> getAssemblageTypes() {
         return inUseAssemblages.stream();
+    }
+
+    @Override
+    public int getSememeCount() {
+        return sememeMap.getSize();
+    }
+
+    @Override
+    public IntStream getSememeKeyStream() {
+        return sememeMap.getKeyStream();
+    }
+
+    @Override
+    public IntStream getSememeKeyParallelStream() {
+        return sememeMap.getKeyParallelStream();
     }
 }
