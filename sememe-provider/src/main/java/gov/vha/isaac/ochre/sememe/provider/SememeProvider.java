@@ -339,16 +339,16 @@ public class SememeProvider implements SememeService {
 
     @Override
     public Stream<SememeChronology<? extends SememeVersion<?>>> getSememeChronologyStream() {
-        return Get.identifierService().getSememeSequenceStream().mapToObj((int sememeSequence) -> getSememe(sememeSequence));
+          return sememeMap.getStream().map((s) -> {
+              return (SememeChronology<? extends SememeVersion<?>>) s;
+        });
     }
 
     @Override
     public Stream<SememeChronology<? extends SememeVersion<?>>> getParallelSememeStream() {
-        return Get.identifierService().getSememeSequenceStream().parallel().filter(
-            // Filter is necessary because a sememe identifier may be allocated, but the object may not be successfully committed, 
-            // leaving a null value in the sememeMap...
-            (int sememeSequence) -> sememeMap.hasData(sememeSequence)).mapToObj(
-                (int sememeSequence)  -> sememeMap.getQuick(sememeSequence));
+        return sememeMap.getParallelStream().map((s) -> {
+            return (SememeChronology<? extends SememeVersion<?>>) s;
+        });
     }
 
     @Override
