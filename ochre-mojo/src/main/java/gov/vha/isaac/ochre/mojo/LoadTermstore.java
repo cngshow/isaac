@@ -266,10 +266,10 @@ public class LoadTermstore extends AbstractMojo
 				skippedItems.clear();
 			}
 			
-			getLog().info("Completing processing on " + deferredActionNids + " defered items");
+			getLog().info("Completing processing on " + deferredActionNids.size() + " defered items");
 			for (int nid : deferredActionNids)
 			{
-				if (Get.identifierService().getChronologyTypeForNid(nid) == ObjectChronologyType.SEMEME)
+				if (ObjectChronologyType.SEMEME.equals(Get.identifierService().getChronologyTypeForNid(nid)))
 				{
 					SememeChronology sc = Get.sememeService().getSememe(nid);
 					if (sc.getSememeType() == SememeType.LOGIC_GRAPH)

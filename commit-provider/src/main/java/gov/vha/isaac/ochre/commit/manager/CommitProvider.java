@@ -732,7 +732,7 @@ public class CommitProvider implements CommitService {
         Set<Integer> nids = deferredImportNoCheckNids.get();
         deferredImportNoCheckNids.remove();
         for (int nid : nids) {
-            if (Get.identifierService().getChronologyTypeForNid(nid) == ObjectChronologyType.SEMEME) {
+            if (ObjectChronologyType.SEMEME.equals(Get.identifierService().getChronologyTypeForNid(nid))) {
                 SememeChronology sc = Get.sememeService().getSememe(nid);
                 if (sc.getSememeType() == SememeType.LOGIC_GRAPH) {
                     Get.taxonomyService().updateTaxonomy(sc);
