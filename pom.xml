@@ -677,6 +677,7 @@
         <module>metacontent-store</module>
         <module>workflow-provider</module>
         <!-- <module>ibdf-differ</module>-->
+        <module>ochre-exporters</module>
     </modules>
     
     <profiles>
