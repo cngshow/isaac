@@ -73,9 +73,13 @@ public class DefaultConfigurationService implements ConfigurationService {
         if (dataStoreFolderPath_ == null && !initComplete_) {
             synchronized (this) {
                 if (dataStoreFolderPath_ == null && !initComplete_) {
-                    String dataStoreRootFolder = System.getProperty(Constants.DATA_STORE_ROOT_LOCATION_PROPERTY);
-                    if (!StringUtils.isBlank(dataStoreRootFolder)) {
-                        dataStoreFolderPath_ = Paths.get(dataStoreRootFolder);
+                	
+                	StringBuilder dataStoreRootFolder = new StringBuilder();
+                	System.getProperty(Constants.DATA_STORE_ROOT_LOCATION_PROPERTY)
+                		.chars().forEach(c -> dataStoreRootFolder.append((char)c));
+                    
+                	if (!StringUtils.isBlank(dataStoreRootFolder.toString())) {
+                        dataStoreFolderPath_ = Paths.get(dataStoreRootFolder.toString());
                         if (!Files.exists(dataStoreFolderPath_)) {
                             try {
                                 Files.createDirectories(dataStoreFolderPath_);
