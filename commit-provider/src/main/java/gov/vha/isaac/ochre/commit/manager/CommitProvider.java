@@ -6,27 +6,6 @@
 package gov.vha.isaac.ochre.commit.manager;
 
 
-import gov.vha.isaac.ochre.api.ConfigurationService;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
-import gov.vha.isaac.ochre.api.commit.*;
-import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
-import gov.vha.isaac.ochre.api.task.SequentialAggregateTask;
-import gov.vha.isaac.ochre.api.task.TimedTask;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
-import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
-import gov.vha.isaac.ochre.api.collections.UuidIntMapMap;
-import gov.vha.isaac.ochre.api.externalizable.StampAlias;
-import gov.vha.isaac.ochre.api.externalizable.StampComment;
-import gov.vha.isaac.ochre.model.ObjectChronologyImpl;
-import gov.vha.isaac.ochre.model.ObjectVersionImpl;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -40,7 +19,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,17 +27,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
-import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.apache.logging.log4j.LogManager;
@@ -67,6 +40,37 @@ import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
+import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
+import gov.vha.isaac.ochre.api.collections.UuidIntMapMap;
+import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.AlertType;
+import gov.vha.isaac.ochre.api.commit.ChangeChecker;
+import gov.vha.isaac.ochre.api.commit.CheckPhase;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
+import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.commit.UncommittedStamp;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.externalizable.StampAlias;
+import gov.vha.isaac.ochre.api.externalizable.StampComment;
+import gov.vha.isaac.ochre.api.task.SequentialAggregateTask;
+import gov.vha.isaac.ochre.api.task.TimedTask;
+import gov.vha.isaac.ochre.model.ObjectChronologyImpl;
+import gov.vha.isaac.ochre.model.ObjectVersionImpl;
+import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 
 /**
  *
@@ -98,6 +102,9 @@ public class CommitProvider implements CommitService {
     private final ConcurrentSkipListSet<ChangeChecker> checkers = new ConcurrentSkipListSet<>();
     private long lastCommit = Long.MIN_VALUE;
     private AtomicBoolean loadRequired = new AtomicBoolean();
+    
+    ThreadLocal<Set<Integer>> deferredImportNoCheckNids = new ThreadLocal<>();
+    
     /**
      * TODO recreate alert collection at restart for uncommitted components.
      */
@@ -695,7 +702,7 @@ public class CommitProvider implements CommitService {
                 SememeChronology sememeChronology = (SememeChronology) ochreExternalizable;
                 Get.sememeService().writeSememe(sememeChronology);
                 if (sememeChronology.getSememeType() == SememeType.LOGIC_GRAPH) {
-                    Get.taxonomyService().updateTaxonomy(sememeChronology);
+                    deferNidAction(sememeChronology.getNid());
                 }
                 break;
             case STAMP_ALIAS:
@@ -709,5 +716,34 @@ public class CommitProvider implements CommitService {
             default: throw new UnsupportedOperationException("Can't handle: " + ochreExternalizable);
         }
     }
+    
+    private void deferNidAction(int nid) {
+        Set<Integer> nids = deferredImportNoCheckNids.get();
+        if (nids == null) {
+            nids = new HashSet<>();
+            deferredImportNoCheckNids.set(nids);
+        }
+        nids.add(nid);
+    }
 
+    @Override
+    public void postProcessImportNoChecks()
+    {
+        Set<Integer> nids = deferredImportNoCheckNids.get();
+        deferredImportNoCheckNids.remove();
+        for (int nid : nids) {
+            if (Get.identifierService().getChronologyTypeForNid(nid) == ObjectChronologyType.SEMEME) {
+                SememeChronology sc = Get.sememeService().getSememe(nid);
+                if (sc.getSememeType() == SememeType.LOGIC_GRAPH) {
+                    Get.taxonomyService().updateTaxonomy(sc);
+                }
+                else {
+                    throw new UnsupportedOperationException("Unexpected nid in deferred set: " + nid);
+                }
+            }
+            else {
+                throw new UnsupportedOperationException("Unexpected nid in deferred set: " + nid);
+            }
+        }
+    }
 }

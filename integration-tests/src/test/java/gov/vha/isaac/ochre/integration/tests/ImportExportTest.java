@@ -57,6 +57,7 @@ public class ImportExportTest {
             reader.getStream().filter(importStats).forEach((object) -> {
                 commitService.importNoChecks(object);
             });
+            commitService.postProcessImportNoChecks();
             LOG.info("Loaded components: " + importStats);
         } catch (FileNotFoundException e) {
             Assert.fail("File not found", e);
@@ -101,6 +102,7 @@ public class ImportExportTest {
                 importCount.incrementAndGet();
                 commitService.importNoChecks(object);
             });
+            commitService.postProcessImportNoChecks();
             LOG.info("imported components: " + importStats);
 
             Assert.assertEquals(exportCount.get(), importCount.get());

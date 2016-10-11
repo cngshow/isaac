@@ -182,6 +182,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					}
 				}
 			}
+			commitService.postProcessImportNoChecks();
 
 		} // Close Type Loop
 

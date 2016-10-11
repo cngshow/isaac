@@ -15,7 +15,9 @@
  */
 package gov.vha.isaac.ochre.api.commit;
 
-import gov.vha.isaac.ochre.api.State;
+import java.util.Optional;
+import java.util.stream.Stream;
+import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -23,16 +25,8 @@ import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.StampAlias;
 import gov.vha.isaac.ochre.api.externalizable.StampComment;
-
-import java.time.Instant;
-import java.util.Optional;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-
-import org.jvnet.hk2.annotations.Contract;
 
 /**
  * @author kec
@@ -44,9 +38,21 @@ public interface CommitService {
     /**
      * Import a object and immediately write to the proper service with no checks of any type performed.
      * Sememes and concepts will have their versions  merged with existing versions if they exist.
+     * 
+     * one MUST call {@link CommitService#postProcessImportNoChecks()} when your import batch is complete
+     * to ensure data integrity.
+     * 
      * @param ochreExternalizable the object to be imported.
      */
     void importNoChecks(OchreExternalizable ochreExternalizable);
+    
+    /**
+     * Runs any update code (such as taxonomy updates) that may need to be done as a result of using 
+     * {@link #importNoChecks(OchreExternalizable)}.  There are certain operations that cannot be done 
+     * during the import, to avoid running into data consistency issues.  This must be called if any call to 
+     * importNoChecks returns a value greater than 0, implying there is at least one deferred operation.  
+     */
+    void postProcessImportNoChecks();
 
     // should the change set get generated here?
 
