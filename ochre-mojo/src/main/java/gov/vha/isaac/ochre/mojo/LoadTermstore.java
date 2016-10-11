@@ -197,7 +197,7 @@ public class LoadTermstore extends AbstractMojo
 										(!activeOnly || (isActive(sc) && !skippedItems.contains(sc.getReferencedComponentNid()))))
 									{
 										Get.sememeService().writeSememe(sc);
-										if (((SememeChronology)object).getSememeType() == SememeType.LOGIC_GRAPH)
+										if (sc.getSememeType() == SememeType.LOGIC_GRAPH)
 										{
 											deferredActionNids.add(((SememeChronology)object).getNid());
 										}
