@@ -59,7 +59,7 @@ public class BinaryDataReaderQueueProvider
 	int DONEREADING = 1;
 	int COMLETE = 0;
 
-	CountDownLatch complete = new CountDownLatch(NOTSTARTED);
+	volatile CountDownLatch complete = new CountDownLatch(NOTSTARTED);
 
 	//Only one thread doing the reading from disk, give it lots of buffer space
 	private BlockingQueue<OchreExternalizableUnparsed> readData = new ArrayBlockingQueue<>(5000);

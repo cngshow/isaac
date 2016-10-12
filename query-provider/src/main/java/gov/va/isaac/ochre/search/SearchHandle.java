@@ -32,7 +32,7 @@ public class SearchHandle {
 	private final long searchStartTime = System.currentTimeMillis();
 	private Integer searchID_;
 
-	private List<CompositeSearchResult> result_;
+	private volatile List<CompositeSearchResult> result_;
 	private volatile boolean cancelled = false;
 	private Exception error = null;
 	

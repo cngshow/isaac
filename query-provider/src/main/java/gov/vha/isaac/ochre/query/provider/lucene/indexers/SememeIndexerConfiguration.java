@@ -70,7 +70,7 @@ public class SememeIndexerConfiguration
 	//store assemblage sequences that should be indexed - and then - for COLUMN_DATA keys, keep the 0 indexed column order numbers that need to be indexed.
 	private HashMap<Integer, Integer[]> whatToIndexSequenceToCol_ = new HashMap<>();
 
-	private volatile AtomicInteger readNeeded_ = new AtomicInteger(1);  //0 means no readNeeded, anything greater than 0 means it does need a re-read
+	private final AtomicInteger readNeeded_ = new AtomicInteger(1);  //0 means no readNeeded, anything greater than 0 means it does need a re-read
 
 	protected boolean needsIndexing(int assemblageConceptSequence)
 	{
