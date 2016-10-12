@@ -35,7 +35,6 @@ import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 import com.cedarsoftware.util.io.JsonWriter;
 import gov.vha.isaac.ochre.api.Get;
@@ -196,7 +195,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	@Override
 	public void generateDiffedIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
-			throws FileNotFoundException {
+			throws IOException {
 		componentCSWriter = Get.binaryDataWriter(new File(ibdfFileOutputDir + changesetFileName).toPath());
 
 		for (ChangeType key : changedComponents.keySet()) {

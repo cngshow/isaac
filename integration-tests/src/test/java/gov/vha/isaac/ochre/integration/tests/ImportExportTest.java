@@ -108,7 +108,7 @@ public class ImportExportTest {
             Assert.assertEquals(exportCount.get(), importCount.get());
             Assert.assertEquals(exportStats, importStats);
 
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Assert.fail("File not found", e);
         }
     }
@@ -182,7 +182,7 @@ public class ImportExportTest {
             Assert.assertEquals(exportStats.stampAliases.get(), importStats.stampAliases.get());
 
 
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Assert.fail("File not found", e);
         }
     }

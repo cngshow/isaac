@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.api;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -351,7 +352,7 @@ public class Get implements OchreCache {
         return getService(BinaryDataServiceFactory.class).getQueueReader(dataPath);
     }
     
-    public static BinaryDataWriterService binaryDataWriter(Path dataPath) throws FileNotFoundException {
+    public static BinaryDataWriterService binaryDataWriter(Path dataPath) throws IOException {
         return getService(BinaryDataServiceFactory.class).getWriter(dataPath);
     }
     
