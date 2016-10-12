@@ -27,19 +27,19 @@ import java.util.UUID;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
-import gov.vha.isaac.ochre.api.WorkflowUserRoleService;
+import gov.vha.isaac.ochre.api.UserRoleService;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
 /**
- * The Class MockWorkflowUserRoleService.
+ * The Class MockUserRoleService.
  *
- * {@link MockWorkflowUserRoleService}
+ * {@link MockUserRoleService}
  * 
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @Service
 @Rank(value = -50)
-public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
+public class MockUserRoleService implements UserRoleService {
 	
 	/**  The Constant firstUserId (for Unit Testing) */
 	protected static final UUID firstUserId = UUID.randomUUID();
@@ -62,7 +62,7 @@ public class MockWorkflowUserRoleService implements WorkflowUserRoleService {
 	/**
 	 * Defines the user roles for the Mock case 
 	 */
-	public MockWorkflowUserRoleService() {
+	public MockUserRoleService() {
 		definitionRoles.add("Editor");
 		definitionRoles.add("Reviewer");
 		definitionRoles.add("Approver");
