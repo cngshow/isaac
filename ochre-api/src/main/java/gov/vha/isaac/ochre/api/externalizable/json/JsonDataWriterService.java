@@ -43,6 +43,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 public class JsonDataWriterService implements BinaryDataWriterService
 {
 	private JsonWriter json_;
+	private FileOutputStream fos_;
 	
 	private JsonDataWriterService() throws IOException
 	{
@@ -75,7 +76,8 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		}
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
-		json_ = new JsonWriter(new BufferedOutputStream(new FileOutputStream(path.toFile())), args);
+		fos_ = new FileOutputStream(path.toFile());
+		json_ = new JsonWriter(new BufferedOutputStream(fos_), args);
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
 	}
@@ -99,5 +101,13 @@ public class JsonDataWriterService implements BinaryDataWriterService
 	public void close()
 	{
 		json_.close();
+		
+		try {
+			fos_.close();
+		}
+		catch (IOException e)
+		{
+			//noop
+		}
 	}
 }
