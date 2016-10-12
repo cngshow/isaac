@@ -30,7 +30,7 @@ import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.OchreCache;
-import gov.vha.isaac.ochre.api.WorkflowUserRoleService;
+import gov.vha.isaac.ochre.api.UserRoleService;
 import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
@@ -89,7 +89,7 @@ public class WorkflowProvider implements OchreCache
 	 * Workflow-based Data Store containing the workflow User Role entries.
 	 * Initialized during reading of WF Definition only and static from then on.
 	 */
-	private WorkflowUserRoleService userRoleContentStore_;
+	private UserRoleService userRoleContentStore_;
 	
 	private BPMNInfo bpmnInfo_;
 	
@@ -120,7 +120,7 @@ public class WorkflowProvider implements OchreCache
 		processHistoryContentStore_ = new WorkflowContentStore<ProcessHistory>(
 				Get.metaContentService().<UUID, byte[]> openStore(WorkflowContentStoreType.HISTORICAL_WORKFLOW.toString()),
 				(bytes) -> bytes == null ? null : new ProcessHistory(bytes));
-		userRoleContentStore_ = LookupService.getService(WorkflowUserRoleService.class);
+		userRoleContentStore_ = LookupService.getService(UserRoleService.class);
 
 		// this needs rework to load 1 (or more) BPMN2 Files from the classpath
 			if (BPMN_PATH != null)  //Null is to support a test case where it doesn't want the file loaded by default
@@ -172,7 +172,7 @@ public class WorkflowProvider implements OchreCache
 		return processHistoryContentStore_;
 	}
 	
-	public WorkflowUserRoleService getUserRoleStore()
+	public UserRoleService getUserRoleStore()
 	{
 		if (userRoleContentStore_ == null)
 		{

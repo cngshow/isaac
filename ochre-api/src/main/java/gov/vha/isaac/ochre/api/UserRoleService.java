@@ -18,21 +18,23 @@
  */
 package gov.vha.isaac.ochre.api;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 import org.jvnet.hk2.annotations.Contract;
 
 /**
- * The Interface WorkflowUserRoleService. The service is used for accessing the
+ * The Interface UserRoleService. The service is used for accessing the
  * roles available to users. They can be defined in prism or hard coded for
  * testing
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @Contract
-public interface WorkflowUserRoleService {
-
+public interface UserRoleService {
 	/**
 	 * Return all user roles available for a given user
 	 *

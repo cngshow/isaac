@@ -23,7 +23,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
-import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
+import gov.vha.isaac.ochre.workflow.user.MockUserRoleService;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
@@ -61,10 +61,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	/* Constants throughout testclasses to simplify process */
 	private static final long TEST_START_TIME = new Date().getTime();
 
-	protected static final UUID firstUserId = MockWorkflowUserRoleService.getFirstTestUser();
-	protected static final UUID secondUserId = MockWorkflowUserRoleService.getSecondTestUser();
-	protected static final int firstUserSeq = MockWorkflowUserRoleService.getFirstTestUserSeq();
-	protected static final int secondUserSeq = MockWorkflowUserRoleService.getSecondTestUserSeq();
+	protected static final UUID firstUserId = MockUserRoleService.getFirstTestUser();
+	protected static final UUID secondUserId = MockUserRoleService.getSecondTestUser();
+	protected static final int firstUserSeq = MockUserRoleService.getFirstTestUserSeq();
+	protected static final int secondUserSeq = MockUserRoleService.getSecondTestUserSeq();
 
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 

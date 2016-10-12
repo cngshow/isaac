@@ -40,7 +40,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
-import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
+import gov.vha.isaac.ochre.workflow.user.MockUserRoleService;
 
 /**
  * Created by kec on 1/2/16.
@@ -70,7 +70,7 @@ public class WorkflowFrameworkTest {
 	/** The bpmn file path. */
 	private static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
-	private static UUID userId = MockWorkflowUserRoleService.getFullRoleTestUser();
+	private static UUID userId = MockUserRoleService.getFullRoleTestUser();
 	private static int firstTestConceptNid;
 	private static int secondTestConceptNid;
 
