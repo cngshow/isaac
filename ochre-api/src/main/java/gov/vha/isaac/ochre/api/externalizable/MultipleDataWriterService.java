@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
 
 /**
  * Simple wrapper class to allow us to serialize to multiple formats at once
@@ -41,13 +39,15 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 		if (jsonPath.isPresent())
 		{
 			//Use HK2 here to make fortify stop false-flagging an open resource error
-			JsonDataWriterService writer = LookupService.get().getService(JsonDataWriterService.class);
+			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "jsonWriter");
 			writer.configure(jsonPath.get());
 			writers_.add(writer);
 		}
 		if (ibdfPath.isPresent())
 		{
-			writers_.add(Get.binaryDataWriter(ibdfPath.get()));
+			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "ibdfWriter");
+			writer.configure(ibdfPath.get());
+			writers_.add(writer);
 		}
 	}
 	
@@ -67,5 +67,11 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 		{
 			writer.close();
 		}
+	}
+
+	@Override
+	public void configure(Path path) throws UnsupportedOperationException
+	{
+		throw new UnsupportedOperationException("Method not supported");
 	}
 }

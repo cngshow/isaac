@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.api.externalizable.json;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,7 +38,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-@Service
+@Service(name="jsonWriter")
 @PerLookup
 public class JsonDataWriterService implements BinaryDataWriterService
 {
@@ -48,7 +49,11 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		//For HK2
 	}
 	
-	//To support non HK2 useage
+	/**
+	 * To support non HK2 useage
+	 * @param path
+	 * @throws IOException
+	 */
 	public JsonDataWriterService(Path path) throws IOException
 	{
 		this();
@@ -61,6 +66,7 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		configure(path.toPath());
 	}
 	
+	@Override
 	public void configure(Path path) throws IOException
 	{
 		if (json_ != null)
@@ -69,7 +75,7 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		}
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
-		json_ = new JsonWriter(new FileOutputStream(path.toFile()), args);
+		json_ = new JsonWriter(new BufferedOutputStream(new FileOutputStream(path.toFile())), args);
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
 	}

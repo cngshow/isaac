@@ -15,13 +15,28 @@
  */
 package gov.vha.isaac.ochre.api.externalizable;
 
+import java.io.IOException;
+import java.nio.file.Path;
+import org.jvnet.hk2.annotations.Contract;
+
 /**
  *
  * @author kec
  */
+@Contract
 public interface BinaryDataWriterService extends AutoCloseable {
     
-    void put(OchreExternalizable ochreObject);
+    /**
+     * Used when constructed via a no arg constructor (HK2 patterns) to configure the writer after the initial 
+     * construct.  Implements are free to not support reconfiguration after the initial call to configure 
+     * (or to not support this method at all, if the only configuration route is via the constructor)
+     * @param path
+     * @throws IOException
+     * @throws UnsupportedOperationException - when method not supported at all, or for reconfiguration
+     */
+    public void configure(Path path) throws IOException, UnsupportedOperationException;
+
+    public void put(OchreExternalizable ochreObject);
     
     @Override
     public void close();
