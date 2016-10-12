@@ -20,19 +20,16 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -43,6 +40,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
+import gov.vha.isaac.ochre.workflow.provider.user.RoleConfigurator;
 
 /**
  * Test the WorkflowProcessInitializerConcluder class
@@ -88,8 +86,8 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testCreateWorkflowProcess() throws Exception {
 		// Initialization
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
-				firstUserId, "Main Process Name", "Main Process Description");
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+				RoleConfigurator.getFirstTestUser(), "Main Process Name", "Main Process Description");
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 
 		// verify content in workflow is as expected
 		assertProcessDefinition(ProcessStatus.DEFINED, mainDefinitionId, processId);
@@ -120,10 +118,10 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		}
 
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
-				firstUserId, "Main Process Name", "Main Process Description");
+				RoleConfigurator.getFirstTestUser(), "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 
@@ -156,7 +154,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testCancelWorkflowProcess() throws Exception {
 		// Attempt to cancel a process that hasn't yet been created
 		try {
-			endWorkflowProcess(UUID.randomUUID(), cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
+			endWorkflowProcess(UUID.randomUUID(), cancelAction, RoleConfigurator.getFirstTestUser(), CANCELED_WORKFLOW_COMMENT,
 					EndWorkflowType.CANCELED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -164,10 +162,10 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		}
 
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
-				firstUserId, "Main Process Name", "Main Process Description");
+				RoleConfigurator.getFirstTestUser(), "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
@@ -181,7 +179,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
-		endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
+		endWorkflowProcess(processId, cancelAction, RoleConfigurator.getFirstTestUser(), CANCELED_WORKFLOW_COMMENT, EndWorkflowType.CANCELED);
 
 		assertProcessDefinition(ProcessStatus.CANCELED, mainDefinitionId, processId);
 		hxEntries.clear();
@@ -190,7 +188,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to cancel an already launched process
 		try {
-			endWorkflowProcess(processId, cancelAction, firstUserId, CANCELED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, cancelAction, RoleConfigurator.getFirstTestUser(), CANCELED_WORKFLOW_COMMENT,
 					EndWorkflowType.CANCELED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -214,7 +212,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 	public void testConcludeWorkflow() throws Exception {
 		// Attempt to conclude a process that hasn't yet been created
 		try {
-			endWorkflowProcess(UUID.randomUUID(), concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(UUID.randomUUID(), concludeAction, RoleConfigurator.getFirstTestUser(), CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -222,26 +220,26 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		}
 
 		UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(mainDefinitionId,
-				firstUserId, "Main Process Name", "Main Process Description");
+				RoleConfigurator.getFirstTestUser(), "Main Process Name", "Main Process Description");
 		Thread.sleep(1);
 
 		// Attempt to conclude a process that hasn't yet been launched
 		try {
-			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, RoleConfigurator.getFirstTestUser(), CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 		}
 
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 		executeSendForReviewAdvancement(processId);
 		wp_.getWorkflowProcessInitializerConcluder().launchProcess(processId);
 		Thread.sleep(1);
 
 		// Attempt to conclude a process that isn't at an end state
 		try {
-			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, RoleConfigurator.getFirstTestUser(), CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {
@@ -257,7 +255,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 		Assert.assertEquals(3, hxEntries.size());
 		assertHistoryForProcess(hxEntries, processId);
 
-		endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+		endWorkflowProcess(processId, concludeAction, RoleConfigurator.getFirstTestUser(), CONCLUDED_WORKFLOW_COMMENT,
 				EndWorkflowType.CONCLUDED);
 
 		assertProcessDefinition(ProcessStatus.CONCLUDED, mainDefinitionId, processId);
@@ -267,7 +265,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 		// Attempt to cancel an already launched process
 		try {
-			endWorkflowProcess(processId, concludeAction, firstUserId, CONCLUDED_WORKFLOW_COMMENT,
+			endWorkflowProcess(processId, concludeAction, RoleConfigurator.getFirstTestUser(), CONCLUDED_WORKFLOW_COMMENT,
 					EndWorkflowType.CONCLUDED);
 			Assert.fail();
 		} catch (Exception e) {

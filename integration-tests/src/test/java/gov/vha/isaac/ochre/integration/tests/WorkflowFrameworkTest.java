@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.integration.tests;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -9,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
+import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
 
 import gov.vha.isaac.MetaData;
@@ -40,7 +42,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
-import gov.vha.isaac.ochre.workflow.user.MockUserRoleService;
+import gov.vha.isaac.ochre.workflow.user.SimpleUserRoleService;
 
 /**
  * Created by kec on 1/2/16.
@@ -70,7 +72,7 @@ public class WorkflowFrameworkTest {
 	/** The bpmn file path. */
 	private static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
-	private static UUID userId = MockUserRoleService.getFullRoleTestUser();
+	private static UUID userId;
 	private static int firstTestConceptNid;
 	private static int secondTestConceptNid;
 
@@ -84,6 +86,22 @@ public class WorkflowFrameworkTest {
 	private int moduleSeq;
 
 	private int pathSeq;
+	
+	@BeforeGroups(groups = {"wf"})
+	public void setUpUsers() throws Exception {
+		userId = UUID.randomUUID();
+		SimpleUserRoleService rolesService = LookupService.get().getService(SimpleUserRoleService.class);
+		rolesService.addRole("Editor");
+		rolesService.addRole("Reviewer");
+		rolesService.addRole("Approver");
+		rolesService.addRole(BPMNInfo.AUTOMATED_ROLE);
+		
+		HashSet<String> roles = new HashSet<>();
+		roles.add("Editor");
+		roles.add("Approver");
+		roles.add("Reviewer");
+		rolesService.addUser(userId, roles);
+	}
 
 	@Test(groups = { "wf" }, dependsOnGroups = { "load" })
 	public void testLoadWorkflow() {
