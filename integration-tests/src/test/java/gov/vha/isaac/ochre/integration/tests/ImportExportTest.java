@@ -32,6 +32,7 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.SomeRole;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.SufficientSet;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
