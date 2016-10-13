@@ -63,7 +63,7 @@
                         <configuration>
                             <schemaDirectory>src/main/resources/</schemaDirectory>
                             <schemaIncludes>
-                                <include>TerminologyData.xsd</include>
+                                <include>TerminologyData.xsd.hidden</include>
                             </schemaIncludes>
                             <generatePackage>gov.va.med.term.vhat.xml.model</generatePackage>
                         </configuration>
