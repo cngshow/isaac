@@ -35,12 +35,6 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType
  */
 public class BPMNInfo {
 
-	/**
-	 * A constant used to inform the user that the system automated the
-	 * advancing workflow action rather than a specific user
-	 */
-	//public static final String AUTOMATED_ROLE = UserRole.AUTOMATED.toString();
-
 	public static final UUID UNOWNED_PROCESS = new UUID(0,0);
 	
 	/** A map of available actions per type of ending workflow */

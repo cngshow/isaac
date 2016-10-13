@@ -29,7 +29,12 @@ import java.util.Optional;
  *
  */
 public enum UserRole {
-	// Do not rearrange.  Add new values to end.
+	// Do not rearrange. Add new values to end.
+
+	/*
+	 * AUTOMATED is used to capture that the system automated the workflow
+	 * advancement rather than a specific user
+	 */
 	AUTOMATED,
 	
 	SUPER_USER,
