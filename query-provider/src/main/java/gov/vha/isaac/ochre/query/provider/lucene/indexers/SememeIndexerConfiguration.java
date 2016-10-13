@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import javax.inject.Singleton;
@@ -71,6 +72,7 @@ public class SememeIndexerConfiguration
 	private HashMap<Integer, Integer[]> whatToIndexSequenceToCol_ = new HashMap<>();
 
 	private final AtomicInteger readNeeded_ = new AtomicInteger(1);  //0 means no readNeeded, anything greater than 0 means it does need a re-read
+	private Semaphore readNeededBlock_ = new Semaphore(1);
 
 	protected boolean needsIndexing(int assemblageConceptSequence)
 	{
@@ -89,8 +91,9 @@ public class SememeIndexerConfiguration
 		if (readNeeded_.get() > 0)
 		{
 			//During bulk index, prevent all threads from doing this at the same time...
-			synchronized (readNeeded_)
+			try
 			{
+				readNeededBlock_.acquireUninterruptibly();
 				if (readNeeded_.get() > 0)
 				{
 					log.debug("Reading Dynamic Sememe Index Configuration");
@@ -141,6 +144,10 @@ public class SememeIndexerConfiguration
 						log.error("Unexpected error reading Dynamic Sememe Index Configuration - generated index will be incomplete!", e);
 					}
 				}
+			}
+			finally
+			{
+				readNeededBlock_.release();
 			}
 		}
 	}

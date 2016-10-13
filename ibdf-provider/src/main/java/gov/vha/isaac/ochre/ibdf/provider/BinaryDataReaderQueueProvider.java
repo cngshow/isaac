@@ -27,6 +27,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -59,7 +60,8 @@ public class BinaryDataReaderQueueProvider
 	int DONEREADING = 1;
 	int COMLETE = 0;
 
-	volatile CountDownLatch complete = new CountDownLatch(NOTSTARTED);
+	final CountDownLatch complete = new CountDownLatch(NOTSTARTED);
+	Semaphore completeBlock = new Semaphore(1);
 
 	//Only one thread doing the reading from disk, give it lots of buffer space
 	private BlockingQueue<OchreExternalizableUnparsed> readData = new ArrayBlockingQueue<>(5000);
@@ -198,8 +200,9 @@ public class BinaryDataReaderQueueProvider
 	{
 		if (complete.getCount() == NOTSTARTED)
 		{
-			synchronized (complete)
+			try
 			{
+				completeBlock.acquireUninterruptibly();
 				if (complete.getCount() == NOTSTARTED)
 				{
 					complete.countDown();
@@ -230,7 +233,7 @@ public class BinaryDataReaderQueueProvider
 							}
 						});
 					}
-
+	
 					Get.workExecutors().getExecutor().execute(() -> 
 					{
 						try
@@ -256,6 +259,10 @@ public class BinaryDataReaderQueueProvider
 						}
 					});
 				}
+			}
+			finally
+			{
+				completeBlock.release();
 			}
 		}
 		return parsedData;
