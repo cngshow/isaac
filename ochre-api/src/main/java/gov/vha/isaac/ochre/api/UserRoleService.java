@@ -38,11 +38,13 @@ public interface UserRoleService {
 	 * @param userId
 	 *            the user's id represented as a UUID
 	 * @return the user roles available to the user in question
+	 * 
+	 * This method should throw exception if the user has not already been cached
 	 */
 	Set<UserRole> getUserRoles(UUID userId);
 
 	/**
-	 * List out all user roles defined in prism
+	 * List out all user roles defined both in prism and in the UserRole enum
 	 *
 	 * @return all user roles defined in prism
 	 */
