@@ -18,9 +18,6 @@
  */
 package gov.vha.isaac.ochre.api;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -42,12 +39,12 @@ public interface UserRoleService {
 	 *            the user's id represented as a UUID
 	 * @return the user roles available to the user in question
 	 */
-	Set<String> getUserRoles(UUID userId);
+	Set<UserRole> getUserRoles(UUID userId);
 
 	/**
 	 * List out all user roles defined in prism
 	 *
 	 * @return all user roles defined in prism
 	 */
-	Set<String> getAllUserRoles();
+	Set<UserRole> getAllUserRoles();
 }

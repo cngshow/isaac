@@ -33,6 +33,7 @@ import org.jvnet.hk2.annotations.Service;
 
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -237,7 +238,7 @@ public class WorkflowAccessor {
 		Map<String, Set<AvailableAction>> applicableActions = new HashMap<>();
 
 		// Get User Roles
-		Set<String> userRoles = workflowProvider_.getUserRoleStore().getUserRoles(userId);
+		Set<UserRole> userRoles = workflowProvider_.getUserRoleStore().getUserRoles(userId);
 
 		// Get Map of available actions (by initialState) that can be executed
 		// based on userRoles

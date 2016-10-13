@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.util.UUID;
 
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
@@ -50,7 +51,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	private String outcomeState;
 
 	/** The workflow role which may perform the action on the initial state. */
-	private String role;
+	private UserRole role;
 
     /**
      * Definition uuid most significant bits for this component
@@ -71,7 +72,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 * @param outcomeState
 	 * @param role
 	 */
-	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, String role) {
+	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, UserRole role) {
 		this.definitionId = definitionId;
         this.definitionIdMsb = definitionId.getMostSignificantBits();
         this.definitionIdLsb = definitionId.getLeastSignificantBits();
@@ -133,7 +134,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the role
 	 */
-	public String getRole() {
+	public UserRole getRole() {
 		return role;
 	}
 
@@ -144,7 +145,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 		out.putByteArrayField(initialState.getBytes());
 		out.putByteArrayField(action.getBytes());
 		out.putByteArrayField(outcomeState.getBytes());
-		out.putByteArrayField(role.getBytes());
+		out.putInt(role.ordinal());
 	}
 
 	@Override
@@ -154,7 +155,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 		initialState = new String(in.getByteArrayField());
 		action = new String(in.getByteArrayField());
 		outcomeState = new String(in.getByteArrayField());
-		role = new String(in.getByteArrayField());
+		role = UserRole.safeValueOf(in.getInt()).get();
 
 		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
 	}

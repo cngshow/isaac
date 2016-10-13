@@ -27,8 +27,8 @@ import java.util.UUID;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.UserRoleService;
-import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
 /**
  * The Class MockUserRoleService.
@@ -54,48 +54,48 @@ public class MockUserRoleService implements UserRoleService {
 	protected static final UUID restTestingUserId = UUID.fromString("85af9e52-8cce-11e6-ae22-56b6b6499611");
 	
 	/**  The user role map  (for Unit Testing) */
-	Map<UUID, Set<String>> userRoleMap = new HashMap<>();
+	Map<UUID, Set<UserRole>> userRoleMap = new HashMap<>();
 
 	/**  The definition roles. */
-	Set<String> definitionRoles = new HashSet<>();
+	Set<UserRole> definitionRoles = new HashSet<>();
 
 	/**
 	 * Defines the user roles for the Mock case 
 	 */
 	public MockUserRoleService() {
-		definitionRoles.add("Editor");
-		definitionRoles.add("Reviewer");
-		definitionRoles.add("Approver");
-		definitionRoles.add(BPMNInfo.AUTOMATED_ROLE);
+		definitionRoles.add(UserRole.EDITOR);
+		definitionRoles.add(UserRole.REVIEWER);
+		definitionRoles.add(UserRole.APPROVER);
+		definitionRoles.add(UserRole.AUTOMATED);
 
 		// Setup User Role Maps
 		userRoleMap.put(firstUserId, new HashSet<>());
-		userRoleMap.get(firstUserId).add("Editor");
-		userRoleMap.get(firstUserId).add("Approver");
+		userRoleMap.get(firstUserId).add(UserRole.EDITOR);
+		userRoleMap.get(firstUserId).add(UserRole.APPROVER);
 
 		userRoleMap.put(secondUserId, new HashSet<>());
-		userRoleMap.get(secondUserId).add("Reviewer");
+		userRoleMap.get(secondUserId).add(UserRole.REVIEWER);
 
 		userRoleMap.put(fullRoleUserId, new HashSet<>());
-		userRoleMap.get(fullRoleUserId).add("Editor");
-		userRoleMap.get(fullRoleUserId).add("Reviewer");
-		userRoleMap.get(fullRoleUserId).add("Approver");
+		userRoleMap.get(fullRoleUserId).add(UserRole.EDITOR);
+		userRoleMap.get(fullRoleUserId).add(UserRole.REVIEWER);
+		userRoleMap.get(fullRoleUserId).add(UserRole.APPROVER);
 
     	userRoleMap.put(restTestingUserId, new HashSet<>());
-    	userRoleMap.get(restTestingUserId).add("Editor");
-    	userRoleMap.get(restTestingUserId).add("Reviewer");
-    	userRoleMap.get(restTestingUserId).add("Approver");
+    	userRoleMap.get(restTestingUserId).add(UserRole.EDITOR);
+    	userRoleMap.get(restTestingUserId).add(UserRole.REVIEWER);
+    	userRoleMap.get(restTestingUserId).add(UserRole.APPROVER);
 	}
 
 	/* see superclass */
 	@Override
-	public Set<String> getUserRoles(UUID userId) {
+	public Set<UserRole> getUserRoles(UUID userId) {
 		return userRoleMap.get(userId);
 	}
 
 	/* see superclass */
 	@Override
-	public Set<String> getAllUserRoles() {
+	public Set<UserRole> getAllUserRoles() {
 		return definitionRoles;
 	}
 

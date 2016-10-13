@@ -12,9 +12,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
 
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
@@ -54,7 +54,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	private static String createState;
 	private static String createAction;
 	private static String createOutcome;
-	private static String createRole = "Automated By System";
+	private static UserRole createRole = UserRole.AUTOMATED;
 
 	protected static WorkflowProvider wp_;
 
@@ -323,10 +323,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	}
 
 	protected UUID createSecondaryDefinition() {
-		Set<String> roles = new HashSet<>();
-		roles.add("Editor");
-		roles.add("Reviewer");
-		roles.add("Approver");
+		Set<UserRole> roles = new HashSet<>();
+		roles.add(UserRole.EDITOR);
+		roles.add(UserRole.REVIEWER);
+		roles.add(UserRole.APPROVER);
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
 				"Description of BPMN2 ID-X");
 		UUID defId = wp_.getDefinitionDetailStore().add(createdEntry);

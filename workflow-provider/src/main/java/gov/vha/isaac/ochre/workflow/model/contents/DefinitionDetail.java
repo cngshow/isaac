@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
@@ -45,7 +46,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	private String version;
 
 	/** The workflow roles available defined via the definition . */
-	private Set<String> roles;
+	private Set<UserRole> roles;
 
 	/** A description of the purpose of the Definition pulled by BPMN2. */
 	private String description;
@@ -63,7 +64,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * @param roles
 	 * @param description
 	 */
-	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<String> roles,
+	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<UserRole> roles,
 			String description) {
 		this.bpmn2Id = bpmn2Id;
 		this.name = name;
@@ -134,7 +135,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * 
 	 * @return the workflow roles available
 	 */
-	public Set<String> getRoles() {
+	public Set<UserRole> getRoles() {
 		return roles;
 	}
 
@@ -156,8 +157,8 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		out.putByteArrayField(version.getBytes());
 
 		out.putInt(roles.size());
-		for (String s : roles) {
-			out.putByteArrayField(s.getBytes());
+		for (UserRole s : roles) {
+			out.putInt(s.ordinal());
 		}
 		
 		out.putByteArrayField(description.getBytes());
@@ -174,7 +175,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		int colCount = in.getInt();
 		roles = new HashSet<>();
 		for (int i = 0; i < colCount; i++) {
-			roles.add(new String(in.getByteArrayField()));
+			roles.add(UserRole.safeValueOf(in.getInt()).get());
 		}
 		
 		description = new String(in.getByteArrayField());
@@ -191,7 +192,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (String r : roles) {
+		for (UserRole r : roles) {
 			buf.append(r + ", ");
 		}
 
