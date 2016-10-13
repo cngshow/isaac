@@ -20,6 +20,7 @@ package gov.va.isaac.ochre.search;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 /**
  * Handle object to get search results.
@@ -33,6 +34,7 @@ public class SearchHandle {
 	private Integer searchID_;
 
 	private List<CompositeSearchResult> result_;
+	private Semaphore resultBlock_ = new Semaphore(1);
 	private volatile boolean cancelled = false;
 	private Exception error = null;
 	
@@ -49,7 +51,8 @@ public class SearchHandle {
 	 */
 	public Collection<CompositeSearchResult> getResults() throws Exception {
 		if (result_ == null) {
-			synchronized (SearchHandle.this) {
+			try {
+				resultBlock_.acquireUninterruptibly();
 				while (result_ == null && error == null && !cancelled) {
 					try {
 						SearchHandle.this.wait();
@@ -57,6 +60,10 @@ public class SearchHandle {
 						// noop
 					}
 				}
+			}
+			finally
+			{
+				resultBlock_.release();
 			}
 		}
 		if (error != null) {

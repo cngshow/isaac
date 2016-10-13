@@ -15,25 +15,28 @@
  */
 package gov.vha.isaac.ochre.ibdf.provider;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import org.glassfish.hk2.api.PerLookup;
+import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Path;
 
 /**
  * @author kec
  */
+@Service(name="ibdfWriter")
+@PerLookup
 public class BinaryDataWriterProvider implements BinaryDataWriterService {
 
     private static final int MAX_DEBUG_COUNT = 10;
-    private static final boolean DEBUG = Get.configurationService().enableVerboseDebug();
+    private boolean DEBUG = false;
 
     private static final int BUFFER_SIZE = 1024;
     Path dataPath;
@@ -43,13 +46,32 @@ public class BinaryDataWriterProvider implements BinaryDataWriterService {
     int debugCount = 0;
     OchreExternalizableObjectType lastObjectType;
 
-    public BinaryDataWriterProvider(Path dataPath) throws FileNotFoundException {
-        this.dataPath = dataPath;
-        this.output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(dataPath.toFile())));
-        this.buffer.setExternalData(true);
+    private BinaryDataWriterProvider() throws IOException {
+        //for HK2
+    }
+    
+    /**
+     * For non-HK2 use cases
+     * @param dataPath
+     * @throws IOException
+     */
+    public BinaryDataWriterProvider(Path dataPath) throws IOException {
+        this();
+        configure(dataPath);
     }
 
     @Override
+    public void configure(Path path) throws IOException {
+        if (this.dataPath != null) {
+            throw new RuntimeException("Reconfiguration is not supported");
+        }
+        this.dataPath = path;
+        this.output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(dataPath.toFile())));
+        this.buffer.setExternalData(true);
+        DEBUG = Get.configurationService().enableVerboseDebug();
+	}
+
+	@Override
     public void put(OchreExternalizable ochreObject) {
         if (ochreObject.getOchreObjectType() != lastObjectType) {
             debugCount = 0;

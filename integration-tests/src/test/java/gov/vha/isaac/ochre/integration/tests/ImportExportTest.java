@@ -32,11 +32,11 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.SomeRole;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.SufficientSet;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.IntStream;
 
 /**
  * Created by kec on 1/2/16.
@@ -108,7 +108,7 @@ public class ImportExportTest {
             Assert.assertEquals(exportCount.get(), importCount.get());
             Assert.assertEquals(exportStats, importStats);
 
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Assert.fail("File not found", e);
         }
     }
@@ -182,7 +182,7 @@ public class ImportExportTest {
             Assert.assertEquals(exportStats.stampAliases.get(), importStats.stampAliases.get());
 
 
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Assert.fail("File not found", e);
         }
     }
