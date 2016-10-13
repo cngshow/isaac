@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.parsers.DocumentBuilder;
@@ -95,6 +96,8 @@ public class ExporterConfig {
 			Terminology tx = new Terminology();
 			
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			//To avoid XXE injections add setFeature
+			dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 	        DocumentBuilder db = dbf.newDocumentBuilder();
 	        Document document = db.newDocument();
 	        
@@ -102,6 +105,8 @@ public class ExporterConfig {
 	        marshaller.marshal(tx, document);
 	        
 	        TransformerFactory tf = TransformerFactory.newInstance();
+	        //To protect a TransformerFactory against XXE injection add setAttribute
+	        tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 	        Transformer t = tf.newTransformer();
 	        DOMSource source = new DOMSource(document);
 	        StreamResult result = new StreamResult(System.out);
