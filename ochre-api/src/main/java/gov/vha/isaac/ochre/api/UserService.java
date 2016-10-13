@@ -18,12 +18,7 @@
  */
 package gov.vha.isaac.ochre.api;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 
 import org.jvnet.hk2.annotations.Contract;
 
@@ -36,47 +31,6 @@ import org.jvnet.hk2.annotations.Contract;
  */
 @Contract
 public interface UserService {
-	public static class User {
-		private final String name;
-		private final UUID id;
-		private final Set<UserRole> roles = new HashSet<>();
-		
-		public User(String name, UUID id, Collection<UserRole> roles) {
-			this.name = name;
-			this.id = id;
-			if (roles != null) {
-				this.roles.addAll(roles);
-			}
-		}
-		
-		/**
-		 * @return
-		 */
-		public String getName() {
-			return name;
-		}
-		/**
-		 * @return
-		 */
-		public UUID getId() {
-			return id;
-		}
-		/**
-		 * @return
-		 */
-		public Set<UserRole> getRoles() {
-			return Collections.unmodifiableSet(roles);
-		}
-
-		/* (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return "User [name=" + name + ", id=" + id + ", roles=" + roles + "]";
-		}
-	}
-
 	/**
 	 * Return a user and roles available for that user
 	 *
