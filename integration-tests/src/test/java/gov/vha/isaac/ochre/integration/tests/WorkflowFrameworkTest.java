@@ -17,6 +17,7 @@ import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -91,15 +92,15 @@ public class WorkflowFrameworkTest {
 	public void setUpUsers() throws Exception {
 		userId = UUID.randomUUID();
 		SimpleUserRoleService rolesService = LookupService.get().getService(SimpleUserRoleService.class);
-		rolesService.addRole("Editor");
-		rolesService.addRole("Reviewer");
-		rolesService.addRole("Approver");
-		rolesService.addRole(BPMNInfo.AUTOMATED_ROLE);
+		rolesService.addRole(UserRole.EDITOR);
+		rolesService.addRole(UserRole.REVIEWER);
+		rolesService.addRole(UserRole.APPROVER);
+		rolesService.addRole(UserRole.AUTOMATED);
 		
-		HashSet<String> roles = new HashSet<>();
-		roles.add("Editor");
-		roles.add("Approver");
-		roles.add("Reviewer");
+		HashSet<UserRole> roles = new HashSet<>();
+		roles.add(UserRole.EDITOR);
+		roles.add(UserRole.APPROVER);
+		roles.add(UserRole.REVIEWER);
 		rolesService.addUser(userId, roles);
 	}
 
@@ -781,7 +782,7 @@ public class WorkflowFrameworkTest {
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, startNodeAction.getInitialState(),
-				startNodeAction.getAction(), startNodeAction.getOutcomeState(), "Automated By System");
+				startNodeAction.getAction(), startNodeAction.getOutcomeState(), UserRole.AUTOMATED);
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"", 1);
