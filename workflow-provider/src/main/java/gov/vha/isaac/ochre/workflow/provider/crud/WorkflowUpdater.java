@@ -180,15 +180,14 @@ public class WorkflowUpdater
 	 * Used when component is removed from the process's component details panel
 	 * 
 	 * @param processId
-	 * THe process from which the component is to be removed
+	 *            The process from which the component is to be removed
 	 * @param compNid
-	 * The component whose changes are to be reverted and removed
-	 * from the process
+	 *            The component whose changes are to be reverted and removed
+	 *            from the process
 	 * @param editCoordinate
-	 * TODO
 	 * @throws Exception
-	 * Thrown if the component has been found to not be currently
-	 * associated with the process
+	 *             Thrown if the component has been found to not be currently
+	 *             associated with the process
 	 */
 	public void removeComponentFromWorkflow(UUID processId, int compNid, EditCoordinate editCoordinate) throws Exception
 	{
@@ -208,7 +207,7 @@ public class WorkflowUpdater
 		}
 		else
 		{
-			throw new Exception("Components may not be renived from Workflow: " + compNid);
+			throw new Exception("Components may not be removed from Workflow: " + compNid);
 		}
 	}
 
