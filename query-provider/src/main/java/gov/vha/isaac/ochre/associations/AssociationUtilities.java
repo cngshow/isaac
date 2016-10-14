@@ -55,6 +55,26 @@ public class AssociationUtilities
 		}
 		return associationSequence;
 	}
+	
+	/**
+	 * Get a particular associations 
+	 * @param associationNid
+	 * @param stamp - optional - if not provided, uses the default from the config service
+	 * @return the found associationInstance, if present on the provided stamp path
+	 */
+	public static Optional<AssociationInstance> getAssociation(int associationNid, StampCoordinate stamp)
+	{
+		StampCoordinate localStamp = stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp;
+		@SuppressWarnings("rawtypes")
+		SememeChronology sc = Get.sememeService().getSememe(associationNid);
+		@SuppressWarnings("unchecked")
+		Optional<LatestVersion<DynamicSememe<?>>> latest = sc.getLatestVersion(DynamicSememe.class, localStamp);
+		if (latest.isPresent())
+		{
+			return Optional.of(AssociationInstance.read(latest.get().value(), stamp));
+		}
+		return Optional.empty();
+	}
 
 	/**
 	 * Get all associations that originate on the specified componentNid
