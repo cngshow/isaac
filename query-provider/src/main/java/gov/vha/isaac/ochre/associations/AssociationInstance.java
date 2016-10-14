@@ -100,7 +100,7 @@ public class AssociationInstance
 		if (targetColIndex >= 0)
 		{
 			DynamicSememeData[] data = sememe_.getData();
-			if (data != null && data.length > targetColIndex)
+			if (data != null && data.length > targetColIndex && data[targetColIndex] != null)
 			{
 				int nid = 0;
 				if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.UUID 
