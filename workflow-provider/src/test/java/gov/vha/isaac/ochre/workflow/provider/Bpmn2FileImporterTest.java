@@ -124,7 +124,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				"Reject Edit", "Reject Review", "Create Workflow Process");
 
 		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Edit", "Canceled During Review",
-				"Canceled During Approval", "Ready for Edit", "Ready for Approve", "Ready for Publish",
+				"Canceled During Approval", "Ready for Edit", "Ready for Approve", "Modeling Review Complete",
 				"Ready for Review");
 
 		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
@@ -251,7 +251,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			} else if (act.getAction().equals("Reject Review")) {
 				Assert.assertEquals("Reject Review", act.getOutcomeState());
 			} else if (act.getAction().equals("Approve")) {
-				Assert.assertEquals("Ready for Publish", act.getOutcomeState());
+				Assert.assertEquals("Modeling Review Complete", act.getOutcomeState());
 			} else {
 				Assert.fail();
 			}

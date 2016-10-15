@@ -443,7 +443,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 			} else if (act.getAction().equals("Reject Edit")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Edit"));
 			} else if (act.getAction().equals("Approve")) {
-				Assert.assertTrue(act.getOutcomeState().equals("Ready for Publish"));
+				Assert.assertTrue(act.getOutcomeState().equals("Modeling Review Complete"));
 			} else if (act.getAction().equals("Cancel Workflow")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Canceled During Approval"));
 			} else {
