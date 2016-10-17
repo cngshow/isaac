@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
+import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
@@ -42,6 +43,7 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
     protected final List<UUID> additionalUuids = new ArrayList<>();
     private UUID primordialUuid = null;
     protected final List<SememeBuilder<?>> sememeBuilders = new ArrayList<>();
+    protected State state = State.ACTIVE;
     
     @Override
     public int getNid() {
@@ -75,6 +77,11 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public IdentifiedComponentBuilder<T> setState(State state) {
+        this.state = state;
+        return this;
+    }
 
     /**
      * If not set, a randomly generated UUID will be automatically used.

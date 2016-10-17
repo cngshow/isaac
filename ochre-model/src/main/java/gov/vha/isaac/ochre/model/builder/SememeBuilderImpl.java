@@ -104,31 +104,31 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         switch (sememeType) {
             case COMPONENT_NID:
                 ComponentNidSememeImpl cnsi = (ComponentNidSememeImpl) 
-                        sememeChronicle.createMutableVersion(ComponentNidSememeImpl.class, State.ACTIVE, editCoordinate);
+                        sememeChronicle.createMutableVersion(ComponentNidSememeImpl.class, state, editCoordinate);
                 cnsi.setComponentNid((Integer) parameters[0]);
                 break;
             case LONG:
                 LongSememeImpl lsi = (LongSememeImpl) 
-                        sememeChronicle.createMutableVersion(LongSememeImpl.class, State.ACTIVE, editCoordinate);
+                        sememeChronicle.createMutableVersion(LongSememeImpl.class, state, editCoordinate);
                 lsi.setLongValue((Long) parameters[0]);
                 break;
             case LOGIC_GRAPH:
                 LogicGraphSememeImpl lgsi = (LogicGraphSememeImpl) 
-                        sememeChronicle.createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
+                        sememeChronicle.createMutableVersion(LogicGraphSememeImpl.class, state, editCoordinate);
                 lgsi.setGraphData(((LogicalExpression) parameters[0]).getData(DataTarget.INTERNAL));
                 break;
             case MEMBER:
                 SememeVersionImpl svi = (SememeVersionImpl)
-                        sememeChronicle.createMutableVersion(SememeVersionImpl.class, State.ACTIVE, editCoordinate);
+                        sememeChronicle.createMutableVersion(SememeVersionImpl.class, state, editCoordinate);
                 break;
             case STRING:
                 StringSememeImpl ssi = (StringSememeImpl)
-                    sememeChronicle.createMutableVersion(StringSememeImpl.class, State.ACTIVE, editCoordinate);
+                    sememeChronicle.createMutableVersion(StringSememeImpl.class, state, editCoordinate);
                 ssi.setString((String) parameters[0]);
                 break;
             case DESCRIPTION: {
                 DescriptionSememeImpl dsi = (DescriptionSememeImpl)
-                    sememeChronicle.createMutableVersion(DescriptionSememeImpl.class, State.ACTIVE, editCoordinate);
+                    sememeChronicle.createMutableVersion(DescriptionSememeImpl.class, state, editCoordinate);
                 dsi.setCaseSignificanceConceptSequence((Integer) parameters[0]);
                 dsi.setDescriptionTypeConceptSequence((Integer) parameters[1]);
                 dsi.setLanguageConceptSequence((Integer) parameters[2]);
@@ -136,7 +136,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 break;
             }
             case DYNAMIC: {
-                DynamicSememeImpl dsi = (DynamicSememeImpl)sememeChronicle.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate);
+                DynamicSememeImpl dsi = (DynamicSememeImpl)sememeChronicle.createMutableVersion(DynamicSememeImpl.class, state, editCoordinate);
                 if (parameters != null && parameters.length > 0) {
                     //See notes in SememeBuilderProvider - this casting / wrapping nonesense it to work around Java being stupid.
                     dsi.setData(((AtomicReference<DynamicSememeData[]>)parameters[0]).get());
@@ -239,6 +239,4 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         builtObjects.add(sememeChronicle);
         return (C) sememeChronicle;
     }
-
-
 }
