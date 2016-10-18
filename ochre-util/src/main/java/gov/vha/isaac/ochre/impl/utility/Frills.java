@@ -36,6 +36,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -121,6 +122,38 @@ public class Frills implements DynamicSememeColumnUtility {
 				+ " STAMP=" + version.getStampSequence() + "{state=" + version.getState()
 				+ ", time=" + version.getTime() + ", author=" + version.getAuthorSequence() + ", module="
 				+ version.getModuleSequence() + ", path=" + version.getPathSequence() + "}";
+	}
+
+	/**
+	 * @param stamp Stamp from which to generate StampCoordinate
+	 * @param precedence Precedence to assign StampCoordinate
+	 * @return StampCoordinate corresponding to Stamp values
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromStamp(Stamp stamp, StampPrecedence precedence) {
+		StampPosition stampPosition = new StampPositionImpl(stamp.getTime(), stamp.getPathSequence());
+		StampCoordinate stampCoordinate = new StampCoordinateImpl(
+				precedence,
+				stampPosition,
+				ConceptSequenceSet.of(stamp.getModuleSequence()),
+				EnumSet.of(stamp.getStatus()));
+				
+		log.debug("Created StampCoordinate from Stamp: " + stamp + ": " + stampCoordinate);
+
+		return stampCoordinate;
+	}
+
+	/**
+	 * @param stamp Stamp from which to generate StampCoordinate
+	 * @return StampCoordinate corresponding to Stamp values
+	 * 
+	 * StampPrecedence set to StampPrecedence.TIME
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromStamp(Stamp stamp) {
+		return getStampCoordinateFromStamp(stamp, StampPrecedence.TIME);
 	}
 	
 	/**

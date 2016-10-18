@@ -388,19 +388,30 @@ public class WorkflowUpdater
 				// actualStampSeq
 				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT)
 				{
-					ConceptChronology<?> conceptChron = ((ConceptVersion) version).getChronology();
-					conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
+					ConceptChronology<?> conceptChron = Get.conceptService().getConcept(compNid);
+					if (version != null) {
+						//conceptChron = ((ConceptVersion) version).getChronology();
+						conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
+					} else {
+						conceptChron.createMutableVersion(State.INACTIVE, editCoordinate);
+					}
 					Get.commitService().addUncommitted(conceptChron);
 					Get.commitService().commit("Reverting concept to how it was prior to workflow");
 				}
 				else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME)
 				{
-					SememeChronology<?> semChron = ((SememeVersion) version).getChronology();
-					SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(version.getClass(), ((SememeVersion<?>) version).getState(),
-							editCoordinate);
+					SememeChronology<?> semChron = Get.sememeService().getSememe(compNid);
+					if (version != null) {
+						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(version.getClass(), ((SememeVersion<?>) version).getState(),
+								editCoordinate);
+						createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
+					} else {
+						SememeVersion firstVersion = (SememeVersion)((SememeChronology) semChron).getVersionList().iterator().next();
+						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(firstVersion.getClass(), State.INACTIVE,
+								editCoordinate);
+					}
 
-					createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
-					Get.commitService().addUncommitted(createdVersion.getChronology()).get();
+					Get.commitService().addUncommitted(semChron).get();
 					Get.commitService().commit("Reverting sememe to how it was prior to workflow");
 				}
 			}
