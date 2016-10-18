@@ -18,9 +18,12 @@
  */
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
+import java.security.InvalidParameterException;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -100,6 +103,48 @@ public enum DynamicSememeValidatorType
 	public String getDisplayName()
 	{
 		return displayName_;
+	}
+	
+	public static DynamicSememeValidatorType[] parse(String[] nameOrEnumId)
+	{
+		if (nameOrEnumId == null)
+		{
+			return null;
+		}
+		DynamicSememeValidatorType[] temp = new DynamicSememeValidatorType[nameOrEnumId.length];
+		{
+			for (int i = 0; i < nameOrEnumId.length; i++)
+			{
+				temp[i] = parse(nameOrEnumId[i]);
+			}
+		}
+		return temp;
+	}
+	
+	public static DynamicSememeValidatorType parse(String nameOrEnumId)
+	{
+		String clean = nameOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+		if (StringUtils.isBlank(clean))
+		{
+			return null;
+		}
+		try
+		{
+			int i = Integer.parseInt(clean);
+			//enumId
+			return DynamicSememeValidatorType.values()[i];
+		}
+		catch (NumberFormatException e)
+		{
+			for (DynamicSememeValidatorType x : DynamicSememeValidatorType.values())
+			{
+				if (x.displayName_.equalsIgnoreCase(clean) || x.name().toLowerCase().equals(clean))
+				{
+					return x;
+				}
+			}
+		}
+		throw new InvalidParameterException("Could not determine type");
 	}
 	
 	public boolean validatorSupportsType(DynamicSememeDataType type)
