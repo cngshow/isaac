@@ -102,7 +102,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
         
         descBuilder.setPrimordialUuid(this.getPrimordialUuid());
         OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>> newDescription = (OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>>)
-                descBuilder.build(editCoordinate, changeCheckerMode, builtObjects);
+                descBuilder.setState(state).build(editCoordinate, changeCheckerMode, builtObjects);
         nestedBuilders.add(newDescription);
         SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
         preferredInDialectAssemblages.forEach(( assemblageProxy) -> {

@@ -147,7 +147,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
 
         ArrayList<OptionalWaitTask<?>> nestedBuilders = new ArrayList<>();
         ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
-        conceptChronology.createMutableVersion(State.ACTIVE, editCoordinate);
+        conceptChronology.createMutableVersion(state, editCoordinate);
         builtObjects.add(conceptChronology);
         descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());
         descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
