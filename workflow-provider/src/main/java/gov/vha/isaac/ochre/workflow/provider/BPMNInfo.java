@@ -49,7 +49,7 @@ public class BPMNInfo {
 	private UUID definitionId;
 
 	/** A map of all states per definition from which a process may be edited */
-	private static Map<UUID, Set<String>> editStatesMap;
+	private Map<UUID, Set<String>> editStatesMap;
 	
 	protected BPMNInfo(UUID definitionId, Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap, Map<UUID, Set<AvailableAction>> definitionStartActionMap, 
 			Map<UUID, Set<String>> editStatesMap)
@@ -128,7 +128,7 @@ public class BPMNInfo {
 	 * 
 	 * @return true if the state is an Edit state
 	 */
-	public static boolean isEditState(UUID definitionId, String state) {
+	public boolean isEditState(UUID definitionId, String state) {
 		return editStatesMap.get(definitionId).contains(state);
 	}
 	
