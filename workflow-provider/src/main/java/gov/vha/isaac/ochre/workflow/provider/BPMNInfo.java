@@ -39,6 +39,7 @@ public class BPMNInfo {
 	public static final UUID UNOWNED_PROCESS = new UUID(0,0);
 
 	/** A universal means of expressing a workflow time stamp */
+	//TODO fix this, SimpleDateFormats aren't threadsafe, can't share this
 	final static public SimpleDateFormat workflowDateFormatter = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
 
 	/** A map of available actions per type of ending workflow */
