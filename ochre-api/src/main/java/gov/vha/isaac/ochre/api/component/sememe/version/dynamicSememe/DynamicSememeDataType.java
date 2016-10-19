@@ -78,8 +78,12 @@ public enum DynamicSememeDataType {
 		}
 	}
 	
-	public static DynamicSememeDataType parse(String nameOrTokenOrEnumId)
+	public static DynamicSememeDataType parse(String nameOrTokenOrEnumId, boolean exceptionOnParseFail)
 	{
+		if (nameOrTokenOrEnumId == null)
+		{
+			return null;
+		}
 		String clean = nameOrTokenOrEnumId.toLowerCase(Locale.ENGLISH).trim();
 		if (StringUtils.isBlank(clean))
 		{
@@ -108,7 +112,14 @@ public enum DynamicSememeDataType {
 				}
 			}
 		}
-		throw new InvalidParameterException("Could not determine type");
+		if (exceptionOnParseFail)
+		{
+			throw new InvalidParameterException("Could not determine DynamicSememeDataType from " + nameOrTokenOrEnumId);
+		}
+		else 
+		{
+			return UNKNOWN;
+		}
 	}
 	
 	private DynamicSememeDataType(int externalizedToken, Class<? extends DynamicSememeData> dataClass, String displayName)

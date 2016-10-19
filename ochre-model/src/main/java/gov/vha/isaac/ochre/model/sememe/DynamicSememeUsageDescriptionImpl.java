@@ -289,7 +289,7 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
 
                         //col 0 is Referenced component restriction information - as a string. 
                         try {
-                            ObjectChronologyType type = ObjectChronologyType.parse(refexDefinitionData[0].getDataObject().toString());
+                            ObjectChronologyType type = ObjectChronologyType.parse(refexDefinitionData[0].getDataObject().toString(), false);
                             if (type == ObjectChronologyType.UNKNOWN_NID) {
                                 //just ignore - it shouldn't have been saved that way anyway.
                             } else {
@@ -303,7 +303,7 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
                         //col 1 is an optional Referenced component sub-restriction information - as a string.
                         if (refexDefinitionData.length > 1 && refexDefinitionData[1] != null) {
                             try {
-                                SememeType type = SememeType.parse(refexDefinitionData[1].getDataObject().toString());
+                                SememeType type = SememeType.parse(refexDefinitionData[1].getDataObject().toString(), false);
                                 if (type == SememeType.UNKNOWN) {
                                     //just ignore - it shouldn't have been saved that way anyway.
                                 } else {

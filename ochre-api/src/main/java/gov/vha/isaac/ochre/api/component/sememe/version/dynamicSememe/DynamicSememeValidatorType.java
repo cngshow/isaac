@@ -105,7 +105,7 @@ public enum DynamicSememeValidatorType
 		return displayName_;
 	}
 	
-	public static DynamicSememeValidatorType[] parse(String[] nameOrEnumId)
+	public static DynamicSememeValidatorType[] parse(String[] nameOrEnumId, boolean exceptionOnParseFail)
 	{
 		if (nameOrEnumId == null)
 		{
@@ -115,14 +115,18 @@ public enum DynamicSememeValidatorType
 		{
 			for (int i = 0; i < nameOrEnumId.length; i++)
 			{
-				temp[i] = parse(nameOrEnumId[i]);
+				temp[i] = parse(nameOrEnumId[i], exceptionOnParseFail);
 			}
 		}
 		return temp;
 	}
 	
-	public static DynamicSememeValidatorType parse(String nameOrEnumId)
+	public static DynamicSememeValidatorType parse(String nameOrEnumId, boolean exceptionOnParseFail)
 	{
+		if (nameOrEnumId == null)
+		{
+			return null;
+		}
 		String clean = nameOrEnumId.toLowerCase(Locale.ENGLISH).trim();
 		if (StringUtils.isBlank(clean))
 		{
@@ -144,7 +148,14 @@ public enum DynamicSememeValidatorType
 				}
 			}
 		}
-		throw new InvalidParameterException("Could not determine type");
+		if (exceptionOnParseFail)
+		{
+			throw new InvalidParameterException("The value " + nameOrEnumId + " could not be parsed as a DynamicSememeValidatorType");
+		}
+		else
+		{
+			return UNKNOWN;
+		}
 	}
 	
 	public boolean validatorSupportsType(DynamicSememeDataType type)
@@ -355,7 +366,7 @@ public enum DynamicSememeValidatorType
 				//Position 0 tells us the ObjectChronologyType.  When the type is Sememe, position 2 tells us the (optional) SememeType of the assemblage restriction
 				DynamicSememeString[] valData = ((DynamicSememeArray<DynamicSememeString>)validatorDefinitionData).getDataArray();
 				
-				ObjectChronologyType expectedCT = ObjectChronologyType.parse(valData[0].getDataString());
+				ObjectChronologyType expectedCT = ObjectChronologyType.parse(valData[0].getDataString(), false);
 				ObjectChronologyType component = Get.identifierService().getChronologyTypeForNid(nid); 
 				
 				if (expectedCT == ObjectChronologyType.UNKNOWN_NID)
@@ -371,7 +382,7 @@ public enum DynamicSememeValidatorType
 				if (expectedCT == ObjectChronologyType.SEMEME && valData.length == 2)
 				{
 					//they specified a specific sememe type.  Verify.
-					SememeType st = SememeType.parse(valData[1].getDataString());
+					SememeType st = SememeType.parse(valData[1].getDataString(), false);
 					SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeService().getSememe(nid);
 					
 					if (sememe.getSememeType() != st)
