@@ -412,13 +412,13 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		}
 
 		Date date = new Date(timeCreated);
-		String timeCreatedString = workflowDateFormatter.format(date);
+		String timeCreatedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		date = new Date(timeLaunched);
-		String timeLaunchedString = workflowDateFormatter.format(date);
+		String timeLaunchedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		date = new Date(timeCanceledOrConcluded);
-		String timeCanceledOrConcludedString = workflowDateFormatter.format(date);
+		String timeCanceledOrConcludedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
 				+ creatorId.toString() + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "
