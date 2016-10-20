@@ -137,6 +137,16 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
         IntStream sequences = IntStream.range(0, objectByteList.size() * SEGMENT_SIZE).parallel();
         return sequences.filter(sequence -> containsKey(sequence)).mapToObj(sequence -> getQuick(sequence));
     }
+    
+    public IntStream getKeyStream() {
+        IntStream sequences = IntStream.range(0, objectByteList.size() * SEGMENT_SIZE);
+        return sequences.filter(sequence -> containsKey(sequence));
+    }
+
+    public IntStream getKeyParallelStream() {
+        IntStream sequences = IntStream.range(0, objectByteList.size() * SEGMENT_SIZE).parallel();
+        return sequences.filter(sequence -> containsKey(sequence));
+    }
 
     protected SerializedAtomicReferenceArray readSegmentFromDisk(int segmentIndex) {
         File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);

@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
@@ -90,11 +91,11 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				createdDefinitionDetailContentStore.size(), 1);
 
 		DefinitionDetail entry = createdDefinitionDetailContentStore.values().iterator().next();
-		Set<String> expectedRoles = new HashSet<>();
-		expectedRoles.add("Editor");
-		expectedRoles.add("Reviewer");
-		expectedRoles.add("Approver");
-		expectedRoles.add(BPMNInfo.AUTOMATED_ROLE);
+		Set<UserRole> expectedRoles = new HashSet<>();
+		expectedRoles.add(UserRole.EDITOR);
+		expectedRoles.add(UserRole.REVIEWER);
+		expectedRoles.add(UserRole.APPROVER);
+		expectedRoles.add(UserRole.AUTOMATED);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -123,7 +124,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 				"Reject Edit", "Reject Review", "Create Workflow Process");
 
 		List<String> possibleStates = Arrays.asList("Assigned", "Canceled During Edit", "Canceled During Review",
-				"Canceled During Approval", "Ready for Edit", "Ready for Approve", "Ready for Publish",
+				"Canceled During Approval", "Ready for Edit", "Ready for Approve", "Modeling Review Complete",
 				"Ready for Review");
 
 		Set<AvailableAction> identifiedCanceledActions = new HashSet<>();
@@ -200,14 +201,14 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(1, actions.size());
 		Assert.assertEquals("Create Workflow Process", actions.iterator().next().getAction());
 		Assert.assertEquals("Ready for Edit", actions.iterator().next().getOutcomeState());
-		Assert.assertEquals("Automated By System", actions.iterator().next().getRole());
+		Assert.assertEquals(UserRole.AUTOMATED, actions.iterator().next().getRole());
 	}
 
 	private void assertReadyForEditActions(Set<AvailableAction> actions) {
 		Assert.assertEquals(2, actions.size());
 
 		for (AvailableAction act : actions) {
-			Assert.assertEquals("Editor", act.getRole());
+			Assert.assertEquals(UserRole.EDITOR, act.getRole());
 
 			if (act.getAction().equals("Cancel Workflow")) {
 				Assert.assertEquals("Canceled During Edit", act.getOutcomeState());
@@ -223,7 +224,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(3, actions.size());
 
 		for (AvailableAction act : actions) {
-			Assert.assertEquals("Reviewer", act.getRole());
+			Assert.assertEquals(UserRole.REVIEWER, act.getRole());
 
 			if (act.getAction().equals("Cancel Workflow")) {
 				Assert.assertEquals("Canceled During Review", act.getOutcomeState());
@@ -241,7 +242,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 		Assert.assertEquals(4, actions.size());
 
 		for (AvailableAction act : actions) {
-			Assert.assertEquals("Approver", act.getRole());
+			Assert.assertEquals(UserRole.APPROVER, act.getRole());
 
 			if (act.getAction().equals("Cancel Workflow")) {
 				Assert.assertEquals("Canceled During Approval", act.getOutcomeState());
@@ -250,7 +251,7 @@ public class Bpmn2FileImporterTest extends AbstractWorkflowProviderTestPackage {
 			} else if (act.getAction().equals("Reject Review")) {
 				Assert.assertEquals("Reject Review", act.getOutcomeState());
 			} else if (act.getAction().equals("Approve")) {
-				Assert.assertEquals("Ready for Publish", act.getOutcomeState());
+				Assert.assertEquals("Modeling Review Complete", act.getOutcomeState());
 			} else {
 				Assert.fail();
 			}

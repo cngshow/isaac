@@ -15,6 +15,9 @@
  */
 package gov.vha.isaac.ochre.api.component.sememe;
 
+import java.security.InvalidParameterException;
+import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
@@ -119,14 +122,27 @@ public enum SememeType {
         }
     }
     
-    public static SememeType parse(String name)
+    public static SememeType parse(String nameOrEnumId, boolean exceptionOnParseFail)
     {
+        if (nameOrEnumId == null)
+        {
+            return null;
+        }
+        String clean = nameOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+        if (StringUtils.isBlank(clean))
+        {
+            return null;
+        }
         for (SememeType ct : values())
         {
-            if (ct.name().equals(name) || ct.niceName_.equals(name))
+            if (ct.name().toLowerCase(Locale.ENGLISH).equals(clean) || ct.niceName_.toLowerCase(Locale.ENGLISH).equals(clean)  || (ct.ordinal() + "").equals(clean))
             {
                 return ct;
             }
+        }
+        if (exceptionOnParseFail)
+        {
+            throw new InvalidParameterException("Could not determine SememeType from " + nameOrEnumId);
         }
         return UNKNOWN;
     }

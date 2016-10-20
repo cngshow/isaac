@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.api.component.sememe;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.collections.NidSet;
@@ -95,11 +96,17 @@ public interface SememeService {
     
     Stream<SememeChronology<? extends SememeVersion<?>>> getParallelSememeStream();
     
+    IntStream getSememeKeyStream();
+    
+    IntStream getSememeKeyParallelStream();
+    
     Stream<SememeChronology<? extends DescriptionSememe<?>>> getDescriptionsForComponent(int componentNid);
     
     /**
      * @return the sequence identifiers of all assemblage concepts that are actually in use by a sememe
      */
     Stream<Integer> getAssemblageTypes();
+    
+    int getSememeCount();
 
 }

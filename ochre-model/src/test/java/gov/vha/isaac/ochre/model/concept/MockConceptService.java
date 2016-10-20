@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -55,7 +56,7 @@ public class MockConceptService implements ConceptService {
         return conceptsMap.containsKey(Get.identifierService().getConceptSequence(conceptId));
     }
 
-	@Override
+    @Override
     public Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getOptionalConcept(UUID... conceptUuids) {
         return Optional.ofNullable(getConcept(conceptUuids));
     }
@@ -98,5 +99,15 @@ public class MockConceptService implements ConceptService {
     @Override
     public Stream<ConceptChronology<? extends ConceptVersion<?>>> getParallelConceptChronologyStream(ConceptSequenceSet conceptSequences) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IntStream getConceptKeyStream() {
+        return conceptsMap.keySet().stream().mapToInt(i -> i);
+    }
+
+    @Override
+    public IntStream getConceptKeyParallelStream() {
+        return conceptsMap.keySet().parallelStream().mapToInt(i -> i);
     }
 }

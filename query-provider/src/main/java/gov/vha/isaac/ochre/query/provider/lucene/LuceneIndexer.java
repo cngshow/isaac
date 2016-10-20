@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -124,6 +125,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     }
     
     private final HashMap<String, AtomicInteger> indexedComponentStatistics = new HashMap<>();
+    private Semaphore indexedComponentStatisticsBlock = new Semaphore(1);
 
     private final ConcurrentHashMap<Integer, IndexedGenerationCallable> componentNidLatch = new ConcurrentHashMap<>();
     private boolean enabled_ = true;
@@ -685,12 +687,16 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     protected void incrementIndexedItemCount(String name) {
         AtomicInteger temp = indexedComponentStatistics.get(name);
         if (temp == null) {
-            synchronized (indexedComponentStatistics) {
+            try {
+                indexedComponentStatisticsBlock.acquireUninterruptibly();
                 temp = indexedComponentStatistics.get(name);
                 if (temp == null) {
                     temp = new AtomicInteger(0);
                     indexedComponentStatistics.put(name, temp);
                 }
+            }
+            finally{
+                indexedComponentStatisticsBlock.release();
             }
         }
         temp.incrementAndGet();

@@ -104,8 +104,6 @@ public class SyncServiceGIT implements SyncFiles
 {
 	private static Logger log = LoggerFactory.getLogger(SyncServiceGIT.class);
 
-	private final char[] fortifyFun = System.getProperty("line.separator").toCharArray();
-	private final String DELIMITER = new String(fortifyFun);
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_REMOTE = "Conflicted merge happened during remote merge";
 	private final String NOTE_FAILED_MERGE_HAPPENED_ON_STASH = "Conflicted merge happened during stash merge";
 	private final String STASH_MARKER = ":STASH-";
@@ -898,17 +896,17 @@ public class SyncServiceGIT implements SyncFiles
 	private String statusToString(Status status)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(" Is clean: ").append(status.isClean()).append(DELIMITER);
-		sb.append(" Changed: ").append(status.getChanged()).append(DELIMITER);
-		sb.append(" Added: ").append(status.getAdded()).append(DELIMITER);
-		sb.append(" Conflicting: ").append(status.getConflicting()).append(DELIMITER);
-		sb.append(" Ignored, unindexed: ").append(status.getIgnoredNotInIndex()).append(DELIMITER);
-		sb.append(" Missing: ").append(status.getMissing()).append(DELIMITER);
-		sb.append(" Modified: ").append(status.getModified()).append(DELIMITER);
-		sb.append(" Removed: ").append(status.getRemoved()).append(DELIMITER);
-		sb.append(" UncomittedChanges: ").append(status.getUncommittedChanges()).append(DELIMITER);
-		sb.append(" Untracked: ").append(status.getUntracked()).append(DELIMITER);
-		sb.append(" UntrackedFolders: ").append(status.getUntrackedFolders()).append(DELIMITER);
+		sb.append(" Is clean: ").append(status.isClean()).append(String.format("%n"));
+		sb.append(" Changed: ").append(status.getChanged()).append(String.format("%n"));
+		sb.append(" Added: ").append(status.getAdded()).append(String.format("%n"));
+		sb.append(" Conflicting: ").append(status.getConflicting()).append(String.format("%n"));
+		sb.append(" Ignored, unindexed: ").append(status.getIgnoredNotInIndex()).append(String.format("%n"));
+		sb.append(" Missing: ").append(status.getMissing()).append(String.format("%n"));
+		sb.append(" Modified: ").append(status.getModified()).append(String.format("%n"));
+		sb.append(" Removed: ").append(status.getRemoved()).append(String.format("%n"));
+		sb.append(" UncomittedChanges: ").append(status.getUncommittedChanges()).append(String.format("%n"));
+		sb.append(" Untracked: ").append(status.getUntracked()).append(String.format("%n"));
+		sb.append(" UntrackedFolders: ").append(status.getUntrackedFolders()).append(String.format("%n"));
 		return sb.toString();
 	}
 

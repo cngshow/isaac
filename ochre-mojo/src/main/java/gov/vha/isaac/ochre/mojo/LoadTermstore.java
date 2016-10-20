@@ -2,12 +2,15 @@ package gov.vha.isaac.ochre.mojo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +26,7 @@ import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -36,8 +40,6 @@ import gov.vha.isaac.ochre.api.externalizable.StampComment;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.IsomorphicResults;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
-import java.util.ArrayList;
-import java.util.List;
 
 /*
  * Copyright 2001-2005 The Apache Software Foundation.
@@ -129,6 +131,7 @@ public class LoadTermstore extends AbstractMojo
 		{
 			getLog().warn("No Metadata IBDF file found!  This probably isn't good....");
 		}
+		Set<Integer> deferredActionNids = new HashSet<>();
 		try
 		{
 			for (File f : ibdfFiles)
@@ -194,9 +197,9 @@ public class LoadTermstore extends AbstractMojo
 										(!activeOnly || (isActive(sc) && !skippedItems.contains(sc.getReferencedComponentNid()))))
 									{
 										Get.sememeService().writeSememe(sc);
-										if (((SememeChronology)object).getSememeType() == SememeType.LOGIC_GRAPH)
+										if (sc.getSememeType() == SememeType.LOGIC_GRAPH)
 										{
-											Get.taxonomyService().updateTaxonomy((SememeChronology)object);
+											deferredActionNids.add(sc.getNid());
 										}
 										sememeCount++;
 									}
@@ -261,6 +264,27 @@ public class LoadTermstore extends AbstractMojo
 				stampAliasCount = 0;
 				stampCommentCount = 0;
 				skippedItems.clear();
+			}
+			
+			getLog().info("Completing processing on " + deferredActionNids.size() + " defered items");
+			for (int nid : deferredActionNids)
+			{
+				if (ObjectChronologyType.SEMEME.equals(Get.identifierService().getChronologyTypeForNid(nid)))
+				{
+					SememeChronology sc = Get.sememeService().getSememe(nid);
+					if (sc.getSememeType() == SememeType.LOGIC_GRAPH)
+					{
+						Get.taxonomyService().updateTaxonomy(sc);
+					}
+					else
+					{
+						throw new UnsupportedOperationException("Unexpected nid in deferred set: " + nid);
+					}
+				}
+				else
+				{
+					throw new UnsupportedOperationException("Unexpected nid in deferred set: " + nid);
+				}
 			}
 			
 			if (skippedAny)

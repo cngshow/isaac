@@ -3,7 +3,11 @@ package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.*;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
+import java.security.InvalidParameterException;
+import java.text.ParseException;
+import java.util.Locale;
 import java.util.UUID;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 
 
@@ -71,6 +75,50 @@ public enum DynamicSememeDataType {
 				return SEQUENCE;
 			default:
 				return UNKNOWN;
+		}
+	}
+	
+	public static DynamicSememeDataType parse(String nameOrTokenOrEnumId, boolean exceptionOnParseFail)
+	{
+		if (nameOrTokenOrEnumId == null)
+		{
+			return null;
+		}
+		String clean = nameOrTokenOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+		if (StringUtils.isBlank(clean))
+		{
+			return null;
+		}
+		try
+		{
+			int i = Integer.parseInt(clean);
+			if (i > 100)
+			{
+				return getFromToken(i);
+			}
+			else
+			{
+				//enumId
+				return DynamicSememeDataType.values()[i];
+			}
+		}
+		catch (NumberFormatException e)
+		{
+			for (DynamicSememeDataType x : DynamicSememeDataType.values())
+			{
+				if (x.displayName_.equalsIgnoreCase(clean) || x.name().toLowerCase().equals(clean))
+				{
+					return x;
+				}
+			}
+		}
+		if (exceptionOnParseFail)
+		{
+			throw new InvalidParameterException("Could not determine DynamicSememeDataType from " + nameOrTokenOrEnumId);
+		}
+		else 
+		{
+			return UNKNOWN;
 		}
 	}
 	

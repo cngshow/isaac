@@ -15,6 +15,10 @@
  */
 package gov.vha.isaac.ochre.api.chronicle;
 
+import java.security.InvalidParameterException;
+import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
+
 /**
  *
  * @author kec
@@ -38,14 +42,28 @@ public enum ObjectChronologyType {
 		return niceName_;
 	}
 	
-	public static ObjectChronologyType parse(String name)
+	public static ObjectChronologyType parse(String nameOrEnumId, boolean exceptionOnParseFail)
 	{
+		if (nameOrEnumId == null)
+		{
+			return null;
+		}
+		String clean = nameOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+		if (StringUtils.isBlank(clean))
+		{
+			return null;
+		}
 		for (ObjectChronologyType ct : values())
 		{
-			if (ct.name().equals(name) || ct.niceName_.equals(name))
+			if (ct.name().toLowerCase(Locale.ENGLISH).equals(clean) || ct.niceName_.toLowerCase(Locale.ENGLISH).equals(clean) 
+					|| (ct.ordinal() + "").equals(clean))
 			{
 				return ct;
 			}
+		}
+		if (exceptionOnParseFail)
+		{
+			throw new InvalidParameterException("Could not determine ObjectChronologyType from " + nameOrEnumId);
 		}
 		return UNKNOWN_NID;
 	}

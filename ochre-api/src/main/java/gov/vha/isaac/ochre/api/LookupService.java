@@ -72,8 +72,10 @@ public class LookupService {
                         ServiceLocator temp = HK2RuntimeInitializer.init("ISAAC", readInhabitantFiles, packages);
                         if (looker != null)
                         {
-                            throw new RuntimeException("RECURSIVE Lookup Service Reference!  Ensure that there are no static variables "
+                            RuntimeException e = new RuntimeException("RECURSIVE Lookup Service Reference!  Ensure that there are no static variables "
                                     + "objects utilizing the LookupService during their init!");
+                            e.printStackTrace();
+                            throw e;
                         }
                         looker = temp;
                         

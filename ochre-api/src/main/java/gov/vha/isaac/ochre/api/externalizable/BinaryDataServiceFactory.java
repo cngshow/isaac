@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.api.externalizable;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import org.jvnet.hk2.annotations.Contract;
 
@@ -47,5 +48,5 @@ public interface BinaryDataServiceFactory {
      * @return the BinaryDataWriterService for the given dataPath
      * @throws java.io.FileNotFoundException
      */
-    BinaryDataWriterService getWriter(Path dataPath) throws FileNotFoundException;
+    BinaryDataWriterService getWriter(Path dataPath) throws IOException;
 }

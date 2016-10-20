@@ -20,6 +20,7 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataServiceFactory;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
@@ -42,7 +43,7 @@ public class BinaryDataProviderFactory implements BinaryDataServiceFactory {
     }
 
     @Override
-    public BinaryDataWriterService getWriter(Path dataPath) throws FileNotFoundException {
+    public BinaryDataWriterService getWriter(Path dataPath) throws IOException {
        return new BinaryDataWriterProvider(dataPath);
     }
 }

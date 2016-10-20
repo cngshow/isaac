@@ -23,8 +23,10 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerConfiguration;
 
 
@@ -46,26 +48,23 @@ public class AssociationType
 	 * Read all details that define an Association.  
 	 * @param conceptNidOrSequence The concept that represents the association
 	 * @param stamp optional - uses system default if not provided.
+	 * @param language optional - uses system default if not provided
 	 * @return
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static AssociationType read(int conceptNidOrSequence, StampCoordinate stamp)
+	public static AssociationType read(int conceptNidOrSequence, StampCoordinate stamp, LanguageCoordinate language)
 	{
 		AssociationType at = new AssociationType(conceptNidOrSequence);
-		String bestName = null;
+		int conceptNid = Get.identifierService().getConceptNid(at.getAssociationTypeSequenece());
+		
 		StampCoordinate localStamp = (stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp);
-		for (DescriptionSememe<?> desc : Frills.getDescriptionsOfType(Get.identifierService().getConceptNid(at.getAssociationTypeSequenece()),
-				MetaData.SYNONYM, localStamp.makeAnalog(State.ACTIVE)))
+		LanguageCoordinate localLanguage = (language == null ? Get.configurationService().getDefaultLanguageCoordinate() : language);
+		
+		at.associationName_ = Get.conceptService().getSnapshot(localStamp, localLanguage).conceptDescriptionText(conceptNid);
+		
+		//Find the inverse name
+		for (DescriptionSememe<?> desc : Frills.getDescriptionsOfType(conceptNid, MetaData.SYNONYM, localStamp.makeAnalog(State.ACTIVE)))
 		{
-			if (bestName == null)
-			{
-				bestName = desc.getText();
-			}
-			if (Frills.isDescriptionPreferred(desc.getNid(), localStamp))
-			{
-				bestName = desc.getText();
-				break;
-			}
 			
 			if (Get.sememeService().getSememesForComponentFromAssemblage(desc.getNid(), 
 					DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getSequence()).anyMatch(nestedSememe ->
@@ -81,16 +80,7 @@ public class AssociationType
 			}
 		}
 		
-		if (bestName == null)
-		{
-			at.associationName_ = "-No name on path!-";
-		}
-		at.associationName_= bestName;
-		if (at.associationInverseName_ == null)
-		{
-			at.associationInverseName_ = Optional.empty();
-		}
-		
+		//find the description
 		for (DescriptionSememe<?> desc : Frills.getDescriptionsOfType(Get.identifierService().getConceptNid(at.getAssociationTypeSequenece()),
 				MetaData.DEFINITION_DESCRIPTION_TYPE, localStamp.makeAnalog(State.ACTIVE)))
 		{
@@ -109,11 +99,6 @@ public class AssociationType
 			}
 		}
 		
-		if (bestName == null)
-		{
-			at.associationName_ = "-No name on path!-";
-		}
-		at.associationName_= bestName;
 		if (at.associationInverseName_ == null)
 		{
 			at.associationInverseName_ = Optional.empty();
@@ -225,7 +210,7 @@ public class AssociationType
 			Get.commitService().commit("mark assocation as association type sememe").get();
 			//final get is to wait for commit completion
 
-			return read(rdud.getDynamicSememeUsageDescriptorSequence(), stampCoord);
+			return read(rdud.getDynamicSememeUsageDescriptorSequence(), stampCoord, LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
 		}
 		catch (Exception e)
 		{

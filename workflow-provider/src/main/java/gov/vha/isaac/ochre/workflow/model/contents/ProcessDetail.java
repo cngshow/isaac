@@ -23,7 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -411,14 +411,14 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at Stamp: " + componentToIntitialEditMap.get(compNid));
 		}
 
-		Date date = new Date(timeCreated);
-		String timeCreatedString = workflowDateFormatter.format(date);
+		LocalDate date = LocalDate.ofEpochDay(timeCreated);
+		String timeCreatedString = BPMNInfo.workflowDateFormatter.format(date);
 
-		date = new Date(timeLaunched);
-		String timeLaunchedString = workflowDateFormatter.format(date);
+		date = LocalDate.ofEpochDay(timeLaunched);
+		String timeLaunchedString = BPMNInfo.workflowDateFormatter.format(date);
 
-		date = new Date(timeCanceledOrConcluded);
-		String timeCanceledOrConcludedString = workflowDateFormatter.format(date);
+		date = LocalDate.ofEpochDay(timeCanceledOrConcluded);
+		String timeCanceledOrConcludedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
 				+ creatorId.toString() + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "

@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.integration.tests;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -9,12 +10,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.testing.hk2testng.HK2;
 import org.testng.Assert;
+import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.Test;
 
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -40,7 +43,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
-import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
+import gov.vha.isaac.ochre.workflow.user.SimpleUserRoleService;
 
 /**
  * Created by kec on 1/2/16.
@@ -70,7 +73,7 @@ public class WorkflowFrameworkTest {
 	/** The bpmn file path. */
 	private static final String BPMN_FILE_PATH = "/gov/vha/isaac/ochre/integration/tests/StaticWorkflowIntegrationTestingDefinition.bpmn2";
 
-	private static UUID userId = MockWorkflowUserRoleService.getFullRoleTestUser();
+	private static UUID userId;
 	private static int firstTestConceptNid;
 	private static int secondTestConceptNid;
 
@@ -84,6 +87,22 @@ public class WorkflowFrameworkTest {
 	private int moduleSeq;
 
 	private int pathSeq;
+	
+	@BeforeGroups(groups = {"wf"})
+	public void setUpUsers() throws Exception {
+		userId = UUID.randomUUID();
+		SimpleUserRoleService rolesService = LookupService.get().getService(SimpleUserRoleService.class);
+		rolesService.addRole(UserRole.EDITOR);
+		rolesService.addRole(UserRole.REVIEWER);
+		rolesService.addRole(UserRole.APPROVER);
+		rolesService.addRole(UserRole.AUTOMATED);
+		
+		HashSet<UserRole> roles = new HashSet<>();
+		roles.add(UserRole.EDITOR);
+		roles.add(UserRole.APPROVER);
+		roles.add(UserRole.REVIEWER);
+		rolesService.addUser(userId, roles);
+	}
 
 	@Test(groups = { "wf" }, dependsOnGroups = { "load" })
 	public void testLoadWorkflow() {
@@ -763,7 +782,7 @@ public class WorkflowFrameworkTest {
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, startNodeAction.getInitialState(),
-				startNodeAction.getAction(), startNodeAction.getOutcomeState(), "Automated By System");
+				startNodeAction.getAction(), startNodeAction.getOutcomeState(), UserRole.AUTOMATED);
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"", 1);
@@ -962,6 +981,59 @@ public class WorkflowFrameworkTest {
 			Assert.fail(e.getMessage());
 		}
 	}
+
+	
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testProcessTimeFields() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel changes made to a sememe's text");
+
+		try {
+			// Create WF 
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+			
+			long timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			long timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			long timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+			
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertEquals(-1, timeLaunched);
+			Assert.assertEquals(-1, timeCanceledOrConcluded);
+			
+			// Launch WF
+			Optional<CommitRecord> commitRecord = createNewVersion(firstTestConceptNid, null);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
+			timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertTrue(timeLaunched > -1);
+			Assert.assertEquals(-1, timeCanceledOrConcluded);
+
+			// Cancel WF
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate);
+			
+			timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertTrue(timeLaunched > -1);
+			Assert.assertTrue(timeCanceledOrConcluded > -1);
+
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
 
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testCancelNewSememe() {

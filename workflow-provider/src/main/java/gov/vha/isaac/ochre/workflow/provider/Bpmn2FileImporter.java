@@ -58,6 +58,7 @@ import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
 
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
@@ -192,13 +193,15 @@ public class Bpmn2FileImporter {
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		if (provider.getDefinitionDetailStore().size() == 0)
 		{
-			Set<String> roles = new HashSet<>();
-			roles.add(BPMNInfo.AUTOMATED_ROLE);
+			Set<UserRole> roles = new HashSet<>();
+			roles.add(UserRole.AUTOMATED);
 	
 			ProcessAssetDesc definition = descriptor.getProcess();
 	
 			for (String key : descriptor.getTaskAssignments().keySet()) {
-				roles.addAll(descriptor.getTaskAssignments().get(key));
+				for (String role : descriptor.getTaskAssignments().get(key)) {
+					roles.add(UserRole.safeValueOf(role).get());
+				}
 			}
 			
 	
@@ -267,7 +270,7 @@ public class Bpmn2FileImporter {
 	private Set<AvailableAction> generateAvailableActions() throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 		String initialState = null;
-		Set<String> roles = new HashSet<>();
+		Set<UserRole> roles = new HashSet<>();
 		Set<AvailableAction> startNodeActions = new HashSet<>();
 		String flagMetaDataStr = null;
 		Set<AvailableAction> availActions = new HashSet<>();
@@ -313,7 +316,7 @@ public class Bpmn2FileImporter {
 			}
 		}
 
-		// TODO: Update to handle multiple start states
+		// TODO in Backlog: Update to handle multiple start states
 		processStartNodeStates(startNodeActions);
 
 		return actions;
@@ -338,7 +341,7 @@ public class Bpmn2FileImporter {
 	 *            associated with the outgoing connections
 	 * @return The full set of AvailableActions based on the current node
 	 */
-	private Set<AvailableAction> identifyNodeActions(Node node, String initialState, Set<String> roles,
+	private Set<AvailableAction> identifyNodeActions(Node node, String initialState, Set<UserRole> roles,
 			List<Connection> nodeOutgoingConnections, List<SequenceFlow> allOutgoingConnections) {
 		Set<AvailableAction> availActions = new HashSet<>();
 
@@ -380,14 +383,14 @@ public class Bpmn2FileImporter {
 			}
 
 			if (roles.size() == 0 && node.getId() == ruleFlow.getStartNodes().iterator().next().getId()) {
-				roles.add(BPMNInfo.AUTOMATED_ROLE);
+				roles.add(UserRole.AUTOMATED);
 			}
 
 			// Verify that all requirements met
 			if (action != null && outcome != null && state != null && roles.size() > 0) {
 
 				// Generate a new AvailableAction for each role
-				for (String role : roles) {
+				for (UserRole role : roles) {
 					AvailableAction newAction = new AvailableAction(currentDefinitionId, state, action, outcome, role);
 					availActions.add(newAction);
 				}
@@ -474,7 +477,7 @@ public class Bpmn2FileImporter {
 	 * @return The ordered list of nodes
 	 */
 	private List<Long> identifyOutputOrder(Node node, List<Long> retList) {
-		// TODO: Eventually handle case where multiple start nodes are possible
+		// TODO in Backlog: Eventually handle case where multiple start nodes are possible
 		if (visitedNodes.contains(node.getId())) {
 			return retList;
 		} else {
@@ -566,8 +569,8 @@ public class Bpmn2FileImporter {
 	 * @return The set of workflow roles which defining the user role
 	 *         which can execute the task
 	 */
-	private Set<String> getActorFromHumanTask(HumanTaskNode node) {
-		Set<String> restrictions = new HashSet<>();
+	private Set<UserRole> getActorFromHumanTask(HumanTaskNode node) {
+		Set<UserRole> restrictions = new HashSet<>();
 
 		// Get HumanTaskNode's restrictions
 		Work work = node.getWork();
@@ -578,7 +581,7 @@ public class Bpmn2FileImporter {
 			if (roleString != null) {
 				String[] roles = roleString.split(",");
 				for (String role : roles) {
-					restrictions.add(role.trim());
+					restrictions.add(UserRole.safeValueOf(role.trim()).get());
 				}
 			}
 		}
@@ -668,7 +671,7 @@ public class Bpmn2FileImporter {
 		if (actions.size() == 0) {
 			throw new Exception("No Start Actions Found");
 		} else if (actions.size() != 1) {
-			// TODO: Handle multiple start states. Out of scope as of now.
+			// TODO in Backlog: Handle multiple start states. Out of scope as of now.
 			throw new Exception(
 					"For R2, there may only be a single case.  If mutliple actions found an error occurred");
 		} else {

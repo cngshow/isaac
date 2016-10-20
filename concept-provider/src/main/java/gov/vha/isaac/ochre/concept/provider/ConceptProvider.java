@@ -49,6 +49,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -312,4 +313,13 @@ public class ConceptProvider implements ConceptService {
         conceptMap.put(concept.getConceptSequence(), (ConceptChronologyImpl) concept);
     }
 
+    @Override
+    public IntStream getConceptKeyStream() {
+        return conceptMap.getKeyStream();
+    }
+
+    @Override
+    public IntStream getConceptKeyParallelStream() {
+        return conceptMap.getKeyParallelStream();
+    }
 }

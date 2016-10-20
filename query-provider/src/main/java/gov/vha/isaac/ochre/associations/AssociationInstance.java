@@ -29,6 +29,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 
 /**
  * {@link AssociationInstance}
@@ -66,7 +67,7 @@ public class AssociationInstance
 	{
 		if (assnType_ == null)
 		{
-			assnType_ = AssociationType.read(sememe_.getAssemblageSequence(), stampCoord_);
+			assnType_ = AssociationType.read(sememe_.getAssemblageSequence(), stampCoord_, LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate());
 		}
 		return assnType_;
 	}
@@ -100,7 +101,7 @@ public class AssociationInstance
 		if (targetColIndex >= 0)
 		{
 			DynamicSememeData[] data = sememe_.getData();
-			if (data != null && data.length > targetColIndex)
+			if (data != null && data.length > targetColIndex && data[targetColIndex] != null)
 			{
 				int nid = 0;
 				if (data[targetColIndex].getDynamicSememeDataType() == DynamicSememeDataType.UUID 

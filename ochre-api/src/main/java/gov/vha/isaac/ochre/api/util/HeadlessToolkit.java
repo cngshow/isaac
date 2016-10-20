@@ -118,7 +118,7 @@ public class HeadlessToolkit extends Toolkit
         try
         {
             Field f = Toolkit.class.getDeclaredField("TOOLKIT");
-            f.setAccessible(true);
+            FortifyFun.fixAccessible(f);  //f.setAccessible(true);
             Object currentToolkit = f.get(null);
             if (currentToolkit == null)
             {

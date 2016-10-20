@@ -36,6 +36,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilderService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -65,6 +66,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -72,7 +74,6 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
-import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
@@ -121,6 +122,38 @@ public class Frills implements DynamicSememeColumnUtility {
 				+ " STAMP=" + version.getStampSequence() + "{state=" + version.getState()
 				+ ", time=" + version.getTime() + ", author=" + version.getAuthorSequence() + ", module="
 				+ version.getModuleSequence() + ", path=" + version.getPathSequence() + "}";
+	}
+
+	/**
+	 * @param stamp Stamp from which to generate StampCoordinate
+	 * @param precedence Precedence to assign StampCoordinate
+	 * @return StampCoordinate corresponding to Stamp values
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromStamp(Stamp stamp, StampPrecedence precedence) {
+		StampPosition stampPosition = new StampPositionImpl(stamp.getTime(), stamp.getPathSequence());
+		StampCoordinate stampCoordinate = new StampCoordinateImpl(
+				precedence,
+				stampPosition,
+				ConceptSequenceSet.of(stamp.getModuleSequence()),
+				EnumSet.of(stamp.getStatus()));
+				
+		log.debug("Created StampCoordinate from Stamp: " + stamp + ": " + stampCoordinate);
+
+		return stampCoordinate;
+	}
+
+	/**
+	 * @param stamp Stamp from which to generate StampCoordinate
+	 * @return StampCoordinate corresponding to Stamp values
+	 * 
+	 * StampPrecedence set to StampPrecedence.TIME
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromStamp(Stamp stamp) {
+		return getStampCoordinateFromStamp(stamp, StampPrecedence.TIME);
 	}
 	
 	/**
@@ -833,10 +866,9 @@ public class Frills implements DynamicSememeColumnUtility {
 				definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememeDescription, builder, MetaData.DEFINITION_DESCRIPTION_TYPE,
 						MetaData.ENGLISH_LANGUAGE);
 				definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
-				@SuppressWarnings("rawtypes")
 				SememeChronology<?> definitionSememe = definitionBuilder.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 				
-				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(definitionSememe.getNid(), 
+				Get.sememeBuilderService().getDynamicSememeBuilder(definitionSememe.getNid(), 
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION.getSequence(), null).build(localEditCoord, 
 								ChangeCheckerMode.ACTIVE).getNoThrow();
 			}
@@ -850,7 +882,7 @@ public class Frills implements DynamicSememeColumnUtility {
 				{
 					DynamicSememeData[] data = LookupService.getService(DynamicSememeUtility.class).configureDynamicSememeDefinitionDataForColumn(ci);
 
-					SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
+					Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
 							DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION.getSequence(), data)
 						.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 				}
@@ -861,7 +893,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			
 			if (data != null)
 			{
-				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
+				Get.sememeBuilderService().getDynamicSememeBuilder(newCon.getNid(), 
 						DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getSequence(), data)
 					.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 			}
@@ -1234,5 +1266,33 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		};
 		Get.workExecutors().getExecutor().execute(r);
+	}
+
+
+	/**
+	 * Convenience method to find the nearest concept related to a sememe.  Recursively walks referenced components until it finds a concept.
+	 * @param nid 
+	 * @return the nearest concept sequence, or -1, if no concept can be found.
+	 */
+	public static int findConcept(int nid)
+	{
+		Optional<? extends ObjectChronology<? extends StampedVersion>> c = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+		
+		if (c.isPresent())
+		{
+			if (c.get().getOchreObjectType() == OchreExternalizableObjectType.SEMEME)
+			{
+				return findConcept(((SememeChronology<?>)c.get()).getReferencedComponentNid());
+			}
+			else if (c.get().getOchreObjectType() == OchreExternalizableObjectType.CONCEPT)
+			{
+				return ((ConceptChronology<?>)c.get()).getConceptSequence();
+			}
+			else
+			{
+				log.warn("Unexpected object type: " + c.get().getOchreObjectType());
+			}
+		}
+		return -1;
 	}
 }

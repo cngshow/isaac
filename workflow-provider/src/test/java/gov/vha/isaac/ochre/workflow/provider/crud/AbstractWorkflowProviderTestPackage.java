@@ -7,14 +7,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.UUID;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
-
-import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
@@ -23,7 +21,7 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
-import gov.vha.isaac.ochre.workflow.user.MockWorkflowUserRoleService;
+import gov.vha.isaac.ochre.workflow.provider.user.RoleConfigurator;
 
 /**
  * Test the AbstractWorkflowProviderTestPackage class
@@ -54,17 +52,12 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	private static String createState;
 	private static String createAction;
 	private static String createOutcome;
-	private static String createRole = "Automated By System";
+	private static UserRole createRole = UserRole.AUTOMATED;
 
 	protected static WorkflowProvider wp_;
 
 	/* Constants throughout testclasses to simplify process */
 	private static final long TEST_START_TIME = new Date().getTime();
-
-	protected static final UUID firstUserId = MockWorkflowUserRoleService.getFirstTestUser();
-	protected static final UUID secondUserId = MockWorkflowUserRoleService.getSecondTestUser();
-	protected static final int firstUserSeq = MockWorkflowUserRoleService.getFirstTestUserSeq();
-	protected static final int secondUserSeq = MockWorkflowUserRoleService.getSecondTestUserSeq();
 
 	protected static final Set<Integer> conceptsForTesting = new HashSet<>(Arrays.asList(-55, -56));
 
@@ -90,6 +83,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	private static int pathSeq = 999;
 
 	protected static void globalSetup() {
+		RoleConfigurator.configureForTest();
 		wp_ = LookupService.get().getService(WorkflowProvider.class);
 
 		mainDefinitionId = wp_.getBPMNInfo().getDefinitionId();
@@ -150,7 +144,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			if (wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId) != null) {
 				historySequence = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last().getHistorySequence();
 			}
-			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, RoleConfigurator.getFirstTestUser(), new Date().getTime(),
 					SEND_TO_APPROVAL_STATE, SEND_TO_APPROVAL_ACTION, SEND_TO_APPROVAL_OUTCOME,
 					SEND_TO_APPROVAL_COMMENT, historySequence + 1);
 
@@ -168,7 +162,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 			if (wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId) != null) {
 				historySequence = wp_.getWorkflowAccessor().getProcessHistory(requestedProcessId).last().getHistorySequence();
 			}
-			ProcessHistory entry = new ProcessHistory(requestedProcessId, firstUserId, new Date().getTime(),
+			ProcessHistory entry = new ProcessHistory(requestedProcessId, RoleConfigurator.getFirstTestUser(), new Date().getTime(),
 					REJECT_REVIEW_STATE, REJECT_REVIEW_ACTION, REJECT_REVIEW_OUTCOME, REJECT_REVIEW_COMMENT, historySequence + 1);
 
 			wp_.getProcessHistoryStore().add(entry);
@@ -181,7 +175,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
-			finishWorkflowProcess(processId, concludeAction, firstUserId, "Concluded Workflow",
+			finishWorkflowProcess(processId, concludeAction, RoleConfigurator.getFirstTestUser(), "Concluded Workflow",
 					EndWorkflowType.CONCLUDED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -192,7 +186,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		try {
 			Thread.sleep(1);
 
-			finishWorkflowProcess(processId, cancelAction, firstUserId, "Canceled Workflow", EndWorkflowType.CANCELED);
+			finishWorkflowProcess(processId, cancelAction, RoleConfigurator.getFirstTestUser(), "Canceled Workflow", EndWorkflowType.CANCELED);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -226,7 +220,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 		for (ProcessHistory entry : allProcessHistory) {
 			if (counter == 0) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserId());
+				Assert.assertEquals(RoleConfigurator.getFirstTestUser(), entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(createState, entry.getInitialState());
 				Assert.assertEquals(createAction, entry.getAction());
@@ -234,7 +228,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals("", entry.getComment());
 			} else if (counter == 1) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserId());
+				Assert.assertEquals(RoleConfigurator.getFirstTestUser(), entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(LAUNCH_STATE, entry.getInitialState());
 				Assert.assertEquals(LAUNCH_ACTION, entry.getAction());
@@ -242,7 +236,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 				Assert.assertEquals(LAUNCH_COMMENT, entry.getComment());
 			} else if (counter == 2) {
 				Assert.assertEquals(processId, entry.getProcessId());
-				Assert.assertEquals(firstUserId, entry.getUserId());
+				Assert.assertEquals(RoleConfigurator.getFirstTestUser(), entry.getUserId());
 				Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 				Assert.assertEquals(SEND_TO_APPROVAL_STATE, entry.getInitialState());
 				Assert.assertEquals(SEND_TO_APPROVAL_ACTION, entry.getAction());
@@ -256,7 +250,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertCancelHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getUserId());
+		Assert.assertEquals(RoleConfigurator.getFirstTestUser(), entry.getUserId());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(cancelAction.getInitialState(), entry.getInitialState());
@@ -267,7 +261,7 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	protected void assertConcludeHistory(ProcessHistory entry, UUID processId) {
 		Assert.assertEquals(processId, entry.getProcessId());
-		Assert.assertEquals(firstUserId, entry.getUserId());
+		Assert.assertEquals(RoleConfigurator.getFirstTestUser(), entry.getUserId());
 		Assert.assertTrue(TEST_START_TIME < entry.getTimeAdvanced());
 
 		Assert.assertEquals(concludeAction.getInitialState(), entry.getInitialState());
@@ -307,14 +301,14 @@ public abstract class AbstractWorkflowProviderTestPackage {
 
 	private UUID createWorkflowProcess(UUID requestedDefinitionId, String name, String description) {
 		// Mimick the initConcluder's create new process
-		ProcessDetail details = new ProcessDetail(requestedDefinitionId, firstUserId, new Date().getTime(),
+		ProcessDetail details = new ProcessDetail(requestedDefinitionId, RoleConfigurator.getFirstTestUser(), new Date().getTime(),
 				ProcessStatus.DEFINED, name, description);
 		UUID processId = wp_.getProcessDetailStore().add(details);
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, createState, createAction,
 				createOutcome, createRole);
-		ProcessHistory advanceEntry = new ProcessHistory(processId, firstUserId, new Date().getTime(),
+		ProcessHistory advanceEntry = new ProcessHistory(processId, RoleConfigurator.getFirstTestUser(), new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"", 0);
 		wp_.getProcessHistoryStore().add(advanceEntry);
@@ -323,10 +317,10 @@ public abstract class AbstractWorkflowProviderTestPackage {
 	}
 
 	protected UUID createSecondaryDefinition() {
-		Set<String> roles = new HashSet<>();
-		roles.add("Editor");
-		roles.add("Reviewer");
-		roles.add("Approver");
+		Set<UserRole> roles = new HashSet<>();
+		roles.add(UserRole.EDITOR);
+		roles.add(UserRole.REVIEWER);
+		roles.add(UserRole.APPROVER);
 		DefinitionDetail createdEntry = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles,
 				"Description of BPMN2 ID-X");
 		UUID defId = wp_.getDefinitionDetailStore().add(createdEntry);

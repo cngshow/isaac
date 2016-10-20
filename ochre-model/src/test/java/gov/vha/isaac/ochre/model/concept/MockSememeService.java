@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.model.concept;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
@@ -55,7 +56,7 @@ public class MockSememeService implements SememeService {
         return sememeMap.containsKey(Get.identifierService().getSememeSequence(sememeId));
     }
 
-	@Override
+    @Override
     public Stream<SememeChronology<? extends SememeVersion<?>>> getSememesFromAssemblage(int assemblageConceptSequence) {
         throw new UnsupportedOperationException();
     }
@@ -144,5 +145,20 @@ public class MockSememeService implements SememeService {
     @Override
     public Stream<Integer> getAssemblageTypes() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IntStream getSememeKeyStream() {
+        return sememeMap.keySet().stream().mapToInt(i -> i);
+    }
+
+    @Override
+    public IntStream getSememeKeyParallelStream() {
+        return sememeMap.keySet().parallelStream().mapToInt(i -> i);
+    }
+
+    @Override
+    public int getSememeCount() {
+        return sememeMap.size();
     }
 }

@@ -24,6 +24,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
+import gov.vha.isaac.ochre.api.Get;
 
 /**
  * 
@@ -130,6 +131,7 @@ public abstract class ConverterBaseMojo extends AbstractMojo
 	@Override
 	public void execute() throws MojoExecutionException
 	{
+		Get.configurationService().setBootstrapMode();
 		ConverterUUID.disableUUIDMap_ = ((createDebugUUIDMap == null || createDebugUUIDMap.length() == 0) ? false : Boolean.parseBoolean(createDebugUUIDMap));
 		if (ConverterUUID.disableUUIDMap_)
 		{

@@ -20,21 +20,19 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.UUID;
-
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
 import gov.vha.isaac.ochre.workflow.provider.WorkflowProvider;
+import gov.vha.isaac.ochre.workflow.provider.user.RoleConfigurator;
 
 /**
  * Test the WorkflowUpdater class
@@ -94,22 +92,22 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertFalse(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
-		Assert.assertEquals(firstUserSeq, details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
-		Assert.assertEquals(firstUserSeq, details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
+		Assert.assertEquals(RoleConfigurator.getFirstTestUserSeq(), details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
+		Assert.assertEquals(RoleConfigurator.getFirstTestUserSeq(), details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
 
-		addComponentsToProcess(processId, secondUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getSecondTestUserSeq(), State.ACTIVE);
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(firstConceptNid));
 		Assert.assertTrue(details.getComponentToInitialEditMap().keySet().contains(secondConceptNid));
-		Assert.assertEquals(secondUserSeq, details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
-		Assert.assertEquals(secondUserSeq, details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
+		Assert.assertEquals(RoleConfigurator.getSecondTestUserSeq(), details.getComponentToInitialEditMap().get(firstConceptNid).getAuthorSequence());
+		Assert.assertEquals(RoleConfigurator.getSecondTestUserSeq(), details.getComponentToInitialEditMap().get(secondConceptNid).getAuthorSequence());
 	}
 
 	/**
@@ -129,8 +127,8 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 		ProcessDetail details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(0, details.getComponentToInitialEditMap().keySet().size());
 
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
-		addComponentsToProcess(processId, secondUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getSecondTestUserSeq(), State.ACTIVE);
 		
 		details = wp_.getProcessDetailStore().get(processId);
 		Assert.assertEquals(2, details.getComponentToInitialEditMap().keySet().size());
@@ -157,63 +155,63 @@ public class WorkflowUpdaterTest extends AbstractWorkflowProviderTestPackage {
 	@Test
 	public void testAdvanceWorkflow() throws Exception {
 		UUID processId = createFirstWorkflowProcess(mainDefinitionId);
-		addComponentsToProcess(processId, firstUserSeq, State.ACTIVE);
+		addComponentsToProcess(processId, RoleConfigurator.getFirstTestUserSeq(), State.ACTIVE);
 		executeLaunchWorkflow(processId);
 
 		// Process in Ready to Edit state: Can execute action "Edit" by
 		// firstUser
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertTrue(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Edit", "Comment #1"));
 
 		// Process in Ready for Review state: Can execute action "QA Passes" by
 		// secondUser
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertTrue(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "QA Passes", "Comment #1"));
 
 		// Process in Ready for Approve state: Can execute action "Approve" by
 		// firstUser
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertTrue(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertTrue(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Approve", "Comment #1"));
 
 		// Process in Publish state: no one can advance
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "Approve", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, secondUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getSecondTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Edit", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Edit", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "QA Passes", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "QA Passes", "Comment #1"));
 
-		Assert.assertFalse(advanceWorkflow(processId, firstUserId, "Approve", "Comment #1"));
+		Assert.assertFalse(advanceWorkflow(processId, RoleConfigurator.getFirstTestUser(), "Approve", "Comment #1"));
 	}
 
 }
