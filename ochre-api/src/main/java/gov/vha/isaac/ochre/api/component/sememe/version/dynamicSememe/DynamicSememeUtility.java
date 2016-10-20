@@ -123,7 +123,8 @@ public interface DynamicSememeUtility {
 		{
 			if (dsud.getColumnInfo()[i].isColumnRequired())
 			{
-				throw new InvalidParameterException("No data was supplied for column " + (i + 1) + " but the column is specified as a required column");
+				throw new InvalidParameterException("No data was supplied for column '" + dsud.getColumnInfo()[i].getColumnName() + "' [" 
+						+  (i + 1) + "(index " + i + ")] but the column is specified as a required column");
 			}
 		}
 		
