@@ -23,7 +23,6 @@ import java.util.UUID;
  */
 
 import org.jvnet.hk2.annotations.Contract;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;

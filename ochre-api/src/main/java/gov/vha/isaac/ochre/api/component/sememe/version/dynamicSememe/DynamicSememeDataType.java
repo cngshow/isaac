@@ -4,7 +4,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import java.security.InvalidParameterException;
-import java.text.ParseException;
 import java.util.Locale;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
@@ -149,7 +148,7 @@ public enum DynamicSememeDataType {
 		 */
 		switch (this)
 		{
-			case BOOLEAN: return DynamicSememeConstants.get().get().DYNAMIC_SEMEME_DT_BOOLEAN.getUUID();
+			case BOOLEAN: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_BOOLEAN.getUUID();
 			case BYTEARRAY: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_BYTE_ARRAY.getUUID();
 			case DOUBLE: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_DOUBLE.getUUID();
 			case FLOAT: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_FLOAT.getUUID();

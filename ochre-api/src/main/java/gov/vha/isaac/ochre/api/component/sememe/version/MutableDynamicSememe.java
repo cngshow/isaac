@@ -15,7 +15,6 @@
  */
 package gov.vha.isaac.ochre.api.component.sememe.version;
 
-import java.beans.PropertyVetoException;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 
 /**
