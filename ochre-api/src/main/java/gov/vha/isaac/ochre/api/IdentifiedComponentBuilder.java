@@ -53,6 +53,18 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * @return  the builder for chaining of operations in a fluent pattern.
      */
     IdentifiedComponentBuilder<T> addUuids(UUID... uuids);
+    
+    /**
+     * define the state that the component will be created with.  if setState is not called, 
+     * the component will be build as active.  Note, this will not impact any nested builders.
+     * Nested builders should have their own state set, if you wish to override the default 
+     * active value.  This is only used for calls to {@link #build(EditCoordinate, ChangeCheckerMode)}
+     * or {@link #build(EditCoordinate, ChangeCheckerMode, List)} (where a active state would otherwise be assumed)
+     * It is not used with a call to {@link #build(int, List)}
+     * @param state
+     * @return the builder for chaining of operations in a fluent pattern. 
+     */
+    IdentifiedComponentBuilder<T> setState(State state);
 
     /**
      * 

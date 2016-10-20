@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.workflow.provider;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,9 @@ import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType
 public class BPMNInfo {
 
 	public static final UUID UNOWNED_PROCESS = new UUID(0,0);
+
+	/** A universal means of expressing a workflow time stamp */
+	final static public DateTimeFormatter workflowDateFormatter = DateTimeFormatter.ofPattern("hh:mm:ssa MM/dd/yy");
 	
 	/** A map of available actions per type of ending workflow */
 	private Map<EndWorkflowType, Set<AvailableAction>> endNodeTypeMap;

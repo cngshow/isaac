@@ -982,6 +982,59 @@ public class WorkflowFrameworkTest {
 		}
 	}
 
+	
+
+	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
+	public void testProcessTimeFields() {
+		clearStores();
+
+		LOG.info("Testing Ability to cancel changes made to a sememe's text");
+
+		try {
+			// Create WF 
+			UUID processId = wp_.getWorkflowProcessInitializerConcluder().createWorkflowProcess(
+					wp_.getBPMNInfo().getDefinitionId(), userId, "Framework Workflow Name",
+					" Framework Workflow Description");
+			
+			long timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			long timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			long timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+			
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertEquals(-1, timeLaunched);
+			Assert.assertEquals(-1, timeCanceledOrConcluded);
+			
+			// Launch WF
+			Optional<CommitRecord> commitRecord = createNewVersion(firstTestConceptNid, null);
+			wp_.getWorkflowUpdater().addCommitRecordToWorkflow(processId, commitRecord);
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Edit", "Edit Comment", defaultEditCoordinate);
+
+			timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertTrue(timeLaunched > -1);
+			Assert.assertEquals(-1, timeCanceledOrConcluded);
+
+			// Cancel WF
+			wp_.getWorkflowUpdater().advanceWorkflow(processId, userId, "Cancel Workflow",
+					"Canceling Workflow for Testing", defaultEditCoordinate);
+			
+			timeCreated = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCreated();
+			timeCanceledOrConcluded = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeCanceledOrConcluded();
+			timeLaunched = wp_.getWorkflowAccessor().getProcessDetails(processId).getTimeLaunched();
+
+			Assert.assertTrue(timeCreated > -1);
+			Assert.assertTrue(timeLaunched > -1);
+			Assert.assertTrue(timeCanceledOrConcluded > -1);
+
+		} catch (Exception e) {
+			Assert.fail(e.getMessage());
+		}
+	}
+
+
 	@Test(groups = { "wf" }, dependsOnMethods = { "testLoadWorkflow" })
 	public void testCancelNewSememe() {
 		clearStores();

@@ -40,9 +40,6 @@ public abstract class AbstractStorableWorkflowContents implements WaitFreeCompar
 	/** The Logger made available to each Workflow Content Store Entry class */
 	protected final Logger logger = LogManager.getLogger();
 
-	/** A universal means of expressing a workflow time stamp */
-	public SimpleDateFormat workflowDateFormatter = new SimpleDateFormat("hh:mm:ssa MM/dd/yy");
-
 	/**
 	 * As every content store entry is key-value based and as all keys are of
 	 * type UUID, add in abstract

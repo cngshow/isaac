@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
@@ -388,20 +389,34 @@ public class WorkflowUpdater
 				// actualStampSeq
 				if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.CONCEPT)
 				{
-					ConceptChronology<?> conceptChron = ((ConceptVersion) version).getChronology();
-					conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
+					ConceptChronology<?> conceptChron = Get.conceptService().getConcept(compNid);
+					if (version != null) {
+						//conceptChron = ((ConceptVersion) version).getChronology();
+						conceptChron.createMutableVersion(((ConceptVersion<?>) version).getState(), editCoordinate);
+					} else {
+						conceptChron.createMutableVersion(State.INACTIVE, editCoordinate);
+					}
 					Get.commitService().addUncommitted(conceptChron);
 					Get.commitService().commit("Reverting concept to how it was prior to workflow");
 				}
 				else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME)
 				{
-					SememeChronology<?> semChron = ((SememeVersion) version).getChronology();
-					SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(version.getClass(), ((SememeVersion<?>) version).getState(),
-							editCoordinate);
+					SememeChronology<?> semChron = Get.sememeService().getSememe(compNid);
+					if (version != null) {
+						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(version.getClass(), ((SememeVersion<?>) version).getState(),
+								editCoordinate);
+						createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
+					} else {
+						List<SememeVersion> list = (List<SememeVersion>)((SememeChronology) semChron).getVersionList();
+						
+						SememeVersion lastVersion = (SememeVersion)list.toArray(new SememeVersion[list.size()])[list.size() -  1];
+						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(lastVersion.getClass(), State.INACTIVE,
+								editCoordinate);
+						createdVersion = populateData(createdVersion, (SememeVersion<?>) lastVersion);
+					}
 
-					createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
-					Get.commitService().addUncommitted(createdVersion.getChronology()).get();
-					Get.commitService().commit("Reverting sememe to how it was prior to workflow");
+					Get.commitService().addUncommitted(semChron).get();
+					Get.commitService().commit("Reverting sememe to how it was prior to workflow").get();
 				}
 			}
 		}

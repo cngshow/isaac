@@ -18,11 +18,12 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
+import java.time.LocalDate;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
+import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
 /**
  * A single advancement (history) of a given workflow process. A new entry is
@@ -237,8 +238,8 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		Date date = new Date(timeAdvanced);
-		String timeAdvancedString = workflowDateFormatter.format(date);
+		LocalDate date = LocalDate.ofEpochDay(timeAdvanced);
+		String timeAdvancedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userId + "\n\t\tTime Advanced as Long: " + timeAdvanced
 				+ "\n\t\tTime Advanced: " + timeAdvancedString + "\n\t\tInitial State: " + initialState + "\n\t\tAction: " + action + "\n\t\tOutcome State: "
