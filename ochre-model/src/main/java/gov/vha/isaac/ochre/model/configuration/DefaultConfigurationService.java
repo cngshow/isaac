@@ -59,6 +59,8 @@ public class DefaultConfigurationService implements ConfigurationService {
     private static final Logger LOG = LogManager.getLogger();
 
     private volatile boolean initComplete_ = false;
+    
+    private boolean bootstrapMode = false;
 
     private DefaultConfigurationService() {
         //only for HK2
@@ -205,4 +207,13 @@ public class DefaultConfigurationService implements ConfigurationService {
         return defaultCoordinateProvider_.getDefaultTaxonomyCoordinate();
     }
 
+    @Override
+    public boolean inBootstrapMode() {
+        return bootstrapMode;
+    }
+
+    @Override
+    public void setBootstrapMode() {
+        bootstrapMode = true;
+    }
 }

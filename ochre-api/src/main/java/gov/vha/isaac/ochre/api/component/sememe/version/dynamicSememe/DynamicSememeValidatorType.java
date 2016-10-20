@@ -234,7 +234,9 @@ public enum DynamicSememeValidatorType
 	 * @param userData
 	 * @param validatorDefinitionData
 	 * @param sc The Stamp Coordinate - not needed for some types of validations. Null allowed when unneeded (for math based tests, for example)
+	 *   {@link IllegalArgumentException} will be thrown if the coordinate was required for the validator (but it wasn't supplied)
 	 * @param tc The Taxonomy Coordinate - not needed for some types of validations. Null allowed when unneeded (for math based tests, for example)
+	 *    {@link IllegalArgumentException} will be thrown if the coordinate was required for the validator (but it wasn't supplied)
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
@@ -290,20 +292,20 @@ public enum DynamicSememeValidatorType
 		{
 			try
 			{
-				int childNid;
-				int parentNid;
+				int childId;
+				int parentId;
 
 				if (userData instanceof DynamicSememeUUID)
 				{
-					childNid = Get.identifierService().getNidForUuids(((DynamicSememeUUID) userData).getDataUUID());
+					childId = Get.identifierService().getNidForUuids(((DynamicSememeUUID) userData).getDataUUID());
 				}
 				else if (userData instanceof DynamicSememeNid)
 				{
-					childNid = ((DynamicSememeNid) userData).getDataNid();
+					childId = ((DynamicSememeNid) userData).getDataNid();
 				}
 				else if (userData instanceof DynamicSememeSequence)
 				{
-					childNid = ((DynamicSememeSequence) userData).getDataSequence();
+					childId = ((DynamicSememeSequence) userData).getDataSequence();
 				}
 				else
 				{
@@ -312,24 +314,44 @@ public enum DynamicSememeValidatorType
 
 				if (validatorDefinitionData instanceof DynamicSememeUUID)
 				{
-					parentNid = Get.identifierService().getNidForUuids(((DynamicSememeUUID) validatorDefinitionData).getDataUUID());
+					parentId = Get.identifierService().getNidForUuids(((DynamicSememeUUID) validatorDefinitionData).getDataUUID());
 				}
 				else if (validatorDefinitionData instanceof DynamicSememeNid)
 				{
-					parentNid = ((DynamicSememeNid) validatorDefinitionData).getDataNid();
+					parentId = ((DynamicSememeNid) validatorDefinitionData).getDataNid();
 				}
 				else if (userData instanceof DynamicSememeSequence)
 				{
-					parentNid = ((DynamicSememeSequence) validatorDefinitionData).getDataSequence();
+					parentId = ((DynamicSememeSequence) validatorDefinitionData).getDataSequence();
 				}
 				else
 				{
 					throw new RuntimeException("Validator DefinitionData is invalid for a IS_CHILD_OF or IS_KIND_OF comparison");
 				}
-
-				return (this == DynamicSememeValidatorType.IS_CHILD_OF ? 
-						Get.taxonomyService().isChildOf(childNid, parentNid, tc) : 
-						Get.taxonomyService().isKindOf(childNid, parentNid, tc));
+				
+				if (this == DynamicSememeValidatorType.IS_CHILD_OF)
+				{
+					if (tc == null)
+					{
+						throw new IllegalArgumentException("A taxonomy coordinate must be provided to evaluate IS_CHILD_OF");
+					}
+					return Get.taxonomyService().isChildOf(childId, parentId, tc);
+				}
+				else
+				{
+					if (tc == null)
+					{
+						return Get.taxonomyService().wasEverKindOf(childId, parentId);
+					}
+					else
+					{
+						return Get.taxonomyService().isKindOf(childId, parentId, tc);
+					}
+				}
+			}
+			catch (IllegalArgumentException e)
+			{
+				throw e;
 			}
 			catch (Exception e)
 			{

@@ -20,6 +20,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IsaacTaxonomy;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstant;
@@ -44,6 +45,7 @@ public class ExportTaxonomy extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
+            Get.configurationService().setBootstrapMode();
             IsaacTaxonomy taxonomy = LookupService.get().getService(IsaacTaxonomy.class); 
             File javaDir = new File(buildDirectory, "src/generated");
             javaDir.mkdirs();

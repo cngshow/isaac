@@ -1,5 +1,6 @@
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
+import java.security.InvalidParameterException;
 import java.util.UUID;
 
 /**
@@ -22,11 +23,16 @@ import java.util.UUID;
  */
 
 import org.jvnet.hk2.annotations.Contract;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArray;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 
 /**
  * {@link DynamicSememeUtility}
@@ -61,4 +67,113 @@ public interface DynamicSememeUtility {
 	public DynamicSememeString createDynamicStringData(String value);
 	
 	public DynamicSememeUUID createDynamicUUIDData(UUID value);
+	
+	/**
+	 * validate that the proposed dynamicSememeData aligns with the definition.
+	 * @param dsud
+	 * @param data
+	 * @param referencedComponentNid
+	 * @param stampCoordinate - optional - column specific validators may be skipped if this is not provided
+	 * @param taxonomyCoordinate - optional - column specific validators may be skipped if this is not provided
+	 * @throws InvalidParameterException - if anything fails validation
+	 */
+	public default void validate(DynamicSememeUsageDescription dsud, DynamicSememeData[] data, int referencedComponentNid, StampCoordinate stampCoordinate, 
+			TaxonomyCoordinate taxonomyCoordinate) throws InvalidParameterException
+	{
+		//Make sure the referenced component meets the ref component restrictions, if any are present.
+		if (dsud.getReferencedComponentTypeRestriction() != null && dsud.getReferencedComponentTypeRestriction() != ObjectChronologyType.UNKNOWN_NID)
+		{
+			ObjectChronologyType requiredType = dsud.getReferencedComponentTypeRestriction();
+			ObjectChronologyType foundType = Get.identifierService().getChronologyTypeForNid(referencedComponentNid);
+			
+			if (requiredType != foundType)
+			{
+				throw new InvalidParameterException("The referenced component must be of type " + requiredType + ", but a " + foundType + " was passed");
+			}
+			
+			if (requiredType == ObjectChronologyType.SEMEME && dsud.getReferencedComponentTypeSubRestriction() != null 
+					&& dsud.getReferencedComponentTypeSubRestriction() != SememeType.UNKNOWN)
+			{
+				SememeType requiredSememeType = dsud.getReferencedComponentTypeSubRestriction();
+				SememeType foundSememeType = Get.sememeService().getSememe(referencedComponentNid).getSememeType();
+				
+				if (requiredSememeType != foundSememeType)
+				{
+					throw new InvalidParameterException("The referenced component must be a sememe of type " + requiredSememeType + ", but a " 
+							+ foundSememeType + " was passed");
+				}
+			}
+		}
+
+		if (data == null)
+		{
+			return;
+		}
+		
+		//specifically allow < - we don't need the trailing columns, if they were defined as optional.
+		if (data.length > dsud.getColumnInfo().length)
+		{
+			throw new InvalidParameterException("The Assemblage concept: " + dsud.getDynamicSememeName() + " specifies " + dsud.getColumnInfo().length + 
+					" columns of data, while the provided data contains " + data.length + " columns.  The data size array must not exeed the sememe definition."
+					+ " (the data column count may be less, if the missing columns are defined as optional)");
+		}
+		
+		//If they provided less columns, make sure the remaining columns are all optional
+		for (int i = data.length; i < dsud.getColumnInfo().length; i++)
+		{
+			if (dsud.getColumnInfo()[i].isColumnRequired())
+			{
+				throw new InvalidParameterException("No data was supplied for column " + (i + 1) + " but the column is specified as a required column");
+			}
+		}
+		
+		for (int dataColumn = 0; dataColumn < data.length; dataColumn++)
+		{
+			DynamicSememeColumnInfo dsci = dsud.getColumnInfo()[dataColumn];
+			
+			if (data[dataColumn] == null)
+			{
+				if (dsci.isColumnRequired())
+				{
+					throw new InvalidParameterException("No data was supplied for column " + (dataColumn + 1) + " but the column is specified as a required column");
+				}
+			}
+			else
+			{
+				DynamicSememeDataType allowedDT = dsci.getColumnDataType();
+				if (data[dataColumn] != null && allowedDT != DynamicSememeDataType.POLYMORPHIC && data[dataColumn].getDynamicSememeDataType() != allowedDT)
+				{
+					throw new InvalidParameterException("The supplied data for column " + dataColumn + " is of type " + data[dataColumn].getDynamicSememeDataType() + 
+							" but the assemblage concept declares that it must be " + allowedDT);
+				}
+				
+				
+				if (dsci.getValidator() != null && dsci.getValidator().length > 0)
+				{
+					try
+					{
+						for (int i = 0; i < dsci.getValidator().length; i++)
+						{
+							try
+							{
+								if (!dsci.getValidator()[i].passesValidator(data[dataColumn], dsci.getValidatorData()[i], stampCoordinate, taxonomyCoordinate))
+								{
+									throw new InvalidParameterException("The supplied data for column " + dataColumn 
+											+ " does not pass the assigned validator(s) for this dynamic sememe");
+								}
+							}
+							catch  (IllegalArgumentException e)
+							{
+								LoggerFactory.getLogger(DynamicSememeUtility.class).debug("Couldn't execute validator due to missing coordiantes");
+							}
+						}
+					}
+					catch (RuntimeException e)
+					{
+						throw new InvalidParameterException(e.getMessage());
+					}
+				}
+			}
+		}
+	}
 }

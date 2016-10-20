@@ -22,12 +22,14 @@ import java.util.Arrays;
 import java.util.UUID;
 import javax.naming.InvalidNameException;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
@@ -44,6 +46,8 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> implements MutableDynamicSememe<DynamicSememeImpl> {
 
     private DynamicSememeData[] data_ = null;
+    
+    private static boolean bootstrapMode = Get.configurationService().inBootstrapMode();
 
     public DynamicSememeImpl(SememeChronologyImpl<DynamicSememeImpl> container, int stampSequence, short versionSequence, ByteArrayDataBuffer data) {
         super(container, stampSequence, versionSequence);
@@ -68,7 +72,6 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
         }
     }
 
-    //TODO setData and constructor with data will need to run the validator!
     public DynamicSememeImpl(SememeChronologyImpl<DynamicSememeImpl> container, int stampSequence, short versionSequence) {
         super(container, stampSequence, versionSequence);
     }
@@ -137,6 +140,14 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
         if (data_ != null) {
             checkUncommitted();
         }
+        
+        //TODO while this checks basic sememe structure / column alignment, it can't fire certain validators, as those require coordinates.
+        //The column-specific validators will have to be fired during commit.
+        if (!bootstrapMode) {  //We can't run the validators when we are building the initial system.
+            DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(getAssemblageSequence());
+            LookupService.get().getService(DynamicSememeUtility.class).validate(dsud, data, getReferencedComponentNid(), null, null);
+        }
+        
         data_ = data == null ? new DynamicSememeData[]{} : data;
     }
 

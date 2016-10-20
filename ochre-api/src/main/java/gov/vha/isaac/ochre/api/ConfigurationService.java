@@ -286,4 +286,18 @@ public interface ConfigurationService {
             return false;
         }
     }
+    
+    /**
+     * There are some cases where validators and such cannot be properly executed if we are in bootstrap mode - building 
+     * the system for the first time.  The default implementation of this returns false.
+     */
+    public default boolean inBootstrapMode()
+    {
+        return false;
+    }
+    
+    public default void setBootstrapMode()
+    {
+        throw new UnsupportedOperationException();
+    }
 }
