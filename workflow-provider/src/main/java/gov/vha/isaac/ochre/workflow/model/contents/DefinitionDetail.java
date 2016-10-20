@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -197,9 +198,8 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 			buf.append(r + ", ");
 		}
 
-		Date date = new Date(importDate);
+		LocalDate date = LocalDate.ofEpochDay(importDate);
 		String importDateString = BPMNInfo.workflowDateFormatter.format(date);
-
 		return "\n\t\tId: " + id + "\n\t\tBPMN2 Id: " + bpmn2Id + "\n\t\tName: " + name + "\n\t\tNamespace: "
 				+ namespace + "\n\t\tVersion: " + version + "\n\t\tRoles: " + buf.toString() + "\n\t\tDescription: "
 				+ description + "\n\t\tImport Date: " + importDateString;

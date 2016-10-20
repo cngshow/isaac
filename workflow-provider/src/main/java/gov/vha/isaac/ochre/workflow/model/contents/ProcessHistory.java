@@ -18,8 +18,8 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
+import java.time.LocalDate;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
@@ -238,7 +238,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	 */
 	@Override
 	public String toString() {
-		Date date = new Date(timeAdvanced);
+		LocalDate date = LocalDate.ofEpochDay(timeAdvanced);
 		String timeAdvancedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userId + "\n\t\tTime Advanced as Long: " + timeAdvanced

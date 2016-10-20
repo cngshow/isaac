@@ -66,6 +66,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
@@ -1267,5 +1268,28 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		};
 		Get.workExecutors().getExecutor().execute(r);
+	}
+
+
+	public int findConcept(int nid)
+	{
+		Optional<? extends ObjectChronology<? extends StampedVersion>> c = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+		
+		if (c.isPresent())
+		{
+			if (c.get().getOchreObjectType() == OchreExternalizableObjectType.SEMEME)
+			{
+				return findConcept(((SememeChronology<?>)c.get()).getReferencedComponentNid());
+			}
+			else if (c.get().getOchreObjectType() == OchreExternalizableObjectType.CONCEPT)
+			{
+				return ((ConceptChronology<?>)c.get()).getConceptSequence();
+			}
+			else
+			{
+				log.warn("Unexpected object type: " + c.get().getOchreObjectType());
+			}
+		}
+		return -1;
 	}
 }

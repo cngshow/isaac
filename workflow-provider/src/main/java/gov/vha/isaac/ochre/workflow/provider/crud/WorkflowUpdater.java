@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.workflow.provider.crud;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
@@ -406,13 +407,16 @@ public class WorkflowUpdater
 								editCoordinate);
 						createdVersion = populateData(createdVersion, (SememeVersion<?>) version);
 					} else {
-						SememeVersion firstVersion = (SememeVersion)((SememeChronology) semChron).getVersionList().iterator().next();
-						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(firstVersion.getClass(), State.INACTIVE,
+						List<SememeVersion> list = (List<SememeVersion>)((SememeChronology) semChron).getVersionList();
+						
+						SememeVersion lastVersion = (SememeVersion)list.toArray(new SememeVersion[list.size()])[list.size() -  1];
+						SememeVersion createdVersion = ((SememeChronology) semChron).createMutableVersion(lastVersion.getClass(), State.INACTIVE,
 								editCoordinate);
+						createdVersion = populateData(createdVersion, (SememeVersion<?>) lastVersion);
 					}
 
 					Get.commitService().addUncommitted(semChron).get();
-					Get.commitService().commit("Reverting sememe to how it was prior to workflow");
+					Get.commitService().commit("Reverting sememe to how it was prior to workflow").get();
 				}
 			}
 		}
