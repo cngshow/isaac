@@ -27,8 +27,10 @@ import java.util.UUID;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
@@ -46,6 +48,8 @@ import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexer;
 public class AssociationUtilities
 {
 	private static int associationSequence = Integer.MIN_VALUE;
+	
+	private static LruCache<Integer, Boolean> isAssociationCache= new LruCache<>(50);
 
 	private static int getAssociationSequence()
 	{
@@ -202,5 +206,17 @@ public class AssociationUtilities
 			}
 		}
 		return Integer.MIN_VALUE;
+	}
+	
+	public static boolean isAssociation(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		if (isAssociationCache.containsKey(sc.getAssemblageSequence()))
+		{
+			return isAssociationCache.get(sc.getAssemblageSequence());
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
+				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
+		isAssociationCache.put(sc.getAssemblageSequence(), temp);
+		return temp;
 	}
 }
