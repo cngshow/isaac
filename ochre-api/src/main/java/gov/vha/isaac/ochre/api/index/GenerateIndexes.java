@@ -7,12 +7,16 @@ package gov.vha.isaac.ochre.api.index;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.task.TimedTask;
 
 /**
@@ -51,18 +55,18 @@ public class GenerateIndexes extends TimedTask<Void> {
         }
         
         List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
-        indexers.stream().forEach((i) -> {
+        for (IndexServiceBI i : indexers) {
             if (islList != null)
             {
                 for (IndexStatusListenerBI isl : islList)
                 {
                     isl.reindexBegan(i);
                 }
-            }
+            }            
             log.info("Clearing index for: " + i.getIndexerName());
             i.clearIndex();
             i.clearIndexedStatistics();
-        });
+        }
 
     }
 
@@ -77,42 +81,44 @@ public class GenerateIndexes extends TimedTask<Void> {
             long sememeCount = (int) Get.identifierService().getSememeSequenceStream().count();
             log.info("Sememes to index: " + sememeCount);
             componentCount = sememeCount;
-             
-            Get.sememeService().getParallelSememeStream().forEach((SememeChronology<?> sememe) -> {
-                indexers.stream().forEach((i) -> {
-                        try {
-                            if (sememe == null) {
-                                //noop - this error is already logged elsewhere.  Just skip.
-                            }
-                            else {
-                                i.index(sememe).get();
-                            }
+            
+            for (SememeChronology<?> sememe : (Iterable<SememeChronology<? extends SememeVersion<?>>>) Get.sememeService().getParallelSememeStream()::iterator)
+            {
+            	for (IndexServiceBI i : indexers) {
+                    try {
+                        if (sememe == null) {
+                            //noop - this error is already logged elsewhere.  Just skip.
                         }
-                        catch (Exception e) {
-                            throw new RuntimeException(e);
+                        else {
+                            i.index(sememe).get();
                         }
-                });
-                updateProcessedCount();
-            });
+                    }
+                    catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+	            }
+	            updateProcessedCount();
+            }
             
             List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
 
-            indexers.stream().forEach((i) -> {
+            for (IndexServiceBI i : indexers) {
                 if (islList != null)
                 {
-                    islList.stream().forEach((isl) -> {
-                        isl.reindexCompleted(i);
-                    });
+                	for(IndexStatusListenerBI isl : islList) {
+                		isl.reindexCompleted(i);
+                	}
                 }
                 i.commitWriter();
                 i.forceMerge();
                 log.info(i.getIndexerName() + " indexing complete.  Statistics follow:");
-                i.reportIndexedItems().forEach((name, value) ->
-                {
-                    log.info(name + ": " + value);
-                });
+                
+                for (Map.Entry<String, Integer> entry : i.reportIndexedItems().entrySet()){
+                	log.info(entry.getKey() + ": " + entry.getValue());
+                }
+                
                 i.clearIndexedStatistics();
-            });
+            }
             return null;
         } finally {
            Get.activeTasks().remove(this);
@@ -127,9 +133,9 @@ public class GenerateIndexes extends TimedTask<Void> {
             //We were committing too often every 1000 components, it was bad for performance.
             if (processedCount % 100000 == 0)
             {
-                indexers.stream().forEach((i) -> {
+            	for (IndexServiceBI i : indexers) {
                     i.commitWriter();
-                });
+                }
             }
         }
     }

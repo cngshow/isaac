@@ -352,18 +352,18 @@ public class Frills implements DynamicSememeColumnUtility {
 	 */
 	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
 	{
-		log.debug("Getting {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+		log.debug("Getting {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? getStatedDefinitionChronology(id, logicCoordinate) : getInferredDefinitionChronology(id, logicCoordinate);
 		if (defChronologyOptional.isPresent())
 		{
-			log.debug("Got {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+			log.debug("Got {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 
 			@SuppressWarnings("unchecked")
 			SememeChronology<? extends LogicGraphSememe<?>> sememeChronology = (SememeChronology<? extends LogicGraphSememe<?>>)defChronologyOptional.get();
 
 			return Optional.of(sememeChronology);
 		} else {
-			log.warn("NO {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+			log.warn("NO {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 
 			return Optional.empty();
 		}
@@ -376,18 +376,18 @@ public class Frills implements DynamicSememeColumnUtility {
 	 */
 	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated)
 	{
-		log.debug("Getting {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+		log.debug("Getting {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? Get.statedDefinitionChronology(id) : Get.inferredDefinitionChronology(id);
 		if (defChronologyOptional.isPresent())
 		{
-			log.debug("Got {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+			log.debug("Got {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 
 			@SuppressWarnings("unchecked")
 			SememeChronology<? extends LogicGraphSememe<?>> sememeChronology = (SememeChronology<? extends LogicGraphSememe<?>>)defChronologyOptional.get();
 
 			return Optional.of(sememeChronology);
 		} else {
-			log.warn("NO {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+			log.warn("NO {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 
 			return Optional.empty();
 		}
@@ -399,14 +399,14 @@ public class Frills implements DynamicSememeColumnUtility {
 	 */
 	public static Optional<LatestVersion<LogicGraphSememe<?>>> getLogicGraphVersion(SememeChronology<? extends LogicGraphSememe<?>> logicGraphSememeChronology, StampCoordinate stampCoordinate)
 	{
-		log.debug("Getting logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+		log.debug("Getting logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<LogicGraphSememe<?>>> latest = ((SememeChronology)logicGraphSememeChronology).getLatestVersion(LogicGraphSememe.class, stampCoordinate);
 		if (latest.isPresent()) {
-			log.debug("Got logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+			log.debug("Got logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 		} else {
-			log.warn("NO logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+			log.warn("NO logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 		}
 		return latest;
 	}
