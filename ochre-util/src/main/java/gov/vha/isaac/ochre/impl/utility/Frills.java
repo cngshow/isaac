@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,11 +22,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
+
 import javax.inject.Singleton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -77,13 +81,20 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
+import gov.vha.isaac.ochre.model.concept.ConceptVersionImpl;
 import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
+import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
 @Service
@@ -100,10 +111,10 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * 
 	 * Use StampCoordinate.makeAnalog() to customize result
 	 */
-	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version) {
+	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version, StampPrecedence precedence) {
 		StampPosition stampPosition = new StampPositionImpl(version.getTime(), version.getPathSequence());
 		StampCoordinate stampCoordinate = new StampCoordinateImpl(
-				StampPrecedence.TIME,
+				precedence,
 				stampPosition,
 				ConceptSequenceSet.of(version.getModuleSequence()),
 				EnumSet.of(version.getState()));
@@ -111,6 +122,17 @@ public class Frills implements DynamicSememeColumnUtility {
 		log.debug("Created StampCoordinate from StampedVersion: " + toString(version) + ": " + stampCoordinate);
 
 		return stampCoordinate;
+	}
+	/**
+	 * @param version StampedVersion from which to generate StampCoordinate
+	 * @return StampCoordinate corresponding to StampedVersion values
+	 * 
+	 * StampPrecedence set to StampPrecedence.TIME
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version) {
+		return getStampCoordinateFromVersion(version, StampPrecedence.TIME);
 	}
 
 	/**
@@ -1294,5 +1316,45 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		}
 		return -1;
+	}
+
+	public static Class<? extends StampedVersion> getVersionType(int nid) {
+		Optional<? extends ObjectChronology<? extends StampedVersion>> obj = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+		if (! obj.isPresent()) {
+			throw new RuntimeException("No StampedVersion object exists with NID=" + nid);
+		}
+		return getVersionType(obj.get());
+	}
+	public static Class<? extends StampedVersion> getVersionType(ObjectChronology<? extends StampedVersion> obj) {
+		switch (obj.getOchreObjectType()) {
+		case SEMEME: {
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			SememeChronology<? extends SememeVersion> sememeChronology = (SememeChronology<? extends SememeVersion>)obj;
+			switch (sememeChronology.getSememeType()) {
+			case COMPONENT_NID:
+				return ComponentNidSememeImpl.class;
+			case DESCRIPTION:
+				return DescriptionSememeImpl.class;
+			case DYNAMIC:
+				return DynamicSememeImpl.class;
+			case LOGIC_GRAPH:
+				return LogicGraphSememeImpl.class;
+			case LONG:
+				return LongSememeImpl.class;
+			case STRING:
+				return StringSememeImpl.class;
+			case RELATIONSHIP_ADAPTOR:
+				return RelationshipVersionAdaptorImpl.class;
+			case UNKNOWN:
+			case MEMBER:
+			default:
+				throw new RuntimeException("Sememe with NID=" + obj.getNid() + " is of unsupported SememeType " + sememeChronology.getSememeType());
+			}
+		}
+		case CONCEPT:
+			return ConceptVersionImpl.class;
+			default:
+				throw new RuntimeException("Object with NID=" + obj.getNid() + " is of unsupported OchreExternalizableObjectType " + obj.getOchreObjectType());
+		}
 	}
 }

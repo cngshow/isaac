@@ -149,6 +149,12 @@ public class WorkflowAccessor {
 		return false;
 	}
 
+	public boolean isComponentInProcess(UUID processId, int componentNid) {
+		ProcessDetail process = getProcessDetails(processId);
+		
+		return process != null ? process.getComponentToInitialEditMap().containsKey(componentNid) : false;
+	}
+
 	/**
 	 * Map the process history to each process for which the user's roles
 	 * enable them to advance workflow based on the process's current state.
@@ -304,5 +310,10 @@ public class WorkflowAccessor {
 		}
 		
 		return null;
+	}
+	public <T extends StampedVersion> T getVersionPriorToWorkflow(Class<T> versionClazz, UUID processId, int compNid) throws Exception {
+		StampedVersion version = getVersionPriorToWorkflow(processId, compNid);
+		
+		return versionClazz.cast(version);
 	}
 }
