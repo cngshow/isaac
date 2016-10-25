@@ -144,10 +144,6 @@ public class ExporterConfig {
 			assemblagesMap.put(Get.conceptSpecification(assemblageSeqId).getPrimordialUuid(), 
 					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
 		});
-		
-		for (UUID key : assemblagesMap.keySet()) {
-		    System.out.println(key + " -> " + assemblagesMap.get(key));
-		}
 
 	}
 	
@@ -367,13 +363,17 @@ public class ExporterConfig {
         
 		 */
 		
+		/*for (UUID key : assemblagesMap.keySet()) {
+		    System.out.println(key + " -> " + assemblagesMap.get(key));
+		}*/
+		
 		// VHAT CodeSystem
 		UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"); 
 		int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID); //-2147377575
 		String csAction = "none";
 		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(vhatCodeSystemNid);
 		String csName = vhatConcept.getConceptDescriptionText();
-		System.out.println(csName);
+		//System.out.println(csName);
 		//System.out.println(Get.c (vhatConcept.getNid())); //5a2e7786-3e41-11dc-8314-0800200c9a66
 		//String csVUID = "";
 		//String csPrefDesigType;
@@ -382,16 +382,15 @@ public class ExporterConfig {
 		//String csCopyrightURL;
 		
 		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
-		System.out.println("English description assemblage (ISAAC) -> " + _edaUUID);
+		//System.out.println("English description assemblage (ISAAC) -> " + _edaUUID);
 		UUID _edtUUID = getFromMapByValue(assemblagesMap, "extended description type (ISAAC)");
-		System.out.println("extended description type (ISAAC) -> " + _edtUUID);
+		//System.out.println("extended description type (ISAAC) -> " + _edtUUID);
 		UUID _vuidUUID = getFromMapByValue(assemblagesMap, "VUID (ISAAC)");
-		System.out.println("VUID (ISAAC) -> " + _vuidUUID);
+		//System.out.println("VUID (ISAAC) -> " + _vuidUUID);
 		UUID _codeUUID = getFromMapByValue(assemblagesMap, "Code");
-		System.out.println("Code -> " + _codeUUID);
+		//System.out.println("Code -> " + _codeUUID);
 		
 		// VHAT Module
-		System.out.println(vhatConcept.getConceptDescriptionText());
 		Get.sememeService().getSememesForComponent(vhatConcept.getNid()).forEach((sememe) -> {
 			switch (sememe.getSememeType()) {
 			case STRING:
@@ -400,15 +399,13 @@ public class ExporterConfig {
                 		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 				
 				UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
-				System.out.println(" -----> "+sememeString.get().value().getString() + " -> "+ assemblagesMap.get(test1)); // VUID
+				//System.out.println(" -----> "+sememeString.get().value().getString() + " -> "+ assemblagesMap.get(test1)); // VUID
 				break;
 			case DESCRIPTION:
 				for (SememeChronology<?> sc : sememe.getSememeList()) {
-					//System.out.println("sc => "+Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()));
 					if (Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get().equals(_edtUUID)) {
 						UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get();
-						//System.out.println(" -----> "+sc.getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly()).get().value().getText() + " -> "+ assemblagesMap.get(test2));
-						System.out.println(" -----> " + assemblagesMap.get(test2));
+						//System.out.println(" -----> " + assemblagesMap.get(test2));
 					}
 				}
 				/*@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -451,8 +448,6 @@ public class ExporterConfig {
 		// CodeSystems
 		Get.taxonomyService().getAllRelationshipOriginSequences(vhatCodeSystemNid).forEach((conceptId) -> {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-			//Optional<UUID> vuid = Get.identifierService().getUuidPrimordialFromConceptSequence(concept.getConceptSequence());
-			//Optional<UUID> code = Get.identifierService().getUuidPrimordialFromConceptSequence(concept.getConceptSequence());
 			Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 				if (sememe.getSememeType() == SememeType.STRING) {
 					@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -461,17 +456,17 @@ public class ExporterConfig {
 					
 					if (sememeVersion.isPresent()) {
 						UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
-						System.out.println(sememeVersion.get().value().getString()+" -> "+ assemblagesMap.get(test)); // VUID or Code
+						//System.out.println(sememeVersion.get().value().getString()+" -> "+ assemblagesMap.get(test)); // VUID or Code
 	                }
 				}
 			});
 			// The VHAT submodules
-			System.out.println(concept.getConceptDescriptionText());
+			//System.out.println(concept.getConceptDescriptionText());
 			Get.taxonomyService().getAllRelationshipOriginSequences(conceptId).forEach((c) -> {
 				// Each sub-submodule (codesystems, VistA, etc.)
 				ConceptChronology<? extends ConceptVersion<?>> c2 = Get.conceptService().getConcept(c);
-				// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"
-				System.out.println("|--- "+c2.getConceptDescriptionText());
+				// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
+				//System.out.println("|--- "+c2.getConceptDescriptionText());
 			});
 			/*for (SememeChronology<? extends DescriptionSememe<?>> a : concept.getConceptDescriptionList()) {
 				System.out.println(a.toUserString());
