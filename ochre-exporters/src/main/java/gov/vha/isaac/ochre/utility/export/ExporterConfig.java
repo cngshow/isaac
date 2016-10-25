@@ -71,6 +71,7 @@ import gov.vha.isaac.ochre.api.util.DBLocator;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.impl.utility.SimpleDisplayConcept;
+import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.relationship.RelationshipAdaptorChronicleKeyImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
@@ -109,12 +110,12 @@ public class ExporterConfig {
 	private Map<UUID, String> relationshipTypes = new HashMap<>();
 	private Map<String, List<String>> subsets = new TreeMap<>();
 	
+	private Map<UUID, String> assemblagesMap = new HashMap<>();
+	
 	
 	public static void main(String[] args) {
 
-		ExporterConfig ec = new ExporterConfig();
-		
-		ec.testXml();
+		new ExporterConfig();
 		
 		javafx.application.Platform.exit();
 		
@@ -123,6 +124,67 @@ public class ExporterConfig {
 	public ExporterConfig()
 	{
 		issacInit();
+		setupExporter();
+		export();
+		isaacStop();
+		testXml();
+	}
+	
+	private void setupExporter() {
+		
+		// Add all assemblages to Map for later lookup
+		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
+			/*System.out.println(assemblageSeqId 
+					+ " -> " 
+					+ Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText()
+					+ " -> "
+					+ Get.conceptSpecification(assemblageSeqId).getPrimordialUuid()
+					);
+			*/
+			assemblagesMap.put(Get.conceptSpecification(assemblageSeqId).getPrimordialUuid(), 
+					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
+		});
+		
+		for (UUID key : assemblagesMap.keySet()) {
+		    System.out.println(key + " -> " + assemblagesMap.get(key));
+		}
+
+	}
+	
+	/*private int getFromMapByValue(Map<UUID, String> haystack, String needle) {
+		// Not worried about the order changing - nothing should be added to the map after initial import
+		if (haystack == null || needle == null || (haystack.size() == 0) | (needle.length() == 0)) {
+			return -1;
+		}
+		
+		List<String> values = new ArrayList<>(haystack.values());
+		for (int i = 0; i < values.size(); i++) {
+			String hstk = ((String) values.get(i)).toLowerCase();
+			String nddl = needle.toLowerCase();
+		    if (hstk.equals(nddl) || hstk.contains(nddl)) {
+		    	return i;
+		    }
+		} 
+		
+		return -1;
+	}*/
+	
+	private UUID getFromMapByValue(Map<UUID, String> haystack, String needle) {
+		// Not worried about the order changing - nothing should be added to the map after initial import
+		if (haystack == null || needle == null || (haystack.size() == 0) | (needle.length() == 0)) {
+			return null;
+		}
+		
+		String nddl = needle.toLowerCase();
+		
+		for (Map.Entry<UUID, String> entry : haystack.entrySet()) {
+		    String hstk = entry.getValue().toLowerCase();
+			if (hstk.equals(nddl)) { //  || hstk.contains(nddl)
+				return entry.getKey();
+		    }
+		}
+		
+		return null;
 	}
 	
 	public boolean isIsaacReady()
@@ -182,6 +244,16 @@ public class ExporterConfig {
 			log.error("Failure starting ISAAC", e);
 		}
 			
+	}
+	
+	private void isaacStop() {
+		shutdown = true;
+		log.info("Stopping ISAAC");
+		LookupService.shutdownIsaac();
+		log.info("ISAAC stopped");
+	}
+	
+	private void export() {
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
 		//int vhatAssociationTypesNid = Get.identifierService().getNidForUuids(vhatAssociationTypesUUID); //-2147481336
@@ -249,16 +321,168 @@ public class ExporterConfig {
 				});
 			}
 		});
+		
+		/*
+	<CodeSystem>
+    <Action>none</Action>
+    <Name>VHAT</Name>
+    <VUID>4707199</VUID>
+    <Description>VHA Terminology</Description>
+   ? <Copyright>2007</Copyright>
+   ? <CopyrightURL />
+    <PreferredDesignationType>Preferred Name</PreferredDesignationType>
+    <Version>
+      <Append>true</Append>
+      <Name>Authoring Version</Name>
+      <Description>This is the version that is given to authoring changes before they are finalized.</Description>
+      <EffectiveDate>2011-02-16</EffectiveDate>
+      <ReleaseDate>2011-02-16</ReleaseDate>
+      <Source />
+      <CodedConcepts>
+        <CodedConcept>
+          <Action>add</Action>
+          <Code>4516261</Code>
+          <Name>Enterprise Clinical Terms</Name>
+          <VUID>4516261</VUID>
+          <Active>true</Active>
+          <Designations>
+            <Designation>
+              <Action>add</Action>
+              <Code>4775680</Code>
+              <TypeName>Preferred Name</TypeName>
+              <VUID>4775680</VUID>
+              <ValueNew>Enterprise Clinical Terms</ValueNew>
+              <Active>true</Active>
+            </Designation>
+          </Designations>
+          <Relationships>
+            <Relationship>
+              <Action>add</Action>
+              <TypeName>has_parent</TypeName>
+              <NewTargetCode>4712493</NewTargetCode>
+              <Active>true</Active>
+            </Relationship>
+          </Relationships>
+        </CodedConcept>
+        
+		 */
+		
+		// VHAT CodeSystem
+		UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"); 
+		int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID); //-2147377575
+		String csAction = "none";
+		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(vhatCodeSystemNid);
+		String csName = vhatConcept.getConceptDescriptionText();
+		System.out.println(csName);
+		//System.out.println(Get.c (vhatConcept.getNid())); //5a2e7786-3e41-11dc-8314-0800200c9a66
+		//String csVUID = "";
+		//String csPrefDesigType;
+		//String csDescription;
+		//String csCopyright;
+		//String csCopyrightURL;
+		
+		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
+		System.out.println("English description assemblage (ISAAC) -> " + _edaUUID);
+		UUID _edtUUID = getFromMapByValue(assemblagesMap, "extended description type (ISAAC)");
+		System.out.println("extended description type (ISAAC) -> " + _edtUUID);
+		UUID _vuidUUID = getFromMapByValue(assemblagesMap, "VUID (ISAAC)");
+		System.out.println("VUID (ISAAC) -> " + _vuidUUID);
+		UUID _codeUUID = getFromMapByValue(assemblagesMap, "Code");
+		System.out.println("Code -> " + _codeUUID);
+		
+		// VHAT Module
+		System.out.println(vhatConcept.getConceptDescriptionText());
+		Get.sememeService().getSememesForComponent(vhatConcept.getNid()).forEach((sememe) -> {
+			switch (sememe.getSememeType()) {
+			case STRING:
+				@SuppressWarnings({ "rawtypes", "unchecked" })
+                Optional<LatestVersion<? extends StringSememe>> sememeString
+                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				
+				UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
+				System.out.println(" -----> "+sememeString.get().value().getString() + " -> "+ assemblagesMap.get(test1)); // VUID
+				break;
+			case DESCRIPTION:
+				for (SememeChronology<?> sc : sememe.getSememeList()) {
+					//System.out.println("sc => "+Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()));
+					if (Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get().equals(_edtUUID)) {
+						UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get();
+						//System.out.println(" -----> "+sc.getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly()).get().value().getText() + " -> "+ assemblagesMap.get(test2));
+						System.out.println(" -----> " + assemblagesMap.get(test2));
+					}
+				}
+				/*@SuppressWarnings({ "rawtypes", "unchecked" })
+                Optional<LatestVersion<? extends DescriptionSememe>> sememeDescription
+                		= ((SememeChronology) sememe).getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				
+				UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeDescription.get().value().getAssemblageSequence()).get();
+				System.out.println(test2);
+				
+				if ( test2.equals(_edaUUID)) { 
+					System.out.println(" -----> "+sememeDescription.get().value().getText() + " -> "+ assemblagesMap.get(test2));
+				}*/
+				break;
+			case DYNAMIC:
+				break;
+			case COMPONENT_NID:
+				break;
+			case MEMBER:
+				break;
+			case UNKNOWN:
+				break;
+			}
+		});
+		
+		
+		/*Get.sememeService().getSememesForComponent(vhatConcept.getNid()).forEach((sememe) -> {
+			if (sememe.getSememeType() == SememeType.STRING) {
+				@SuppressWarnings({ "rawtypes", "unchecked" })
+                Optional<LatestVersion<? extends StringSememe>> sememeVersion
+                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				
+				//if (sememeVersion.isPresent()) {
+					UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
+					System.out.println(" -----> "+sememeVersion.get().value().getString() + " -> "+ assemblagesMap.get(test)); // VUID
+					
+                //}
+			}
+		});*/
+		
+		// CodeSystems
+		Get.taxonomyService().getAllRelationshipOriginSequences(vhatCodeSystemNid).forEach((conceptId) -> {
+			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
+			//Optional<UUID> vuid = Get.identifierService().getUuidPrimordialFromConceptSequence(concept.getConceptSequence());
+			//Optional<UUID> code = Get.identifierService().getUuidPrimordialFromConceptSequence(concept.getConceptSequence());
+			Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
+				if (sememe.getSememeType() == SememeType.STRING) {
+					@SuppressWarnings({ "rawtypes", "unchecked" })
+	                Optional<LatestVersion<? extends StringSememe>> sememeVersion
+	                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+					
+					if (sememeVersion.isPresent()) {
+						UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
+						System.out.println(sememeVersion.get().value().getString()+" -> "+ assemblagesMap.get(test)); // VUID or Code
+	                }
+				}
+			});
+			// The VHAT submodules
+			System.out.println(concept.getConceptDescriptionText());
+			Get.taxonomyService().getAllRelationshipOriginSequences(conceptId).forEach((c) -> {
+				// Each sub-submodule (codesystems, VistA, etc.)
+				ConceptChronology<? extends ConceptVersion<?>> c2 = Get.conceptService().getConcept(c);
+				// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"
+				System.out.println("|--- "+c2.getConceptDescriptionText());
+			});
+			/*for (SememeChronology<? extends DescriptionSememe<?>> a : concept.getConceptDescriptionList()) {
+				System.out.println(a.toUserString());
+			}*/
+		});
 
+		//Get.sememeService().getAssemblageTypes().
 		//System.out.println(Get.conceptService().getConceptChronologyStream().count());
         
         //System.out.println(Get.sememeService().getAssemblageTypes().count());
 		
-		shutdown = true;
-		log.info("Stopping ISAAC");
-		LookupService.shutdownIsaac();
-		log.info("ISAAC stopped");
-
 	}
 
 	private void testXml() {
@@ -326,7 +550,7 @@ public class ExporterConfig {
 	        DOMSource source = new DOMSource(document);
 	        StreamResult result = new StreamResult(System.out);
 	        t.transform(source, result);
-			
+	        
 			/* TODO: We want to use this method, after we have time to adjust
 			 * for Fortify scans and not create any warnings/failures
 			 * 
