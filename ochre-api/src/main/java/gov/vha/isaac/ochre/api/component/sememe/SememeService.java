@@ -54,7 +54,7 @@ public interface SememeService {
     /**
      * Use in circumstances when not all sememes may have been loaded to find out if a sememe is present,
      * without incurring the overhead of reading back the object. 
-     * @param sememeId Either a nid or concept sequence
+     * @param sememeId Either a nid or sememe sequence
      * @return true if present, false otherwise
      */
     boolean hasSememe(int sememeId);
