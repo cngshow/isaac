@@ -372,7 +372,8 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param stated boolean indicating stated vs inferred definition chronology should be used
 	 * @return An Optional containing a LogicGraphSememe SememeChronology
 	 */
-	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
+	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, 
+			LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
 	{
 		log.debug("Getting {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? getStatedDefinitionChronology(id, logicCoordinate) : getInferredDefinitionChronology(id, logicCoordinate);
