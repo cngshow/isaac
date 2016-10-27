@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -68,7 +69,8 @@ public interface DynamicSememeUtility {
 	public DynamicSememeUUID createDynamicUUIDData(UUID value);
 	
 	/**
-	 * validate that the proposed dynamicSememeData aligns with the definition.
+	 * validate that the proposed dynamicSememeData aligns with the definition.  This also fills in default values, 
+	 * as necessary, if the data[] contains 'nulls' and the column is specified with a default value.
 	 * @param dsud
 	 * @param data
 	 * @param referencedComponentNid
@@ -103,10 +105,10 @@ public interface DynamicSememeUtility {
 				}
 			}
 		}
-
+		
 		if (data == null)
 		{
-			return;
+			data = new DynamicSememeData[] {};
 		}
 		
 		//specifically allow < - we don't need the trailing columns, if they were defined as optional.
@@ -115,6 +117,30 @@ public interface DynamicSememeUtility {
 			throw new InvalidParameterException("The Assemblage concept: " + dsud.getDynamicSememeName() + " specifies " + dsud.getColumnInfo().length + 
 					" columns of data, while the provided data contains " + data.length + " columns.  The data size array must not exeed the sememe definition."
 					+ " (the data column count may be less, if the missing columns are defined as optional)");
+		}
+		
+		int lastColumnWithDefaultValue = 0;
+		for (int i = 0; i < dsud.getColumnInfo().length; i++)
+		{
+			if (dsud.getColumnInfo()[i].getDefaultColumnValue() != null)
+			{
+				lastColumnWithDefaultValue = i;
+			}
+		}
+		
+		if (lastColumnWithDefaultValue + 1 > data.length)
+		{
+			//We need to lengthen the data array, to make room to add the default value
+			data = Arrays.copyOf(data, lastColumnWithDefaultValue);
+		}
+		
+		for (int i = 0; i < dsud.getColumnInfo().length; i++)
+		{
+			DynamicSememeData defaultValue = dsud.getColumnInfo()[i].getDefaultColumnValue();
+			if (defaultValue != null && data[i] == null)
+			{
+				data[i] = defaultValue;
+			}
 		}
 		
 		//If they provided less columns, make sure the remaining columns are all optional
