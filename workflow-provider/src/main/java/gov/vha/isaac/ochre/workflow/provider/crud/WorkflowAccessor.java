@@ -272,7 +272,7 @@ public class WorkflowAccessor {
 	 * 
 	 * @throws Exception
 	 */
-	public StampedVersion getVersionPriorToWorkflow(UUID processId, int compNid) throws Exception {
+	public StampedVersion getVersionPriorToWorkflow(UUID processId, int compNid) {
 		ProcessDetail proc = getProcessDetails(processId);
 		
 		if (!proc.getComponentToInitialEditMap().keySet().contains(compNid)) {
@@ -287,7 +287,7 @@ public class WorkflowAccessor {
 		} else if (Get.identifierService().getChronologyTypeForNid(compNid) == ObjectChronologyType.SEMEME) {
 			objChron = Get.sememeService().getSememe(compNid);
 		} else {
-			throw new Exception("Cannot reconcile NID with Identifier Service for nid: " + compNid);
+			throw new RuntimeException("Cannot reconcile NID with Identifier Service for nid: " + compNid);
 		}
 
 		OfInt stampSequencesItr = objChron.getVersionStampSequences().iterator();
@@ -310,10 +310,5 @@ public class WorkflowAccessor {
 		}
 		
 		return null;
-	}
-	public <T extends StampedVersion> T getVersionPriorToWorkflow(Class<T> versionClazz, UUID processId, int compNid) throws Exception {
-		StampedVersion version = getVersionPriorToWorkflow(processId, compNid);
-		
-		return versionClazz.cast(version);
 	}
 }
