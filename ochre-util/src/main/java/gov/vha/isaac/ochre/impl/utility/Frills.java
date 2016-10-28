@@ -3,7 +3,6 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,14 +21,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
-
 import javax.inject.Singleton;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -39,6 +35,7 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
@@ -81,6 +78,7 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
+import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.concept.ConceptVersionImpl;
 import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
@@ -97,11 +95,15 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
-@Service
+//This is a service, simply to implement the DynamicSememeColumnUtility interface.  Everythign else is static, and may be used directly
+@Service  
 @Singleton
 public class Frills implements DynamicSememeColumnUtility {
 
 	private static Logger log = LogManager.getLogger();
+	
+	private static LruCache<Integer, Boolean> isAssociationCache = new LruCache<>(50);
+	private static LruCache<Integer, Boolean> isMappingCache= new LruCache<>(50);
 
 	/**
 	 * @param version StampedVersion from which to generate StampCoordinate
@@ -1357,5 +1359,29 @@ public class Frills implements DynamicSememeColumnUtility {
 			default:
 				throw new RuntimeException("Object with NID=" + obj.getNid() + " is of unsupported OchreExternalizableObjectType " + obj.getOchreObjectType());
 		}
+	}
+	
+	public static boolean isAssociation(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		if (isAssociationCache.containsKey(sc.getAssemblageSequence()))
+		{
+			return isAssociationCache.get(sc.getAssemblageSequence());
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
+				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
+		isAssociationCache.put(sc.getAssemblageSequence(), temp);
+		return temp;
+	}
+	
+	public static boolean isMapping(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		if (isMappingCache.containsKey(sc.getAssemblageSequence()))
+		{
+			return isMappingCache.get(sc.getAssemblageSequence());
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
+				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getConceptSequence()).anyMatch(sememe -> true);
+		isMappingCache.put(sc.getAssemblageSequence(), temp);
+		return temp;
 	}
 }

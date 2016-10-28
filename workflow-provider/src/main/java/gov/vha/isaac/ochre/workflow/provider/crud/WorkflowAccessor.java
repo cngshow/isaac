@@ -27,11 +27,8 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
-
 import javax.inject.Singleton;
-
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.UserRole;
@@ -52,9 +49,7 @@ import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
-import gov.vha.isaac.ochre.associations.AssociationUtilities;
 import gov.vha.isaac.ochre.impl.utility.Frills;
-import gov.vha.isaac.ochre.mapping.data.MappingUtils;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
@@ -448,9 +443,9 @@ public class WorkflowAccessor {
 					}
 				}
 
-				if (MappingUtils.isMapping(sememe)) {
+				if (Frills.isMapping(sememe)) {
 					return formatStringMapInformation(value, target);
-				} else if (AssociationUtilities.isAssociation(sememe)) {
+				} else if (Frills.isAssociation(sememe)) {
 					return formatStringAssociationInformation(value, target);
 				} else {
 					return formatStringValueInformation(value);

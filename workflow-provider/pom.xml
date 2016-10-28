@@ -33,13 +33,7 @@
 		
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>ochre-mapping</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>query-provider</artifactId>
+			<artifactId>ochre-util</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		

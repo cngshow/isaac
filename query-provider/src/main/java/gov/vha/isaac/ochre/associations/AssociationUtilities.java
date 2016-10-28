@@ -27,7 +27,6 @@ import java.util.UUID;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -36,6 +35,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUtilityImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexer;
@@ -49,8 +49,6 @@ public class AssociationUtilities
 {
 	private static int associationSequence = Integer.MIN_VALUE;
 	
-	private static LruCache<Integer, Boolean> isAssociationCache= new LruCache<>(50);
-
 	private static int getAssociationSequence()
 	{
 		if (associationSequence == Integer.MIN_VALUE)
@@ -210,13 +208,6 @@ public class AssociationUtilities
 	
 	public static boolean isAssociation(SememeChronology<? extends SememeVersion<?>> sc)
 	{
-		if (isAssociationCache.containsKey(sc.getAssemblageSequence()))
-		{
-			return isAssociationCache.get(sc.getAssemblageSequence());
-		}
-		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
-		isAssociationCache.put(sc.getAssemblageSequence(), temp);
-		return temp;
+		return Frills.isAssociation(sc);
 	}
 }
