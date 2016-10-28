@@ -241,11 +241,26 @@ public enum DynamicSememeValidatorType
 	 */
 	@SuppressWarnings("unchecked")
 	public boolean passesValidator(DynamicSememeData userData, DynamicSememeData validatorDefinitionData, StampCoordinate sc, TaxonomyCoordinate tc)
+		throws IllegalArgumentException
 	{
 		if (validatorDefinitionData == null)
 		{
 			throw new RuntimeException("The validator definition data is required");
 		}
+		
+		if (userData instanceof DynamicSememeArray)
+		{
+			//If the user data is an array, unwrap, and validate each.
+			for (DynamicSememeData userDataItem : ((DynamicSememeArray<?>)userData).getDataArray())
+			{
+				if (!passesValidator(userDataItem, validatorDefinitionData, sc, tc))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+		
 		if (this == DynamicSememeValidatorType.EXTERNAL)
 		{
 			DynamicSememeExternalValidator validator = null;

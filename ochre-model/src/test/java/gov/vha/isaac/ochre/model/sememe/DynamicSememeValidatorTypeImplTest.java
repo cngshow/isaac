@@ -22,7 +22,9 @@ import java.beans.PropertyVetoException;
 import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeArrayImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDoubleImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeFloatImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeIntegerImpl;
@@ -149,8 +151,8 @@ public class DynamicSememeValidatorTypeImplTest
 	@Test
 	public void testRegexp() throws PropertyVetoException, IOException
 	{
-		Assert.assertTrue(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeStringImpl("testWord"), new DynamicSememeStringImpl(".*"), null, null));
-		Assert.assertTrue(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeStringImpl("testWord"), new DynamicSememeStringImpl("[a-zA-Z]*"), null, null));
+		Assert.assertTrue(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeArrayImpl(new DynamicSememeData[] {new DynamicSememeStringImpl("testWord")}), new DynamicSememeStringImpl(".*"), null, null));
+		Assert.assertTrue(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeArrayImpl(new DynamicSememeData[] {new DynamicSememeStringImpl("testWord")}), new DynamicSememeStringImpl("[a-zA-Z]*"), null, null));
 		Assert.assertFalse(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeStringImpl("testWord"), new DynamicSememeStringImpl("[a-z]*"), null, null));
 		Assert.assertTrue(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeStringImpl("426"), new DynamicSememeStringImpl("\\d{3}?") , null, null));
 		Assert.assertFalse(DynamicSememeValidatorType.REGEXP.passesValidator(new DynamicSememeStringImpl("4264"), new DynamicSememeStringImpl("\\d{3}?") , null, null));
