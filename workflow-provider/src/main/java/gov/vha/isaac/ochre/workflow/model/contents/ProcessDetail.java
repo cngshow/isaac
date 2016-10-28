@@ -3,7 +3,7 @@
  *
  * This is a work of the U.S. Government and is not subject to copyright
  * protection in the United States. Foreign copyrights may apply.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,7 +36,7 @@ import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 /**
  * The metadata defining a given process (or workflow instance). This doesn't
  * include its Detail which is available via {@link ProcessHistory}
- * 
+ *
  * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -61,7 +61,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	/**
 	 * The exhaustive list of possible ways an instantiated process may be ended
 	 *
-	 * 
+	 *
 	 */
 	public enum EndWorkflowType
 	{
@@ -109,40 +109,40 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	private UUID ownerId = BPMNInfo.UNOWNED_PROCESS;
 
 	/**
-     * Definition uuid most significant bits
-     */
+	 * Definition uuid most significant bits
+	 */
 	private long definitionIdMsb;
-    
-	/**
-     * Definition uuid least significant bits
-     */
-    private long definitionIdLsb;
 
-    /**
-     * Creator uuid most significant bits
-     */
+	/**
+	 * Definition uuid least significant bits
+	 */
+	private long definitionIdLsb;
+
+	/**
+	 * Creator uuid most significant bits
+	 */
 	private long creatorIdMsb;
-    
-	/**
-     * Creator uuid least significant bits
-     */
-    private long creatorIdLsb;
 
 	/**
-     * Owner uuid most significant bits
-     */
-	private long ownerIdMsb;
-    
+	 * Creator uuid least significant bits
+	 */
+	private long creatorIdLsb;
+
 	/**
-     * Owner uuid least significant bits
-     */
-    private long ownerIdLsb;
-	
-    private StampSerializer stampSerializer = new StampSerializer();
+	 * Owner uuid most significant bits
+	 */
+	private long ownerIdMsb;
+
+	/**
+	 * Owner uuid least significant bits
+	 */
+	private long ownerIdLsb;
+
+	private StampSerializer stampSerializer = new StampSerializer();
 
 	/**
 	 * Constructor for a new process based on specified entry fields.
-	 * 
+	 *
 	 * @param definitionId
 	 * @param creatorId
 	 * @param timeCreated
@@ -161,11 +161,11 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		this.ownerId = creatorId;
 
 		this.definitionIdMsb = definitionId.getMostSignificantBits();
-        this.definitionIdLsb = definitionId.getLeastSignificantBits();
-        this.creatorIdMsb = creatorId.getMostSignificantBits();
-        this.creatorIdLsb = creatorId.getLeastSignificantBits();
-        this.ownerIdMsb = ownerId.getMostSignificantBits();
-        this.ownerIdLsb = ownerId.getLeastSignificantBits();
+		this.definitionIdLsb = definitionId.getLeastSignificantBits();
+		this.creatorIdMsb = creatorId.getMostSignificantBits();
+		this.creatorIdLsb = creatorId.getLeastSignificantBits();
+		this.ownerIdMsb = ownerId.getMostSignificantBits();
+		this.ownerIdLsb = ownerId.getLeastSignificantBits();
 	}
 
 	/**
@@ -245,7 +245,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/**
 	 * Get the time the process was launched as long primitive type
-	 * 
+	 *
 	 * @return the time launched
 	 */
 	public long getTimeLaunched()
@@ -289,7 +289,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/**
 	 * The name of the process
-	 * 
+	 *
 	 * @return process name
 	 */
 	public String getName()
@@ -299,7 +299,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/**
 	 * The description of the process
-	 * 
+	 *
 	 * @return process description
 	 */
 	public String getDescription()
@@ -309,8 +309,8 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/**
 	 * Retrieves the current owner of the process
-	 * 
-	 * @return 0-based UUID: Process is not owned.  
+	 *
+	 * @return 0-based UUID: Process is not owned.
 	 * Otherwise, return the process's current owner id
 	 */
 	public UUID getOwnerId()
@@ -320,7 +320,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/**
 	 * Sets the current owner of the process
-	 * 
+	 *
 	 * @param nid
 	 * The userId obtaining a lock on the instance. Note '0' means no owner.
 	 */
@@ -336,6 +336,16 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		return status == ProcessStatus.LAUNCHED || status == ProcessStatus.DEFINED;
 	}
 
+	public boolean isCanceled()
+	{
+		return status == ProcessStatus.CANCELED;
+	}
+
+	public boolean isConcluded()
+	{
+		return status == ProcessStatus.CONCLUDED;
+	}
+
 	@Override
 	protected void putAdditionalWorkflowFields(ByteArrayDataBuffer out) {
 		out.putLong(definitionIdMsb);
@@ -344,15 +354,15 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		out.putInt(componentToIntitialEditMap.size());
 		for (Integer componentNid : componentToIntitialEditMap.keySet()) {
 			out.putNid(componentNid);
-			
-	        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-	        	stampSerializer.serialize(new DataOutputStream(baos), componentToIntitialEditMap.get(componentNid));
-	        	out.putByteArrayField(baos.toByteArray());
-	        } catch (IOException e) {
-	            throw new RuntimeException(e);
-	        }
+
+			try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				stampSerializer.serialize(new DataOutputStream(baos), componentToIntitialEditMap.get(componentNid));
+				out.putByteArrayField(baos.toByteArray());
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
-		
+
 		out.putLong(creatorIdMsb);
 		out.putLong(creatorIdLsb);
 		out.putLong(timeCreated);
@@ -370,16 +380,16 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		definitionIdMsb = in.getLong();
 		definitionIdLsb = in.getLong();
 		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
-		
+
 		int collectionCount = in.getInt();
 		for (int i = 0; i < collectionCount; i++) {
 			int compNid = in.getNid();
-			
-	        try (ByteArrayInputStream baos = new ByteArrayInputStream(in.getByteArrayField())) {
-	        	componentToIntitialEditMap.put(compNid, stampSerializer.deserialize(new DataInputStream(baos)));
-	        } catch (IOException e) {
-	            throw new RuntimeException(e);
-	        }
+
+			try (ByteArrayInputStream baos = new ByteArrayInputStream(in.getByteArrayField())) {
+				componentToIntitialEditMap.put(compNid, stampSerializer.deserialize(new DataInputStream(baos)));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		creatorIdMsb = in.getLong();
@@ -398,7 +408,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -407,9 +417,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		StringBuffer buf = new StringBuffer();
 
 		for (Integer compNid : componentToIntitialEditMap.keySet())
-		{
 			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at Stamp: " + componentToIntitialEditMap.get(compNid));
-		}
 
 		LocalDate date = LocalDate.ofEpochDay(timeCreated);
 		String timeCreatedString = BPMNInfo.workflowDateFormatter.format(date);
@@ -421,14 +429,14 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 		String timeCanceledOrConcludedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "
-				+ creatorId.toString() + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "
-				+ timeCanceledOrConcludedString + "\n\t\tStatus: " + status + "\n\t\tName: " + name + "\n\t\tDescription: " + description + "\n\t\tOwner Id: "
-				+ ownerId.toString();
+		+ creatorId.toString() + "\n\t\tTime Created: " + timeCreatedString + "\n\t\tTime Launched: " + timeLaunchedString + "\n\t\tTime Canceled or Concluded: "
+		+ timeCanceledOrConcludedString + "\n\t\tStatus: " + status + "\n\t\tName: " + name + "\n\t\tDescription: " + description + "\n\t\tOwner Id: "
+		+ ownerId.toString();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -443,7 +451,7 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
