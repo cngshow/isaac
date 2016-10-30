@@ -35,19 +35,25 @@ public enum UserRole {
 	 * AUTOMATED is used to capture that the system automated the workflow
 	 * advancement rather than a specific user
 	 */
-	AUTOMATED,
+	AUTOMATED(UserRoleConstants.AUTOMATED),
+
+	SUPER_USER(UserRoleConstants.SUPER_USER),
+	ADMINISTRATOR(UserRoleConstants.ADMINISTRATOR),
+
+	READ_ONLY(UserRoleConstants.READ_ONLY),
+	EDITOR(UserRoleConstants.EDITOR),
+	REVIEWER(UserRoleConstants.REVIEWER),
+	APPROVER(UserRoleConstants.APPROVER),
+	MANAGER(UserRoleConstants.MANAGER);
 	
-	SUPER_USER,
-	ADMINISTRATOR,
-	READ_ONLY,
-	EDITOR,
-	REVIEWER,
-	APPROVER,
-	MANAGER;
+	private final String text;
+	private UserRole(String text) { this.text = text; }
+	
+	public String getText() { return text; }
 	
 	public static Optional<UserRole> safeValueOf(String str) {
 		for (UserRole role : UserRole.values()) {
-			if (role.name().equalsIgnoreCase(str)) {
+			if (role.getText().equalsIgnoreCase(str)) {
 				return Optional.of(role);
 			}
 		}
@@ -65,6 +71,6 @@ public enum UserRole {
 	}
 	
 	public String toString() {
-		return name().toString().toLowerCase();
+		return text;
 	}
 }
