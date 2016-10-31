@@ -137,7 +137,7 @@ public class NumericUtils
 		{
 			return Optional.of(Long.parseLong(string.trim()));
 		}
-		catch (NumberFormatException e)
+		catch (Exception e)
 		{
 			return Optional.empty();
 		}
@@ -170,7 +170,7 @@ public class NumericUtils
 		{
 			return Optional.of(Integer.parseInt(string.trim()));
 		}
-		catch (NumberFormatException e)
+		catch (Exception e)
 		{
 			return Optional.empty();
 		}
