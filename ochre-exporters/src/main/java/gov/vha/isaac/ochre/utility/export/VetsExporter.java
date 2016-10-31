@@ -24,9 +24,13 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.associations.AssociationInstance;
+import gov.vha.isaac.ochre.associations.AssociationUtilities;
 
 
 public class VetsExporter {
@@ -199,8 +203,8 @@ public class VetsExporter {
 		String csDescription = Frills.getDescription(vhatCodeSystemNid).orElse("none"); // This should be "VHA Terminology" but can't seem to get that ... easily
 		//String csCopyright; // ?
 		//String csCopyrightURL; // ?
-		System.out.println("VUID = " + csVUID);
-		System.out.println("Desc = " + csDescription);
+		//System.out.println("VUID = " + csVUID);
+		//System.out.println("Desc = " + csDescription);
 		
 		/*
 		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
@@ -243,6 +247,7 @@ public class VetsExporter {
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
 		Get.taxonomyService().getAllRelationshipOriginSequences(-2147387560).forEach((conceptId) -> {
+			
 			ConceptChronology<? extends ConceptVersion<?>> _concept = Get.conceptService().getConcept(conceptId);
 			int _conceptNid = _concept.getNid();
 			String _tmpName = Frills.getDescription(_conceptNid).orElse("");
@@ -253,30 +258,57 @@ public class VetsExporter {
 				return;
 			}
 			
-			
 			long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
 			
-			// Code Assemblage
-			int _codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(getFromMapByValue(assemblagesMap, "Code"));
-			Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblage(_conceptNid, _codeAssemblageConceptSeq).toArray();
-			String _code = null;
+			String _code = getCodeFromConceptNid(_conceptNid);
 			
-			// Should only be '1' - but working around the "must be effectively final" issue for _code variable from within the stream
-			for (Object o : _scList) {
-				Optional<LatestVersion<? extends StringSememe>> sememeVersion = ((SememeChronology) o).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-				_code = sememeVersion.get().value().getString();
+			boolean _active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
+			
+			//System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
+
+			// TODO: Designations
+			
+			// Relationships
+			/*
+			 <Relationships>
+				<Relationship>
+				  <Action>add</Action>
+				  <TypeName>has_parent</TypeName>
+				  <NewTargetCode>4712493</NewTargetCode>
+				  <Active>true</Active>
+				</Relationship>
+			  </Relationships>
+			 */
+			
+			List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(_concept.getNid(), StampCoordinates.getDevelopmentLatestActiveOnly());
+			for (AssociationInstance ai : aiList) {
+				String __typeName = ai.getAssociationType().getAssociationName();
+				String __targetUUID = ai.getTargetComponentData().get().getDataObject().toString();
+				ConceptChronology<?> __concept = Get.conceptService().getConcept(UUID.fromString(__targetUUID));
+				String __newTargetCode = getCodeFromConceptNid(__concept.getNid());
+				boolean __active = __concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
+				
+				//System.out.println("Relationship: add, " + __typeName + ", " + __newTargetCode + ", " + __active);
 			}
-			
-			boolean active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
-			
-			System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
 			
 		});
 		
 		
-		
-		
 		buildXml(writeTo);
+	}
+	
+	private String getCodeFromConceptNid(int conceptNid) {
+		
+		// Code Assemblage
+		int _codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(getFromMapByValue(assemblagesMap, "Code"));
+		Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, _codeAssemblageConceptSeq).toArray();
+		String _code = null;
+		for (Object o : _scList) {
+			Optional<LatestVersion<? extends StringSememe>> sememeVersion = ((SememeChronology) o).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+			_code = sememeVersion.get().value().getString();
+		}
+		
+		return _code;
 	}
 
 	private void buildXml(OutputStream writeTo) {
