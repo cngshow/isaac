@@ -39,25 +39,8 @@ public class VetsExporter {
 	
 	public VetsExporter()
 	{
-		setupExporter();
 	}
 	
-	private void setupExporter() {
-		
-		// Add all assemblages to Map for later lookup
-		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
-			/*System.out.println(assemblageSeqId 
-					+ " -> " 
-					+ Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText()
-					+ " -> "
-					+ Get.conceptSpecification(assemblageSeqId).getPrimordialUuid()
-					);
-			*/
-			assemblagesMap.put(Get.conceptSpecification(assemblageSeqId).getPrimordialUuid(), 
-					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
-		});
-
-	}
 	
 	/*private int getFromMapByValue(Map<UUID, String> haystack, String needle) {
 		// Not worried about the order changing - nothing should be added to the map after initial import
@@ -97,6 +80,19 @@ public class VetsExporter {
 
 	
 	public void export(OutputStream writeTo) {
+		
+		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
+			/*System.out.println(assemblageSeqId 
+					+ " -> " 
+					+ Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText()
+					+ " -> "
+					+ Get.conceptSpecification(assemblageSeqId).getPrimordialUuid()
+					);
+			*/
+			assemblagesMap.put(Get.conceptSpecification(assemblageSeqId).getPrimordialUuid(), 
+					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
+		});
+		
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
 		//int vhatAssociationTypesNid = Get.identifierService().getNidForUuids(vhatAssociationTypesUUID); //-2147481336
