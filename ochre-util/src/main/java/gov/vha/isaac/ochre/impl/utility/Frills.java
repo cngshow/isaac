@@ -1361,27 +1361,42 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 	}
 	
+	public static boolean definesAssociation(int conceptSequence)
+	{
+		if (isAssociationCache.containsKey(conceptSequence))
+		{
+			return isAssociationCache.get(conceptSequence);
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(conceptSequence), 
+				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
+		isAssociationCache.put(conceptSequence, temp);
+		return temp;
+	}
+	
 	public static boolean isAssociation(SememeChronology<? extends SememeVersion<?>> sc)
 	{
-		if (isAssociationCache.containsKey(sc.getAssemblageSequence()))
+		return definesAssociation(sc.getAssemblageSequence());
+	}
+	
+	public static boolean definesMapping(int conceptSequence)
+	{
+		if (isMappingCache.containsKey(conceptSequence))
 		{
-			return isAssociationCache.get(sc.getAssemblageSequence());
+			return isMappingCache.get(conceptSequence);
 		}
-		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
-		isAssociationCache.put(sc.getAssemblageSequence(), temp);
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(conceptSequence), 
+				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getConceptSequence()).anyMatch(sememe -> true);
+		isMappingCache.put(conceptSequence, temp);
 		return temp;
 	}
 	
 	public static boolean isMapping(SememeChronology<? extends SememeVersion<?>> sc)
 	{
-		if (isMappingCache.containsKey(sc.getAssemblageSequence()))
-		{
-			return isMappingCache.get(sc.getAssemblageSequence());
-		}
-		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
-				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getConceptSequence()).anyMatch(sememe -> true);
-		isMappingCache.put(sc.getAssemblageSequence(), temp);
-		return temp;
+		return definesMapping(sc.getAssemblageSequence());
+	}
+	
+	public static boolean definesDynamicSememe(int conceptSequence)
+	{
+		return DynamicSememeUsageDescriptionImpl.isDynamicSememe(conceptSequence);
 	}
 }
