@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import javax.xml.bind.JAXBContext;
@@ -15,13 +16,16 @@ import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
 import gov.va.med.term.vhat.xml.model.KindType;
 import gov.va.med.term.vhat.xml.model.Terminology;
+import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 
 
@@ -190,55 +194,26 @@ public class VetsExporter {
 		String csAction = "none";
 		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(vhatCodeSystemNid);
 		String csName = vhatConcept.getConceptDescriptionText();
-		//String csVUID = "";
+		Long csVUID = Frills.getVuId(vhatCodeSystemNid, null).orElse(0L); // Probably not right
 		//String csPrefDesigType;
-		//String csDescription;
+		String csDescription = Frills.getDescription(vhatCodeSystemNid).orElse("none"); // This should be "VHA Terminology" but can't seem to get that ... easily
 		//String csCopyright; // ?
 		//String csCopyrightURL; // ?
+		System.out.println("VUID = " + csVUID);
+		System.out.println("Desc = " + csDescription);
 		
+		/*
 		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
 		UUID _edtUUID = getFromMapByValue(assemblagesMap, "extended description type (ISAAC)");
 		UUID _vuidUUID = getFromMapByValue(assemblagesMap, "VUID (ISAAC)");
 		UUID _codeUUID = getFromMapByValue(assemblagesMap, "Code");
+		*/
+		// UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
 		
 		// VHAT Module
-		Get.sememeService().getSememesForComponent(vhatConcept.getNid()).forEach((sememe) -> {
-			switch (sememe.getSememeType()) {
-			case STRING:
-				@SuppressWarnings({ "rawtypes", "unchecked" })
-				Optional<LatestVersion<? extends StringSememe>> sememeString
-						= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-				
-				UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
-				break;
-			case DESCRIPTION:
-				for (SememeChronology<?> sc : sememe.getSememeList()) {
-					if (Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get().equals(_edtUUID)) {
-						UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sc.getAssemblageSequence()).get();
-					}
-				}
-				/*@SuppressWarnings({ "rawtypes", "unchecked" })
-				Optional<LatestVersion<? extends DescriptionSememe>> sememeDescription
-						= ((SememeChronology) sememe).getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-				
-				UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeDescription.get().value().getAssemblageSequence()).get();
-				System.out.println(test2);
-				*/
-				break;
-			case DYNAMIC:
-				break;
-			case COMPONENT_NID:
-				break;
-			case MEMBER:
-				break;
-			case UNKNOWN:
-				break;
-			}
-		});
 		
-		
-		// CodeSystems
-		Get.taxonomyService().getAllRelationshipOriginSequences(vhatCodeSystemNid).forEach((conceptId) -> {
+		// All CodeSystems
+		/*Get.taxonomyService().getAllRelationshipOriginSequences(vhatCodeSystemNid).forEach((conceptId) -> {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 			Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 				if (sememe.getSememeType() == SememeType.STRING) {
@@ -258,10 +233,51 @@ public class VetsExporter {
 				// Each sub-submodule (codesystems, VistA, etc.)
 				ConceptChronology<? extends ConceptVersion<?>> c2 = Get.conceptService().getConcept(c);
 				// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
-				//System.out.println("|--- "+c2.getConceptDescriptionText());
+				System.out.println("|--- "+c2.getConceptDescriptionText());
 			});
-		});
+			
+			
+		});*/
+		
+		// Standard Code Systems, not sorted alphabetically by name as implied in the  
+		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
+		int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
+		Get.taxonomyService().getAllRelationshipOriginSequences(-2147387560).forEach((conceptId) -> {
+			ConceptChronology<? extends ConceptVersion<?>> _concept = Get.conceptService().getConcept(conceptId);
+			int _conceptNid = _concept.getNid();
+			String _tmpName = Frills.getDescription(_conceptNid).orElse("");
 
+			// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
+			if (!(_tmpName.length() > 0)) {
+				// NOP, is this valid ?
+				return;
+			}
+			
+			
+			long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
+			
+			// Code Assemblage
+			// TODO: need to generate dynamically
+			Set<Integer> _codeAssemblageSet = new java.util.HashSet<>();
+			_codeAssemblageSet.add(Integer.valueOf(272));
+			Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblages(_conceptNid, _codeAssemblageSet).toArray();
+			String _code = null;
+			
+			// Should only be '1' but working around the "must be effectively final" issue for _code variable from within the stream
+			for (Object o : _scList) {
+				Optional<LatestVersion<? extends StringSememe>> sememeVersion = ((SememeChronology) o).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				_code = sememeVersion.get().value().getString();
+			}
+			
+			boolean active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
+			
+			//System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
+			
+		});
+		
+		
+		
+		
 		buildXml(writeTo);
 	}
 
