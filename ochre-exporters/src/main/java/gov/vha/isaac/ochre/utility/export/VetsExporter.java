@@ -1,7 +1,6 @@
 package gov.vha.isaac.ochre.utility.export;
 
-import static gov.vha.isaac.ochre.api.constants.Constants.DATA_STORE_ROOT_LOCATION_PROPERTY;
-import java.io.File;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,101 +8,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
-
-import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.Marshaller;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-//import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import gov.vha.isaac.MetaData;
-import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.va.med.term.vhat.xml.model.ActionType;
+import gov.va.med.term.vhat.xml.model.KindType;
+import gov.va.med.term.vhat.xml.model.Terminology;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
-import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
-import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.LongSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableComponentNidSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableLogicGraphSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableLongSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.MutableStringSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnUtility;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeValidatorType;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeArray;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
-import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
-import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
-import gov.vha.isaac.ochre.api.util.DBLocator;
-import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
-import gov.vha.isaac.ochre.api.util.WorkExecutors;
-import gov.vha.isaac.ochre.impl.utility.SimpleDisplayConcept;
-import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
-import gov.vha.isaac.ochre.model.relationship.RelationshipAdaptorChronicleKeyImpl;
-import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
-import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.concurrent.Task;
-
-import gov.va.med.term.vhat.xml.model.ActionType;
-import gov.va.med.term.vhat.xml.model.CodeSystemType;
-import gov.va.med.term.vhat.xml.model.ConceptType;
-import gov.va.med.term.vhat.xml.model.DesignationSubsetType;
-import gov.va.med.term.vhat.xml.model.DesignationType;
-import gov.va.med.term.vhat.xml.model.KindType;
-import gov.va.med.term.vhat.xml.model.MapEntryType;
-import gov.va.med.term.vhat.xml.model.MapSetType;
-import gov.va.med.term.vhat.xml.model.ObjectFactory;
-import gov.va.med.term.vhat.xml.model.PropertyType;
-import gov.va.med.term.vhat.xml.model.RelationshipType;
-import gov.va.med.term.vhat.xml.model.SubsetType;
-import gov.va.med.term.vhat.xml.model.Terminology;
-import gov.va.med.term.vhat.xml.model.Type;
-import gov.va.med.term.vhat.xml.model.TypeType;
-import gov.va.med.term.vhat.xml.model.VersionType;
 
 
-@SuppressWarnings("restriction")
-public class ExporterConfig {
+public class VetsExporter {
 
 	private Logger log = LogManager.getLogger();
-	
-	private boolean shutdown = false;
 	
 	private Map<UUID, String> designationTypes = new HashMap<>();
 	private Map<UUID, String> propertyTypes = new HashMap<>();
@@ -113,21 +37,9 @@ public class ExporterConfig {
 	private Map<UUID, String> assemblagesMap = new HashMap<>();
 	
 	
-	public static void main(String[] args) {
-
-		new ExporterConfig();
-		
-		javafx.application.Platform.exit();
-		
-	}
-	
-	public ExporterConfig()
+	public VetsExporter()
 	{
-		issacInit();
 		setupExporter();
-		export();
-		isaacStop();
-		testXml();
 	}
 	
 	private void setupExporter() {
@@ -157,9 +69,9 @@ public class ExporterConfig {
 		for (int i = 0; i < values.size(); i++) {
 			String hstk = ((String) values.get(i)).toLowerCase();
 			String nddl = needle.toLowerCase();
-		    if (hstk.equals(nddl) || hstk.contains(nddl)) {
-		    	return i;
-		    }
+			if (hstk.equals(nddl) || hstk.contains(nddl)) {
+				return i;
+			}
 		} 
 		
 		return -1;
@@ -174,82 +86,17 @@ public class ExporterConfig {
 		String nddl = needle.toLowerCase();
 		
 		for (Map.Entry<UUID, String> entry : haystack.entrySet()) {
-		    String hstk = entry.getValue().toLowerCase();
+			String hstk = entry.getValue().toLowerCase();
 			if (hstk.equals(nddl)) { //  || hstk.contains(nddl)
 				return entry.getKey();
-		    }
+			}
 		}
 		
 		return null;
 	}
-	
-	public boolean isIsaacReady()
-	{
-		return LookupService.isIsaacStarted();
-	}
-	
-	private void issacInit()
-	{
-		log.info("Isaac Init called");
-		
-		try
-		{
-			log.info("ISAAC Init thread begins");
-			
-			if (StringUtils.isBlank(System.getProperty(DATA_STORE_ROOT_LOCATION_PROPERTY)))
-			{
-				//if there isn't an official system property set, check this one.
-				String sysProp = System.getProperty("isaacDatabaseLocation");
-				//File temp = new File(sysProp);
-				
-				if (shutdown)
-				{
-					return;
-				}
-				
-				File dataStoreLocation = DBLocator.findDBFolder(new File("")); //temp
-				
-				if (!dataStoreLocation.exists())
-				{
-					throw new RuntimeException("Couldn't find a data store from the input of '" + dataStoreLocation.getAbsoluteFile().getAbsolutePath() + "'");
-				}
-				if (!dataStoreLocation.isDirectory())
-				{
-					throw new RuntimeException("The specified data store: '" + dataStoreLocation.getAbsolutePath() + "' is not a folder");
-				}
-				
-				//use the passed in JVM parameter location
-				LookupService.getService(ConfigurationService.class).setDataStoreFolderPath(dataStoreLocation.toPath());
-				System.out.println("  Setup AppContext, data store location = " + dataStoreLocation.getAbsolutePath());
-			}
 
-			if (shutdown)
-			{
-				return;
-			}
-			
-			//status_.set("Starting ISAAC");
-			LookupService.startupIsaac();
-			
-			//status_.set("Ready");
-			System.out.println("Done setting up ISAAC");
-
-		}
-		catch (Exception e)
-		{
-			log.error("Failure starting ISAAC", e);
-		}
-			
-	}
 	
-	private void isaacStop() {
-		shutdown = true;
-		log.info("Stopping ISAAC");
-		LookupService.shutdownIsaac();
-		log.info("ISAAC stopped");
-	}
-	
-	private void export() {
+	public void export(OutputStream writeTo) {
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
 		//int vhatAssociationTypesNid = Get.identifierService().getNidForUuids(vhatAssociationTypesUUID); //-2147481336
@@ -297,8 +144,8 @@ public class ExporterConfig {
 				Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 					if (sememe.getSememeType() == SememeType.STRING) {
 						@SuppressWarnings({ "rawtypes", "unchecked" })
-		                Optional<LatestVersion<? extends StringSememe>> sememeVersion
-		                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+						Optional<LatestVersion<? extends StringSememe>> sememeVersion
+								= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 						
 						if (sememeVersion.isPresent()) {
 							List<String> _subsetList = new ArrayList<>();
@@ -311,8 +158,8 @@ public class ExporterConfig {
 							// Just incase it's needed, might as well have it
 							_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
 							// Add to map
-		                    subsets.put(subsetName, _subsetList);
-		                }
+							subsets.put(subsetName, _subsetList);
+						}
 					}
 				});
 			}
@@ -320,51 +167,51 @@ public class ExporterConfig {
 		
 		/*
 	<CodeSystem>
-    <Action>none</Action>
-    <Name>VHAT</Name>
-    <VUID>4707199</VUID>
-    <Description>VHA Terminology</Description>
+	<Action>none</Action>
+	<Name>VHAT</Name>
+	<VUID>4707199</VUID>
+	<Description>VHA Terminology</Description>
    ? <Copyright>2007</Copyright>
    ? <CopyrightURL />
-    <PreferredDesignationType>Preferred Name</PreferredDesignationType>
-    <Version>
-      <Append>true</Append>
-      <Name>Authoring Version</Name>
-      <Description>This is the version that is given to authoring changes before they are finalized.</Description>
-      <EffectiveDate>2011-02-16</EffectiveDate>
-      <ReleaseDate>2011-02-16</ReleaseDate>
-      <Source />
-      <CodedConcepts>
-        <CodedConcept>
-          <Action>add</Action>
-          <Code>4516261</Code>
-          <Name>Enterprise Clinical Terms</Name>
-          <VUID>4516261</VUID>
-          <Active>true</Active>
-          <Designations>
-            <Designation>
-              <Action>add</Action>
-              <Code>4775680</Code>
-              <TypeName>Preferred Name</TypeName>
-              <VUID>4775680</VUID>
-              <ValueNew>Enterprise Clinical Terms</ValueNew>
-              <Active>true</Active>
-            </Designation>
-          </Designations>
-          <Relationships>
-            <Relationship>
-              <Action>add</Action>
-              <TypeName>has_parent</TypeName>
-              <NewTargetCode>4712493</NewTargetCode>
-              <Active>true</Active>
-            </Relationship>
-          </Relationships>
-        </CodedConcept>
-        
+	<PreferredDesignationType>Preferred Name</PreferredDesignationType>
+	<Version>
+	  <Append>true</Append>
+	  <Name>Authoring Version</Name>
+	  <Description>This is the version that is given to authoring changes before they are finalized.</Description>
+	  <EffectiveDate>2011-02-16</EffectiveDate>
+	  <ReleaseDate>2011-02-16</ReleaseDate>
+	  <Source />
+	  <CodedConcepts>
+		<CodedConcept>
+		  <Action>add</Action>
+		  <Code>4516261</Code>
+		  <Name>Enterprise Clinical Terms</Name>
+		  <VUID>4516261</VUID>
+		  <Active>true</Active>
+		  <Designations>
+			<Designation>
+			  <Action>add</Action>
+			  <Code>4775680</Code>
+			  <TypeName>Preferred Name</TypeName>
+			  <VUID>4775680</VUID>
+			  <ValueNew>Enterprise Clinical Terms</ValueNew>
+			  <Active>true</Active>
+			</Designation>
+		  </Designations>
+		  <Relationships>
+			<Relationship>
+			  <Action>add</Action>
+			  <TypeName>has_parent</TypeName>
+			  <NewTargetCode>4712493</NewTargetCode>
+			  <Active>true</Active>
+			</Relationship>
+		  </Relationships>
+		</CodedConcept>
+		
 		 */
 		
 		/*for (UUID key : assemblagesMap.keySet()) {
-		    System.out.println(key + " -> " + assemblagesMap.get(key));
+			System.out.println(key + " -> " + assemblagesMap.get(key));
 		}*/
 		
 		// VHAT CodeSystem
@@ -395,8 +242,8 @@ public class ExporterConfig {
 			switch (sememe.getSememeType()) {
 			case STRING:
 				@SuppressWarnings({ "rawtypes", "unchecked" })
-                Optional<LatestVersion<? extends StringSememe>> sememeString
-                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				Optional<LatestVersion<? extends StringSememe>> sememeString
+						= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 				
 				UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
 				//System.out.println(" -----> "+sememeString.get().value().getString() + " -> "+ assemblagesMap.get(test1)); // VUID
@@ -409,8 +256,8 @@ public class ExporterConfig {
 					}
 				}
 				/*@SuppressWarnings({ "rawtypes", "unchecked" })
-                Optional<LatestVersion<? extends DescriptionSememe>> sememeDescription
-                		= ((SememeChronology) sememe).getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				Optional<LatestVersion<? extends DescriptionSememe>> sememeDescription
+						= ((SememeChronology) sememe).getLatestVersion(DescriptionSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 				
 				UUID test2 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeDescription.get().value().getAssemblageSequence()).get();
 				System.out.println(test2);
@@ -434,14 +281,14 @@ public class ExporterConfig {
 		/*Get.sememeService().getSememesForComponent(vhatConcept.getNid()).forEach((sememe) -> {
 			if (sememe.getSememeType() == SememeType.STRING) {
 				@SuppressWarnings({ "rawtypes", "unchecked" })
-                Optional<LatestVersion<? extends StringSememe>> sememeVersion
-                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+				Optional<LatestVersion<? extends StringSememe>> sememeVersion
+						= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 				
 				//if (sememeVersion.isPresent()) {
 					UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
 					System.out.println(" -----> "+sememeVersion.get().value().getString() + " -> "+ assemblagesMap.get(test)); // VUID
 					
-                //}
+				//}
 			}
 		});*/
 		
@@ -451,13 +298,13 @@ public class ExporterConfig {
 			Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 				if (sememe.getSememeType() == SememeType.STRING) {
 					@SuppressWarnings({ "rawtypes", "unchecked" })
-	                Optional<LatestVersion<? extends StringSememe>> sememeVersion
-	                		= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+					Optional<LatestVersion<? extends StringSememe>> sememeVersion
+							= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 					
 					if (sememeVersion.isPresent()) {
 						UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
 						//System.out.println(sememeVersion.get().value().getString()+" -> "+ assemblagesMap.get(test)); // VUID or Code
-	                }
+					}
 				}
 			});
 			// The VHAT submodules
@@ -475,12 +322,14 @@ public class ExporterConfig {
 
 		//Get.sememeService().getAssemblageTypes().
 		//System.out.println(Get.conceptService().getConceptChronologyStream().count());
-        
-        //System.out.println(Get.sememeService().getAssemblageTypes().count());
 		
+		//System.out.println(Get.sememeService().getAssemblageTypes().count());
+		
+		
+		buildXml(writeTo);
 	}
 
-	private void testXml() {
+	private void buildXml(OutputStream writeTo) {
 		
 		try {
 			
@@ -529,34 +378,13 @@ public class ExporterConfig {
 				terminology.getSubsets().getSubset().add(_subset);
 			}
 			
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			//To avoid XXE injections add setFeature
-			dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-	        DocumentBuilder db = dbf.newDocumentBuilder();
-	        Document document = db.newDocument();
-	        
-	        Marshaller marshaller = jaxbContext.createMarshaller();
-	        marshaller.marshal(terminology, document);
-	        
-	        TransformerFactory tf = TransformerFactory.newInstance();
-	        //To protect a TransformerFactory against XXE injection add setAttribute
-	        tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-	        Transformer t = tf.newTransformer();
-	        DOMSource source = new DOMSource(document);
-	        StreamResult result = new StreamResult(System.out);
-	        t.transform(source, result);
-	        
-			/* TODO: We want to use this method, after we have time to adjust
-			 * for Fortify scans and not create any warnings/failures
-			 * 
 			Marshaller marshaller = jaxbContext.createMarshaller();
-	        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-	        marshaller.marshal(terminology, System.out );
-	        */
-	        
+			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+			marshaller.marshal(terminology, writeTo);
+			
 		} catch (Exception e) {
-			// TODO
+			log.error("Unexpected", e);
+			throw new RuntimeException(e);
 		}
-		
 	}
 }
