@@ -239,7 +239,7 @@ public class VetsExporter {
 			
 		});*/
 		
-		// Standard Code Systems, not sorted alphabetically by name as implied in the  
+		// Standard Code Systems  
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
 		Get.taxonomyService().getAllRelationshipOriginSequences(-2147387560).forEach((conceptId) -> {
@@ -257,13 +257,11 @@ public class VetsExporter {
 			long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
 			
 			// Code Assemblage
-			// TODO: need to generate dynamically
-			Set<Integer> _codeAssemblageSet = new java.util.HashSet<>();
-			_codeAssemblageSet.add(Integer.valueOf(272));
-			Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblages(_conceptNid, _codeAssemblageSet).toArray();
+			int _codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(getFromMapByValue(assemblagesMap, "Code"));
+			Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblage(_conceptNid, _codeAssemblageConceptSeq).toArray();
 			String _code = null;
 			
-			// Should only be '1' but working around the "must be effectively final" issue for _code variable from within the stream
+			// Should only be '1' - but working around the "must be effectively final" issue for _code variable from within the stream
 			for (Object o : _scList) {
 				Optional<LatestVersion<? extends StringSememe>> sememeVersion = ((SememeChronology) o).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 				_code = sememeVersion.get().value().getString();
@@ -271,7 +269,7 @@ public class VetsExporter {
 			
 			boolean active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
 			
-			//System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
+			System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
 			
 		});
 		
