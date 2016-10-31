@@ -45,6 +45,8 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 @Singleton
 public class DynamicSememeConstants implements ModuleProvidedConstants
 {
+	private static DynamicSememeConstants cache_;
+	
 	private DynamicSememeConstants()
 	{
 		//making this class impossible to construct outside of HK2
@@ -52,7 +54,11 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 	
 	public static DynamicSememeConstants get()
 	{
-		return LookupService.getService(DynamicSememeConstants.class);
+		if (cache_ == null)
+		{
+			cache_ = LookupService.getService(DynamicSememeConstants.class);
+		}
+		return cache_;
 	}
 	
 	public final UUID UNKNOWN_CONCEPT = UUID.fromString("00000000-0000-0000-C000-000000000046");

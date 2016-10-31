@@ -40,9 +40,15 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		//Only for HK2 to construct
 	}
 	
+	private static IsaacMappingConstants cache_;
+	
 	public static IsaacMappingConstants get()
 	{
-		return LookupService.getService(IsaacMappingConstants.class);
+		if (cache_ == null)
+		{
+			cache_ = LookupService.getService(IsaacMappingConstants.class);
+		}
+		return cache_;
 	}
 	
 	//This is just used as salt for generating other UUIDs
