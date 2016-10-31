@@ -8,6 +8,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
@@ -135,7 +136,48 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration) {
         return search(
                 restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch), sememeConceptSequence),
-                sizeLimit, targetGeneration);
+                sizeLimit, targetGeneration, null);
+    }
+    
+    /**
+     * A generic query API that handles most common cases.  The cases handled for various component property types
+     * are detailed below.
+     * 
+     * NOTE - subclasses of LuceneIndexer may have other query(...) methods that allow for more specific and or complex
+     * queries.  Specifically both {@link DynamicSememeIndexer} and {@link DescriptionIndexer} have their own 
+     * query(...) methods which allow for more advanced queries.
+     *
+     * @param query The query to apply.
+     * @param prefixSearch if true, utilize a search algorithm that is optimized for prefix searching, such as the searching 
+     * that would be done to implement a type-ahead style search.  Does not use the Lucene Query parser.  Every term (or token) 
+     * that is part of the query string will be required to be found in the result.
+     * 
+     * Note, it is useful to NOT trim the text of the query before it is sent in - if the last word of the query has a 
+     * space character following it, that word will be required as a complete term.  If the last word of the query does not 
+     * have a space character following it, that word will be required as a prefix match only.
+     * 
+     * For example:
+     * The query "family test" will return results that contain 'Family Testudinidae'
+     * The query "family test " will not match on  'Testudinidae', so that will be excluded.
+     * 
+     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+     * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
+     * or the concept sequence {@link MetaData#SNOMED_INTEGER_ID} for example.
+     * @param sizeLimit The maximum size of the result list.
+     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
+     * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
+     * indexing operations are completed - and then use the latest index.
+     * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
+     * the nid should be allowed in the result, false otherwise.  Note that this may cause large performance slowdowns, depending
+     * on the implementation of your filter
+     *
+     * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
+     * to other matches.
+     */
+    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter) {
+        return search(
+                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch), sememeConceptSequence),
+                sizeLimit, targetGeneration, filter);
     }
 
     /**
@@ -164,7 +206,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
             return super.query(query, (Integer[])null, sizeLimit, targetGeneration);
         } else {
             return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false),
-                    sizeLimit, targetGeneration);
+                    sizeLimit, targetGeneration, null);
         }
     }
 
@@ -190,7 +232,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
             return super.query(query, (Integer[])null, sizeLimit, targetGeneration);
         } else {
             return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + descriptionType.name(), false),
-                    sizeLimit, targetGeneration);
+                    sizeLimit, targetGeneration, null);
         }
     }
 

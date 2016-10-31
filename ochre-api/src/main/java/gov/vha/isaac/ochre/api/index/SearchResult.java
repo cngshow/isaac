@@ -1,40 +1,14 @@
 package gov.vha.isaac.ochre.api.index;
 
 /**
- * Class to termstore the nid of a component that matches a search, and the
- * sore of that component's match.
- * @author kec
+ * {@link SearchResult}
+ * Interface to serve as a common parent to ComponentSearchResult and ConceptSearchResult
+ *
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class SearchResult {
+public interface SearchResult
+{
+	public int getNid();
 
-    /**
-     * The native id of the component that matches the search.
-     */
-    public int nid;
-
-    /**
-     * The score of the components match relative to other matches.
-     */
-    public float score;
-
-    public SearchResult(int nid, float score) {
-        this.nid   = nid;
-        this.score = score;
-    }
-
-    public int getNid() {
-        return nid;
-    }
-
-    public void setNid(int nid) {
-        this.nid = nid;
-    }
-
-    public float getScore() {
-        return score;
-    }
-
-    public void setScore(float score) {
-        this.score = score;
-    }
+	public float getScore();
 }

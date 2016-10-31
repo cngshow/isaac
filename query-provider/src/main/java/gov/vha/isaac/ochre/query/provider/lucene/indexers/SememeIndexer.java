@@ -359,7 +359,7 @@ public class SememeIndexer extends LuceneIndexer
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
 		
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
 	}
 
 	/**
@@ -479,7 +479,7 @@ public class SememeIndexer extends LuceneIndexer
 				throw new RuntimeException("unexpected error, see logs");
 			}
 		}
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
 	}
 	
 	/**
@@ -516,7 +516,7 @@ public class SememeIndexer extends LuceneIndexer
 			}
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
 	}
 
 	private Query buildNumericQuery(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive, DynamicSememeData queryDataUpper,
