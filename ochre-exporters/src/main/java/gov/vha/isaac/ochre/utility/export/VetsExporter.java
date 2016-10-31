@@ -44,6 +44,8 @@ public class VetsExporter {
 	
 	private Map<UUID, String> assemblagesMap = new HashMap<>();
 	
+	private Terminology terminology;
+	
 	
 	public VetsExporter()
 	{
@@ -70,10 +72,18 @@ public class VetsExporter {
 	
 	public void export(OutputStream writeTo) {
 		
+		// Build Assemblages map
 		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
 			assemblagesMap.put(Get.conceptSpecification(assemblageSeqId).getPrimordialUuid(), 
 					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
 		});
+		
+		// XML object
+		terminology = new Terminology();
+		
+		// Types
+		terminology.setTypes(new Terminology.Types());
+		Terminology.Types.Type _type;
 		
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
@@ -84,7 +94,15 @@ public class VetsExporter {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 			relationshipTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
 		});
-
+		
+		// Build XML
+		for (String s : relationshipTypes.values()) {
+			_type = new Terminology.Types.Type();
+			_type.setKind(KindType.RELATIONSHIP_TYPE);
+			_type.setName(s);
+			terminology.getTypes().getType().add(_type);
+		}
+		
 		// ISAAC Attributes => PropertyType UUID
 		UUID vhatPropertyTypesUUID = UUID.fromString("eb7696e7-fe40-5985-9b2e-4e3d840a47b7"); 
 		//int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID); //-2147481872 
@@ -94,7 +112,15 @@ public class VetsExporter {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 			propertyTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
 		});
-
+		
+		// Build XML
+		for (String s : propertyTypes.values()) {
+			_type = new Terminology.Types.Type();
+			_type.setKind(KindType.PROPERTY_TYPE);
+			_type.setName(s);
+			terminology.getTypes().getType().add(_type);
+		}
+		
 		// ISAAC Descriptions => DesignationType UUID
 		UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38"); 
 		//int vhatDesignationTypesNid = Get.identifierService().getNidForUuids(vhatDesignationTypesUUID); //-2147481914
@@ -104,6 +130,14 @@ public class VetsExporter {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 			designationTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
 		});
+		
+		// Build XML
+		for (String s : designationTypes.values()) {
+			_type = new Terminology.Types.Type();
+			_type.setKind(KindType.DESIGNATION_TYPE);
+			_type.setName(s);
+			terminology.getTypes().getType().add(_type);
+		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
 		UUID vhatRefsetsUUID = UUID.fromString("99173138-dcaa-5a77-a4eb-311b01991b88");
@@ -143,6 +177,24 @@ public class VetsExporter {
 			}
 		});
 		
+		// Subsets/Refsets
+		terminology.setSubsets(new Terminology.Subsets());
+		Terminology.Subsets.Subset _subset;
+		
+		// Build XML
+		for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
+			_subset = new Terminology.Subsets.Subset();
+			String name = entry.getKey();
+			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
+			if (al.equals("add")) { 
+				_subset.setAction(ActionType.ADD); 
+			}
+			_subset.setName(name);
+			_subset.setVUID(Long.valueOf(al.get(1)));
+			_subset.setActive(Boolean.parseBoolean(al.get(2)));
+			terminology.getSubsets().getSubset().add(_subset);
+		}
+		
 		/*
 	<CodeSystem>
 	<Action>none</Action>
@@ -156,8 +208,8 @@ public class VetsExporter {
 	  <Append>true</Append>
 	  <Name>Authoring Version</Name>
 	  <Description>This is the version that is given to authoring changes before they are finalized.</Description>
-	  <EffectiveDate>2011-02-16</EffectiveDate>
-	  <ReleaseDate>2011-02-16</ReleaseDate>
+	? <EffectiveDate>2011-02-16</EffectiveDate>
+	? <ReleaseDate>2011-02-16</ReleaseDate>
 	  <Source />
 	  <CodedConcepts>
 		<CodedConcept>
@@ -268,6 +320,24 @@ public class VetsExporter {
 
 			// TODO: Designations
 			
+/*
+			  <Designations>
+				<Designation>
+				  <Action>add</Action>
+				  <Code>4775680</Code>
+				  <TypeName>Preferred Name</TypeName>
+				  <VUID>4775680</VUID>
+				  <ValueNew>Enterprise Clinical Terms</ValueNew>
+				  <Active>true</Active>
+				</Designation>
+			  </Designations>
+*/
+			
+			/*Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
+				Frills.getExtendedDescriptionTypes();
+				a.getAssemblageSequence();
+			});*/
+			
 			// Relationships
 			/*
 			 <Relationships>
@@ -294,7 +364,7 @@ public class VetsExporter {
 		});
 		
 		
-		buildXml(writeTo);
+		writeXml(writeTo);
 	}
 	
 	private String getCodeFromConceptNid(int conceptNid) {
@@ -311,55 +381,11 @@ public class VetsExporter {
 		return _code;
 	}
 
-	private void buildXml(OutputStream writeTo) {
+	private void writeXml(OutputStream writeTo) {
 		
 		try {
 			
 			JAXBContext jaxbContext = JAXBContext.newInstance(Terminology.class);
-			Terminology terminology = new Terminology();
-			
-			// Types
-			terminology.setTypes(new Terminology.Types());
-			Terminology.Types.Type _type;
-
-			for (String s : designationTypes.values()) {
-				_type = new Terminology.Types.Type();
-				_type.setKind(KindType.DESIGNATION_TYPE);
-				_type.setName(s);
-				terminology.getTypes().getType().add(_type);
-			}
-			
-			for (String s : propertyTypes.values()) {
-				_type = new Terminology.Types.Type();
-				_type.setKind(KindType.PROPERTY_TYPE);
-				_type.setName(s);
-				terminology.getTypes().getType().add(_type);
-			}
-						
-			for (String s : relationshipTypes.values()) {
-				_type = new Terminology.Types.Type();
-				_type.setKind(KindType.RELATIONSHIP_TYPE);
-				_type.setName(s);
-				terminology.getTypes().getType().add(_type);
-			}
-			
-			// Subsets/Refsets
-			terminology.setSubsets(new Terminology.Subsets());
-			Terminology.Subsets.Subset _subset;
-			
-			for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
-				_subset = new Terminology.Subsets.Subset();
-				String name = entry.getKey();
-				List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-				if (al.equals("add")) { 
-					_subset.setAction(ActionType.ADD); 
-				}
-				_subset.setName(name);
-				_subset.setVUID(Long.valueOf(al.get(1)));
-				_subset.setActive(Boolean.parseBoolean(al.get(2)));
-				terminology.getSubsets().getSubset().add(_subset);
-			}
-			
 			Marshaller marshaller = jaxbContext.createMarshaller();
 			marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 			marshaller.marshal(terminology, writeTo);
