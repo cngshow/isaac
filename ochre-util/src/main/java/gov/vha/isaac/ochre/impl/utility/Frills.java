@@ -1029,12 +1029,13 @@ public class Frills implements DynamicSememeColumnUtility {
 
 	/**
 	 * Utility method to get the best text value description for a concept, according to the user preferences.  
-	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)}. 
+	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} using the default system stamp coordinate, 
+	 * modified to return all states (this may return an inactive description)
 	 * @param conceptId - either a sequence or a nid
 	 * @return
 	 */
 	public static Optional<String> getDescription(int conceptId) {
-		return getDescription(conceptId, null, null);
+		return getDescription(conceptId, Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ACTIVE, State.INACTIVE, State.CANCELED, State.PRIMORDIAL), null);
 	}
 	
 	/**
