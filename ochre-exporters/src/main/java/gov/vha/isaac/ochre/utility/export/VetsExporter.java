@@ -4,41 +4,40 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
 import gov.va.med.term.vhat.xml.model.KindType;
 import gov.va.med.term.vhat.xml.model.Terminology;
-import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.TaxonomyService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
-import gov.vha.isaac.ochre.impl.utility.Frills;
-import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 
 
 public class VetsExporter {
@@ -78,7 +77,13 @@ public class VetsExporter {
 	}
 
 	
-	public void export(OutputStream writeTo) {
+	/**
+	 * 
+	 * @param writeTo
+	 * @param startDate - only export concepts modified on or after this date.  Set to 0, if you want to start from the beginning
+	 * @param endDate - only export concepts where their most recent modified date is on or before this date.  Set to Long.MAX_VALUE to get everything.
+	 */
+	public void export(OutputStream writeTo, long startDate, long endDate) {
 		
 		// Build Assemblages map
 		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
@@ -310,107 +315,150 @@ public class VetsExporter {
 		// CodeSystems : Standard Code Systems  
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		//int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
-		Get.conceptService().getConceptChronologyStream().limit(1000).forEach((_concept) -> {
+		
+		TaxonomyService ts = Get.taxonomyService();
+		int vhatSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"));  //VHAT root concept
+		AtomicInteger skippedForNonVHAT = new AtomicInteger();
+		AtomicInteger skippedDateRange = new AtomicInteger();
+		AtomicInteger observedVhatConcepts = new AtomicInteger();
+		AtomicInteger exportedVhatConcepts = new AtomicInteger();
+		
+		Get.conceptService().getConceptChronologyStream().forEach((_concept) -> {
 			
 			// TODO: Need to ignore all the non-imported concepts
 			
-			int _conceptNid = _concept.getNid();
-			
-			String _name = Frills.getDescription(_conceptNid).orElse("");
-			// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
-			if (!(_name.length() > 0)) {
-				// NOP, is this valid ?
-				return;
+			//TODO I noticed there is a small discrepencey between the "all vhat concepts" refset, and the children of VHAT.  Need to determine if this
+			//is something other than just metadata, or if there are some orphans in there.
+			if (!ts.wasEverKindOf(_concept.getConceptSequence(), vhatSequence))
+			{
+				skippedForNonVHAT.getAndIncrement();
 			}
-			
-			long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
-			String _code = getCodeFromConceptNid(_conceptNid);
-			boolean _active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
-			
-			//System.out.println("*** " + _name + " -- " + _vuid + " -- " + _code + " -- " + _active);
-			
-			Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
-			_xmlCodedConcept.setAction(ActionType.ADD);
-			_xmlCodedConcept.setName(_name);
-			_xmlCodedConcept.setVUID(_vuid);
-			_xmlCodedConcept.setCode(_code);
-			if (_active) {
-				_xmlCodedConcept.setActive(Boolean.TRUE);
-			} else {
-				_xmlCodedConcept.setActive(Boolean.FALSE);
-			}
-			
-			// TODO: Designations
-/*
-			  <Designations>
-				<Designation>
-				  <Action>add</Action>
-				  <Code>4775680</Code>
-				  <TypeName>Preferred Name</TypeName>
-				  <VUID>4775680</VUID>
-				  <ValueNew>Enterprise Clinical Terms</ValueNew>
-				  <Active>true</Active>
-				</Designation>
-			  </Designations>
-*/
-			
-			/*Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
-				Frills.getExtendedDescriptionTypes();
-				a.getAssemblageSequence();
-			});*/
-			
-			// TODO: Properties
-/*
-		  <Properties>
-            <Property>
-              <Action>add</Action>
-              <TypeName>Allergy_Type</TypeName>
-              <ValueNew>DRUG</ValueNew>
-              <Active>true</Active>
-            </Property>
-          </Properties>
- */
-			
-			// Relationships
-			/*
-			 <Relationships>
-				<Relationship>
-				  <Action>add</Action>
-				  <TypeName>has_parent</TypeName>
-				  <NewTargetCode>4712493</NewTargetCode>
-				  <Active>true</Active>
-				</Relationship>
-			  </Relationships>
-			 */
-			
-			Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
-			List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(_concept.getNid(), StampCoordinates.getDevelopmentLatestActiveOnly());
-			for (AssociationInstance ai : aiList) {
-				String __typeName = ai.getAssociationType().getAssociationName();
-				String __targetUUID = ai.getTargetComponentData().get().getDataObject().toString();
-				ConceptChronology<?> __concept = Get.conceptService().getConcept(UUID.fromString(__targetUUID));
-				String __newTargetCode = getCodeFromConceptNid(__concept.getNid());
-				boolean __active = __concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
+			else
+			{
+				observedVhatConcepts.getAndIncrement();
+				int _conceptNid = _concept.getNid();
 				
-				//System.out.println("Relationship: add, " + __typeName + ", " + __newTargetCode + ", " + __active);
-				
-				Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship _xmlRelationship = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
-				
-				_xmlRelationship.setAction(ActionType.ADD);
-				_xmlRelationship.setTypeName(__typeName);
-				_xmlRelationship.setNewTargetCode(__newTargetCode);
-				if (__active) {
-					_xmlRelationship.setActive(Boolean.TRUE);
-				} else {
-					_xmlRelationship.setActive(Boolean.FALSE);
+				if (!wasModifiedInDateRange(_concept, startDate, endDate))
+				{
+					skippedDateRange.getAndIncrement();
 				}
-				
-				_xmlRelationships.getRelationship().add(_xmlRelationship);
+				else
+				{
+					exportedVhatConcepts.getAndIncrement();
+					
+					//TODO at this point, we know some component related to this concept was modified in our specified date range - but we don't know which one.
+					//For a proper TDS changeset file, we need to stub out certain things like the concept with an action field of "none" - but then when we encounter
+					//the component that was new (action = add) or retired (action = remove) or just edited (action = update) we need to set it appropriately
+					
+					//TODO this needs to change - name needs to come from a specific description type, not an arbitrary one, which is what the convenience method does.
+					String _name = Frills.getDescription(_conceptNid).orElse("");
+					// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
+					if (!(_name.length() > 0)) {
+						log.error("Missing description for concept " + _concept.getPrimordialUuid());
+//Debug code
+//						Get.sememeService().getSememesForComponent(_concept.getNid()).forEach(sc ->
+//						{
+//							System.out.println(sc.toUserString());
+//						});
+						return;
+					}
+					
+					long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
+					if (_vuid == 0)
+					{
+						log.warn("Missing VUID for concept " + _conceptNid);
+					}
+					
+					String _code = getCodeFromNid(_conceptNid);
+					boolean _active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatest());
+					
+					//System.out.println("*** " + _name + " -- " + _vuid + " -- " + _code + " -- " + _active);
+					
+					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
+					//TODO use this action logic elsewhere.
+					_xmlCodedConcept.setAction(determineAction((ObjectChronology<? extends StampedVersion>)_concept, startDate, endDate));
+					_xmlCodedConcept.setName(_name);
+					_xmlCodedConcept.setVUID(_vuid);
+					_xmlCodedConcept.setCode(_code);
+					if (_active) {
+						_xmlCodedConcept.setActive(Boolean.TRUE);
+					} else {
+						_xmlCodedConcept.setActive(Boolean.FALSE);
+					}
+					
+					// TODO: Designations
+		/*
+					  <Designations>
+						<Designation>
+						  <Action>add</Action>
+						  <Code>4775680</Code>
+						  <TypeName>Preferred Name</TypeName>
+						  <VUID>4775680</VUID>
+						  <ValueNew>Enterprise Clinical Terms</ValueNew>
+						  <Active>true</Active>
+						</Designation>
+					  </Designations>
+		*/
+					
+					/*Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
+						Frills.getExtendedDescriptionTypes();
+						a.getAssemblageSequence();
+					});*/
+					
+					// TODO: Properties
+		/*
+				  <Properties>
+		            <Property>
+		              <Action>add</Action>
+		              <TypeName>Allergy_Type</TypeName>
+		              <ValueNew>DRUG</ValueNew>
+		              <Active>true</Active>
+		            </Property>
+		          </Properties>
+		 */
+					
+					// Relationships
+					/*
+					 <Relationships>
+						<Relationship>
+						  <Action>add</Action>
+						  <TypeName>has_parent</TypeName>
+						  <NewTargetCode>4712493</NewTargetCode>
+						  <Active>true</Active>
+						</Relationship>
+					  </Relationships>
+					 */
+					
+					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
+					List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(_concept.getNid(), StampCoordinates.getDevelopmentLatestActiveOnly());
+					for (AssociationInstance ai : aiList) {
+						String __typeName = ai.getAssociationType().getAssociationName();
+						String __targetUUID = ai.getTargetComponentData().get().getDataObject().toString();
+						ConceptChronology<?> __concept = Get.conceptService().getConcept(UUID.fromString(__targetUUID));
+						String __newTargetCode = getCodeFromNid(__concept.getNid());
+						boolean __active = __concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
+						
+						//System.out.println("Relationship: add, " + __typeName + ", " + __newTargetCode + ", " + __active);
+						
+						Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship _xmlRelationship = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
+						
+						_xmlRelationship.setAction(ActionType.ADD);
+						_xmlRelationship.setTypeName(__typeName);
+						_xmlRelationship.setNewTargetCode(__newTargetCode);
+						if (__active) {
+							_xmlRelationship.setActive(Boolean.TRUE);
+						} else {
+							_xmlRelationship.setActive(Boolean.FALSE);
+						}
+						
+						_xmlRelationships.getRelationship().add(_xmlRelationship);
+					}
+					_xmlCodedConcept.setRelationships(_xmlRelationships);
+					
+					// Add all CodedConcept elements
+					_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
+				}
 			}
-			_xmlCodedConcept.setRelationships(_xmlRelationships);
-			
-			// Add all CodedConcept elements
-			_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
 		});
 		
 		// Close out XML
@@ -418,21 +466,147 @@ public class VetsExporter {
 		_xmlCodeSystem.setVersion(_xmlVersion);
 		terminology.setCodeSystem(_xmlCodeSystem);
 		
+		log.info("Skipped " + skippedForNonVHAT.get() + " concepts for non-vhat");
+		log.info("Skipped " + skippedDateRange.get() + " concepts for outside date range");
+		log.info("Processed " + observedVhatConcepts.get() + " concepts");
+		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
+		
 		writeXml(writeTo);
 	}
 	
-	private String getCodeFromConceptNid(int conceptNid) {
+	/**
+	 * @param _concept
+	 * @return
+	 */
+	private ActionType determineAction(ObjectChronology<? extends StampedVersion> object, long startDate, long endDate)
+	{
+		List<? extends StampedVersion> versions = object.getVersionList();
+		versions.sort(new Comparator<StampedVersion>()
+		{
+			//TODO check and see if Dan got the sort backwards
+			@Override
+			public int compare(StampedVersion o1, StampedVersion o2)
+			{
+				return -1 * Long.compare(o1.getTime(), o2.getTime());
+			}
+		});
+		
+		boolean latest = true;
+		boolean finalStateIsInactive = false;
+		boolean firstStateIsInactive = false;
+		int versionCountInDateRange = 0;
+		int actionCountPriorToStartDate = 0;
+		for (StampedVersion sv : versions)
+		{
+			if (sv.getTime() < startDate)
+			{
+				actionCountPriorToStartDate++;
+			}
+			if (sv.getTime() <= endDate || sv.getTime() >= startDate)
+			{
+				if (latest && sv.getState() != State.ACTIVE)
+				{
+					finalStateIsInactive = true;
+				}
+				firstStateIsInactive = sv.getState() != State.ACTIVE ? true : false;
+				versionCountInDateRange++;
+			}
+			latest = false;
+			
+		}
+
+		//TODO this logic needs some serious sanity checking / junit tests.  Dan is up to late to get it right on the first try.
+		if (firstStateIsInactive && finalStateIsInactive)
+		{
+			return ActionType.NONE;
+		}
+		else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
+		{
+			return ActionType.REMOVE;
+		}
+		
+		if (versionCountInDateRange == 0)
+		{
+			return ActionType.NONE;
+		}
+		
+		if (actionCountPriorToStartDate > 0)
+		{
+			return ActionType.UPDATE;
+		}
+		else
+		{
+			return ActionType.ADD;
+		}
+	}
+
+
+	/**
+	 * Scan through all (nested) components associated with this concept, and the concept itself, and see if the latest edit
+	 * date for any component is within our filter range.
+	 * @return
+	 */
+	@SuppressWarnings("rawtypes")
+	private boolean wasModifiedInDateRange(ConceptChronology concept, long startDate, long endDate)
+	{
+		@SuppressWarnings("unchecked")
+		Optional<LatestVersion<ConceptVersion>> cv = concept.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+		if (cv.isPresent())
+		{
+			if (cv.get().value().getTime() >= startDate && cv.get().value().getTime() <= endDate)
+			{
+				return true;
+			}
+		}
+		
+		return hasSememeModifiedInDateRange(concept.getNid(), startDate, endDate);
+	}
+
+
+	/**
+	 * @param nid
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	private boolean hasSememeModifiedInDateRange(int nid, long startDate, long endDate)
+	{
+		//Check all the nested sememes
+		return Get.sememeService().getSememesForComponent(nid).anyMatch(sc -> 
+		{
+			@SuppressWarnings({ "unchecked", "rawtypes" })
+			Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+			if (sv.isPresent())
+			{
+				if (sv.get().value().getTime() > startDate && sv.get().value().getTime() < endDate)
+				{
+					return true;
+				}
+			}
+			//recurse
+			if (hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate))
+			{
+				return true;
+			}
+			return false;
+		});
+	}
+
+
+	private String getCodeFromNid(int conceptNid) {
 		
 		// Code Assemblage
 		int _codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(getFromMapByValue(assemblagesMap, "Code"));
-		Object[] _scList = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, _codeAssemblageConceptSeq).toArray();
-		String _code = null;
-		for (Object o : _scList) {
-			Optional<LatestVersion<? extends StringSememe>> sememeVersion = ((SememeChronology) o).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-			_code = sememeVersion.get().value().getString();
+		Optional<SememeChronology<? extends SememeVersion<?>>> sc = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, _codeAssemblageConceptSeq).findFirst();
+		if (sc.isPresent())
+		{
+			Optional<LatestVersion<StringSememe<?>>> sv = ((SememeChronology)sc.get()).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatest());
+			if (sv.isPresent())
+			{
+				return sv.get().value().getString();
+			}
 		}
-		
-		return _code;
+		return null;
 	}
 
 	private void writeXml(OutputStream writeTo) {
