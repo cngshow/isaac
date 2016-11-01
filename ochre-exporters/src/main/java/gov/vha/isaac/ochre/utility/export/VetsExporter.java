@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
 import gov.va.med.term.vhat.xml.model.KindType;
 import gov.va.med.term.vhat.xml.model.Terminology;
+import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.TaxonomyService;
@@ -31,13 +32,21 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.impl.utility.SimpleDisplayConcept;
+import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
+import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDataImpl;
 
 
 public class VetsExporter {
@@ -325,12 +334,11 @@ public class VetsExporter {
 		
 		Get.conceptService().getConceptChronologyStream().forEach((_concept) -> {
 			
-			// TODO: Need to ignore all the non-imported concepts
-			
 			//TODO I noticed there is a small discrepencey between the "all vhat concepts" refset, and the children of VHAT.  Need to determine if this
 			//is something other than just metadata, or if there are some orphans in there.
 			if (!ts.wasEverKindOf(_concept.getConceptSequence(), vhatSequence))
 			{
+				// Needed to ignore all the dynamically created/non-imported concepts
 				skippedForNonVHAT.getAndIncrement();
 			}
 			else
@@ -399,11 +407,36 @@ public class VetsExporter {
 						</Designation>
 					  </Designations>
 		*/
+					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
 					
-					/*Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
-						Frills.getExtendedDescriptionTypes();
-						a.getAssemblageSequence();
-					});*/
+					Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
+						if (a.getSememeType() == SememeType.DESCRIPTION) {
+							@SuppressWarnings({ "unchecked", "rawtypes" })
+							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+							if (__sv.isPresent()) {
+								int __sememeNid = __sv.get().value().getNid();
+								long __vuid = Frills.getVuId(__sememeNid, null).orElse(0L);
+								if (__vuid == 0)
+								{
+									log.warn("Missing VUID for concept " + __sememeNid);
+								}
+								
+								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation _xmlDesignation = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation();
+								// TODO: this same date logic here?
+								//@SuppressWarnings({ "unchecked" })
+								_xmlDesignation.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
+								_xmlDesignation.setCode(getCodeFromNid(__sememeNid));
+								_xmlDesignation.setTypeName(""); // TODO
+								_xmlDesignation.setVUID(__vuid);
+								_xmlDesignation.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+								
+								_xmlDesignations.getDesignation().add(_xmlDesignation);
+								
+							}
+						}
+					});
+					
+					_xmlCodedConcept.setDesignations(_xmlDesignations);
 					
 					// TODO: Properties
 		/*
