@@ -35,6 +35,7 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
@@ -77,20 +78,32 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
+import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
+import gov.vha.isaac.ochre.model.concept.ConceptVersionImpl;
 import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
+import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
+import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
-@Service
+//This is a service, simply to implement the DynamicSememeColumnUtility interface.  Everythign else is static, and may be used directly
+@Service  
 @Singleton
 public class Frills implements DynamicSememeColumnUtility {
 
 	private static Logger log = LogManager.getLogger();
+	
+	private static LruCache<Integer, Boolean> isAssociationCache = new LruCache<>(50);
+	private static LruCache<Integer, Boolean> isMappingCache= new LruCache<>(50);
 
 	/**
 	 * @param version StampedVersion from which to generate StampCoordinate
@@ -100,10 +113,10 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * 
 	 * Use StampCoordinate.makeAnalog() to customize result
 	 */
-	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version) {
+	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version, StampPrecedence precedence) {
 		StampPosition stampPosition = new StampPositionImpl(version.getTime(), version.getPathSequence());
 		StampCoordinate stampCoordinate = new StampCoordinateImpl(
-				StampPrecedence.TIME,
+				precedence,
 				stampPosition,
 				ConceptSequenceSet.of(version.getModuleSequence()),
 				EnumSet.of(version.getState()));
@@ -111,6 +124,17 @@ public class Frills implements DynamicSememeColumnUtility {
 		log.debug("Created StampCoordinate from StampedVersion: " + toString(version) + ": " + stampCoordinate);
 
 		return stampCoordinate;
+	}
+	/**
+	 * @param version StampedVersion from which to generate StampCoordinate
+	 * @return StampCoordinate corresponding to StampedVersion values
+	 * 
+	 * StampPrecedence set to StampPrecedence.TIME
+	 * 
+	 * Use StampCoordinate.makeAnalog() to customize result
+	 */
+	public static StampCoordinate getStampCoordinateFromVersion(StampedVersion version) {
+		return getStampCoordinateFromVersion(version, StampPrecedence.TIME);
 	}
 
 	/**
@@ -350,20 +374,21 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param stated boolean indicating stated vs inferred definition chronology should be used
 	 * @return An Optional containing a LogicGraphSememe SememeChronology
 	 */
-	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
+	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated, StampCoordinate stampCoordinate, 
+			LanguageCoordinate languageCoordinate, LogicCoordinate logicCoordinate)
 	{
-		log.debug("Getting {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+		log.debug("Getting {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? getStatedDefinitionChronology(id, logicCoordinate) : getInferredDefinitionChronology(id, logicCoordinate);
 		if (defChronologyOptional.isPresent())
 		{
-			log.debug("Got {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+			log.debug("Got {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 
 			@SuppressWarnings("unchecked")
 			SememeChronology<? extends LogicGraphSememe<?>> sememeChronology = (SememeChronology<? extends LogicGraphSememe<?>>)defChronologyOptional.get();
 
 			return Optional.of(sememeChronology);
 		} else {
-			log.warn("NO {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id, stampCoordinate, languageCoordinate));
+			log.warn("NO {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id, stampCoordinate, languageCoordinate)));
 
 			return Optional.empty();
 		}
@@ -376,18 +401,18 @@ public class Frills implements DynamicSememeColumnUtility {
 	 */
 	public static Optional<SememeChronology<? extends LogicGraphSememe<?>>> getLogicGraphChronology(int id, boolean stated)
 	{
-		log.debug("Getting {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+		log.debug("Getting {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 		Optional<SememeChronology<? extends SememeVersion<?>>> defChronologyOptional = stated ? Get.statedDefinitionChronology(id) : Get.inferredDefinitionChronology(id);
 		if (defChronologyOptional.isPresent())
 		{
-			log.debug("Got {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+			log.debug("Got {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 
 			@SuppressWarnings("unchecked")
 			SememeChronology<? extends LogicGraphSememe<?>> sememeChronology = (SememeChronology<? extends LogicGraphSememe<?>>)defChronologyOptional.get();
 
 			return Optional.of(sememeChronology);
 		} else {
-			log.warn("NO {} logic graph chronology for {}", () -> (stated ? "stated" : "inferred"), () -> Frills.getIdInfo(id));
+			log.warn("NO {} logic graph chronology for {}", (stated ? "stated" : "inferred"), Optional.ofNullable(Frills.getIdInfo(id)));
 
 			return Optional.empty();
 		}
@@ -399,14 +424,14 @@ public class Frills implements DynamicSememeColumnUtility {
 	 */
 	public static Optional<LatestVersion<LogicGraphSememe<?>>> getLogicGraphVersion(SememeChronology<? extends LogicGraphSememe<?>> logicGraphSememeChronology, StampCoordinate stampCoordinate)
 	{
-		log.debug("Getting logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+		log.debug("Getting logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<LogicGraphSememe<?>>> latest = ((SememeChronology)logicGraphSememeChronology).getLatestVersion(LogicGraphSememe.class, stampCoordinate);
 		if (latest.isPresent()) {
-			log.debug("Got logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+			log.debug("Got logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 		} else {
-			log.warn("NO logic graph sememe for {}", () -> Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid()));
+			log.warn("NO logic graph sememe for {}", Optional.ofNullable(Frills.getIdInfo(logicGraphSememeChronology.getReferencedComponentNid())));
 		}
 		return latest;
 	}
@@ -1004,12 +1029,13 @@ public class Frills implements DynamicSememeColumnUtility {
 
 	/**
 	 * Utility method to get the best text value description for a concept, according to the user preferences.  
-	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)}. 
+	 * Calls {@link #getDescription(int, LanguageCoordinate, StampCoordinate)} using the default system stamp coordinate, 
+	 * modified to return all states (this may return an inactive description)
 	 * @param conceptId - either a sequence or a nid
 	 * @return
 	 */
 	public static Optional<String> getDescription(int conceptId) {
-		return getDescription(conceptId, null, null);
+		return getDescription(conceptId, Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ACTIVE, State.INACTIVE, State.CANCELED, State.PRIMORDIAL), null);
 	}
 	
 	/**
@@ -1294,5 +1320,84 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		}
 		return -1;
+	}
+
+	public static Class<? extends StampedVersion> getVersionType(int nid) {
+		Optional<? extends ObjectChronology<? extends StampedVersion>> obj = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
+		if (! obj.isPresent()) {
+			throw new RuntimeException("No StampedVersion object exists with NID=" + nid);
+		}
+		return getVersionType(obj.get());
+	}
+	public static Class<? extends StampedVersion> getVersionType(ObjectChronology<? extends StampedVersion> obj) {
+		switch (obj.getOchreObjectType()) {
+		case SEMEME: {
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			SememeChronology<? extends SememeVersion> sememeChronology = (SememeChronology<? extends SememeVersion>)obj;
+			switch (sememeChronology.getSememeType()) {
+			case COMPONENT_NID:
+				return ComponentNidSememeImpl.class;
+			case DESCRIPTION:
+				return DescriptionSememeImpl.class;
+			case DYNAMIC:
+				return DynamicSememeImpl.class;
+			case LOGIC_GRAPH:
+				return LogicGraphSememeImpl.class;
+			case LONG:
+				return LongSememeImpl.class;
+			case STRING:
+				return StringSememeImpl.class;
+			case RELATIONSHIP_ADAPTOR:
+				return RelationshipVersionAdaptorImpl.class;
+			case UNKNOWN:
+			case MEMBER:
+			default:
+				throw new RuntimeException("Sememe with NID=" + obj.getNid() + " is of unsupported SememeType " + sememeChronology.getSememeType());
+			}
+		}
+		case CONCEPT:
+			return ConceptVersionImpl.class;
+			default:
+				throw new RuntimeException("Object with NID=" + obj.getNid() + " is of unsupported OchreExternalizableObjectType " + obj.getOchreObjectType());
+		}
+	}
+	
+	public static boolean definesAssociation(int conceptSequence)
+	{
+		if (isAssociationCache.containsKey(conceptSequence))
+		{
+			return isAssociationCache.get(conceptSequence);
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(conceptSequence), 
+				DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getConceptSequence()).anyMatch(sememe -> true);
+		isAssociationCache.put(conceptSequence, temp);
+		return temp;
+	}
+	
+	public static boolean isAssociation(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		return definesAssociation(sc.getAssemblageSequence());
+	}
+	
+	public static boolean definesMapping(int conceptSequence)
+	{
+		if (isMappingCache.containsKey(conceptSequence))
+		{
+			return isMappingCache.get(conceptSequence);
+		}
+		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(conceptSequence), 
+				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getConceptSequence()).anyMatch(sememe -> true);
+		isMappingCache.put(conceptSequence, temp);
+		return temp;
+	}
+	
+	public static boolean isMapping(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		return definesMapping(sc.getAssemblageSequence());
+	}
+	
+	public static boolean definesDynamicSememe(int conceptSequence)
+	{
+		return DynamicSememeUsageDescriptionImpl.isDynamicSememe(conceptSequence);
 	}
 }

@@ -40,9 +40,15 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		//Only for HK2 to construct
 	}
 	
+	private static IsaacMappingConstants cache_;
+	
 	public static IsaacMappingConstants get()
 	{
-		return LookupService.getService(IsaacMappingConstants.class);
+		if (cache_ == null)
+		{
+			cache_ = LookupService.getService(IsaacMappingConstants.class);
+		}
+		return cache_;
 	}
 	
 	//This is just used as salt for generating other UUIDs
@@ -81,14 +87,13 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 
 		
-	//These next 3 don't have to be public - just want the hierarchy created during the DB build
-	private static final MetadataConceptConstant broader = new MetadataConceptConstant("Broader Than", 
+	public static final MetadataConceptConstant MAPPING_QUALIFIER_BROADER = new MetadataConceptConstant("Broader Than", 
 		UUID.fromString("c1068428-a986-5c12-9583-9b2d3a24fdc6")) {};
 	
-	private static final MetadataConceptConstant exact = new MetadataConceptConstant("Exact", 
+	public static final MetadataConceptConstant MAPPING_QUALIFIER_EXACT = new MetadataConceptConstant("Exact", 
 		UUID.fromString("8aa6421d-4966-5230-ae5f-aca96ee9c2c1")) {};
 	
-	private static final MetadataConceptConstant narrower = new MetadataConceptConstant("Narrower Than", 
+	public static final MetadataConceptConstant MAPPING_QUALIFIER_NARROWER = new MetadataConceptConstant("Narrower Than", 
 		UUID.fromString("250d3a08-4f28-5127-8758-e8df4947f89c")) {};
 		
 	public final MetadataConceptConstantGroup MAPPING_QUALIFIERS = new MetadataConceptConstantGroup("mapping qualifiers", 
@@ -96,9 +101,9 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		"A grouping of different types types of allowed mapping qualifiers") 
 		{
 			{
-				addChild(broader);
-				addChild(exact);
-				addChild(narrower);
+				addChild(MAPPING_QUALIFIER_BROADER);
+				addChild(MAPPING_QUALIFIER_EXACT);
+				addChild(MAPPING_QUALIFIER_NARROWER);
 			}
 		};
 		

@@ -83,7 +83,7 @@ public class DescriptionLuceneMatch extends LeafClause {
         }
         List<SearchResult> queryResults = descriptionIndexer.query(luceneMatch, 1000);
         queryResults.stream().forEach((s) -> {
-            nids.add(s.nid);
+            nids.add(s.getNid());
         });
         //Filter the results, based upon the input ViewCoordinate
         nids.stream().forEach((nid) -> {

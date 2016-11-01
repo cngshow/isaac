@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
 import java.security.InvalidParameterException;
+import java.util.Arrays;
 import java.util.UUID;
 
 /**
@@ -23,7 +24,6 @@ import java.util.UUID;
  */
 
 import org.jvnet.hk2.annotations.Contract;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -69,7 +69,8 @@ public interface DynamicSememeUtility {
 	public DynamicSememeUUID createDynamicUUIDData(UUID value);
 	
 	/**
-	 * validate that the proposed dynamicSememeData aligns with the definition.
+	 * validate that the proposed dynamicSememeData aligns with the definition.  This also fills in default values, 
+	 * as necessary, if the data[] contains 'nulls' and the column is specified with a default value.
 	 * @param dsud
 	 * @param data
 	 * @param referencedComponentNid
@@ -78,7 +79,7 @@ public interface DynamicSememeUtility {
 	 * @throws InvalidParameterException - if anything fails validation
 	 */
 	public default void validate(DynamicSememeUsageDescription dsud, DynamicSememeData[] data, int referencedComponentNid, StampCoordinate stampCoordinate, 
-			TaxonomyCoordinate taxonomyCoordinate) throws InvalidParameterException
+			TaxonomyCoordinate taxonomyCoordinate) throws IllegalArgumentException
 	{
 		//Make sure the referenced component meets the ref component restrictions, if any are present.
 		if (dsud.getReferencedComponentTypeRestriction() != null && dsud.getReferencedComponentTypeRestriction() != ObjectChronologyType.UNKNOWN_NID)
@@ -88,7 +89,7 @@ public interface DynamicSememeUtility {
 			
 			if (requiredType != foundType)
 			{
-				throw new InvalidParameterException("The referenced component must be of type " + requiredType + ", but a " + foundType + " was passed");
+				throw new IllegalArgumentException("The referenced component must be of type " + requiredType + ", but a " + foundType + " was passed");
 			}
 			
 			if (requiredType == ObjectChronologyType.SEMEME && dsud.getReferencedComponentTypeSubRestriction() != null 
@@ -99,23 +100,47 @@ public interface DynamicSememeUtility {
 				
 				if (requiredSememeType != foundSememeType)
 				{
-					throw new InvalidParameterException("The referenced component must be a sememe of type " + requiredSememeType + ", but a " 
+					throw new IllegalArgumentException("The referenced component must be a sememe of type " + requiredSememeType + ", but a " 
 							+ foundSememeType + " was passed");
 				}
 			}
 		}
-
+		
 		if (data == null)
 		{
-			return;
+			data = new DynamicSememeData[] {};
 		}
 		
 		//specifically allow < - we don't need the trailing columns, if they were defined as optional.
 		if (data.length > dsud.getColumnInfo().length)
 		{
-			throw new InvalidParameterException("The Assemblage concept: " + dsud.getDynamicSememeName() + " specifies " + dsud.getColumnInfo().length + 
+			throw new IllegalArgumentException("The Assemblage concept: " + dsud.getDynamicSememeName() + " specifies " + dsud.getColumnInfo().length + 
 					" columns of data, while the provided data contains " + data.length + " columns.  The data size array must not exeed the sememe definition."
 					+ " (the data column count may be less, if the missing columns are defined as optional)");
+		}
+		
+		int lastColumnWithDefaultValue = 0;
+		for (int i = 0; i < dsud.getColumnInfo().length; i++)
+		{
+			if (dsud.getColumnInfo()[i].getDefaultColumnValue() != null)
+			{
+				lastColumnWithDefaultValue = i;
+			}
+		}
+		
+		if (lastColumnWithDefaultValue + 1 > data.length)
+		{
+			//We need to lengthen the data array, to make room to add the default value
+			data = Arrays.copyOf(data, lastColumnWithDefaultValue);
+		}
+		
+		for (int i = 0; i < dsud.getColumnInfo().length; i++)
+		{
+			DynamicSememeData defaultValue = dsud.getColumnInfo()[i].getDefaultColumnValue();
+			if (defaultValue != null && data[i] == null)
+			{
+				data[i] = defaultValue;
+			}
 		}
 		
 		//If they provided less columns, make sure the remaining columns are all optional
@@ -123,7 +148,7 @@ public interface DynamicSememeUtility {
 		{
 			if (dsud.getColumnInfo()[i].isColumnRequired())
 			{
-				throw new InvalidParameterException("No data was supplied for column '" + dsud.getColumnInfo()[i].getColumnName() + "' [" 
+				throw new IllegalArgumentException("No data was supplied for column '" + dsud.getColumnInfo()[i].getColumnName() + "' [" 
 						+  (i + 1) + "(index " + i + ")] but the column is specified as a required column");
 			}
 		}
@@ -136,7 +161,7 @@ public interface DynamicSememeUtility {
 			{
 				if (dsci.isColumnRequired())
 				{
-					throw new InvalidParameterException("No data was supplied for column " + (dataColumn + 1) + " but the column is specified as a required column");
+					throw new IllegalArgumentException("No data was supplied for column " + (dataColumn + 1) + " but the column is specified as a required column");
 				}
 			}
 			else
@@ -144,7 +169,7 @@ public interface DynamicSememeUtility {
 				DynamicSememeDataType allowedDT = dsci.getColumnDataType();
 				if (data[dataColumn] != null && allowedDT != DynamicSememeDataType.POLYMORPHIC && data[dataColumn].getDynamicSememeDataType() != allowedDT)
 				{
-					throw new InvalidParameterException("The supplied data for column " + dataColumn + " is of type " + data[dataColumn].getDynamicSememeDataType() + 
+					throw new IllegalArgumentException("The supplied data for column " + dataColumn + " is of type " + data[dataColumn].getDynamicSememeDataType() + 
 							" but the assemblage concept declares that it must be " + allowedDT);
 				}
 				
@@ -155,23 +180,37 @@ public interface DynamicSememeUtility {
 					{
 						for (int i = 0; i < dsci.getValidator().length; i++)
 						{
+							boolean rethrow = false;
 							try
 							{
 								if (!dsci.getValidator()[i].passesValidator(data[dataColumn], dsci.getValidatorData()[i], stampCoordinate, taxonomyCoordinate))
 								{
-									throw new InvalidParameterException("The supplied data for column " + dataColumn 
-											+ " does not pass the assigned validator(s) for this dynamic sememe");
+									rethrow = true;
+									throw new IllegalArgumentException("The supplied data for column " + dataColumn 
+											+ " does not pass the assigned validator(s) for this dynamic sememe.  Data: " + data[dataColumn].dataToString()
+											+ " Validator: " + dsci.getValidator()[i].name() + " Validator Data: " + dsci.getValidatorData()[i].dataToString());
 								}
 							}
-							catch  (IllegalArgumentException e)
+							catch (IllegalArgumentException e)
 							{
-								LoggerFactory.getLogger(DynamicSememeUtility.class).debug("Couldn't execute validator due to missing coordiantes");
+								if (rethrow)
+								{
+									throw e;
+								}
+								else
+								{
+									LoggerFactory.getLogger(DynamicSememeUtility.class).debug("Couldn't execute validator due to missing coordiantes");
+								}
 							}
 						}
 					}
+					catch (IllegalArgumentException e)
+					{
+						throw e;
+					}
 					catch (RuntimeException e)
 					{
-						throw new InvalidParameterException(e.getMessage());
+						throw new IllegalArgumentException(e.getMessage());
 					}
 				}
 			}

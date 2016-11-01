@@ -40,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -85,14 +86,18 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
+import gov.vha.isaac.ochre.api.index.ComponentSearchResult;
+import gov.vha.isaac.ochre.api.index.ConceptSearchResult;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.query.provider.lucene.indexers.DescriptionIndexer;
 import gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexer;
+import gov.vha.isaac.ochre.query.provider.lucene.indexers.TopDocsFilteredCollector;
 
 // See example for help with the Controlled Real-time indexing...
 // http://stackoverflow.com/questions/17993960/lucene-4-4-0-new-controlledrealtimereopenthread-sample-usage?answertab=votes#tab-top
@@ -111,7 +116,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     //exact matches.
     protected static final String FIELD_SEMEME_ASSEMBLAGE_SEQUENCE = "_sememe_type_sequence_" + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER;  
     //this isn't indexed
-    protected static final String FIELD_COMPONENT_NID = "_component_nid_";
+    public static final String FIELD_COMPONENT_NID = "_component_nid_";
     
     protected static final FieldType FIELD_TYPE_INT_STORED_NOT_INDEXED;
 
@@ -354,8 +359,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     /**
      * Subclasses may call this method with much more specific queries than this generic class is capable of constructing.
+     * @param q - the query
+     * @param sizeLimit - how many results to return (at most)
+     * @param targetGeneration - target generation that must be included in the search or Long.MIN_VALUE if there is no need 
+     * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
+     * indexing operations are completed - and then use the latest index.
+     * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
+     * the nid should be allowed in the result, false otherwise.  Note that this may cause large performance slowdowns, depending
+     * on the implementation of your filter
+     * @return
      */
-    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration) {
+    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter) {
         try 
         {
             if (targetGeneration != null && targetGeneration != Long.MIN_VALUE) {
@@ -388,7 +402,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 
                 int adjustedLimit = (limitWithExtras > Integer.MAX_VALUE ? sizeLimit : (int)limitWithExtras);
                 
-                TopDocs topDocs = searcher.search(q, adjustedLimit);
+                TopDocs topDocs;
+                if (filter != null)
+                {
+                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(adjustedLimit, q, searcher, filter);
+                    searcher.search(q, tdf);
+                    topDocs = tdf.getTopDocs();
+                }
+                else
+                {
+                    topDocs = searcher.search(q, adjustedLimit);
+                }
                 List<SearchResult> results = new ArrayList<>(topDocs.totalHits);
                 HashSet<Integer> includedComponentNids = new HashSet<>();
                 
@@ -405,7 +429,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                     else
                     {
                         includedComponentNids.add(componentNid);
-                        results.add(new SearchResult(componentNid, hit.score));
+                        results.add(new ComponentSearchResult(componentNid, hit.score));
                         if (results.size() == sizeLimit)
                         {
                             break;
@@ -684,6 +708,25 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         indexedComponentStatistics.clear();
     }
     
+
+    @Override
+    public List<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult) {
+        HashMap<Integer, ConceptSearchResult> merged = new HashMap<>();
+        List<ConceptSearchResult> result = new ArrayList<>();
+        for (SearchResult sr : searchResult) {
+            int conSequence = Frills.findConcept(sr.getNid());
+            if (merged.containsKey(conSequence)) {
+                merged.get(conSequence).merge(sr);
+            }
+            else {
+                ConceptSearchResult csr = new ConceptSearchResult(conSequence, sr.getNid(), sr.getScore());
+                merged.put(conSequence, csr);
+                result.add(csr);
+            }
+        }
+        return result;
+    }
+
     protected void incrementIndexedItemCount(String name) {
         AtomicInteger temp = indexedComponentStatistics.get(name);
         if (temp == null) {

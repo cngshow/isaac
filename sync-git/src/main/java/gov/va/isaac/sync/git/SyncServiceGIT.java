@@ -144,10 +144,10 @@ public class SyncServiceGIT implements SyncFiles
 					{
 						//Note- JSCH is _really_  verbose at the INFO level, so I'm mapping info to DEBUG.
 						logMap.put(com.jcraft.jsch.Logger.DEBUG, log::debug);
-						logMap.put(com.jcraft.jsch.Logger.ERROR, log::error);
-						logMap.put(com.jcraft.jsch.Logger.FATAL, log::error);
+						logMap.put(com.jcraft.jsch.Logger.ERROR, log::debug); //error
+						logMap.put(com.jcraft.jsch.Logger.FATAL, log::debug); //error
 						logMap.put(com.jcraft.jsch.Logger.INFO, log::debug);
-						logMap.put(com.jcraft.jsch.Logger.WARN, log::warn);
+						logMap.put(com.jcraft.jsch.Logger.WARN, log::debug); //warn
 						
 						enabledMap.put(com.jcraft.jsch.Logger.DEBUG, log::isDebugEnabled);
 						enabledMap.put(com.jcraft.jsch.Logger.ERROR, log::isErrorEnabled);

@@ -61,7 +61,7 @@ public class Snapshot {
     }
 
     public <V extends StampedVersion> Stream<? extends V> getVisible(ObjectChronology<V> chronicle) {
-        return chronicle.getVersionList().stream().filter((V version) -> positionCalculator.onRoute(version));
+    	return chronicle.getVersionList().stream().filter(version -> positionCalculator.onRoute(version));
     }
     
 }

@@ -20,6 +20,7 @@
 package gov.vha.isaac.ochre.api.index;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -183,4 +184,12 @@ public interface IndexServiceBI {
      * to other matches.
      */
     List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration);
+    
+    /**
+     * Locate the concept most closely tied to a search result, and merge them together, maintaining the best score.
+     * This is a convenience method.
+     * @param searchResult
+     * @return the merged results, in a collection that iterates in the same order as they were passed in.
+     */
+    Collection<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult);
 }

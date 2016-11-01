@@ -244,8 +244,10 @@ public class StampProvider implements StampService {
         if (time == Long.MAX_VALUE) {
             UncommittedStamp usp = new UncommittedStamp(status, authorSequence,
                     moduleSequence, pathSequence);
-            if (UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.containsKey(usp)) {
-                return UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.get(usp);
+            Integer temp = UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.get(usp);
+            
+            if (temp != null) {
+                return temp.intValue();
             } else {
                 stampLock.lock();
 

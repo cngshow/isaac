@@ -35,9 +35,14 @@ public class NumericUtils
 {
 	public static Number parseUnknown(String value) throws NumberFormatException
 	{
+		if (value == null)
+		{
+			throw new NumberFormatException("No value");
+		}
+		String temp = value.trim();
 		try
 		{
-			return Integer.parseInt(value);
+			return Integer.parseInt(temp);
 		}
 		catch (Exception e)
 		{
@@ -45,7 +50,7 @@ public class NumericUtils
 		}
 		try
 		{
-			return Long.parseLong(value);
+			return Long.parseLong(temp);
 		}
 		catch (Exception e)
 		{
@@ -53,13 +58,13 @@ public class NumericUtils
 		}
 		try
 		{
-			return Float.parseFloat(value);
+			return Float.parseFloat(temp);
 		}
 		catch (Exception e)
 		{
 			//noop
 		}
-		return Double.parseDouble(value);
+		return Double.parseDouble(temp);
 	}
 
 	public static Number readNumber(DynamicSememeData value) throws NumberFormatException
@@ -130,9 +135,9 @@ public class NumericUtils
 	{
 		try
 		{
-			return Optional.of(Long.parseLong(string));
+			return Optional.of(Long.parseLong(string.trim()));
 		}
-		catch (NumberFormatException e)
+		catch (Exception e)
 		{
 			return Optional.empty();
 		}
@@ -163,9 +168,9 @@ public class NumericUtils
 	{
 		try
 		{
-			return Optional.of(Integer.parseInt(string));
+			return Optional.of(Integer.parseInt(string.trim()));
 		}
-		catch (NumberFormatException e)
+		catch (Exception e)
 		{
 			return Optional.empty();
 		}

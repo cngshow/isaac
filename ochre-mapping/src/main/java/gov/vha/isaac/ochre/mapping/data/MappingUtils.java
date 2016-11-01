@@ -26,8 +26,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.vha.isaac.MetaData;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
@@ -43,7 +41,6 @@ import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 public class MappingUtils
 {
 	protected static final Logger LOG = LoggerFactory.getLogger(MappingUtils.class);
-	private static LruCache<Integer, Boolean> isMappingCache= new LruCache<>(50);
 	
 	public static final HashMap<String, ConceptSpecification> CODE_SYSTEM_CONCEPTS = new HashMap<String, ConceptSpecification>(); 
 	static 
@@ -89,14 +86,6 @@ public class MappingUtils
 	
 	public static boolean isMapping(SememeChronology<? extends SememeVersion<?>> sc)
 	{
-		if (isMappingCache.containsKey(sc.getAssemblageSequence()))
-		{
-			return isMappingCache.get(sc.getAssemblageSequence());
-		}
-		boolean temp = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getConceptNid(sc.getAssemblageSequence()), 
-				IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getConceptSequence()).anyMatch(sememe -> true);
-		isMappingCache.put(sc.getAssemblageSequence(), temp);
-		return temp;
+		return Frills.isMapping(sc);
 	}
-	
 }
