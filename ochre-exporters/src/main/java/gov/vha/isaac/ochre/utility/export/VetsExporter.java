@@ -390,30 +390,16 @@ public class VetsExporter {
 					_xmlCodedConcept.setName(_name);
 					_xmlCodedConcept.setVUID(_vuid);
 					_xmlCodedConcept.setCode(_code);
-					if (_active) {
-						_xmlCodedConcept.setActive(Boolean.TRUE);
-					} else {
-						_xmlCodedConcept.setActive(Boolean.FALSE);
-					}
+					_xmlCodedConcept.setActive(Boolean.valueOf(_active));
 					
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
+					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
 					
 					Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
+						Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation _xmlDesignation = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation();
 						if (a.getSememeType() == SememeType.DESCRIPTION) {
 							// TODO: Designations
-							/*
-							  <Designations>
-								<Designation>
-								  <Action>add</Action>
-								  <Code>4775680</Code>
-								  <TypeName>Preferred Name</TypeName>
-								  <VUID>4775680</VUID>
-								  <ValueNew>Enterprise Clinical Terms</ValueNew>
-								  <Active>true</Active>
-								</Designation>
-							  </Designations>
-				*/
 							@SuppressWarnings({ "unchecked", "rawtypes" })
 							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
 							if (__sv.isPresent()) {
@@ -421,10 +407,9 @@ public class VetsExporter {
 								long __vuid = Frills.getVuId(__sememeNid, null).orElse(0L);
 								if (__vuid == 0)
 								{
-									log.warn("Missing VUID for concept " + __sememeNid);
+									log.warn("Missing VUID for sememe " + __sememeNid);
 								}
 								
-								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation _xmlDesignation = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation();
 								// TODO: this same date logic here?
 								//@SuppressWarnings({ "unchecked" })
 								_xmlDesignation.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
@@ -460,16 +445,6 @@ public class VetsExporter {
 							}
 						} else if (a.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(a.getAssemblageSequence(), vhatPropertyTypesNid)) {
 							// TODO: Properties
-							/*
-									  <Properties>
-							            <Property>
-							              <Action>add</Action>
-							              <TypeName>Allergy_Type</TypeName>
-							              <ValueNew>DRUG</ValueNew>
-							              <Active>true</Active>
-							            </Property>
-							          </Properties>
-							 */
 							@SuppressWarnings({ "unchecked", "rawtypes" })
 							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
 							if (__sv.isPresent()) {
@@ -484,21 +459,50 @@ public class VetsExporter {
 								
 								_xmlProperties.getProperty().add(_xmlProperty);
 							}
+						} else if (Frills.isMapping(a)) {
+							// TODO: SubsetMembership
+							/*
+					        <SubsetMemberships>
+			                <SubsetMembership>
+			                  <Action>add</Action>
+			                  <VUID>5197408</VUID>
+			                  <Active>true</Active>
+			                </SubsetMembership>
+			              </SubsetMemberships>
+			              */
+							@SuppressWarnings({ "unchecked", "rawtypes" })
+							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+							if (__sv.isPresent()) {
+								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership _xmlSubsetMembership = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership();
+								
+								int __sememeNid = __sv.get().value().getNid();
+								long __vuid = Frills.getVuId(__sememeNid, null).orElse(0L);
+								if (__vuid == 0)
+								{
+									log.warn("Missing VUID for sememe " + __sememeNid);
+								}
+								
+								// TODO: this same date logic here?
+								//@SuppressWarnings({ "unchecked" })
+								_xmlSubsetMembership.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
+								_xmlSubsetMembership.setVUID(__vuid); // TODO: Propery CodedConcept <Name> value?
+								_xmlSubsetMembership.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+								
+								_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
+								
+								//System.out.println("Subset! => " + __vuid);
+							}
+							
+							if (_xmlSubsetMemberships.getSubsetMembership().size() > 0) {
+								_xmlDesignation.setSubsetMemberships(_xmlSubsetMemberships);
+							}
+							
+							_xmlDesignations.getDesignation().add(_xmlDesignation);
 						}
 					});
 					
-					// Relationships
-					/*
-					 <Relationships>
-						<Relationship>
-						  <Action>add</Action>
-						  <TypeName>has_parent</TypeName>
-						  <NewTargetCode>4712493</NewTargetCode>
-						  <Active>true</Active>
-						</Relationship>
-					  </Relationships>
-					 */
 					
+					// Relationships
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
 					List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(_concept.getNid(), StampCoordinates.getDevelopmentLatestActiveOnly());
 					for (AssociationInstance ai : aiList) {
@@ -507,8 +511,6 @@ public class VetsExporter {
 						ConceptChronology<?> __concept = Get.conceptService().getConcept(UUID.fromString(__targetUUID));
 						String __newTargetCode = getCodeFromNid(__concept.getNid());
 						boolean __active = __concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
-						
-						//System.out.println("Relationship: add, " + __typeName + ", " + __newTargetCode + ", " + __active);
 						
 						Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship _xmlRelationship = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
 						
@@ -532,6 +534,7 @@ public class VetsExporter {
 					if (_xmlRelationships.getRelationship().size() > 0) {
 						_xmlCodedConcept.setRelationships(_xmlRelationships);
 					}
+
 					// Add all CodedConcept elements
 					_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
 				}
