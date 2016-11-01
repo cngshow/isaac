@@ -1,7 +1,11 @@
 package gov.vha.isaac.ochre.utility.export;
 
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +15,10 @@ import java.util.TreeMap;
 import java.util.UUID;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
@@ -83,7 +91,7 @@ public class VetsExporter {
 		
 		// Types
 		terminology.setTypes(new Terminology.Types());
-		Terminology.Types.Type _type;
+		Terminology.Types.Type _xmlType;
 		
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
@@ -97,10 +105,10 @@ public class VetsExporter {
 		
 		// Build XML
 		for (String s : relationshipTypes.values()) {
-			_type = new Terminology.Types.Type();
-			_type.setKind(KindType.RELATIONSHIP_TYPE);
-			_type.setName(s);
-			terminology.getTypes().getType().add(_type);
+			_xmlType = new Terminology.Types.Type();
+			_xmlType.setKind(KindType.RELATIONSHIP_TYPE);
+			_xmlType.setName(s);
+			terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Attributes => PropertyType UUID
@@ -115,10 +123,10 @@ public class VetsExporter {
 		
 		// Build XML
 		for (String s : propertyTypes.values()) {
-			_type = new Terminology.Types.Type();
-			_type.setKind(KindType.PROPERTY_TYPE);
-			_type.setName(s);
-			terminology.getTypes().getType().add(_type);
+			_xmlType = new Terminology.Types.Type();
+			_xmlType.setKind(KindType.PROPERTY_TYPE);
+			_xmlType.setName(s);
+			terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Descriptions => DesignationType UUID
@@ -133,10 +141,10 @@ public class VetsExporter {
 		
 		// Build XML
 		for (String s : designationTypes.values()) {
-			_type = new Terminology.Types.Type();
-			_type.setKind(KindType.DESIGNATION_TYPE);
-			_type.setName(s);
-			terminology.getTypes().getType().add(_type);
+			_xmlType = new Terminology.Types.Type();
+			_xmlType.setKind(KindType.DESIGNATION_TYPE);
+			_xmlType.setName(s);
+			terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
@@ -179,20 +187,20 @@ public class VetsExporter {
 		
 		// Subsets/Refsets
 		terminology.setSubsets(new Terminology.Subsets());
-		Terminology.Subsets.Subset _subset;
+		Terminology.Subsets.Subset _xmlSubset;
 		
 		// Build XML
 		for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
-			_subset = new Terminology.Subsets.Subset();
+			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
 			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
 			if (al.equals("add")) { 
-				_subset.setAction(ActionType.ADD); 
+				_xmlSubset.setAction(ActionType.ADD); 
 			}
-			_subset.setName(name);
-			_subset.setVUID(Long.valueOf(al.get(1)));
-			_subset.setActive(Boolean.parseBoolean(al.get(2)));
-			terminology.getSubsets().getSubset().add(_subset);
+			_xmlSubset.setName(name);
+			_xmlSubset.setVUID(Long.valueOf(al.get(1)));
+			_xmlSubset.setActive(Boolean.parseBoolean(al.get(2)));
+			terminology.getSubsets().getSubset().add(_xmlSubset);
 		}
 		
 		/*
@@ -244,19 +252,50 @@ public class VetsExporter {
 			System.out.println(key + " -> " + assemblagesMap.get(key));
 		}*/
 		
+		//terminology.setCodeSystem(new Terminology.CodeSystem());
+		Terminology.CodeSystem _xmlCodeSystem = new Terminology.CodeSystem();
+		
 		// VHAT CodeSystem
 		UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"); 
 		int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID); //-2147377575
-		String csAction = "none";
 		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(vhatCodeSystemNid);
 		String csName = vhatConcept.getConceptDescriptionText();
 		Long csVUID = Frills.getVuId(vhatCodeSystemNid, null).orElse(0L); // Probably not right
-		//String csPrefDesigType;
+		String csPrefDesigType = "Preferred Name"; // ? TODO:
 		String csDescription = Frills.getDescription(vhatCodeSystemNid).orElse("none"); // This should be "VHA Terminology" but can't seem to get that ... easily
-		//String csCopyright; // ?
-		//String csCopyrightURL; // ?
-		//System.out.println("VUID = " + csVUID);
-		//System.out.println("Desc = " + csDescription);
+		String csCopyright = "2007"; // ? TODO: 
+		String csCopyrightURL = ""; // ? TODO:
+		
+		_xmlCodeSystem.setAction(ActionType.NONE);
+		_xmlCodeSystem.setName(csName);
+		_xmlCodeSystem.setVUID(csVUID);
+		_xmlCodeSystem.setDescription(csDescription);
+		_xmlCodeSystem.setCopyright(csCopyright);
+		_xmlCodeSystem.setCopyrightURL(csCopyrightURL);
+		_xmlCodeSystem.setPreferredDesignationType(csPrefDesigType);
+		
+		Terminology.CodeSystem.Version _xmlVersion = new Terminology.CodeSystem.Version();
+		_xmlVersion.setAppend(Boolean.TRUE);
+		_xmlVersion.setName("Authoring Version"); // ? TODO
+		_xmlVersion.setDescription("This is the version that is given to authoring changes before they are finalized."); // ? TODO
+		
+		try {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			String formattedDate = sdf.format(sdf.parse("2011-02-16"));
+			XMLGregorianCalendar _xmlEffDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate);
+			XMLGregorianCalendar _xmlRelDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate);
+			_xmlVersion.setEffectiveDate(_xmlEffDate);
+			_xmlVersion.setReleaseDate(_xmlRelDate);
+			//DatatypeFactory.newInstance().newXMLGregorianCalendarDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH), DatatypeConstants.FIELD_UNDEFINED);
+		} catch (DatatypeConfigurationException dtce) {
+			// TODO: Just leave empty elements if there is a parsing error?
+		} catch (ParseException pe) {
+			// TODO:
+		}
+		
+		_xmlVersion.setSource("");
+		
+		Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
 		
 		/*
 		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
@@ -264,38 +303,9 @@ public class VetsExporter {
 		UUID _vuidUUID = getFromMapByValue(assemblagesMap, "VUID (ISAAC)");
 		UUID _codeUUID = getFromMapByValue(assemblagesMap, "Code");
 		*/
-		// UUID test1 = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeString.get().value().getAssemblageSequence()).get();
 		
 		// VHAT Module
-		
-		// All CodeSystems
-		/*Get.taxonomyService().getAllRelationshipOriginSequences(vhatCodeSystemNid).forEach((conceptId) -> {
-			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-			Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
-				if (sememe.getSememeType() == SememeType.STRING) {
-					@SuppressWarnings({ "rawtypes", "unchecked" })
-					Optional<LatestVersion<? extends StringSememe>> sememeVersion
-							= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-					
-					if (sememeVersion.isPresent()) {
-						UUID test = Get.identifierService().getUuidPrimordialFromConceptSequence(sememeVersion.get().value().getAssemblageSequence()).get();
-						//System.out.println(sememeVersion.get().value().getString()+" -> "+ assemblagesMap.get(test)); // VUID or Code
-					}
-				}
-			});
-
-			// The VHAT submodules
-			Get.taxonomyService().getAllRelationshipOriginSequences(conceptId).forEach((c) -> {
-				// Each sub-submodule (codesystems, VistA, etc.)
-				ConceptChronology<? extends ConceptVersion<?>> c2 = Get.conceptService().getConcept(c);
-				// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
-				System.out.println("|--- "+c2.getConceptDescriptionText());
-			});
-			
-			
-		});*/
-		
-		// Standard Code Systems  
+		// CodeSystems : Standard Code Systems  
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
 		Get.taxonomyService().getAllRelationshipOriginSequences(-2147387560).forEach((conceptId) -> {
@@ -363,6 +373,11 @@ public class VetsExporter {
 			
 		});
 		
+		Terminology.CodeSystem.Version.CodedConcepts _xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
+		_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
+		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
+		_xmlCodeSystem.setVersion(_xmlVersion);
+		terminology.setCodeSystem(_xmlCodeSystem);
 		
 		writeXml(writeTo);
 	}
