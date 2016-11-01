@@ -93,6 +93,16 @@ public class VetsExporter {
 		terminology.setTypes(new Terminology.Types());
 		Terminology.Types.Type _xmlType;
 		
+		// Subsets/Refsets
+		terminology.setSubsets(new Terminology.Subsets());
+		Terminology.Subsets.Subset _xmlSubset;
+		
+		// CodeSystem
+		Terminology.CodeSystem _xmlCodeSystem = new Terminology.CodeSystem();
+		Terminology.CodeSystem.Version _xmlVersion = new Terminology.CodeSystem.Version();
+		Terminology.CodeSystem.Version.CodedConcepts _xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
+		//Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
+		
 		// ISAAC Associations => RelationshipType UUID
 		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
 		//int vhatAssociationTypesNid = Get.identifierService().getNidForUuids(vhatAssociationTypesUUID); //-2147481336
@@ -185,10 +195,6 @@ public class VetsExporter {
 			}
 		});
 		
-		// Subsets/Refsets
-		terminology.setSubsets(new Terminology.Subsets());
-		Terminology.Subsets.Subset _xmlSubset;
-		
 		// Build XML
 		for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
 			_xmlSubset = new Terminology.Subsets.Subset();
@@ -252,8 +258,7 @@ public class VetsExporter {
 			System.out.println(key + " -> " + assemblagesMap.get(key));
 		}*/
 		
-		//terminology.setCodeSystem(new Terminology.CodeSystem());
-		Terminology.CodeSystem _xmlCodeSystem = new Terminology.CodeSystem();
+		
 		
 		// VHAT CodeSystem
 		UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"); 
@@ -274,7 +279,6 @@ public class VetsExporter {
 		_xmlCodeSystem.setCopyrightURL(csCopyrightURL);
 		_xmlCodeSystem.setPreferredDesignationType(csPrefDesigType);
 		
-		Terminology.CodeSystem.Version _xmlVersion = new Terminology.CodeSystem.Version();
 		_xmlVersion.setAppend(Boolean.TRUE);
 		_xmlVersion.setName("Authoring Version"); // ? TODO
 		_xmlVersion.setDescription("This is the version that is given to authoring changes before they are finalized."); // ? TODO
@@ -295,8 +299,6 @@ public class VetsExporter {
 		
 		_xmlVersion.setSource("");
 		
-		Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
-		
 		/*
 		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
 		UUID _edtUUID = getFromMapByValue(assemblagesMap, "extended description type (ISAAC)");
@@ -307,29 +309,38 @@ public class VetsExporter {
 		// VHAT Module
 		// CodeSystems : Standard Code Systems  
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
-		int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
-		Get.taxonomyService().getAllRelationshipOriginSequences(-2147387560).forEach((conceptId) -> {
+		//int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
+		Get.conceptService().getConceptChronologyStream().limit(1000).forEach((_concept) -> {
 			
-			ConceptChronology<? extends ConceptVersion<?>> _concept = Get.conceptService().getConcept(conceptId);
+			// TODO: Need to ignore all the non-imported concepts
+			
 			int _conceptNid = _concept.getNid();
-			String _tmpName = Frills.getDescription(_conceptNid).orElse("");
-
+			
+			String _name = Frills.getDescription(_conceptNid).orElse("");
 			// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
-			if (!(_tmpName.length() > 0)) {
+			if (!(_name.length() > 0)) {
 				// NOP, is this valid ?
 				return;
 			}
 			
 			long _vuid = Frills.getVuId(_conceptNid, null).orElse(0L);
-			
 			String _code = getCodeFromConceptNid(_conceptNid);
-			
 			boolean _active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
 			
-			//System.out.println("*** " + _tmpName + " -- " + _vuid + " -- " + _code + " -- " + active);
-
-			// TODO: Designations
+			//System.out.println("*** " + _name + " -- " + _vuid + " -- " + _code + " -- " + _active);
 			
+			Terminology.CodeSystem.Version.CodedConcepts.CodedConcept _xmlCodedConcept = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
+			_xmlCodedConcept.setAction(ActionType.ADD);
+			_xmlCodedConcept.setName(_name);
+			_xmlCodedConcept.setVUID(_vuid);
+			_xmlCodedConcept.setCode(_code);
+			if (_active) {
+				_xmlCodedConcept.setActive(Boolean.TRUE);
+			} else {
+				_xmlCodedConcept.setActive(Boolean.FALSE);
+			}
+			
+			// TODO: Designations
 /*
 			  <Designations>
 				<Designation>
@@ -348,6 +359,18 @@ public class VetsExporter {
 				a.getAssemblageSequence();
 			});*/
 			
+			// TODO: Properties
+/*
+		  <Properties>
+            <Property>
+              <Action>add</Action>
+              <TypeName>Allergy_Type</TypeName>
+              <ValueNew>DRUG</ValueNew>
+              <Active>true</Active>
+            </Property>
+          </Properties>
+ */
+			
 			// Relationships
 			/*
 			 <Relationships>
@@ -360,6 +383,7 @@ public class VetsExporter {
 			  </Relationships>
 			 */
 			
+			Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
 			List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(_concept.getNid(), StampCoordinates.getDevelopmentLatestActiveOnly());
 			for (AssociationInstance ai : aiList) {
 				String __typeName = ai.getAssociationType().getAssociationName();
@@ -369,12 +393,27 @@ public class VetsExporter {
 				boolean __active = __concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly());
 				
 				//System.out.println("Relationship: add, " + __typeName + ", " + __newTargetCode + ", " + __active);
+				
+				Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship _xmlRelationship = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
+				
+				_xmlRelationship.setAction(ActionType.ADD);
+				_xmlRelationship.setTypeName(__typeName);
+				_xmlRelationship.setNewTargetCode(__newTargetCode);
+				if (__active) {
+					_xmlRelationship.setActive(Boolean.TRUE);
+				} else {
+					_xmlRelationship.setActive(Boolean.FALSE);
+				}
+				
+				_xmlRelationships.getRelationship().add(_xmlRelationship);
 			}
+			_xmlCodedConcept.setRelationships(_xmlRelationships);
 			
+			// Add all CodedConcept elements
+			_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
 		});
 		
-		Terminology.CodeSystem.Version.CodedConcepts _xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
-		_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
+		// Close out XML
 		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
 		_xmlCodeSystem.setVersion(_xmlVersion);
 		terminology.setCodeSystem(_xmlCodeSystem);
