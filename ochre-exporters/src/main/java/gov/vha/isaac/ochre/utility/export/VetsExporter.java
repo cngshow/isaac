@@ -137,7 +137,6 @@ public class VetsExporter {
 		
 		// ISAAC Attributes => PropertyType UUID
 		UUID vhatPropertyTypesUUID = UUID.fromString("eb7696e7-fe40-5985-9b2e-4e3d840a47b7"); 
-		//int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID); //-2147481872 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatPropertyTypesUUID)).forEach((conceptId) -> {
@@ -324,6 +323,7 @@ public class VetsExporter {
 		// CodeSystems : Standard Code Systems  
 		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		//int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
+		int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID); //-2147481872
 		
 		TaxonomyService ts = Get.taxonomyService();
 		int vhatSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"));  //VHAT root concept
@@ -394,23 +394,24 @@ public class VetsExporter {
 						_xmlCodedConcept.setActive(Boolean.FALSE);
 					}
 					
-					// TODO: Designations
-		/*
-					  <Designations>
-						<Designation>
-						  <Action>add</Action>
-						  <Code>4775680</Code>
-						  <TypeName>Preferred Name</TypeName>
-						  <VUID>4775680</VUID>
-						  <ValueNew>Enterprise Clinical Terms</ValueNew>
-						  <Active>true</Active>
-						</Designation>
-					  </Designations>
-		*/
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
+					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
 					
 					Get.sememeService().getSememesForComponent(_conceptNid).forEach((a) -> {
 						if (a.getSememeType() == SememeType.DESCRIPTION) {
+							// TODO: Designations
+							/*
+							  <Designations>
+								<Designation>
+								  <Action>add</Action>
+								  <Code>4775680</Code>
+								  <TypeName>Preferred Name</TypeName>
+								  <VUID>4775680</VUID>
+								  <ValueNew>Enterprise Clinical Terms</ValueNew>
+								  <Active>true</Active>
+								</Designation>
+							  </Designations>
+				*/
 							@SuppressWarnings({ "unchecked", "rawtypes" })
 							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
 							if (__sv.isPresent()) {
@@ -433,22 +434,34 @@ public class VetsExporter {
 								_xmlDesignations.getDesignation().add(_xmlDesignation);
 								
 							}
+						} else if (a.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(a.getAssemblageSequence(), vhatPropertyTypesNid)) {
+							// TODO: Properties
+							/*
+									  <Properties>
+							            <Property>
+							              <Action>add</Action>
+							              <TypeName>Allergy_Type</TypeName>
+							              <ValueNew>DRUG</ValueNew>
+							              <Active>true</Active>
+							            </Property>
+							          </Properties>
+							 */
+							@SuppressWarnings({ "unchecked", "rawtypes" })
+							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+							if (__sv.isPresent()) {
+								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property _xmlProperty = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property();
+								// TODO: this same date logic here?
+								//@SuppressWarnings({ "unchecked" })
+								DynamicSememeUsageDescription __dsud = DynamicSememeUsageDescriptionImpl.read(__sv.get().value().getAssemblageSequence());
+								_xmlProperty.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
+								_xmlProperty.setTypeName(__dsud.getDynamicSememeUsageDescription());
+								_xmlProperty.setValueNew(_name); // TODO: Propery CodedConcept <Name> value?
+								_xmlProperty.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+								
+								_xmlProperties.getProperty().add(_xmlProperty);
+							}
 						}
 					});
-					
-					_xmlCodedConcept.setDesignations(_xmlDesignations);
-					
-					// TODO: Properties
-		/*
-				  <Properties>
-		            <Property>
-		              <Action>add</Action>
-		              <TypeName>Allergy_Type</TypeName>
-		              <ValueNew>DRUG</ValueNew>
-		              <Active>true</Active>
-		            </Property>
-		          </Properties>
-		 */
 					
 					// Relationships
 					/*
@@ -486,8 +499,19 @@ public class VetsExporter {
 						
 						_xmlRelationships.getRelationship().add(_xmlRelationship);
 					}
-					_xmlCodedConcept.setRelationships(_xmlRelationships);
 					
+					// Try to keep XML output somewhat clean, without empty elements (i.e. <Element/> or <Element></Element> 
+					if (_xmlDesignations.getDesignation().size() > 0) {
+						_xmlCodedConcept.setDesignations(_xmlDesignations);
+					}
+					
+					if (_xmlProperties.getProperty().size() > 0) {
+						_xmlCodedConcept.setProperties(_xmlProperties);
+					}
+					
+					if (_xmlRelationships.getRelationship().size() > 0) {
+						_xmlCodedConcept.setRelationships(_xmlRelationships);
+					}
 					// Add all CodedConcept elements
 					_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
 				}
@@ -497,7 +521,7 @@ public class VetsExporter {
 		// Close out XML
 		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
 		_xmlCodeSystem.setVersion(_xmlVersion);
-		terminology.setCodeSystem(_xmlCodeSystem);
+		terminology.setCodeSystem(_xmlCodeSystem); 
 		
 		log.info("Skipped " + skippedForNonVHAT.get() + " concepts for non-vhat");
 		log.info("Skipped " + skippedDateRange.get() + " concepts for outside date range");
