@@ -21,7 +21,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
 import gov.va.med.term.vhat.xml.model.KindType;
+import gov.va.med.term.vhat.xml.model.PropertyType;
 import gov.va.med.term.vhat.xml.model.Terminology;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties;
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
@@ -431,8 +433,30 @@ public class VetsExporter {
 								_xmlDesignation.setVUID(__vuid);
 								_xmlDesignation.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
 								
-								_xmlDesignations.getDesignation().add(_xmlDesignation);
 								
+								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties __xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties();
+								List<SememeChronology<? extends SememeVersion<?>>> __scList = __sv.get().value().getChronology().getSememeList();
+								for (SememeChronology<? extends SememeVersion<?>> ___sc : __scList) {
+									if (ts.wasEverKindOf(___sc.getAssemblageSequence(), vhatPropertyTypesNid)) {
+										PropertyType __xmlProperty = new PropertyType();
+										// TODO: this same date logic here?
+										//@SuppressWarnings({ "unchecked" })
+										Optional<String> __typeName =  Optional.of("ToDo"); // TODO
+										__xmlProperty.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
+										__xmlProperty.setTypeName(__typeName.orElse(""));
+										__xmlProperty.setValueNew(_name); // TODO: Propery CodedConcept <Name> value?
+										__xmlProperty.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+										
+										__xmlProperties.getProperty().add(__xmlProperty);
+									}
+								}
+								
+								
+								if (__xmlProperties.getProperty().size() > 0) {
+									_xmlDesignation.setProperties(__xmlProperties);
+								}
+								
+								_xmlDesignations.getDesignation().add(_xmlDesignation);
 							}
 						} else if (a.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(a.getAssemblageSequence(), vhatPropertyTypesNid)) {
 							// TODO: Properties
@@ -491,11 +515,7 @@ public class VetsExporter {
 						_xmlRelationship.setAction(ActionType.ADD);
 						_xmlRelationship.setTypeName(__typeName);
 						_xmlRelationship.setNewTargetCode(__newTargetCode);
-						if (__active) {
-							_xmlRelationship.setActive(Boolean.TRUE);
-						} else {
-							_xmlRelationship.setActive(Boolean.FALSE);
-						}
+						_xmlRelationship.setActive(Boolean.valueOf(__active));
 						
 						_xmlRelationships.getRelationship().add(_xmlRelationship);
 					}
