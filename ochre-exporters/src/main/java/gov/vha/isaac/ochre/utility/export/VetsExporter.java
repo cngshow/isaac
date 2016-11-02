@@ -435,6 +435,51 @@ public class VetsExporter {
 							
 							_xmlDesignations.getDesignation().add(_xmlDesignation);
 						}
+						
+						// TODO: MapSets
+						// 1. Determine if sememe is a MapSet 
+						// 2. Process/add to MapSet collection/map
+						// 3. Create XML elements and add to XML output later
+						/*if (Frills.definesMapping(_concept.getConceptSequence())) {
+							MapSets.MapSet _xmlMapSet = new MapSets.MapSet();
+							
+							StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
+							@SuppressWarnings({"unchecked", "rawtypes"})
+							Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, devLatestStampCoordinates);
+							// TODO
+							if (__cv.isPresent()) {
+								ConceptChronology<? extends ConceptVersion<?>> __tmpConcept = __cv.get().value().getChronology();
+								_xmlMapSet.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __tmpConcept, startDate, endDate));
+								_xmlMapSet.setActive(__tmpConcept.isLatestVersionActive(devLatestStampCoordinates));
+								_xmlMapSet.setCode(getCodeFromNid(__tmpConcept.getNid()));
+								//_xmlMapSet.setDesignations(value);
+								//_xmlMapSet.setMapEntries(value);
+								_xmlMapSet.setName("Name");
+								//_xmlMapSet.setProperties(value);
+								
+								// Relationships
+								MapSets.MapSet.Relationships _xmlRelationships = new MapSets.MapSet.Relationships();
+								List<Map<String, Object>> rels = getRelationships(__tmpConcept, startDate, endDate);
+								for (Map<String, Object> rel : rels) {
+									MapSets.MapSet.Relationships.Relationship _xmlRelationship = new MapSets.MapSet.Relationships.Relationship();
+									_xmlRelationship.setAction((ActionType) rel.get("Action"));
+									_xmlRelationship.setTypeName((String) rel.get("TypeName"));
+									_xmlRelationship.setNewTargetCode((String) rel.get("NewTargetCode"));
+									_xmlRelationship.setActive((Boolean) rel.get("Active"));
+									_xmlRelationships.getRelationship().add(_xmlRelationship);
+								}
+								_xmlMapSet.setRelationships(_xmlRelationships);
+								
+								_xmlMapSet.setSourceCodeSystem("SourceCodeSystem");
+								_xmlMapSet.setSourceVersionName("SourceVersionName");
+								_xmlMapSet.setTargetCodeSystem("TargetCodeSystem");
+								_xmlMapSet.setTargetVersionName("TargetVersionName");
+								//_xmlMapSet.setVUID(value);
+								
+								_xmlMapSetCollection.add(_xmlMapSet);
+							}
+						}*/
+						
 					});
 					
 					
@@ -472,6 +517,11 @@ public class VetsExporter {
 		
 		// Close out XML
 		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
+		
+		// MapSets
+		MapSets _xmlMapSets = new MapSets();
+		_xmlMapSets.getMapSet().addAll(_xmlMapSetCollection);
+		
 		_xmlCodeSystem.setVersion(_xmlVersion);
 		terminology.setCodeSystem(_xmlCodeSystem); 
 		
