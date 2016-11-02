@@ -365,24 +365,25 @@ public class VetsExporter {
 								_xmlDesignation.setVUID(__vuid);
 								_xmlDesignation.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
 								
-								
+								// Designations->Properties
+								// TODO: This isn't right
 								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties __xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties();
 								List<SememeChronology<? extends SememeVersion<?>>> __scList = __sv.get().value().getChronology().getSememeList();
 								for (SememeChronology<? extends SememeVersion<?>> ___sc : __scList) {
-									if (ts.wasEverKindOf(___sc.getAssemblageSequence(), vhatPropertyTypesNid)) {
-										PropertyType __xmlProperty = new PropertyType();
-										// TODO: this same date logic here?
-										//@SuppressWarnings({ "unchecked" })
-										Optional<String> __typeName =  Optional.of("ToDo"); // TODO
-										__xmlProperty.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
-										__xmlProperty.setTypeName(__typeName.orElse(""));
-										__xmlProperty.setValueNew(_name); // TODO: Propery CodedConcept <Name> value?
-										__xmlProperty.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+									if (ts.wasEverKindOf(___sc.getAssemblageSequence(), vhatPropertyTypesNid)) {//
+										Map<String, Object> prop = getProperties(__sv.get().value().getChronology(), startDate, endDate);
 										
-										__xmlProperties.getProperty().add(__xmlProperty);
+										if (!prop.isEmpty()) {
+											PropertyType __xmlProperty = new PropertyType();
+											__xmlProperty.setAction((ActionType) prop.get("Action"));
+											__xmlProperty.setTypeName((String) prop.get("TypeName"));
+											__xmlProperty.setValueNew((String) prop.get("ValueNew")); // TODO: ??
+											__xmlProperty.setActive((Boolean) prop.get("Active"));
+											
+											__xmlProperties.getProperty().add(__xmlProperty);
+										}
 									}
 								}
-								
 								
 								if (__xmlProperties.getProperty().size() > 0) {
 									_xmlDesignation.setProperties(__xmlProperties);
@@ -392,17 +393,14 @@ public class VetsExporter {
 							}
 						} else if (_sememe.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_sememe.getAssemblageSequence(), vhatPropertyTypesNid)) {
 							// TODO: Properties
-							@SuppressWarnings({ "unchecked", "rawtypes" })
-							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) _sememe).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
-							if (__sv.isPresent()) {
+							Map<String, Object> prop = getProperties(_sememe, startDate, endDate);
+							
+							if (!prop.isEmpty()) {
 								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property _xmlProperty = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property();
-								// TODO: this same date logic here?
-								//@SuppressWarnings({ "unchecked" })
-								DynamicSememeUsageDescription __dsud = DynamicSememeUsageDescriptionImpl.read(__sv.get().value().getAssemblageSequence());
-								_xmlProperty.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
-								_xmlProperty.setTypeName(__dsud.getDynamicSememeUsageDescription());
-								_xmlProperty.setValueNew(_name); // TODO: Propery CodedConcept <Name> value?
-								_xmlProperty.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
+								_xmlProperty.setAction((ActionType) prop.get("Action"));
+								_xmlProperty.setTypeName((String) prop.get("TypeName"));
+								_xmlProperty.setValueNew((String) prop.get("ValueNew")); // TODO: ??
+								_xmlProperty.setActive((Boolean) prop.get("Active"));
 								
 								_xmlProperties.getProperty().add(_xmlProperty);
 							}
@@ -423,7 +421,7 @@ public class VetsExporter {
 								// TODO: this same date logic here?
 								//@SuppressWarnings({ "unchecked" })
 								_xmlSubsetMembership.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
-								_xmlSubsetMembership.setVUID(__vuid); // TODO: Propery CodedConcept <Name> value?
+								_xmlSubsetMembership.setVUID(__vuid);
 								_xmlSubsetMembership.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
 								
 								_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
@@ -487,6 +485,54 @@ public class VetsExporter {
 		/*for (UUID key : assemblagesMap.keySet()) {
 			System.out.println(key + " -> " + assemblagesMap.get(key));
 		}*/
+	}
+	
+	/**
+	 * 
+	 * @param sememe
+	 * @param startDate
+	 * @param endDate
+	 * @return Map of property Objects
+	 */
+	private Map<String, Object> getProperties(SememeChronology<?> sememe, long startDate, long endDate) {
+		
+		if (sememe == null) {
+			return new HashMap<>();
+		}
+		
+		Map<String, Object> tmpMap = new HashMap<>();
+		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
+		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+		if (sememeVersion.isPresent()) {
+			// TODO: this same date logic here?
+			@SuppressWarnings({ "unchecked" })
+			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			tmpMap.put("Action", action);
+			
+			String typeName;
+			switch (sememe.getSememeType()) {
+			case DESCRIPTION:
+				typeName = ""; // TODO: ??
+				break;
+			case DYNAMIC:
+				DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
+				typeName = dsud.getDynamicSememeUsageDescription();
+				break;
+			default:
+				typeName = ""; // TODO: ??
+				break;
+			}
+			
+			tmpMap.put("TypeName", typeName);
+			// TODO: Propery CodedConcept <Name> value? 
+			tmpMap.put("ValueNew", "ToDo"); // TODO: ??
+			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(devLatestStampCoordinates);
+			tmpMap.put("Active", active);
+		}
+		
+		return tmpMap;
 	}
 	
 	/**
