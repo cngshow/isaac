@@ -224,57 +224,6 @@ public class VetsExporter {
 			terminology.getSubsets().getSubset().add(_xmlSubset);
 		}
 		
-		/*
-	<CodeSystem>
-	<Action>none</Action>
-	<Name>VHAT</Name>
-	<VUID>4707199</VUID>
-	<Description>VHA Terminology</Description>
-   ? <Copyright>2007</Copyright>
-   ? <CopyrightURL />
-	<PreferredDesignationType>Preferred Name</PreferredDesignationType>
-	<Version>
-	  <Append>true</Append>
-	  <Name>Authoring Version</Name>
-	  <Description>This is the version that is given to authoring changes before they are finalized.</Description>
-	? <EffectiveDate>2011-02-16</EffectiveDate>
-	? <ReleaseDate>2011-02-16</ReleaseDate>
-	  <Source />
-	  <CodedConcepts>
-		<CodedConcept>
-		  <Action>add</Action>
-		  <Code>4516261</Code>
-		  <Name>Enterprise Clinical Terms</Name>
-		  <VUID>4516261</VUID>
-		  <Active>true</Active>
-		  <Designations>
-			<Designation>
-			  <Action>add</Action>
-			  <Code>4775680</Code>
-			  <TypeName>Preferred Name</TypeName>
-			  <VUID>4775680</VUID>
-			  <ValueNew>Enterprise Clinical Terms</ValueNew>
-			  <Active>true</Active>
-			</Designation>
-		  </Designations>
-		  <Relationships>
-			<Relationship>
-			  <Action>add</Action>
-			  <TypeName>has_parent</TypeName>
-			  <NewTargetCode>4712493</NewTargetCode>
-			  <Active>true</Active>
-			</Relationship>
-		  </Relationships>
-		</CodedConcept>
-		
-		 */
-		
-		/*for (UUID key : assemblagesMap.keySet()) {
-			System.out.println(key + " -> " + assemblagesMap.get(key));
-		}*/
-		
-		
-		
 		// VHAT CodeSystem
 		UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447"); 
 		int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID); //-2147377575
@@ -313,13 +262,6 @@ public class VetsExporter {
 		}
 		
 		_xmlVersion.setSource("");
-		
-		/*
-		UUID _edaUUID = getFromMapByValue(assemblagesMap, "English description assemblage (ISAAC)");
-		UUID _edtUUID = getFromMapByValue(assemblagesMap, "extended description type (ISAAC)");
-		UUID _vuidUUID = getFromMapByValue(assemblagesMap, "VUID (ISAAC)");
-		UUID _codeUUID = getFromMapByValue(assemblagesMap, "Code");
-		*/
 		
 		// VHAT Module
 		// CodeSystems : Standard Code Systems  
@@ -461,15 +403,6 @@ public class VetsExporter {
 							}
 						} else if (Frills.isMapping(a)) {
 							// TODO: SubsetMembership
-							/*
-					        <SubsetMemberships>
-			                <SubsetMembership>
-			                  <Action>add</Action>
-			                  <VUID>5197408</VUID>
-			                  <Active>true</Active>
-			                </SubsetMembership>
-			              </SubsetMemberships>
-			              */
 							@SuppressWarnings({ "unchecked", "rawtypes" })
 							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) a).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
 							if (__sv.isPresent()) {
@@ -552,6 +485,12 @@ public class VetsExporter {
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 		
 		writeXml(writeTo);
+		
+		/*for (UUID key : assemblagesMap.keySet()) {
+			System.out.println(key + " -> " + assemblagesMap.get(key));
+		}*/
+	
+
 		
 	}
 	
