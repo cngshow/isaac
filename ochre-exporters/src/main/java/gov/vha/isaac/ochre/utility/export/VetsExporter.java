@@ -173,8 +173,8 @@ public class VetsExporter {
 		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
-		UUID vhatRefsetsUUID = UUID.fromString("99173138-dcaa-5a77-a4eb-311b01991b88");
-		//int vhatRefsetsNid = Get.identifierService().getNidForUuids(vhatRefsetsUUID); //-2147481162
+		UUID vhatRefsetsUUID = UUID.fromString("fab80263-6dae-523c-b604-c69e450d8c7f");
+		//int vhatRefsetsNid = Get.identifierService().getNidForUuids(vhatRefsetsUUID); // -2147481168
 		// Get data, Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(Get.identifierService().getNidForUuids(vhatRefsetsUUID)).forEach((tcs) -> {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(tcs);
@@ -552,6 +552,7 @@ public class VetsExporter {
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 		
 		writeXml(writeTo);
+		
 	}
 	
 	/**
