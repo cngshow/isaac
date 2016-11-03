@@ -19,17 +19,18 @@
 package gov.vha.isaac.ochre.api.util;
 
 import java.util.UUID;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
@@ -68,6 +69,7 @@ public class WorkExecutors
 	private ForkJoinPool forkJoinExecutor_;
 	private ThreadPoolExecutor blockingThreadPoolExecutor_;
 	private ThreadPoolExecutor threadPoolExecutor_;
+	private ScheduledExecutorService scheduledExecutor_;
 	private static final Logger log = LogManager.getLogger();
 	
 	private volatile static WorkExecutors nonHK2Instance_ = null;
@@ -119,6 +121,9 @@ public class WorkExecutors
 		//init of secure random can block on many systems that don't have enough entropy occuring.  The DB load process
 		//should provide enough entropy to get it initialized, so it doesn't pause things later when someone requests a random UUID. 
 		getExecutor().execute(() -> UUID.randomUUID());
+		
+		scheduledExecutor_ = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ISAAC-Scheduled-Thread", true));
+		
 		log.debug("WorkExecutors thread pools ready");
 	}
 
@@ -142,6 +147,12 @@ public class WorkExecutors
 		{
 			threadPoolExecutor_.shutdownNow();
 			threadPoolExecutor_  = null;
+		}
+		
+		if (scheduledExecutor_ != null)
+		{
+			scheduledExecutor_.shutdownNow();
+			scheduledExecutor_ = null;
 		}
 		nonHK2Instance_ = null;
 		log.debug("Stopped WorkExecutors thread pools");
@@ -173,6 +184,15 @@ public class WorkExecutors
 	public ThreadPoolExecutor getExecutor()
 	{
 		return threadPoolExecutor_;
+	}
+	
+	/**
+	 * @return the ISAAC common {@link ScheduledThreadPoolExecutor} instance - (behavior described in the class docs)
+	 * This pool only has a single thread - submitted jobs should be fast executing.
+	 */
+	public ScheduledExecutorService getScheduledThreadPoolExecutor()
+	{
+		return scheduledExecutor_;
 	}
 	
 
