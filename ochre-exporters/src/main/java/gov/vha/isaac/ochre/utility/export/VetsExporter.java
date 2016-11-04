@@ -38,10 +38,14 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
@@ -308,7 +312,8 @@ public class VetsExporter {
 					//the component that was new (action = add) or retired (action = remove) or just edited (action = update) we need to set it appropriately
 					
 					//TODO this needs to change - name needs to come from a specific description type, not an arbitrary one, which is what the convenience method does.
-					String _name = Frills.getDescription(_conceptNid).orElse("");
+					// Not sure if thisis appropriate or not
+					String _name = Get.conceptSpecification(_conceptNid).getConceptDescriptionText();
 					// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
 					if (!(_name.length() > 0)) {
 						log.error("Missing description for concept " + _concept.getPrimordialUuid());
@@ -343,56 +348,26 @@ public class VetsExporter {
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
 					
+					// TODO: This isn't quite right, either
 					Get.sememeService().getSememesForComponent(_conceptNid).forEach((_sememe) -> {
 						Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation _xmlDesignation = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation();
-						if (_sememe.getSememeType() == SememeType.DESCRIPTION) {
-							// TODO: Designations
-							@SuppressWarnings({ "unchecked", "rawtypes" })
-							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) _sememe).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
-							if (__sv.isPresent()) {
-								int __sememeNid = __sv.get().value().getNid();
-								long __vuid = Frills.getVuId(__sememeNid, null).orElse(0L);
-								if (__vuid == 0)
-								{
-									log.warn("Missing VUID for " + __sememeNid);
-								}
-								
-								// TODO: this same date logic here?
-								//@SuppressWarnings({ "unchecked" })
-								_xmlDesignation.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
-								_xmlDesignation.setCode(getCodeFromNid(__sememeNid));
-								_xmlDesignation.setTypeName(""); // TODO
-								_xmlDesignation.setVUID(__vuid);
-								_xmlDesignation.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
-								
-								// Designations->Properties
-								// TODO: This isn't right
-								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties __xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties();
-								List<SememeChronology<? extends SememeVersion<?>>> __scList = __sv.get().value().getChronology().getSememeList();
-								for (SememeChronology<? extends SememeVersion<?>> ___sc : __scList) {
-									if (ts.wasEverKindOf(___sc.getAssemblageSequence(), vhatPropertyTypesNid)) {//
-										Map<String, Object> prop = getProperties(__sv.get().value().getChronology(), startDate, endDate);
-										
-										if (!prop.isEmpty()) {
-											PropertyType __xmlProperty = new PropertyType();
-											__xmlProperty.setAction((ActionType) prop.get("Action"));
-											__xmlProperty.setTypeName((String) prop.get("TypeName"));
-											__xmlProperty.setValueNew((String) prop.get("ValueNew")); // TODO: ??
-											__xmlProperty.setActive((Boolean) prop.get("Active"));
-											
-											__xmlProperties.getProperty().add(__xmlProperty);
-										}
-									}
-								}
-								
-								if (__xmlProperties.getProperty().size() > 0) {
-									_xmlDesignation.setProperties(__xmlProperties);
-								}
-								
-								_xmlDesignations.getDesignation().add(_xmlDesignation);
-							}
-						} else if (_sememe.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_sememe.getAssemblageSequence(), vhatPropertyTypesNid)) {
+						Map<String, Object> m = getDesignations(_sememe, startDate, endDate);
+						if (m != null) { // TODO: This is a hack for now
+							_xmlDesignation = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation();
+							_xmlDesignation.setAction((ActionType) m.get("Action"));
+							_xmlDesignation.setCode((String) m.get("Code"));
+							_xmlDesignation.setTypeName((String) m.get("TypeName"));
+							_xmlDesignation.setValueNew((String) m.get("ValueNew"));
+							_xmlDesignation.setVUID((Long) m.get("VUID"));
+							_xmlDesignation.setActive((Boolean) m.get("Active"));
+							_xmlDesignations.getDesignation().add(_xmlDesignation);
+							
 							// TODO: Properties
+							// TODO: SubsetMemberships
+						}
+						
+						// TODO: Properties
+						if (_sememe.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_sememe.getAssemblageSequence(), vhatPropertyTypesNid)) {
 							Map<String, Object> prop = getProperties(_sememe, startDate, endDate);
 							
 							if (!prop.isEmpty()) {
@@ -401,87 +376,54 @@ public class VetsExporter {
 								_xmlProperty.setTypeName((String) prop.get("TypeName"));
 								_xmlProperty.setValueNew((String) prop.get("ValueNew")); // TODO: ??
 								_xmlProperty.setActive((Boolean) prop.get("Active"));
-								
 								_xmlProperties.getProperty().add(_xmlProperty);
 							}
-						} else if (Frills.isMapping(_sememe)) {
-							// TODO: SubsetMembership
-							@SuppressWarnings({ "unchecked", "rawtypes" })
-							Optional<LatestVersion<SememeVersion>> __sv = ((SememeChronology) _sememe).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
-							if (__sv.isPresent()) {
-								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership _xmlSubsetMembership = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership();
-								
-								int __sememeNid = __sv.get().value().getNid();
-								long __vuid = Frills.getVuId(__sememeNid, null).orElse(0L);
-								if (__vuid == 0)
-								{
-									log.warn("Missing VUID for " + __sememeNid);
-								}
-								
-								// TODO: this same date logic here?
-								//@SuppressWarnings({ "unchecked" })
-								_xmlSubsetMembership.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
-								_xmlSubsetMembership.setVUID(__vuid);
-								_xmlSubsetMembership.setActive(__sv.get().value().getChronology().isLatestVersionActive(StampCoordinates.getDevelopmentLatest()));
-								
-								_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
-								
-								//System.out.println("Subset! => " + __vuid);
-							}
-							
-							if (_xmlSubsetMemberships.getSubsetMembership().size() > 0) {
-								_xmlDesignation.setSubsetMemberships(_xmlSubsetMemberships);
-							}
-							
-							_xmlDesignations.getDesignation().add(_xmlDesignation);
 						}
-						
-						// TODO: MapSets
-						// 1. Determine if sememe is a MapSet 
-						// 2. Process/add to MapSet collection/map
-						// 3. Create XML elements and add to XML output later
-						/*if (Frills.definesMapping(_concept.getConceptSequence())) {
-							MapSets.MapSet _xmlMapSet = new MapSets.MapSet();
-							
-							StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
-							@SuppressWarnings({"unchecked", "rawtypes"})
-							Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, devLatestStampCoordinates);
-							// TODO
-							if (__cv.isPresent()) {
-								ConceptChronology<? extends ConceptVersion<?>> __tmpConcept = __cv.get().value().getChronology();
-								_xmlMapSet.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __tmpConcept, startDate, endDate));
-								_xmlMapSet.setActive(__tmpConcept.isLatestVersionActive(devLatestStampCoordinates));
-								_xmlMapSet.setCode(getCodeFromNid(__tmpConcept.getNid()));
-								//_xmlMapSet.setDesignations(value);
-								//_xmlMapSet.setMapEntries(value);
-								_xmlMapSet.setName("Name");
-								//_xmlMapSet.setProperties(value);
-								
-								// Relationships
-								MapSets.MapSet.Relationships _xmlRelationships = new MapSets.MapSet.Relationships();
-								List<Map<String, Object>> rels = getRelationships(__tmpConcept, startDate, endDate);
-								for (Map<String, Object> rel : rels) {
-									MapSets.MapSet.Relationships.Relationship _xmlRelationship = new MapSets.MapSet.Relationships.Relationship();
-									_xmlRelationship.setAction((ActionType) rel.get("Action"));
-									_xmlRelationship.setTypeName((String) rel.get("TypeName"));
-									_xmlRelationship.setNewTargetCode((String) rel.get("NewTargetCode"));
-									_xmlRelationship.setActive((Boolean) rel.get("Active"));
-									_xmlRelationships.getRelationship().add(_xmlRelationship);
-								}
-								_xmlMapSet.setRelationships(_xmlRelationships);
-								
-								_xmlMapSet.setSourceCodeSystem("SourceCodeSystem");
-								_xmlMapSet.setSourceVersionName("SourceVersionName");
-								_xmlMapSet.setTargetCodeSystem("TargetCodeSystem");
-								_xmlMapSet.setTargetVersionName("TargetVersionName");
-								//_xmlMapSet.setVUID(value);
-								
-								_xmlMapSetCollection.add(_xmlMapSet);
-							}
-						}*/
-						
 					});
 					
+					// TODO: MapSets
+					// 1. Determine if sememe is a MapSet 
+					// 2. Process/add to MapSet collection/map
+					// 3. Create XML elements and add to XML output later
+					/*if (Frills.definesMapping(_concept.getConceptSequence())) {
+						MapSets.MapSet _xmlMapSet = new MapSets.MapSet();
+						
+						StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
+						@SuppressWarnings({"unchecked", "rawtypes"})
+						Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, devLatestStampCoordinates);
+						// TODO
+						if (__cv.isPresent()) {
+							ConceptChronology<? extends ConceptVersion<?>> __tmpConcept = __cv.get().value().getChronology();
+							_xmlMapSet.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __tmpConcept, startDate, endDate));
+							_xmlMapSet.setActive(__tmpConcept.isLatestVersionActive(devLatestStampCoordinates));
+							_xmlMapSet.setCode(getCodeFromNid(__tmpConcept.getNid()));
+							//_xmlMapSet.setDesignations(value);
+							//_xmlMapSet.setMapEntries(value);
+							_xmlMapSet.setName("Name");
+							//_xmlMapSet.setProperties(value);
+							
+							// Relationships
+							MapSets.MapSet.Relationships _xmlRelationships = new MapSets.MapSet.Relationships();
+							List<Map<String, Object>> rels = getRelationships(__tmpConcept, startDate, endDate);
+							for (Map<String, Object> rel : rels) {
+								MapSets.MapSet.Relationships.Relationship _xmlRelationship = new MapSets.MapSet.Relationships.Relationship();
+								_xmlRelationship.setAction((ActionType) rel.get("Action"));
+								_xmlRelationship.setTypeName((String) rel.get("TypeName"));
+								_xmlRelationship.setNewTargetCode((String) rel.get("NewTargetCode"));
+								_xmlRelationship.setActive((Boolean) rel.get("Active"));
+								_xmlRelationships.getRelationship().add(_xmlRelationship);
+							}
+							_xmlMapSet.setRelationships(_xmlRelationships);
+							
+							_xmlMapSet.setSourceCodeSystem("SourceCodeSystem");
+							_xmlMapSet.setSourceVersionName("SourceVersionName");
+							_xmlMapSet.setTargetCodeSystem("TargetCodeSystem");
+							_xmlMapSet.setTargetVersionName("TargetVersionName");
+							//_xmlMapSet.setVUID(value);
+							
+							_xmlMapSetCollection.add(_xmlMapSet);
+						}
+					}*/
 					
 					// Relationships
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
@@ -554,32 +496,108 @@ public class VetsExporter {
 		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
 		
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+		//Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, devLatestStampCoordinates);
+		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, devLatestStampCoordinates);
+		
 		if (sememeVersion.isPresent()) {
+			//System.out.println(sememeVersion.get().value().toUserString());
 			// TODO: this same date logic here?
 			@SuppressWarnings({ "unchecked" })
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
 			tmpMap.put("Action", action);
 			
 			String typeName;
-			switch (sememe.getSememeType()) {
-			case DESCRIPTION:
-				typeName = ""; // TODO: ??
-				break;
-			case DYNAMIC:
-				DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
-				typeName = dsud.getDynamicSememeUsageDescription();
-				break;
-			default:
-				typeName = ""; // TODO: ??
-				break;
-			}
-			
+			String valueNew = "";
+
+			DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
+			typeName = dsud.getDynamicSememeUsageDescription();
+		     @SuppressWarnings("rawtypes")
+            DynamicSememe ds = sememeVersion.get().value();
+            DynamicSememeData[] dsd = ds.getData();
+            if (dsd.length > 0) {
+            	valueNew = dsd[0].getDataObject().toString();
+            }
+
 			tmpMap.put("TypeName", typeName);
 			// TODO: Propery CodedConcept <Name> value? 
-			tmpMap.put("ValueNew", "ToDo"); // TODO: ??
+			tmpMap.put("ValueNew", valueNew); // TODO: ??
 			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(devLatestStampCoordinates);
 			tmpMap.put("Active", active);
+		}
+		
+		return tmpMap;
+	}
+	
+	/**
+	 * 
+	 * @param sememe
+	 * @param startDate
+	 * @param endDate
+	 * @return Map of Objects representing the Designation elements
+	 */
+	private Map<String, Object> getDesignations(SememeChronology<?> sememe, long startDate, long endDate) {
+		
+		Map<String, Object> tmpMap = new HashMap<>();
+		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
+		
+		ActionType action;
+		String code;
+		long vuid;
+		String valueNew = "";
+		String typeName = "";
+		boolean active;
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, devLatestStampCoordinates);
+		if (sememeVersion.isPresent()) {
+			//System.out.print("Action = " + determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
+			if (sememeVersion.get().value().getChronology().getSememeType() == SememeType.DESCRIPTION) {
+				SememeChronology<?> sc = sememeVersion.get().value().getChronology();
+                @SuppressWarnings("rawtypes")
+                Optional<LatestVersion<? extends DescriptionSememe>> sv
+                        = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, devLatestStampCoordinates);
+                if (sv.isPresent()) {
+                    @SuppressWarnings("rawtypes")
+                    String ds = sv.get().value().getText();
+                    System.out.print(", ValueNew = " + ds);
+                    valueNew = ds;
+                }
+            }
+			
+			// TODO: This is horrendous and potentially very flakey
+			for ( SememeChronology<?> sc : ((SememeChronology<?>) sememeVersion.get().value().getChronology()).getSememeList()) {
+				if (sc.getSememeType() == SememeType.DYNAMIC) {
+	                @SuppressWarnings("rawtypes")
+	                Optional<LatestVersion<? extends DynamicSememe>> sv = ((SememeChronology) sc).getLatestVersion(DynamicSememe.class, devLatestStampCoordinates);
+	                if (sv.isPresent()) {
+	                    @SuppressWarnings("rawtypes")
+	                    DynamicSememe ds = sv.get().value();
+	                    DynamicSememeData[] dsd = ds.getData();
+	                    if (dsd.length > 0 && dsd[0].getDynamicSememeDataType().getDisplayName().equals("UUID")) {
+	                    	typeName = designationTypes.get(dsd[0].getDataObject());
+	                    	break;
+	                    }
+	                }					        		
+				}
+				
+			}
+			
+			//System.out.print(", VUID = " + Frills.getVuId(__sv.get().value().getNid(), null).orElse(0L));
+			action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			tmpMap.put("Action", action);
+			//System.out.print(", Code = " + getCodeFromNid(__sv.get().value().getNid()));
+			code = getCodeFromNid(sememeVersion.get().value().getNid());
+			tmpMap.put("Code", code);
+			vuid = Frills.getVuId(sememeVersion.get().value().getNid(), null).orElse(0L);
+			tmpMap.put("VUID", vuid);
+			tmpMap.put("TypeName", typeName);
+			tmpMap.put("ValueNew", valueNew);
+			active = sememeVersion.get().value().getChronology().isLatestVersionActive(devLatestStampCoordinates);
+			tmpMap.put("Active", active);
+			
+			// TODO: This isn't right
+			if (vuid == 0L) {
+				return null;
+			}
 		}
 		
 		return tmpMap;
