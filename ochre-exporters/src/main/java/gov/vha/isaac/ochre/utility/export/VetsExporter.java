@@ -73,6 +73,8 @@ public class VetsExporter {
 	
 	private List<Terminology.CodeSystem.Version.MapSets.MapSet>_xmlMapSetCollection = new ArrayList<>();
 	
+	private StampCoordinate STAMP_COORDINATES = StampCoordinates.getDevelopmentLatest();
+	
 	
 	public VetsExporter()
 	{
@@ -199,7 +201,7 @@ public class VetsExporter {
 					if (sememe.getSememeType() == SememeType.STRING) {
 						@SuppressWarnings({ "rawtypes", "unchecked" })
 						Optional<LatestVersion<? extends StringSememe>> sememeVersion
-								= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+								= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 						
 						if (sememeVersion.isPresent()) {
 							List<String> _subsetList = new ArrayList<>();
@@ -207,7 +209,7 @@ public class VetsExporter {
 							String subsetName = concept.getConceptDescriptionText();
 							_subsetList.add(sememeVersion.get().value().getString()); // VUID
 							// I'm assuming this will always be 'true' or 'false' - never empty or another identifier
-							String active = Boolean.toString(sememe.isLatestVersionActive(StampCoordinates.getDevelopmentLatestActiveOnly()));
+							String active = Boolean.toString(sememe.isLatestVersionActive(STAMP_COORDINATES));
 							_subsetList.add(active); // Active
 							// Just incase it's needed, might as well have it
 							_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
@@ -332,7 +334,7 @@ public class VetsExporter {
 					}
 					
 					String _code = getCodeFromNid(_conceptNid);
-					boolean _active = _concept.isLatestVersionActive(StampCoordinates.getDevelopmentLatest());
+					boolean _active = _concept.isLatestVersionActive(STAMP_COORDINATES);
 					
 					//System.out.println("*** " + _name + " -- " + _vuid + " -- " + _code + " -- " + _active);
 					
@@ -388,9 +390,8 @@ public class VetsExporter {
 					/*if (Frills.definesMapping(_concept.getConceptSequence())) {
 						MapSets.MapSet _xmlMapSet = new MapSets.MapSet();
 						
-						StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
 						@SuppressWarnings({"unchecked", "rawtypes"})
-						Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, devLatestStampCoordinates);
+						Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, STAMP_COORDINATES);
 						// TODO
 						if (__cv.isPresent()) {
 							ConceptChronology<? extends ConceptVersion<?>> __tmpConcept = __cv.get().value().getChronology();
@@ -493,11 +494,10 @@ public class VetsExporter {
 		}
 		
 		Map<String, Object> tmpMap = new HashMap<>();
-		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
 		
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		//Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, devLatestStampCoordinates);
-		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, devLatestStampCoordinates);
+		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 		
 		if (sememeVersion.isPresent()) {
 			//System.out.println(sememeVersion.get().value().toUserString());
@@ -521,7 +521,7 @@ public class VetsExporter {
 			tmpMap.put("TypeName", typeName);
 			// TODO: Propery CodedConcept <Name> value? 
 			tmpMap.put("ValueNew", valueNew); // TODO: ??
-			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(devLatestStampCoordinates);
+			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 		}
 		
@@ -538,7 +538,6 @@ public class VetsExporter {
 	private Map<String, Object> getDesignations(SememeChronology<?> sememe, long startDate, long endDate) {
 		
 		Map<String, Object> tmpMap = new HashMap<>();
-		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
 		
 		ActionType action;
 		String code;
@@ -547,14 +546,14 @@ public class VetsExporter {
 		String typeName = "";
 		boolean active;
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, devLatestStampCoordinates);
+		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
 		if (sememeVersion.isPresent()) {
 			//System.out.print("Action = " + determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
 			if (sememeVersion.get().value().getChronology().getSememeType() == SememeType.DESCRIPTION) {
 				SememeChronology<?> sc = sememeVersion.get().value().getChronology();
                 @SuppressWarnings("rawtypes")
                 Optional<LatestVersion<? extends DescriptionSememe>> sv
-                        = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, devLatestStampCoordinates);
+                        = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
                 if (sv.isPresent()) {
                     @SuppressWarnings("rawtypes")
                     String ds = sv.get().value().getText();
@@ -567,7 +566,7 @@ public class VetsExporter {
 			for ( SememeChronology<?> sc : ((SememeChronology<?>) sememeVersion.get().value().getChronology()).getSememeList()) {
 				if (sc.getSememeType() == SememeType.DYNAMIC) {
 	                @SuppressWarnings("rawtypes")
-	                Optional<LatestVersion<? extends DynamicSememe>> sv = ((SememeChronology) sc).getLatestVersion(DynamicSememe.class, devLatestStampCoordinates);
+	                Optional<LatestVersion<? extends DynamicSememe>> sv = ((SememeChronology) sc).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 	                if (sv.isPresent()) {
 	                    @SuppressWarnings("rawtypes")
 	                    DynamicSememe ds = sv.get().value();
@@ -591,7 +590,7 @@ public class VetsExporter {
 			tmpMap.put("VUID", vuid);
 			tmpMap.put("TypeName", typeName);
 			tmpMap.put("ValueNew", valueNew);
-			active = sememeVersion.get().value().getChronology().isLatestVersionActive(devLatestStampCoordinates);
+			active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 			
 			// TODO: This isn't right
@@ -615,8 +614,7 @@ public class VetsExporter {
 		List<Map<String, Object>> tmpList = new ArrayList<>();
 		
 		Map<String, Object> tmpMap = new HashMap<>();
-		StampCoordinate devLatestStampCoordinates = StampCoordinates.getDevelopmentLatest();
-		List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(concept.getNid(), devLatestStampCoordinates);
+		List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(concept.getNid(), STAMP_COORDINATES);
 		
 		for (AssociationInstance ai : aiList) {
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) concept, startDate, endDate);
@@ -631,7 +629,7 @@ public class VetsExporter {
 			String oldTargetCode = "";
 			tmpMap.put("OldTargetCode", oldTargetCode);
 			// TODO: Is this current or target concept active?
-			boolean active = targetConcept.isLatestVersionActive(devLatestStampCoordinates);
+			boolean active = targetConcept.isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 			
 			tmpList.add(tmpMap);
@@ -716,7 +714,7 @@ public class VetsExporter {
 	private boolean wasModifiedInDateRange(ConceptChronology concept, long startDate, long endDate)
 	{
 		@SuppressWarnings("unchecked")
-		Optional<LatestVersion<ConceptVersion>> cv = concept.getLatestVersion(ConceptVersion.class, StampCoordinates.getDevelopmentLatest());
+		Optional<LatestVersion<ConceptVersion>> cv = concept.getLatestVersion(ConceptVersion.class, STAMP_COORDINATES);
 		if (cv.isPresent())
 		{
 			if (cv.get().value().getTime() >= startDate && cv.get().value().getTime() <= endDate)
@@ -741,7 +739,7 @@ public class VetsExporter {
 		return Get.sememeService().getSememesForComponent(nid).anyMatch(sc -> 
 		{
 			@SuppressWarnings({ "unchecked", "rawtypes" })
-			Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, StampCoordinates.getDevelopmentLatest());
+			Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
 			if (sv.isPresent())
 			{
 				if (sv.get().value().getTime() > startDate && sv.get().value().getTime() < endDate)
@@ -766,7 +764,7 @@ public class VetsExporter {
 		Optional<SememeChronology<? extends SememeVersion<?>>> sc = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, _codeAssemblageConceptSeq).findFirst();
 		if (sc.isPresent())
 		{
-			Optional<LatestVersion<StringSememe<?>>> sv = ((SememeChronology)sc.get()).getLatestVersion(StringSememe.class, StampCoordinates.getDevelopmentLatest());
+			Optional<LatestVersion<StringSememe<?>>> sv = ((SememeChronology)sc.get()).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 			if (sv.isPresent())
 			{
 				return sv.get().value().getString();
