@@ -187,8 +187,7 @@ public class VetsExporter {
 				Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 					if (sememe.getSememeType() == SememeType.STRING) {
 						@SuppressWarnings({ "rawtypes", "unchecked" })
-						Optional<LatestVersion<? extends StringSememe>> sememeVersion
-								= ((SememeChronology) sememe).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
+						Optional<LatestVersion<? extends StringSememe<?>>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 						
 						if (sememeVersion.isPresent()) {
 							List<String> _subsetList = new ArrayList<>();
@@ -262,7 +261,7 @@ public class VetsExporter {
 		
 		// VHAT Module
 		// CodeSystems : Standard Code Systems  
-		UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
+		//UUID vhatStandardCodeSystemsUUID = UUID.fromString("fa27aa69-ba88-556d-88ba-77b9be26db60");
 		//int vhatStandardCodeSystemsNid = Get.identifierService().getNidForUuids(vhatStandardCodeSystemsUUID); // -2147387560;
 		int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID); //-2147481872
 		
@@ -334,7 +333,7 @@ public class VetsExporter {
 					
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
-					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
+					//Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
 					
 					// TODO: This isn't quite right, either
 					Get.sememeService().getSememesForComponent(_conceptNid).forEach((_sememe) -> {
@@ -490,20 +489,19 @@ public class VetsExporter {
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
 			tmpMap.put("Action", action);
 			
-			String typeName;
-			String valueNew = "";
-
 			DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
-			typeName = dsud.getDynamicSememeUsageDescription();
-		     @SuppressWarnings("rawtypes")
+			String typeName = dsud.getDynamicSememeUsageDescription();
+			tmpMap.put("TypeName", typeName);
+			
+			@SuppressWarnings("rawtypes")
             DynamicSememe ds = sememeVersion.get().value();
             DynamicSememeData[] dsd = ds.getData();
+            String valueNew = "";
             if (dsd.length > 0) {
             	valueNew = dsd[0].getDataObject().toString();
             }
-
-			tmpMap.put("TypeName", typeName);
 			tmpMap.put("ValueNew", valueNew);
+
 			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 		}
@@ -522,22 +520,17 @@ public class VetsExporter {
 		
 		Map<String, Object> tmpMap = new HashMap<>();
 		
-		ActionType action;
-		String code;
-		long vuid;
-		String valueNew = "";
-		String typeName = "";
-		boolean active;
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
 		if (sememeVersion.isPresent()) {
+			String valueNew = "";
+			String typeName = "";
+			
 			if (sememeVersion.get().value().getChronology().getSememeType() == SememeType.DESCRIPTION) {
 				SememeChronology<?> sc = sememeVersion.get().value().getChronology();
-                @SuppressWarnings("rawtypes")
-                Optional<LatestVersion<? extends DescriptionSememe>> sv
-                        = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
+                @SuppressWarnings({ "rawtypes", "unchecked" })
+                Optional<LatestVersion<? extends DescriptionSememe>> sv = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
                 if (sv.isPresent()) {
-                    @SuppressWarnings("rawtypes")
                     String ds = sv.get().value().getText();
                     System.out.print(", ValueNew = " + ds);
                     valueNew = ds;
@@ -547,7 +540,7 @@ public class VetsExporter {
 			// TODO: This is horrendous and potentially very flakey
 			for ( SememeChronology<?> sc : ((SememeChronology<?>) sememeVersion.get().value().getChronology()).getSememeList()) {
 				if (sc.getSememeType() == SememeType.DYNAMIC) {
-	                @SuppressWarnings("rawtypes")
+	                @SuppressWarnings({ "rawtypes", "unchecked" })
 	                Optional<LatestVersion<? extends DynamicSememe>> sv = ((SememeChronology) sc).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 	                if (sv.isPresent()) {
 	                    @SuppressWarnings("rawtypes")
@@ -559,18 +552,22 @@ public class VetsExporter {
 	                    }
 	                }					        		
 				}
-				
 			}
 			
-			action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			@SuppressWarnings("unchecked")
+			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
 			tmpMap.put("Action", action);
-			code = getCodeFromNid(sememeVersion.get().value().getNid());
+			
+			String code = getCodeFromNid(sememeVersion.get().value().getNid());
 			tmpMap.put("Code", code);
-			vuid = Frills.getVuId(sememeVersion.get().value().getNid(), null).orElse(0L);
+			
+			long vuid = Frills.getVuId(sememeVersion.get().value().getNid(), null).orElse(0L);
 			tmpMap.put("VUID", vuid);
+			
 			tmpMap.put("TypeName", typeName);
 			tmpMap.put("ValueNew", valueNew);
-			active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
+			
+			boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 			
 			// TODO: This isn't the right way to handle this, I'm sure
@@ -599,15 +596,19 @@ public class VetsExporter {
 		for (AssociationInstance ai : aiList) {
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) concept, startDate, endDate);
 			tmpMap.put("Action", action);
+			
 			String typeName = ai.getAssociationType().getAssociationName();
 			tmpMap.put("TypeName", typeName);
+			
 			String targetUUID = ai.getTargetComponentData().get().getDataObject().toString();
 			ConceptChronology<?> targetConcept = Get.conceptService().getConcept(UUID.fromString(targetUUID));
 			String newTargetCode = getCodeFromNid(targetConcept.getNid());
 			tmpMap.put("NewTargetCode", newTargetCode);
+			
 			// This doesn't appear to be used in the input TerminologyData.xml file
 			String oldTargetCode = "";
 			tmpMap.put("OldTargetCode", oldTargetCode);
+			
 			// TODO: Is this current or target concept active?
 			boolean active = targetConcept.isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
@@ -744,6 +745,7 @@ public class VetsExporter {
 		Optional<SememeChronology<? extends SememeVersion<?>>> sc = Get.sememeService().getSememesForComponentFromAssemblage(conceptNid, _codeAssemblageConceptSeq).findFirst();
 		if (sc.isPresent())
 		{
+			@SuppressWarnings({ "unchecked", "rawtypes" })
 			Optional<LatestVersion<StringSememe<?>>> sv = ((SememeChronology)sc.get()).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 			if (sv.isPresent())
 			{
