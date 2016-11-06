@@ -21,13 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.med.term.vhat.xml.model.ActionType;
 import gov.va.med.term.vhat.xml.model.KindType;
-import gov.va.med.term.vhat.xml.model.PropertyType;
 import gov.va.med.term.vhat.xml.model.Terminology;
-import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts;
-import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.MapSets;
-import gov.va.med.term.vhat.xml.model.Terminology.Subsets;
-import gov.va.med.term.vhat.xml.model.Terminology.Types;
-import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.TaxonomyService;
@@ -43,19 +37,13 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
-import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
 import gov.vha.isaac.ochre.impl.utility.Frills;
-import gov.vha.isaac.ochre.impl.utility.SimpleDisplayConcept;
-import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
-import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeDataImpl;
 
 
 public class VetsExporter {
@@ -90,7 +78,7 @@ public class VetsExporter {
 		
 		for (Map.Entry<UUID, String> entry : haystack.entrySet()) {
 			String hstk = entry.getValue().toLowerCase();
-			if (hstk.equals(nddl)) { //  || hstk.contains(nddl)
+			if (hstk.equals(nddl)) {
 				return entry.getKey();
 			}
 		}
@@ -196,7 +184,6 @@ public class VetsExporter {
 				|| 	concept.getPrimordialUuid() == UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee")) {
 				// Skip
 			} else {
-				// VUID UUID = f31f3d89-5a6f-5e1f-81d3-5b68344d96f9
 				Get.sememeService().getSememesForComponent(concept.getNid()).forEach((sememe) -> {
 					if (sememe.getSememeType() == SememeType.STRING) {
 						@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -255,8 +242,8 @@ public class VetsExporter {
 		_xmlCodeSystem.setPreferredDesignationType(csPrefDesigType);
 		
 		_xmlVersion.setAppend(Boolean.TRUE);
-		_xmlVersion.setName("Authoring Version"); // ? TODO
-		_xmlVersion.setDescription("This is the version that is given to authoring changes before they are finalized."); // ? TODO
+		_xmlVersion.setName("Authoring Version"); // ? TODO:
+		_xmlVersion.setDescription("This is the version that is given to authoring changes before they are finalized."); // ? TODO:
 		
 		try {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -265,14 +252,13 @@ public class VetsExporter {
 			XMLGregorianCalendar _xmlRelDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate);
 			_xmlVersion.setEffectiveDate(_xmlEffDate);
 			_xmlVersion.setReleaseDate(_xmlRelDate);
-			//DatatypeFactory.newInstance().newXMLGregorianCalendarDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH), DatatypeConstants.FIELD_UNDEFINED);
 		} catch (DatatypeConfigurationException dtce) {
 			// TODO: Just leave empty elements if there is a parsing error?
 		} catch (ParseException pe) {
 			// TODO:
 		}
 		
-		_xmlVersion.setSource("");
+		_xmlVersion.setSource(""); // TODO:
 		
 		// VHAT Module
 		// CodeSystems : Standard Code Systems  
@@ -314,7 +300,7 @@ public class VetsExporter {
 					//the component that was new (action = add) or retired (action = remove) or just edited (action = update) we need to set it appropriately
 					
 					//TODO this needs to change - name needs to come from a specific description type, not an arbitrary one, which is what the convenience method does.
-					// Not sure if thisis appropriate or not
+					// Not sure if this is appropriate or not
 					String _name = Get.conceptSpecification(_conceptNid).getConceptDescriptionText();
 					// Need to skip over/handle the blank one in the GUI/DB "No desc for: -2147304122"?
 					if (!(_name.length() > 0)) {
@@ -376,7 +362,7 @@ public class VetsExporter {
 								Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property _xmlProperty = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property();
 								_xmlProperty.setAction((ActionType) prop.get("Action"));
 								_xmlProperty.setTypeName((String) prop.get("TypeName"));
-								_xmlProperty.setValueNew((String) prop.get("ValueNew")); // TODO: ??
+								_xmlProperty.setValueNew((String) prop.get("ValueNew"));
 								_xmlProperty.setActive((Boolean) prop.get("Active"));
 								_xmlProperties.getProperty().add(_xmlProperty);
 							}
@@ -462,7 +448,7 @@ public class VetsExporter {
 		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
 		
 		// MapSets
-		MapSets _xmlMapSets = new MapSets();
+		Terminology.CodeSystem.Version.MapSets _xmlMapSets = new Terminology.CodeSystem.Version.MapSets();
 		_xmlMapSets.getMapSet().addAll(_xmlMapSetCollection);
 		
 		_xmlCodeSystem.setVersion(_xmlVersion);
@@ -496,11 +482,9 @@ public class VetsExporter {
 		Map<String, Object> tmpMap = new HashMap<>();
 		
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		//Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, devLatestStampCoordinates);
 		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 		
 		if (sememeVersion.isPresent()) {
-			//System.out.println(sememeVersion.get().value().toUserString());
 			// TODO: this same date logic here?
 			@SuppressWarnings({ "unchecked" })
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
@@ -519,8 +503,7 @@ public class VetsExporter {
             }
 
 			tmpMap.put("TypeName", typeName);
-			// TODO: Propery CodedConcept <Name> value? 
-			tmpMap.put("ValueNew", valueNew); // TODO: ??
+			tmpMap.put("ValueNew", valueNew);
 			Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 		}
@@ -548,7 +531,6 @@ public class VetsExporter {
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Optional<LatestVersion<SememeVersion>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
 		if (sememeVersion.isPresent()) {
-			//System.out.print("Action = " + determineAction((ObjectChronology<? extends StampedVersion>) __sv.get().value().getChronology(), startDate, endDate));
 			if (sememeVersion.get().value().getChronology().getSememeType() == SememeType.DESCRIPTION) {
 				SememeChronology<?> sc = sememeVersion.get().value().getChronology();
                 @SuppressWarnings("rawtypes")
@@ -580,10 +562,8 @@ public class VetsExporter {
 				
 			}
 			
-			//System.out.print(", VUID = " + Frills.getVuId(__sv.get().value().getNid(), null).orElse(0L));
 			action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
 			tmpMap.put("Action", action);
-			//System.out.print(", Code = " + getCodeFromNid(__sv.get().value().getNid()));
 			code = getCodeFromNid(sememeVersion.get().value().getNid());
 			tmpMap.put("Code", code);
 			vuid = Frills.getVuId(sememeVersion.get().value().getNid(), null).orElse(0L);
@@ -593,7 +573,7 @@ public class VetsExporter {
 			active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 			
-			// TODO: This isn't right
+			// TODO: This isn't the right way to handle this, I'm sure
 			if (vuid == 0L) {
 				return null;
 			}
