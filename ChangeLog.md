@@ -5,7 +5,7 @@ where provided, and the git commit history.
 
 * 2016/11/?? - 3.18: 
     * Enhancements to the VETs XML Export
-    * 
+    * Fix defect 392895 by restricting XML upload to XML files only.
 
 * 2016/11/02 - 3.17: 
     * Add a scheduled thread pool executor
