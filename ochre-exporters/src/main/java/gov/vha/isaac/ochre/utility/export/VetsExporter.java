@@ -37,11 +37,13 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
+import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
 import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 
@@ -334,8 +336,8 @@ public class VetsExporter {
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
 					//Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
-					Terminology.CodeSystem.Version.MapSets.MapSet.Designations _xmlMapSetDesignations = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations();
-					Terminology.CodeSystem.Version.MapSets.MapSet.Properties _xmlMapSetProperties = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties();
+					//Terminology.CodeSystem.Version.MapSets.MapSet.Designations _xmlMapSetDesignations = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations();
+					//Terminology.CodeSystem.Version.MapSets.MapSet.Properties _xmlMapSetProperties = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties();
 					
 					// TODO: This isn't quite right, either
 					Get.sememeService().getSememesForComponent(_conceptNid).forEach((_sememe) -> {
@@ -370,82 +372,6 @@ public class VetsExporter {
 						}
 					});
 					
-					// TODO: MapSets
-					// 1. Determine if sememe is a MapSet 
-					// 2. Process/add to MapSet collection/map
-					// 3. Create XML elements and add to XML output later
-					if (Frills.definesMapping(_concept.getConceptSequence())) {
-						Terminology.CodeSystem.Version.MapSets.MapSet _xmlMapSet = new Terminology.CodeSystem.Version.MapSets.MapSet();
-						
-						@SuppressWarnings({"unchecked", "rawtypes"})
-						Optional<LatestVersion<ConceptVersion<?>>> __cv = ((ConceptChronology) _concept).getLatestVersion(ConceptVersion.class, STAMP_COORDINATES);
-						// TODO
-						if (__cv.isPresent()) {
-							ConceptChronology<? extends ConceptVersion<?>> __tmpConcept = __cv.get().value().getChronology();
-							_xmlMapSet.setAction(determineAction((ObjectChronology<? extends StampedVersion>) __tmpConcept, startDate, endDate));
-							_xmlMapSet.setActive(__tmpConcept.isLatestVersionActive(STAMP_COORDINATES));
-							_xmlMapSet.setCode(getCodeFromNid(__tmpConcept.getNid()));
-							
-							// TODO: This isn't quite right, either
-							Get.sememeService().getSememesForComponent(_conceptNid).forEach((_sememe) -> {
-								Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation _xmlMapSetDesignation = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation();
-								Map<String, Object> m = getDesignations(_sememe, startDate, endDate);
-								if (m != null) { // TODO: This is a hack for now
-									_xmlMapSetDesignation = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation();
-									_xmlMapSetDesignation.setAction((ActionType) m.get("Action"));
-									_xmlMapSetDesignation.setCode((String) m.get("Code"));
-									_xmlMapSetDesignation.setTypeName((String) m.get("TypeName"));
-									_xmlMapSetDesignation.setValueNew((String) m.get("ValueNew"));
-									_xmlMapSetDesignation.setVUID((Long) m.get("VUID"));
-									_xmlMapSetDesignation.setActive((Boolean) m.get("Active"));
-									_xmlMapSetDesignations.getDesignation().add(_xmlMapSetDesignation);
-								}
-								
-								// TODO: Properties
-								if (_sememe.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_sememe.getAssemblageSequence(), vhatPropertyTypesNid)) {
-									Map<String, Object> prop = getProperties(_sememe, startDate, endDate);
-									
-									if (!prop.isEmpty()) {
-										Terminology.CodeSystem.Version.MapSets.MapSet.Properties.Property _xmlMapSetProperty = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties.Property();
-										_xmlMapSetProperty.setAction((ActionType) prop.get("Action"));
-										_xmlMapSetProperty.setTypeName((String) prop.get("TypeName"));
-										_xmlMapSetProperty.setValueNew((String) prop.get("ValueNew"));
-										_xmlMapSetProperty.setActive((Boolean) prop.get("Active"));
-										_xmlMapSetProperties.getProperty().add(_xmlMapSetProperty);
-									}
-								}
-							});
-							
-							_xmlMapSet.setDesignations(_xmlMapSetDesignations);
-							//_xmlMapSet.setMapEntries(value);
-							_xmlMapSet.setName("Name");
-							_xmlMapSet.setProperties(_xmlMapSetProperties);
-							
-							// Relationships
-							Terminology.CodeSystem.Version.MapSets.MapSet.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.MapSets.MapSet.Relationships();
-							List<Map<String, Object>> rels = getRelationships(__tmpConcept, startDate, endDate);
-							for (Map<String, Object> rel : rels) {
-								Terminology.CodeSystem.Version.MapSets.MapSet.Relationships.Relationship _xmlRelationship = new Terminology.CodeSystem.Version.MapSets.MapSet.Relationships.Relationship();
-								_xmlRelationship.setAction((ActionType) rel.get("Action"));
-								_xmlRelationship.setTypeName((String) rel.get("TypeName"));
-								_xmlRelationship.setNewTargetCode((String) rel.get("NewTargetCode"));
-								_xmlRelationship.setActive((Boolean) rel.get("Active"));
-								_xmlRelationships.getRelationship().add(_xmlRelationship);
-							}
-							_xmlMapSet.setRelationships(_xmlRelationships);
-							
-							_xmlMapSet.setSourceCodeSystem("SourceCodeSystem"); // TODO: ?
-							_xmlMapSet.setSourceVersionName("SourceVersionName"); // TODO: ?
-							_xmlMapSet.setTargetCodeSystem("TargetCodeSystem"); // TODO: ?
-							_xmlMapSet.setTargetVersionName("TargetVersionName"); // TODO: ?
-							
-							long vuid = Frills.getVuId(_conceptNid, STAMP_COORDINATES).orElse(0L);
-							_xmlMapSet.setVUID(vuid);
-							
-							_xmlMapSetCollection.add(_xmlMapSet);
-						}
-					}
-					
 					// Relationships
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships _xmlRelationships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships();
 					List<Map<String, Object>> rels = getRelationships(_concept, startDate, endDate);
@@ -473,18 +399,126 @@ public class VetsExporter {
 
 					// Add all CodedConcept elements
 					_xmlCodedConcepts.getCodedConcept().add(_xmlCodedConcept);
+				
+					// TODO: MapSets
 				}
 			}
-			
 		});
 		
+		// MapSets
+		// TODO: This should probably be moved up into the other stream processing
+		// TODO: Need to add this XML set to the full XML tree
+		Get.conceptService().getConceptChronologyStream().forEach((_concept) -> {
+			UUID mappingUUID = UUID.fromString("3a0d3b6f-da93-5e07-8783-678b4deb382b"); //MapSet->Properties
+			int mappingNid = Get.identifierService().getNidForUuids(mappingUUID);
+			int mappingSeq = Get.conceptService().getConcept(mappingNid).getConceptSequence();
+			
+			if (Frills.definesMapping(_concept.getConceptSequence())) {
+				//System.out.println(_concept.getConceptDescriptionText());
+				
+				Terminology.CodeSystem.Version.MapSets.MapSet _xmlMapSet = new Terminology.CodeSystem.Version.MapSets.MapSet();
+				_xmlMapSet.setAction(determineAction((ObjectChronology<? extends StampedVersion>) _concept, startDate, endDate));
+				_xmlMapSet.setActive(_concept.isLatestVersionActive(STAMP_COORDINATES));
+				_xmlMapSet.setCode(getCodeFromNid(_concept.getNid()));
+				_xmlMapSet.setName(_concept.getConceptDescriptionText()); // TODO: ??
+				long vuid = Frills.getVuId(_concept.getNid(), STAMP_COORDINATES).orElse(0L);
+				_xmlMapSet.setVUID(vuid);
+				
+				// Designations
+				Terminology.CodeSystem.Version.MapSets.MapSet.Designations _xmlMapSetDesignations = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations();
+				Get.sememeService().getSememesForComponent(_concept.getNid()).forEach((sememe) -> {
+					Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation _xmlMapSetDesignation = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation();
+					Map<String, Object> msDescMap = getDesignations(sememe, startDate, endDate);
+					if (msDescMap != null) { // TODO: This is a hack for now
+						_xmlMapSetDesignation = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations.Designation();
+						_xmlMapSetDesignation.setAction((ActionType) msDescMap.get("Action"));
+						_xmlMapSetDesignation.setCode((String) msDescMap.get("Code"));
+						_xmlMapSetDesignation.setTypeName((String) msDescMap.get("TypeName"));
+						_xmlMapSetDesignation.setValueNew((String) msDescMap.get("ValueNew"));
+						_xmlMapSetDesignation.setVUID((Long) msDescMap.get("VUID"));
+						_xmlMapSetDesignation.setActive((Boolean) msDescMap.get("Active"));
+						_xmlMapSetDesignations.getDesignation().add(_xmlMapSetDesignation);
+						//System.out.println("D - Action = " + msDescMap.get("Action") + ", Code = " + msDescMap.get("Code") + ", TypeName = " + msDescMap.get("TypeName") + ", ValueNew = " + msDescMap.get("ValueNew") + ", VUID = " + (Long) msDescMap.get("VUID") + ", Active = " + msDescMap.get("Active"));
+					}
+				});	
+				
+				int dsedNid = -2147483452; // SourceCodeSystem / SourceVersionName / TargetCodeSystem / TargetVersionName
+				int dsedSeq = Get.conceptService().getConcept(dsedNid).getConceptSequence();
+				Get.sememeService().getSememesForComponentFromAssemblage(_concept.getNid(), dsedSeq).forEach((sememe) -> {
+					Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
+					//System.out.println(sememeVersion.get().value());
+					DynamicSememeData dsd[] = sememeVersion.get().value().getData();
+                	if (dsd[0].getDataObject().equals(-2147483446)) {
+                		//System.out.println("SourceCodeSystem = " + dsd[1].getDataObject());
+                		_xmlMapSet.setSourceCodeSystem(dsd[1].getDataObject().toString());
+                	} else if (dsd[0].getDataObject().equals(-2147483445)) {
+                		//System.out.println("SourceVersionName = " + dsd[1].getDataObject());
+                		_xmlMapSet.setSourceVersionName(dsd[1].getDataObject().toString());
+                	} else if (dsd[0].getDataObject().equals(-2147483444)) {
+                		//System.out.println("TargetCodeSystem = " + dsd[1].getDataObject());
+                		_xmlMapSet.setTargetCodeSystem(dsd[1].getDataObject().toString());
+                	} else if (dsd[0].getDataObject().equals(-2147483443)) {
+                		//System.out.println("TargetVersionName = " + dsd[1].getDataObject());
+                		_xmlMapSet.setTargetVersionName(dsd[1].getDataObject().toString());
+                	}
+				});
+				
+				// Properties
+				Terminology.CodeSystem.Version.MapSets.MapSet.Properties _xmlMapSetProperties = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties();
+				_concept.getSememeListFromAssemblage(mappingSeq).forEach((s) -> {
+					//System.out.println("---> "+s.toUserString());
+					// TODO: MapSet Data
+					// TODO: Designations
+					// Properties - only 1 per MapSet?
+					Map<String, Object> prop = getProperties(s, startDate, endDate);
+					if (!prop.isEmpty()) {
+						Terminology.CodeSystem.Version.MapSets.MapSet.Properties.Property _xmlMapSetProperty = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties.Property();
+						_xmlMapSetProperty.setAction((ActionType) prop.get("Action"));
+						_xmlMapSetProperty.setTypeName((String) prop.get("TypeName"));
+						_xmlMapSetProperty.setValueNew((String) prop.get("ValueNew"));
+						_xmlMapSetProperty.setActive((Boolean) prop.get("Active"));
+						_xmlMapSetProperties.getProperty().add(_xmlMapSetProperty);
+						//System.out.println("P - Action = " + prop.get("Action") + ", TypeName = " + prop.get("TypeName") + ", ValueNew = " + prop.get("ValueNew") + ", Active = " + prop.get("Active"));
+					}
+					
+					
+				});
+				// TODO: Relationships
+				/* Disabled - there doesn't appear to be any MapSet->Relationships in the source TerminologyData.xml file, confirmed in VHAT importer
+				Terminology.CodeSystem.Version.MapSets.MapSet.Relationships _xmlMapSetRelationships = new Terminology.CodeSystem.Version.MapSets.MapSet.Relationships();
+				List<Map<String, Object>> rels = getRelationships(r, startDate, endDate);
+				for (Map<String, Object> rel : rels) {
+					Terminology.CodeSystem.Version.MapSets.MapSet.Relationships.Relationship _xmlMapSetRelationship = new Terminology.CodeSystem.Version.MapSets.MapSet.Relationships.Relationship();
+					_xmlMapSetRelationship.setAction((ActionType) rel.get("Action"));
+					_xmlMapSetRelationship.setTypeName((String) rel.get("TypeName"));
+					_xmlMapSetRelationship.setNewTargetCode((String) rel.get("NewTargetCode"));
+					_xmlMapSetRelationship.setActive((Boolean) rel.get("Active"));
+					_xmlMapSetRelationships.getRelationship().add(_xmlMapSetRelationship);
+					System.out.println("Action = " + rel.get("Action") + ", TypeName = " + rel.get("TypeName") + ", ValueNew = " + rel.get("NewTargetCode") + ", Active = " + rel.get("Active"));
+				}*/
+				// TODO: MapEntries
+				// 		TODO: MapEntry->Designations
+				// 		TODO: MapEntry->Properties
+				// 		TODO: MapEntry->Relationships
+				
+				_xmlMapSet.setDesignations(_xmlMapSetDesignations);
+				//_xmlMapSet.setMapEntries(value);
+				_xmlMapSet.setProperties(_xmlMapSetProperties);
+				//_xmlMapSet.setRelationships(_xmlMapSetRelationships);
+				
+				_xmlMapSetCollection.add(_xmlMapSet);
+			}
+		});
+		//--- /MapSets
+				
 		// Close out XML
 		_xmlVersion.setCodedConcepts(_xmlCodedConcepts);
 		
 		// MapSets
-		Terminology.CodeSystem.Version.MapSets _xmlMapSets = new Terminology.CodeSystem.Version.MapSets();
-		_xmlMapSets.getMapSet().addAll(_xmlMapSetCollection);
-		
+		//Terminology.CodeSystem.Version.MapSets _xmlMapSets = new Terminology.CodeSystem.Version.MapSets();
+		//_xmlMapSets.getMapSet().addAll(_xmlMapSetCollection);
+		//_xmlVersion.setMapSets(_xmlMapSets);
+	
 		_xmlCodeSystem.setVersion(_xmlVersion);
 		terminology.setCodeSystem(_xmlCodeSystem); 
 		
@@ -567,7 +601,6 @@ public class VetsExporter {
                 Optional<LatestVersion<? extends DescriptionSememe>> sv = ((SememeChronology) sc).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
                 if (sv.isPresent()) {
                     String ds = sv.get().value().getText();
-                    System.out.print(", ValueNew = " + ds);
                     valueNew = ds;
                 }
             }
