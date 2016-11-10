@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2016/11/10 - 3.??
+    * Enhancements to VETs XML Export
+
 * 2016/11/?? - 3.18: 
     * Enhancements to the VETs XML Export
     * Fix defect 392895 by restricting XML upload to XML files only.
