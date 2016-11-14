@@ -7,6 +7,7 @@ where provided, and the git commit history.
     * Enhancements to VETs XML Export
     * Added more convenience methods to Frills
     * Rename a couple of API methods to have sensible names that actually match their behavior
+    * Fix a bug with the concept builder that caused extra description builders to get lost (or the default one to get lost)
 
 * 2016/11/?? - 3.18: 
     * Enhancements to the VETs XML Export
