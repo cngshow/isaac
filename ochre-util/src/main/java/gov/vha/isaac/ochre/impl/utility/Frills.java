@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
@@ -57,6 +58,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
@@ -88,6 +90,8 @@ import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
@@ -811,12 +815,12 @@ public class Frills implements DynamicSememeColumnUtility {
 						MetaData.SYNONYM,
 						MetaData.ENGLISH_LANGUAGE);
 
-		definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
+		definitionBuilder.addPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 		builder.addDescription(definitionBuilder);
 		
 		definitionBuilder = descriptionBuilderService.getDescriptionBuilder(columnDescription, builder, MetaData.DEFINITION_DESCRIPTION_TYPE,
 				MetaData.ENGLISH_LANGUAGE);
-		definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
+		definitionBuilder.addPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 		builder.addDescription(definitionBuilder);
 
 		ConceptChronology<? extends ConceptVersion<?>> newCon;
@@ -881,7 +885,7 @@ public class Frills implements DynamicSememeColumnUtility {
 
 			DescriptionBuilder<? extends SememeChronology<?> , ? extends MutableDescriptionSememe<?>> definitionBuilder = descriptionBuilderService.
 					getDescriptionBuilder(sememePreferredTerm, builder, MetaData.SYNONYM, MetaData.ENGLISH_LANGUAGE);
-			definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
+			definitionBuilder.addPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 			builder.addDescription(definitionBuilder);
 			
 			ConceptChronology<? extends ConceptVersion<?>> newCon = builder.build(localEditCoord, ChangeCheckerMode.ACTIVE, new ArrayList<>()).getNoThrow();
@@ -890,7 +894,7 @@ public class Frills implements DynamicSememeColumnUtility {
 				//Set up the dynamic sememe 'special' definition
 				definitionBuilder = descriptionBuilderService.getDescriptionBuilder(sememeDescription, builder, MetaData.DEFINITION_DESCRIPTION_TYPE,
 						MetaData.ENGLISH_LANGUAGE);
-				definitionBuilder.setPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
+				definitionBuilder.addPreferredInDialectAssemblage(MetaData.US_ENGLISH_DIALECT);
 				SememeChronology<?> definitionSememe = definitionBuilder.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 				
 				Get.sememeBuilderService().getDynamicSememeBuilder(definitionSememe.getNid(), 
@@ -1107,6 +1111,76 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 		Collections.sort(temp);
 		return temp;
+	}
+	
+	/**
+	 * If this description is flagged as an extended description type, return the type concept of the extension.
+	 * @param sc - optional Stamp - pass null to use the default stamp.
+	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
+	 * @return
+	 */
+	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId) 
+	{
+		Optional<SememeChronology<? extends SememeVersion<?>>> descriptionExtendedTypeAnnotationSememe =
+				getAnnotationSememe(Get.identifierService().getSememeNid(descriptionId), 
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence());
+		
+		if (descriptionExtendedTypeAnnotationSememe.isPresent()) 
+		{
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
+				.getLatestVersion(DynamicSememeImpl.class, stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate() : stampCoordinate);
+			if (optionalLatestSememeVersion.get().contradictions().isPresent() && optionalLatestSememeVersion.get().contradictions().get().size() > 0) {
+				//TODO handle contradictions
+				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()
+					.contradictions().get().size() + " contradictions");
+			}
+			
+			DynamicSememeData[] dataColumns = optionalLatestSememeVersion.get().value().getData();
+			if (dataColumns.length != 1)
+			{
+				throw new RuntimeException("Invalidly specified DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.  Should always have a column size of 1");
+			}
+			
+			if (dataColumns[0].getDynamicSememeDataType() == DynamicSememeDataType.UUID) 
+			{
+				return Optional.of(((DynamicSememeUUIDImpl)dataColumns[0]).getDataUUID());
+			}
+			// This isn't supposed to happen, but we have some bad data where it did.
+			else if (dataColumns[0].getDynamicSememeDataType() == DynamicSememeDataType.STRING) 
+			{
+				log.warn("Extended description type data found with type string instead of type UUID!");
+				return Optional.of(UUID.fromString(((DynamicSememeStringImpl)dataColumns[0]).getDataString()));
+			}
+			
+			throw new RuntimeException("Failed to find UUID DynamicSememeData type in DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation dynamic sememe");
+		}
+		return Optional.empty();
+	}
+	
+	/**
+	 * A convenience method to determine if a particular component has 0 or 1 annotations of a particular type.  If there is more than one 
+	 * annotation of a particular type, this method will throw a runtime exception.
+	 * @param componentNid - the component to check for the assemblage
+	 * @param assemblageConceptId - the assemblage type you are interested in (nid or concept sequence)
+	 * @return
+	 */
+	public static Optional<SememeChronology<? extends SememeVersion<?>>> getAnnotationSememe(int componentNid, int assemblageConceptId) 
+	{
+		Set<Integer> allowedAssemblages = new HashSet<>();
+		allowedAssemblages.add(assemblageConceptId);
+		Set<SememeChronology<? extends SememeVersion<?>>> sememeSet= Get.sememeService()
+				.getSememesForComponentFromAssemblages(componentNid, allowedAssemblages).collect(Collectors.toSet());
+		switch(sememeSet.size()) 
+		{
+			case 0:
+				return Optional.empty();
+			case 1:
+				return Optional.of(sememeSet.iterator().next());
+				default:
+					throw new RuntimeException("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
+							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1)");
+		}
 	}
 	
 	/**

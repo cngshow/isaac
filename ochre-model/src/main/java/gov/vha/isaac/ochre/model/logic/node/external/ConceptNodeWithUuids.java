@@ -39,7 +39,7 @@ public class ConceptNodeWithUuids extends AbstractLogicNode {
 
     public ConceptNodeWithUuids(ConceptNodeWithSequences internalForm) {
         super(internalForm);
-        this.conceptUuid = Get.identifierService().getUuidPrimordialFromConceptSequence(internalForm.getConceptSequence()).get();
+        this.conceptUuid = Get.identifierService().getUuidPrimordialFromConceptId(internalForm.getConceptSequence()).get();
     }
 
     public UUID getConceptUuid() {

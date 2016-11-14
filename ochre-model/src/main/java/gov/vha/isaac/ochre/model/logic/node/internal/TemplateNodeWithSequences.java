@@ -144,8 +144,8 @@ public final class TemplateNodeWithSequences extends AbstractLogicNode {
     @Override
     protected UUID initNodeUuid() {
         return UuidT5Generator.get(getNodeSemantic().getSemanticUuid(),
-                Get.identifierService().getUuidPrimordialFromConceptSequence(assemblageConceptSequence).get().toString()
-                        + Get.identifierService().getUuidPrimordialFromConceptSequence(templateConceptSequence).get().toString());
+                Get.identifierService().getUuidPrimordialFromConceptId(assemblageConceptSequence).get().toString()
+                        + Get.identifierService().getUuidPrimordialFromConceptId(templateConceptSequence).get().toString());
 
     }
 

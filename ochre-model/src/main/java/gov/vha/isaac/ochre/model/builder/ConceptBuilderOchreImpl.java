@@ -111,7 +111,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
                 getDescriptionBuilder(descriptionTextBuilder.toString(), this,
                         TermAux.FULLY_SPECIFIED_DESCRIPTION_TYPE,
                         defaultLanguageForDescriptions).
-                setPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+                addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
                 getDescriptionBuilder(conceptName, this,
                         TermAux.SYNONYM_DESCRIPTION_TYPE,
                         defaultLanguageForDescriptions).
-                setPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+                addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
     }
 
     @Override

@@ -28,6 +28,6 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
  */
 public interface DescriptionBuilder<T extends ObjectChronology<?>, V extends StampedVersion> 
     extends IdentifiedComponentBuilder<T> {
-    DescriptionBuilder<?,?> setPreferredInDialectAssemblage(ConceptSpecification dialectAssemblage);
-    DescriptionBuilder<?,?> setAcceptableInDialectAssemblage(ConceptSpecification dialectAssemblage);
+    DescriptionBuilder<?,?> addPreferredInDialectAssemblage(ConceptSpecification dialectAssemblage);
+    DescriptionBuilder<?,?> addAcceptableInDialectAssemblage(ConceptSpecification dialectAssemblage);
 }

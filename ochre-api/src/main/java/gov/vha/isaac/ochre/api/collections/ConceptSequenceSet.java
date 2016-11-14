@@ -124,7 +124,7 @@ public class ConceptSequenceSet extends SequenceSet<ConceptSequenceSet> {
 	public List<ConceptSpecification> toConceptSpecificationList() {
 		return stream().mapToObj((int conceptSequence) -> new ConceptProxy(
 				  Get.conceptDescriptionText(conceptSequence),
-				  Get.identifierService().getUuidPrimordialFromConceptSequence(conceptSequence).get())).collect(Collectors.toList());
+				  Get.identifierService().getUuidPrimordialFromConceptId(conceptSequence).get())).collect(Collectors.toList());
 	}
 
 	public void addAll(OpenIntHashSet conceptsReferencedAtNodeOrAbove) {

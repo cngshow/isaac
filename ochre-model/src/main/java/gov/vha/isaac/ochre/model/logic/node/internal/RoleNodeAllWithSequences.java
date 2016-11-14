@@ -54,7 +54,7 @@ public final class RoleNodeAllWithSequences extends TypedNodeWithSequences {
     @Override
     protected UUID initNodeUuid() {
         return UuidT5Generator.get(getNodeSemantic().getSemanticUuid(),
-                Get.identifierService().getUuidPrimordialFromConceptSequence(typeConceptSequence).get().toString());
+                Get.identifierService().getUuidPrimordialFromConceptId(typeConceptSequence).get().toString());
 
     }
 

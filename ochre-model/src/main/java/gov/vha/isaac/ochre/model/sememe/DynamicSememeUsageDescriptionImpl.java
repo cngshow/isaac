@@ -120,19 +120,19 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
         switch (sememe.getSememeType()) {
             case COMPONENT_NID:
                 dsud.refexColumnInfo_ = new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
-                    Get.identifierService().getUuidPrimordialFromConceptSequence(sememe.getAssemblageSequence()).get(),
+                    Get.identifierService().getUuidPrimordialFromConceptId(sememe.getAssemblageSequence()).get(),
                     0, DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_NID.getPrimordialUuid(), DynamicSememeDataType.NID, null, true, null, null, false)};
                 break;
             case LONG:
                 dsud.refexColumnInfo_ = new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
-                    Get.identifierService().getUuidPrimordialFromConceptSequence(sememe.getAssemblageSequence()).get(),
+                    Get.identifierService().getUuidPrimordialFromConceptId(sememe.getAssemblageSequence()).get(),
                     0, DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_LONG.getPrimordialUuid(), DynamicSememeDataType.LONG, null, true, null, null, false)};
                 break;
             case DESCRIPTION:
             case STRING:
             case LOGIC_GRAPH:
                 dsud.refexColumnInfo_ = new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
-                    Get.identifierService().getUuidPrimordialFromConceptSequence(sememe.getAssemblageSequence()).get(),
+                    Get.identifierService().getUuidPrimordialFromConceptId(sememe.getAssemblageSequence()).get(),
                     0, DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_STRING.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, null, null, false)};
                 break;
             case MEMBER:
