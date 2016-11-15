@@ -184,6 +184,12 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			UUID.fromString("e598e12f-3d39-56ac-be68-4e9fca98fb7a"),
 			"Stores the (optional) target concept or component of an association or mapping") {
 	};
+	
+	
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_BUSINESS_RULES = new MetadataConceptConstant("business rules",
+			UUID.fromString("7ebc6742-8586-58c3-b49d-765fb5a93f35"),
+			"Stores the business rules stored on a sememe definition - specifically a map set definition, but can be used elsewhere") {
+	};
 
 	//parent concept for all of the column info
 	//An organizational concept which serves as a parent concept for any column types that are defined
@@ -205,6 +211,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			addChild(DYNAMIC_SEMEME_COLUMN_EDITOR_COMMENT);
 			addChild(DYNAMIC_SEMEME_COLUMN_EDITOR_COMMENT_CONTEXT);
 			addChild(DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT);
+			addChild(DYNAMIC_SEMEME_COLUMN_BUSINESS_RULES);
 		}
 	};
 
