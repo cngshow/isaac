@@ -351,10 +351,34 @@ public class VetsExporter {
 							_xmlDesignation.setValueNew((String) m.get("ValueNew"));
 							_xmlDesignation.setVUID((Long) m.get("VUID"));
 							_xmlDesignation.setActive((Boolean) m.get("Active"));
-							_xmlDesignations.getDesignation().add(_xmlDesignation);
 							
 							// TODO: Properties
-							// TODO: SubsetMemberships
+							Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties _xmlDesignationProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties();
+							
+							if (Frills.hasNestedSememe(_sememe)) {
+								Get.sememeService().getSememesForComponent(_sememe.getNid()).forEach((_s) -> {
+									if (_s.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_s.getAssemblageSequence(), vhatPropertyTypesNid)) {
+										Map<String, Object> prop = getProperties(_s, startDate, endDate);
+										
+										if (!prop.isEmpty()) {
+											gov.va.med.term.vhat.xml.model.PropertyType _xmlDesignationProperty = new gov.va.med.term.vhat.xml.model.PropertyType();
+											_xmlDesignationProperty.setAction((ActionType) prop.get("Action"));
+											_xmlDesignationProperty.setTypeName((String) prop.get("TypeName"));
+											_xmlDesignationProperty.setValueNew((String) prop.get("ValueNew"));
+											_xmlDesignationProperty.setActive((Boolean) prop.get("Active"));
+											_xmlDesignationProperties.getProperty().add(_xmlDesignationProperty);
+										}
+									}
+								});
+								if (_xmlDesignationProperties.getProperty().size() > 0) {
+									_xmlDesignation.setProperties(_xmlDesignationProperties);
+								}
+								
+								// TODO: SubsetMemberships
+								
+							}
+							
+							_xmlDesignations.getDesignation().add(_xmlDesignation);
 						}
 						
 						// TODO: Properties
