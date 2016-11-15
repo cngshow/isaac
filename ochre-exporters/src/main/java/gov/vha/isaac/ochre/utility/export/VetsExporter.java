@@ -58,6 +58,7 @@ public class VetsExporter {
 	private Map<String, List<String>> subsets = new TreeMap<>();
 	
 	private Map<UUID, String> assemblagesMap = new HashMap<>();
+	private Map<String, Long> subsetMap = new HashMap<>();
 	
 	private Terminology terminology;
 	
@@ -214,13 +215,15 @@ public class VetsExporter {
 			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
 			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-			if (al.equals("add")) { 
+			if (al.equals("add")) { // TODO: fix this for date range?
 				_xmlSubset.setAction(ActionType.ADD); 
 			}
 			_xmlSubset.setName(name);
-			_xmlSubset.setVUID(Long.valueOf(al.get(1)));
+			long vuid = Long.valueOf(al.get(1));
+			_xmlSubset.setVUID(vuid);
 			_xmlSubset.setActive(Boolean.parseBoolean(al.get(2)));
 			terminology.getSubsets().getSubset().add(_xmlSubset);
+			subsetMap.put(name, vuid);
 		}
 		
 		// VHAT CodeSystem
@@ -335,7 +338,6 @@ public class VetsExporter {
 					
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations _xmlDesignations = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations();
 					Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties _xmlProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties();
-					//Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
 					//Terminology.CodeSystem.Version.MapSets.MapSet.Designations _xmlMapSetDesignations = new Terminology.CodeSystem.Version.MapSets.MapSet.Designations();
 					//Terminology.CodeSystem.Version.MapSets.MapSet.Properties _xmlMapSetProperties = new Terminology.CodeSystem.Version.MapSets.MapSet.Properties();
 					
@@ -352,30 +354,63 @@ public class VetsExporter {
 							_xmlDesignation.setVUID((Long) m.get("VUID"));
 							_xmlDesignation.setActive((Boolean) m.get("Active"));
 							
-							// TODO: Properties
 							Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties _xmlDesignationProperties = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties();
+							Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships _xmlSubsetMemberships = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships();
 							
 							if (Frills.hasNestedSememe(_sememe)) {
 								Get.sememeService().getSememesForComponent(_sememe.getNid()).forEach((_s) -> {
-									if (_s.getSememeType() == SememeType.DYNAMIC && ts.wasEverKindOf(_s.getAssemblageSequence(), vhatPropertyTypesNid)) {
-										Map<String, Object> prop = getProperties(_s, startDate, endDate);
-										
-										if (!prop.isEmpty()) {
-											gov.va.med.term.vhat.xml.model.PropertyType _xmlDesignationProperty = new gov.va.med.term.vhat.xml.model.PropertyType();
-											_xmlDesignationProperty.setAction((ActionType) prop.get("Action"));
-											_xmlDesignationProperty.setTypeName((String) prop.get("TypeName"));
-											_xmlDesignationProperty.setValueNew((String) prop.get("ValueNew"));
-											_xmlDesignationProperty.setActive((Boolean) prop.get("Active"));
-											_xmlDesignationProperties.getProperty().add(_xmlDesignationProperty);
+									if (_s.getSememeType() == SememeType.DYNAMIC) {
+										// TODO: Properties
+										if (ts.wasEverKindOf(_s.getAssemblageSequence(), vhatPropertyTypesNid)) {
+											Map<String, Object> prop = getProperties(_s, startDate, endDate);
+											
+											if (!prop.isEmpty()) {
+												gov.va.med.term.vhat.xml.model.PropertyType _xmlDesignationProperty = new gov.va.med.term.vhat.xml.model.PropertyType();
+												_xmlDesignationProperty.setAction((ActionType) prop.get("Action"));
+												_xmlDesignationProperty.setTypeName((String) prop.get("TypeName"));
+												_xmlDesignationProperty.setValueNew((String) prop.get("ValueNew"));
+												_xmlDesignationProperty.setActive((Boolean) prop.get("Active"));
+												_xmlDesignationProperties.getProperty().add(_xmlDesignationProperty);
+												//System.out.println("Action=" + (ActionType) prop.get("Action") + ", TypeName=" + (String) prop.get("TypeName") + ", ValueNew=" + (String) prop.get("ValueNew") + ", Active=" + (Boolean) prop.get("Active"));
+											}
+										}
+									
+										// TODO: SubsetMemberships
+										else {
+											@SuppressWarnings({ "unchecked", "rawtypes" })
+											Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) _s).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
+											if (sememeVersion.isPresent()) {
+												@SuppressWarnings("rawtypes")
+									            DynamicSememe ds = sememeVersion.get().value();
+									            DynamicSememeData[] dsd = ds.getData();
+									            // This implies a Subset - sememe with 0 columns?
+									            if (dsd.length == 0) {
+									            	DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
+													Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership _xmlSubsetMembership = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership();
+									            	String name = dsud.getDynamicSememeName();
+									            	Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
+									            	_xmlSubsetMembership.setActive(active);
+									            	@SuppressWarnings("unchecked")
+									            	ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+									            	_xmlSubsetMembership.setAction(action);
+									            	long vuid = subsetMap.get(name);
+									            	_xmlSubsetMembership.setVUID(vuid);
+									            	//System.out.println("Action=" + action + ", VUID=" + vuid + ", Active=" + active);
+									    			_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
+									            }
+											}
 										}
 									}
 								});
+								
 								if (_xmlDesignationProperties.getProperty().size() > 0) {
 									_xmlDesignation.setProperties(_xmlDesignationProperties);
 								}
 								
-								// TODO: SubsetMemberships
-								
+								if (_xmlSubsetMemberships.getSubsetMembership().size() > 0) {
+									_xmlDesignation.setSubsetMemberships(_xmlSubsetMemberships);
+								}
+								//System.out.println("---");
 							}
 							
 							_xmlDesignations.getDesignation().add(_xmlDesignation);
