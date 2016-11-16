@@ -79,12 +79,15 @@ public class SememeProvider implements SememeService {
     final Path sememePath;
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
+ 	private boolean databaseFolderAlreadyExist;
 
     //For HK2
     private SememeProvider() throws IOException {
         try {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
+            databaseFolderAlreadyExist = Files.exists(sememePath);
+
             loadRequired.set(!Files.exists(sememePath));
             Files.createDirectories(sememePath);
             LOG.info("Setting up sememe provider at " + sememePath.toAbsolutePath().toString());
@@ -405,4 +408,9 @@ public class SememeProvider implements SememeService {
     public IntStream getSememeKeyParallelStream() {
         return sememeMap.getKeyParallelStream();
     }
+
+	@Override
+	public boolean databaseExistsBeforeStartup() {
+		return databaseFolderAlreadyExist;
+	}
 }

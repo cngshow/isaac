@@ -75,7 +75,8 @@ public class ConceptProvider implements ConceptService {
 
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
-
+	private boolean databaseFolderAlreadyExist;
+    
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
             Path propertiesPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_PROPERTIES_FILE_NAME);
@@ -99,6 +100,7 @@ public class ConceptProvider implements ConceptService {
             }
 
             Path ochreConceptPath = folderPath.resolve("ochre");
+            databaseFolderAlreadyExist = Files.exists(ochreConceptPath);
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
@@ -322,4 +324,9 @@ public class ConceptProvider implements ConceptService {
     public IntStream getConceptKeyParallelStream() {
         return conceptMap.getKeyParallelStream();
     }
+
+	@Override
+	public boolean databaseExistsBeforeStartup() {
+		return databaseFolderAlreadyExist;
+	}
 }

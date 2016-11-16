@@ -105,12 +105,15 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
-    
+	private boolean databaseFolderAlreadyExist;
+
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
+        databaseFolderAlreadyExist = Files.exists(taxonomyProviderFolder);
+        
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
         originDestinationTaxonomyRecordMap
@@ -1057,4 +1060,8 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         originDestinationTaxonomyRecordMap.put(conceptSequence, parentTaxonomyRecord);
     }
 
+	@Override
+	public boolean databaseExistsBeforeStartup() {
+		return databaseFolderAlreadyExist;
+	}
 }
