@@ -376,28 +376,16 @@ public class VetsExporter {
 										}
 									
 										// TODO: SubsetMemberships
+										// TODO: Validate there are no duplicate Subset entries
 										else {
-											@SuppressWarnings({ "unchecked", "rawtypes" })
-											Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) _s).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
-											if (sememeVersion.isPresent()) {
-												@SuppressWarnings("rawtypes")
-									            DynamicSememe ds = sememeVersion.get().value();
-									            DynamicSememeData[] dsd = ds.getData();
-									            // This implies a Subset - sememe with 0 columns?
-									            if (dsd.length == 0) {
-									            	DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
-													Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership _xmlSubsetMembership = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership();
-									            	String name = dsud.getDynamicSememeName();
-									            	Boolean active = sememeVersion.get().value().getChronology().isLatestVersionActive(STAMP_COORDINATES);
-									            	_xmlSubsetMembership.setActive(active);
-									            	@SuppressWarnings("unchecked")
-									            	ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
-									            	_xmlSubsetMembership.setAction(action);
-									            	long vuid = subsetMap.get(name);
-									            	_xmlSubsetMembership.setVUID(vuid);
-									            	//System.out.println("Action=" + action + ", VUID=" + vuid + ", Active=" + active);
-									    			_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
-									            }
+											Map<String, Object> subMems = getSubsetMemberships(_s, startDate, endDate);
+											if (!subMems.isEmpty()) {
+												Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership _xmlSubsetMembership = new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership();
+								            	_xmlSubsetMembership.setAction((ActionType) subMems.get("Action"));
+								            	_xmlSubsetMembership.setVUID((Long) subMems.get("VUID"));
+								            	_xmlSubsetMembership.setActive((Boolean) subMems.get("Active"));
+								            	//System.out.println("Action=" + action + ", VUID=" + vuid + ", Active=" + active);
+								    			_xmlSubsetMemberships.getSubsetMembership().add(_xmlSubsetMembership);
 											}
 										}
 									}
@@ -543,7 +531,7 @@ public class VetsExporter {
 					
 				});
 				// TODO: Relationships
-				/* Disabled - there doesn't appear to be any MapSet->Relationships in the source TerminologyData.xml file, confirmed in VHAT importer
+				/* Disabled - there doesn't appear to be any MapSet->Relationships in the source TerminologyData.xml file, confirmed in VHAT importer code/comments
 				Terminology.CodeSystem.Version.MapSets.MapSet.Relationships _xmlMapSetRelationships = new Terminology.CodeSystem.Version.MapSets.MapSet.Relationships();
 				List<Map<String, Object>> rels = getRelationships(r, startDate, endDate);
 				for (Map<String, Object> rel : rels) {
@@ -708,6 +696,49 @@ public class VetsExporter {
 	
 	/**
 	 * 
+	 * @param sememe
+	 * @param startDate
+	 * @param endDate
+	 * @return Map of Objects representing the SubsetMemberships elements
+	 */
+	private Map<String, Object> getSubsetMemberships(SememeChronology<?> sememe, long startDate, long endDate) {
+		
+		Map<String, Object> tmpMap = new HashMap<>();
+		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
+		if (sememeVersion.isPresent()) {
+			@SuppressWarnings("rawtypes")
+            DynamicSememe ds = sememeVersion.get().value();
+            DynamicSememeData[] dsd = ds.getData();
+            // This implies a Subset - sememe with 0 columns?
+            if (dsd.length == 0) {
+            	DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
+				String name = dsud.getDynamicSememeName();
+				
+				@SuppressWarnings("unchecked")
+				SememeChronology<? extends SememeVersion<?>> sc = sememeVersion.get().value().getChronology();
+				
+            	ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+            	tmpMap.put("Action", action);
+            	
+             	long vuid = 0L;
+             	if (subsetMap.containsKey(name)) {
+             		vuid = subsetMap.get(name);
+             	}
+             	tmpMap.put("VUID", vuid);
+    			
+             	Boolean active = sc.isLatestVersionActive(STAMP_COORDINATES);
+            	tmpMap.put("Active", active);
+            	
+            }
+		}
+		
+		return tmpMap;
+	}
+	
+	/**
+	 * 
 	 * @param concept
 	 * @param startDate
 	 * @param endDate
@@ -717,10 +748,11 @@ public class VetsExporter {
 		
 		List<Map<String, Object>> tmpList = new ArrayList<>();
 		
-		Map<String, Object> tmpMap = new HashMap<>();
 		List<AssociationInstance> aiList = AssociationUtilities.getSourceAssociations(concept.getNid(), STAMP_COORDINATES);
 		
 		for (AssociationInstance ai : aiList) {
+			Map<String, Object> tmpMap = new HashMap<>();
+			
 			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) concept, startDate, endDate);
 			tmpMap.put("Action", action);
 			
@@ -732,7 +764,7 @@ public class VetsExporter {
 			String newTargetCode = getCodeFromNid(targetConcept.getNid());
 			tmpMap.put("NewTargetCode", newTargetCode);
 			
-			// This doesn't appear to be used in the input TerminologyData.xml file
+			// TODO: This doesn't appear to be used in the input TerminologyData.xml file, but might be needed for TDS changes ??
 			String oldTargetCode = "";
 			tmpMap.put("OldTargetCode", oldTargetCode);
 			
