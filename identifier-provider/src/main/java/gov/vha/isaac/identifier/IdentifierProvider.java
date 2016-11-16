@@ -317,7 +317,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     @Override
     public List<UUID> getUuidsForNid(int nid) {
         if (nid > 0) {
-            nid = getConceptNid(nid);
+            throw new RuntimeException("Method expected nid!");
         }
         Optional<? extends ObjectChronology<? extends StampedVersion>> optionalObj
                 = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);
