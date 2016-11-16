@@ -1,5 +1,7 @@
 package gov.vha.isaac.ochre.query.provider.lucene;
 
+import java.io.ByteArrayOutputStream;
+
 /**
  * Copyright Notice
  *
@@ -140,6 +142,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final TrackingIndexWriter trackingIndexWriter;
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
+	protected boolean luceneIndexAlreadyExists;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -154,6 +157,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             }
             
             indexFolder_ = new File(luceneRootFolder_.get(), indexName);
+            luceneIndexAlreadyExists = indexFolder_.exists();
+            
             indexFolder_.mkdirs();
 
             log.info("Index: " + indexFolder_.getAbsolutePath());
@@ -760,4 +765,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);
     protected abstract void addFields(ObjectChronology<?> chronicle, Document doc);
+    
+    @Override
+    public boolean luceneIndexAlreadyExists() {
+    	return luceneIndexAlreadyExists;
+    }
 }
