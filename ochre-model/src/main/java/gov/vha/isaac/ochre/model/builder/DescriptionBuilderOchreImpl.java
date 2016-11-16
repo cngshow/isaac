@@ -75,13 +75,13 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
     }
 
     @Override
-    public DescriptionBuilder setPreferredInDialectAssemblage(ConceptSpecification dialectAssemblage) {
+    public DescriptionBuilder addPreferredInDialectAssemblage(ConceptSpecification dialectAssemblage) {
         preferredInDialectAssemblages.add(dialectAssemblage);
         return this; 
    }
 
     @Override
-    public DescriptionBuilder setAcceptableInDialectAssemblage(ConceptSpecification dialectAssemblage) {
+    public DescriptionBuilder addAcceptableInDialectAssemblage(ConceptSpecification dialectAssemblage) {
         acceptableInDialectAssemblages.add(dialectAssemblage);
         return this;
     }

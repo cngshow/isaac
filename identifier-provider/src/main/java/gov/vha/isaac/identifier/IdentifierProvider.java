@@ -307,13 +307,13 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     }
 
     @Override
-    public Optional<UUID> getUuidPrimordialFromConceptSequence(int conceptSequence) {
-        return getUuidPrimordialForNid(getConceptNid(conceptSequence));
+    public Optional<UUID> getUuidPrimordialFromConceptId(int conceptId) {
+        return getUuidPrimordialForNid(getConceptNid(conceptId));
     }
 
     @Override
-    public Optional<UUID> getUuidPrimordialFromSememeSequence(int sememeSequence) {
-        return getUuidPrimordialForNid(getSememeNid(sememeSequence));
+    public Optional<UUID> getUuidPrimordialFromSememeId(int sememeId) {
+        return getUuidPrimordialForNid(getSememeNid(sememeId));
     }
 
     /**
@@ -323,7 +323,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     @Override
     public List<UUID> getUuidsForNid(int nid) {
         if (nid > 0) {
-            nid = getConceptNid(nid);
+            throw new RuntimeException("Method expected nid!");
         }
         Optional<? extends ObjectChronology<? extends StampedVersion>> optionalObj
                 = Get.identifiedObjectService().getIdentifiedObjectChronology(nid);

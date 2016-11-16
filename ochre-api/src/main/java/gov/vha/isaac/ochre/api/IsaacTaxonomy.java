@@ -212,9 +212,9 @@ public class IsaacTaxonomy {
                 .getDescriptionBuilder(description, cb, descriptionType, TermAux.ENGLISH_LANGUAGE);
 
         if (preferred) {
-            db.setPreferredInDialectAssemblage(TermAux.US_DIALECT_ASSEMBLAGE);
+            db.addPreferredInDialectAssemblage(TermAux.US_DIALECT_ASSEMBLAGE);
         } else {
-            db.setAcceptableInDialectAssemblage(TermAux.US_DIALECT_ASSEMBLAGE);
+            db.addAcceptableInDialectAssemblage(TermAux.US_DIALECT_ASSEMBLAGE);
         }
 
         cb.addDescription(db);
