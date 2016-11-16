@@ -24,7 +24,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author kec
  */
 @Contract
-public interface IdentifierService {
+public interface IdentifierService extends DatabaseServices {
 
     static final int FIRST_NID = Integer.MIN_VALUE + 1;
 

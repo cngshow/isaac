@@ -1,5 +1,6 @@
 package gov.vha.isaac.ochre.api.commit;
 
+import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import javafx.concurrent.Task;
@@ -13,7 +14,7 @@ import org.jvnet.hk2.annotations.Contract;
  * Created by kec on 1/2/16.
  */
 @Contract
-public interface StampService {
+public interface StampService extends DatabaseServices {
 
     /**
      * STAMP sequences start at 1, in part to ensure that uninitialized values
