@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.jvnet.hk2.annotations.Contract;
 
-import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
 
 /**
@@ -34,7 +33,7 @@ import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Contract
-public interface MetaContentService extends DatabaseServices {
+public interface MetaContentService {
 	/**
 	 * Call prior to JVM exit for safe shutdown
 	 */
