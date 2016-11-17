@@ -161,4 +161,10 @@ public class MockSememeService implements SememeService {
     public int getSememeCount() {
         return sememeMap.size();
     }
+
+    @Override
+    public boolean databaseExistsBeforeStartup() {
+        // Doesn't rely on existing database directories so always return true.
+        return true;
+    }
 }

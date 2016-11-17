@@ -110,4 +110,10 @@ public class MockConceptService implements ConceptService {
     public IntStream getConceptKeyParallelStream() {
         return conceptsMap.keySet().parallelStream().mapToInt(i -> i);
     }
+
+    @Override
+    public boolean databaseExistsBeforeStartup() {
+        // Doesn't rely on existing database directories so always return true.
+        return true;
+    }
 }
