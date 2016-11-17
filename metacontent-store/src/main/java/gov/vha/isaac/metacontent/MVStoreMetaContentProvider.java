@@ -53,7 +53,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 
 	MVStore store;
 	MVMap<Integer, byte[]> userPrefsMap;
-	private boolean databaseFolderAlreadyExist;
 
 	@SuppressWarnings("unused")
 	private MVStoreMetaContentProvider() {
@@ -78,7 +77,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	 */
 	public MVStoreMetaContentProvider(File storageFolder, String storePrefix, boolean wipeExisting) {
 		LOG.info("Starting a user-requested MVStoreMetaContent instance");
-		databaseFolderAlreadyExist = storageFolder.exists();
 		initialize(storageFolder, storePrefix, wipeExisting);
 	}
 
@@ -108,8 +106,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 			throw new RuntimeException("Unable to start MVStore - no folder path is available in the Configuration Service!");
 		}
 		File temp = new File(path.get().toFile(), "metacontent");
-		databaseFolderAlreadyExist = temp.exists();
-
 		temp.mkdir();
 		if (!temp.isDirectory()) {
 			throw new RuntimeException(
@@ -176,10 +172,5 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 			throw new IllegalArgumentException("reserved store name");
 		}
 		store.removeMap(store.openMap(storeName));
-	}
-
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
 	}
 }

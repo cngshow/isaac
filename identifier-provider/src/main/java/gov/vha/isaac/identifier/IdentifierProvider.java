@@ -85,22 +85,19 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final UuidIntMapMap uuidIntMapMap;
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
-    private final AtomicBoolean loadRequired = new AtomicBoolean();
-    private boolean databaseFolderAlreadyExist;
+     private final AtomicBoolean loadRequired = new AtomicBoolean();
 
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
-        databaseFolderAlreadyExist = Files.exists(folderPath);
-
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
         uuidIntMapMap = UuidIntMapMap.create(new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map"));
         conceptSequenceMap = new SequenceMap(450000);
         sememeSequenceMap = new SequenceMap(3000000);
     }
-    
+
     @PostConstruct
     private void startMe() {
         try {
@@ -480,9 +477,4 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         //We could also clear refs from the uuid map here... but that would take longer / 
         //provide minimal gain
     }
-
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
 }
