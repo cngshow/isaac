@@ -114,7 +114,8 @@ public class ConceptProvider implements ConceptService {
     private void startMe() {
         LOG.info("Starting OCHRE ConceptProvider post-construct");
         conceptActiveService = LookupService.getService(ConceptActiveService.class);
-        if (databaseFolderAlreadyExist && !loadRequired.compareAndSet(true, false)) {
+        if (!loadRequired.compareAndSet(true, false)) {
+
             LOG.info("Reading existing OCHRE concept-map.");
             conceptMap.initialize();
 
