@@ -17,7 +17,6 @@ package gov.vha.isaac.ochre.api;
 
 import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
 import gov.vha.isaac.ochre.api.constants.Constants;
-import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import java.awt.GraphicsEnvironment;
 import java.lang.annotation.Annotation;
@@ -45,13 +44,10 @@ public class LookupService {
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
-    public static final int DATABASE_INITIALIZED_RUNLEVEL = 1;
-    public static final int LUCENE_INITIALIZED_RUNLEVEL = 2;
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
     public static final int ISAAC_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
-    private static Boolean databaseAlreadyExistsStatus = null;
 
     /**
      * @return the {@link ServiceLocator} that is managing this ISAAC instance
@@ -187,43 +183,6 @@ public class LookupService {
                     handle.getService().reset();
                 }
             });
-
-            // Check database directories. Either all must exist or none may exist. Inconsistent state suggests database
-            // corruption.
-            looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
-                if (handle.isActive()) {
-                    if (databaseAlreadyExistsStatus == null) {
-                        // Initial time through. All other database directories and lucene directories must have same state.
-                        LOG.info("First batabase service handler seen and its database existing prior to startup status is: "
-                                + handle.getService().databaseExistsBeforeStartup());
-                        databaseAlreadyExistsStatus = handle.getService().databaseExistsBeforeStartup();
-                    } else {
-                        // Verify database directories have same state as identified in first time through.
-                        LOG.info("With starting validation that database directories are consistent at startup with status: "
-                                + databaseAlreadyExistsStatus.toString() + " for Provider " + handle.getActiveDescriptor().getImplementation());
-
-                        if (databaseAlreadyExistsStatus.booleanValue() != handle.getService().databaseExistsBeforeStartup()) {
-                            throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
-                                    + " had inconsistent existance of database directory prior to startup");
-                        }
-                    }
-                }
-            });
-
-            // Check Lucene directories. Both must exist if database exists. Neither must not exist if database doesn't
-            // exist. Inconsistent state suggests database corruption.
-            looker.getAllServiceHandles(IndexServiceBI.class).forEach(handle -> {
-                if (handle.isActive()) {
-                    LOG.info("Checking lucene directories existing prior to startup has same status as database directories (value must be = "
-                            + databaseAlreadyExistsStatus);
-                    
-                    if (databaseAlreadyExistsStatus.booleanValue() != handle.getService().luceneIndexAlreadyExists()) {
-                        throw new RuntimeException("Database Corruption Observed: Lucene index " + handle.getActiveDescriptor().getImplementation()
-                                + " has inconsistent existance prior to startup compared with directory");
-                    }
-                }
-            });
-
             looker.getAllServices(OchreCache.class).forEach((cache) -> {cache.reset();});
         }
         getService(RunLevelController.class).proceedTo(runLevel);
@@ -252,8 +211,6 @@ public class LookupService {
      */
     public static void startupIsaac() {
         setRunLevel(ISAAC_STARTED_RUNLEVEL);
-        setRunLevel(DATABASE_INITIALIZED_RUNLEVEL);
-        setRunLevel(LUCENE_INITIALIZED_RUNLEVEL);
     }
     
     /**
