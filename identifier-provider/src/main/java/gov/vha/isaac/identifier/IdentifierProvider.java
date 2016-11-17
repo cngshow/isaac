@@ -16,7 +16,6 @@
 package gov.vha.isaac.identifier;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -118,8 +117,6 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuid-nid-map can do dynamic load, no need to read all at the beginning.
                 // LOG.info("Loading uuid-nid-map.");
                 // uuidIntMapMap.read();
-                
-                validateUuidIntMap();
             }
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Identifier Provider", e);
@@ -483,27 +480,6 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         //We could also clear refs from the uuid map here... but that would take longer / 
         //provide minimal gain
     }
-
-    private void validateUuidIntMap() {
-        File dir = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
-        int numberOfFiles = dir.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return (name.endsWith("map"));
-            }
-        }).length;
-
-        int segmentIndex = 0;
-		while (segmentIndex < numberOfFiles) {
-			File segmentFile = new File(dir, segmentIndex + "-uuid-nid.map");
-
-			if (!segmentFile.exists()) {
-				throw new RuntimeException("Missing database file: " + segmentFile.getName());
-			}
-
-			segmentIndex++;
-		}
-	}
 
 	@Override
 	public boolean databaseExistsBeforeStartup() {
