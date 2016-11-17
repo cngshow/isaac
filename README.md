@@ -13,3 +13,5 @@ To run HP Fortify scan on child projects (assuming Fortify application and licen
         $ mvn -Dmaven.test.skip=true -Dfortify.sca.buildId={PROJECT_NAME} -Dfortify.sca.toplevel.artifactId=isaac-parent com.hpe.security.fortify.maven.plugin:sca-maven-plugin:translate
         $ mvn -Dmaven.test.skip=true -Dfortify.sca.buildId={PROJECT_NAME} -Dfortify.sca.toplevel.artifactId=isaac-parent com.hpe.security.fortify.maven.plugin:sca-maven-plugin:scan
 
+
+
