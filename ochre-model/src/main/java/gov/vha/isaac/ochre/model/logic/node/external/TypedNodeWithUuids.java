@@ -42,7 +42,7 @@ public abstract class TypedNodeWithUuids extends ConnectorNode {
 
     public TypedNodeWithUuids(TypedNodeWithSequences internalForm) {
         super(internalForm);
-        this.typeConceptUuid = Get.identifierService().getUuidPrimordialFromConceptSequence(internalForm.getTypeConceptSequence()).get();
+        this.typeConceptUuid = Get.identifierService().getUuidPrimordialFromConceptId(internalForm.getTypeConceptSequence()).get();
     }
     
     @Override

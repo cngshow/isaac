@@ -470,7 +470,7 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         builder.append("Isomorphic Analysis for:")
             .append(Get.conceptDescriptionText(referenceExpression.conceptSequence))
             .append("\n     ")
-            .append(Get.identifierService().getUuidPrimordialFromConceptSequence(referenceExpression.conceptSequence))
+            .append(Get.identifierService().getUuidPrimordialFromConceptId(referenceExpression.conceptSequence))
             .append("\n\n");
         builder.append("Reference expression:\n\n ");
         builder.append(referenceExpression.toString("r"));

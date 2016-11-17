@@ -71,7 +71,7 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("VHAT content is typically exported from a VETs system.  ", "",
 					"VHAT.xml",
 					"Any XML file that is valid per the VETs TerminologyData.xsd schema.  The file name is ignored", 
-					".*", true)
+					".xml$", true)
 	}),
 	RXNORM("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 

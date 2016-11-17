@@ -52,9 +52,9 @@ public class StampUniversal {
         IdentifierService idService = Get.identifierService();
         this.status = stampService.getStatusForStamp(stamp);
         this.time = stampService.getTimeForStamp(stamp);
-        this.authorUuid = idService.getUuidPrimordialFromConceptSequence(stampService.getAuthorSequenceForStamp(stamp)).get();
-        this.moduleUuid = idService.getUuidPrimordialFromConceptSequence(stampService.getModuleSequenceForStamp(stamp)).get();
-        this.pathUuid = idService.getUuidPrimordialFromConceptSequence(stampService.getPathSequenceForStamp(stamp)).get();
+        this.authorUuid = idService.getUuidPrimordialFromConceptId(stampService.getAuthorSequenceForStamp(stamp)).get();
+        this.moduleUuid = idService.getUuidPrimordialFromConceptId(stampService.getModuleSequenceForStamp(stamp)).get();
+        this.pathUuid = idService.getUuidPrimordialFromConceptId(stampService.getPathSequenceForStamp(stamp)).get();
     }
 
     public void writeExternal(ByteArrayDataBuffer out) {

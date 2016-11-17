@@ -57,9 +57,9 @@ public abstract class StampedItem
 	{
 		if (!lazyLoadFinished_)
 		{
-			authorUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getAuthorSequence()).get();
-			moduleUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getModuleSequence()).get();
-			pathUUID = Get.identifierService().getUuidPrimordialFromConceptSequence(componentVersion_.getPathSequence()).get();
+			authorUUID = Get.identifierService().getUuidPrimordialFromConceptId(componentVersion_.getAuthorSequence()).get();
+			moduleUUID = Get.identifierService().getUuidPrimordialFromConceptId(componentVersion_.getModuleSequence()).get();
+			pathUUID = Get.identifierService().getUuidPrimordialFromConceptId(componentVersion_.getPathSequence()).get();
 			
 			Get.workExecutors().getExecutor().execute(() ->
 			{

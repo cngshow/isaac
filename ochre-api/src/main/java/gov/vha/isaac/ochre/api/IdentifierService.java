@@ -84,8 +84,8 @@ public interface IdentifierService {
     void addUuidForNid(UUID uuid, int nid);
 
     Optional<UUID> getUuidPrimordialForNid(int nid);
-    Optional<UUID> getUuidPrimordialFromConceptSequence(int conceptSequence);
-    Optional<UUID> getUuidPrimordialFromSememeSequence(int sememeSequence);
+    Optional<UUID> getUuidPrimordialFromConceptId(int conceptId);
+    Optional<UUID> getUuidPrimordialFromSememeId(int sememeId);
     
     Optional<LatestVersion<String>> getIdentifierForAuthority(int nid, UUID identifierAuthorityUuid, 
             StampCoordinate stampCoordinate);

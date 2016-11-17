@@ -50,6 +50,9 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     private final List<DescriptionBuilder> descriptionBuilders = new ArrayList<>();
     private final List<LogicalExpressionBuilder> logicalExpressionBuilders = new ArrayList<>();
     private final List<LogicalExpression> logicalExpressions = new ArrayList<>();
+    
+    private transient DescriptionBuilder fsnDescriptionBuilder = null;
+    private transient DescriptionBuilder preferredDescriptionBuilder = null;
 
     public ConceptBuilderOchreImpl(String conceptName,
             String semanticTag,
@@ -100,27 +103,37 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
 
     @Override
     public DescriptionBuilder getFullySpecifiedDescriptionBuilder() {
-        StringBuilder descriptionTextBuilder = new StringBuilder();
-        descriptionTextBuilder.append(conceptName);
-        if (semanticTag != null && semanticTag.length() > 0) {
-            descriptionTextBuilder.append(" (");
-            descriptionTextBuilder.append(semanticTag);
-            descriptionTextBuilder.append(")");
+        synchronized (this) {
+            if (fsnDescriptionBuilder == null) {
+                StringBuilder descriptionTextBuilder = new StringBuilder();
+                descriptionTextBuilder.append(conceptName);
+                if (semanticTag != null && semanticTag.length() > 0) {
+                    descriptionTextBuilder.append(" (");
+                    descriptionTextBuilder.append(semanticTag);
+                    descriptionTextBuilder.append(")");
+                }
+                fsnDescriptionBuilder = LookupService.getService(DescriptionBuilderService.class).
+                    getDescriptionBuilder(descriptionTextBuilder.toString(), this,
+                            TermAux.FULLY_SPECIFIED_DESCRIPTION_TYPE,
+                            defaultLanguageForDescriptions).
+                    addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+            }
         }
-        return LookupService.getService(DescriptionBuilderService.class).
-                getDescriptionBuilder(descriptionTextBuilder.toString(), this,
-                        TermAux.FULLY_SPECIFIED_DESCRIPTION_TYPE,
-                        defaultLanguageForDescriptions).
-                setPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+        return fsnDescriptionBuilder;
     }
 
     @Override
     public DescriptionBuilder getSynonymPreferredDescriptionBuilder() {
-        return LookupService.getService(DescriptionBuilderService.class).
+        synchronized (this) {
+            if (preferredDescriptionBuilder == null) {
+                preferredDescriptionBuilder = LookupService.getService(DescriptionBuilderService.class).
                 getDescriptionBuilder(conceptName, this,
                         TermAux.SYNONYM_DESCRIPTION_TYPE,
                         defaultLanguageForDescriptions).
-                setPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+                addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+            }
+        }
+        return preferredDescriptionBuilder;
     }
 
     @Override
@@ -168,7 +181,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
             primaryNested = Get.commitService().addUncommitted(conceptChronology);
         } else {
-        	primaryNested = Get.commitService().addUncommittedNoChecks(conceptChronology);
+            primaryNested = Get.commitService().addUncommittedNoChecks(conceptChronology);
         }
         return new OptionalWaitTask<ConceptChronology<?>>(primaryNested, conceptChronology, nestedBuilders);
     }
