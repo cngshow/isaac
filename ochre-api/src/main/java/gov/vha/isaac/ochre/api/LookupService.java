@@ -204,7 +204,7 @@ public class LookupService {
 
                         if (databaseAlreadyExistsStatus.booleanValue() != handle.getService().databaseExistsBeforeStartup()) {
                             throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
-                                    + " had inconsistent existance of database directory prior to startup");
+                                    + " has inconsistent existance of database directory prior to startup");
                         }
                     }
                 }
@@ -215,7 +215,7 @@ public class LookupService {
             looker.getAllServiceHandles(IndexServiceBI.class).forEach(handle -> {
                 if (handle.isActive()) {
                     LOG.info("Checking lucene directories existing prior to startup has same status as database directories (value must be = "
-                            + databaseAlreadyExistsStatus);
+                            + databaseAlreadyExistsStatus + ")");
                     
                     if (databaseAlreadyExistsStatus.booleanValue() != handle.getService().luceneIndexAlreadyExists()) {
                         throw new RuntimeException("Database Corruption Observed: Lucene index " + handle.getActiveDescriptor().getImplementation()
