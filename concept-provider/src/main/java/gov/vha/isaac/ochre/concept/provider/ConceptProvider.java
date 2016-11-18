@@ -15,7 +15,6 @@
  */
 package gov.vha.isaac.ochre.concept.provider;
 
-
 import gov.vha.isaac.ochre.concept.provider.ConceptSerializer;
 import gov.vha.isaac.ochre.api.ConceptActiveService;
 import gov.vha.isaac.ochre.api.ConfigurationService;
@@ -75,8 +74,9 @@ public class ConceptProvider implements ConceptService {
 
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
-	private boolean databaseFolderAlreadyExist;
-    
+    private Boolean databaseFolderExists;
+    private boolean databasePopulated;
+
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
             Path propertiesPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_PROPERTIES_FILE_NAME);
@@ -100,7 +100,7 @@ public class ConceptProvider implements ConceptService {
             }
 
             Path ochreConceptPath = folderPath.resolve("ochre");
-            databaseFolderAlreadyExist = Files.exists(ochreConceptPath);
+            databaseFolderExists = Files.exists(ochreConceptPath);
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
@@ -114,13 +114,14 @@ public class ConceptProvider implements ConceptService {
     private void startMe() {
         LOG.info("Starting OCHRE ConceptProvider post-construct");
         conceptActiveService = LookupService.getService(ConceptActiveService.class);
-        if (databaseFolderAlreadyExist && !loadRequired.compareAndSet(true, false)) {
+        if (!loadRequired.compareAndSet(true, false)) {
             LOG.info("Reading existing OCHRE concept-map.");
-            conceptMap.initialize();
+            databasePopulated = conceptMap.initialize();
 
             LOG.info("Finished OCHRE read.");
         }
     }
+
     @PreDestroy
     private void stopMe() {
         LOG.info("Stopping OCHRE ConceptProvider.");
@@ -146,7 +147,7 @@ public class ConceptProvider implements ConceptService {
         }
         return conceptMap.get(conceptId);
     }
-    
+
     @Override
     public boolean hasConcept(int conceptId) {
         if (conceptId < 0) {
@@ -324,8 +325,28 @@ public class ConceptProvider implements ConceptService {
         return conceptMap.getKeyParallelStream();
     }
 
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).
+            Path folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("ochre-concepts");
+            Path ochreConceptPath = folderPath.resolve("ochre");
+            return Files.exists(ochreConceptPath);
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+        databasePopulated = false;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // Doesn't rely on existing database directories so always return true.
+        return databasePopulated;
+    }
 }

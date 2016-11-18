@@ -142,7 +142,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final TrackingIndexWriter trackingIndexWriter;
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
-	protected boolean luceneIndexAlreadyExists;
+	protected Boolean luceneIndexAlreadyExists;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -768,6 +768,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     
     @Override
     public boolean luceneIndexAlreadyExists() {
-    	return luceneIndexAlreadyExists;
+        if (luceneIndexAlreadyExists != null) {
+            // Initial Processing Time
+            return luceneIndexAlreadyExists;
+        } else {
+            // Secondary Processing Time
+            return indexFolder_.exists();
+        }
+    }
+    
+    @Override
+    public void clearLuceneValiditySettings() {
+        luceneIndexAlreadyExists = null;
     }
 }

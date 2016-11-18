@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.api.component.concept;
 
 import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.PopulatedDatabaseServices;
 import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
@@ -31,7 +32,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author kec
  */
 @Contract
-public interface ConceptService extends DatabaseServices {
+public interface ConceptService extends PopulatedDatabaseServices {
     
     /**
      * 

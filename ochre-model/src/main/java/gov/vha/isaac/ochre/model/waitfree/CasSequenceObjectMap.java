@@ -68,7 +68,7 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
      * Read from disk
      *
      */
-	public void initialize() {
+	public boolean initialize() {
 		objectByteList.clear();
 		int segmentIndex = 0;
 		File segmentDirectory = new File(dbFolderPath.toString());
@@ -96,6 +96,8 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
 			objectByteList.add(segmentIndex, reference);
 			segmentIndex++;
 		}
+		
+		return numberOfSegmentFiles > 0;
 	}
 
     private class CasSequenceMapSerializer implements DataSerializer<SerializedAtomicReferenceArray> {

@@ -112,7 +112,18 @@ public class MockConceptService implements ConceptService {
     }
 
     @Override
-    public boolean databaseExistsBeforeStartup() {
+    public boolean folderExists() {
+        // Doesn't rely on existing database directories so always return true.
+        return true;
+    }
+    
+    @Override
+    public void clearDatabaseValiditySettings() {
+        // Placeholder as databaseFolderExists always returns true.
+    }
+
+    @Override
+    public boolean isPopulated() {
         // Doesn't rely on existing database directories so always return true.
         return true;
     }

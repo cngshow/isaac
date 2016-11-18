@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import org.jvnet.hk2.annotations.Contract;
 
 import gov.vha.isaac.ochre.api.DatabaseServices;
+import gov.vha.isaac.ochre.api.PopulatedDatabaseServices;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
@@ -34,7 +35,7 @@ import gov.vha.isaac.ochre.api.coordinate.StampPosition;
  * @author kec
  */
 @Contract
-public interface SememeService extends DatabaseServices {
+public interface SememeService extends PopulatedDatabaseServices {
     <V extends SememeVersion> SememeSnapshotService<V> getSnapshot(Class<V> versionType, 
             StampCoordinate stampCoordinate);
     

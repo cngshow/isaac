@@ -194,4 +194,6 @@ public interface IndexServiceBI {
     Collection<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult);
     
     boolean luceneIndexAlreadyExists();
+    
+    void clearLuceneValiditySettings();
 }

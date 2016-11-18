@@ -131,7 +131,7 @@ public class CommitProvider implements CommitService {
     private final SememeSequenceSet uncommittedSememesWithChecksSequenceSet = SememeSequenceSet.concurrent();
     private final SememeSequenceSet uncommittedSememesNoChecksSequenceSet = SememeSequenceSet.concurrent();
 
-	private boolean databaseFolderAlreadyExist;
+    private Boolean databaseFolderExists;
 
     private CommitProvider() throws IOException {
         try {
@@ -139,7 +139,7 @@ public class CommitProvider implements CommitService {
             loadRequired.set(Files.exists(dbFolderPath));
             Files.createDirectories(dbFolderPath);
             commitManagerFolder = dbFolderPath.resolve(DEFAULT_CRADLE_COMMIT_MANAGER_FOLDER);
-            databaseFolderAlreadyExist = Files.exists(commitManagerFolder) ;
+            databaseFolderExists = Files.exists(commitManagerFolder);
             Files.createDirectories(commitManagerFolder);
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Provider", e);
@@ -750,8 +750,19 @@ public class CommitProvider implements CommitService {
         }
     }
 
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).
+            return Files.exists(commitManagerFolder);
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+    }
 }

@@ -15,7 +15,6 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.api.ConceptActiveService;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.*;
@@ -105,14 +104,15 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
-	private boolean databaseFolderAlreadyExist;
+	private Boolean databaseFolderExists;
+    private boolean databasePopulated;
 
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
-        databaseFolderAlreadyExist = Files.exists(taxonomyProviderFolder);
+        databaseFolderExists = Files.exists(taxonomyProviderFolder);
         
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
@@ -128,7 +128,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LOG.info("Starting TaxonomyService post-construct");
             if (!loadRequired.get()) {
                 LOG.info("Reading taxonomy.");
-                originDestinationTaxonomyRecordMap.initialize();
+                databasePopulated  = originDestinationTaxonomyRecordMap.initialize();
                 File inputFile = new File(taxonomyProviderFolder.toFile(), ORIGIN_DESTINATION_MAP);
                 try (DataInputStream in = new DataInputStream(new BufferedInputStream(
                         new FileInputStream(inputFile)))) {
@@ -1061,7 +1061,25 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     }
 
 	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
+	public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).  
+            return Files.exists(taxonomyProviderFolder);
+        }
 	}
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+        databasePopulated = false;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // Doesn't rely on existing database directories so always return true.
+        return databasePopulated;
+    }
 }

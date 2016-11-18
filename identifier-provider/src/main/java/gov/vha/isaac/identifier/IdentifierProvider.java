@@ -87,13 +87,14 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
     private final AtomicBoolean loadRequired = new AtomicBoolean();
-    private boolean databaseFolderAlreadyExist;
+    private Boolean databaseFolderExists;
+    private boolean databasePopulated;
 
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
-        databaseFolderAlreadyExist = Files.exists(folderPath);
+        databaseFolderExists = Files.exists(folderPath);
 
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
@@ -485,28 +486,48 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     }
 
     private void validateUuidIntMap() {
-        File dir = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
-        int numberOfFiles = dir.list(new FilenameFilter() {
+        File segmentDirectory = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
+        int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
             @Override
-            public boolean accept(File dir, String name) {
+            public boolean accept(File segmentDirectory, String name) {
                 return (name.endsWith("map"));
             }
         }).length;
 
         int segmentIndex = 0;
-		while (segmentIndex < numberOfFiles) {
-			File segmentFile = new File(dir, segmentIndex + "-uuid-nid.map");
+        while (segmentIndex < numberOfSegmentFiles) {
+            File segmentFile = new File(segmentDirectory, segmentIndex + "-uuid-nid.map");
 
-			if (!segmentFile.exists()) {
-				throw new RuntimeException("Missing database file: " + segmentFile.getName());
-			}
+            if (!segmentFile.exists()) {
+                throw new RuntimeException("Missing database file: " + segmentFile.getName());
+            }
 
-			segmentIndex++;
-		}
-	}
+            segmentIndex++;
+        }
 
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
+        databasePopulated = numberOfSegmentFiles > 0;
+    }
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).
+            return Files.exists(folderPath);
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+        databasePopulated = false;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // Doesn't rely on existing database directories so always return true.
+        return databasePopulated;
+    }
 }

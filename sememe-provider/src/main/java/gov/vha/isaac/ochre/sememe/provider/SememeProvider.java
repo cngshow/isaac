@@ -79,14 +79,15 @@ public class SememeProvider implements SememeService {
     final Path sememePath;
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
- 	private boolean databaseFolderAlreadyExist;
+ 	private Boolean databaseFolderExists;
+    private boolean databasePopulated;
 
     //For HK2
     private SememeProvider() throws IOException {
         try {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
-            databaseFolderAlreadyExist = Files.exists(sememePath);
+            databaseFolderExists = Files.exists(sememePath);
 
             loadRequired.set(!Files.exists(sememePath));
             Files.createDirectories(sememePath);
@@ -105,7 +106,7 @@ public class SememeProvider implements SememeService {
             LOG.info("Loading sememeMap.");
             if (!loadRequired.get()) {
                 LOG.info("Reading existing sememeMap.");
-                sememeMap.initialize();
+                databasePopulated = sememeMap.initialize();
 
                 LOG.info("Reading existing SememeKeys.");
 
@@ -409,8 +410,27 @@ public class SememeProvider implements SememeService {
         return sememeMap.getKeyParallelStream();
     }
 
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).  
+            return Files.exists(sememePath);
+        }
+    }
+    
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+        databasePopulated = false;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // Doesn't rely on existing database directories so always return true.
+        return databasePopulated;
+    }
 }

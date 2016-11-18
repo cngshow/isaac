@@ -19,6 +19,7 @@
 package gov.vha.isaac.metacontent;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
@@ -31,7 +32,10 @@ import org.glassfish.hk2.runlevel.RunLevel;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.jvnet.hk2.annotations.Service;
+
+import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
 
@@ -53,7 +57,8 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 
 	MVStore store;
 	MVMap<Integer, byte[]> userPrefsMap;
-	private boolean databaseFolderAlreadyExist;
+    private static File databaseFolder;
+    private Boolean databaseFolderExists;
 
 	@SuppressWarnings("unused")
 	private MVStoreMetaContentProvider() {
@@ -78,7 +83,8 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	 */
 	public MVStoreMetaContentProvider(File storageFolder, String storePrefix, boolean wipeExisting) {
 		LOG.info("Starting a user-requested MVStoreMetaContent instance");
-		databaseFolderAlreadyExist = storageFolder.exists();
+        databaseFolder = storageFolder;
+        databaseFolderExists = storageFolder.exists();
 		initialize(storageFolder, storePrefix, wipeExisting);
 	}
 
@@ -107,15 +113,14 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 		{
 			throw new RuntimeException("Unable to start MVStore - no folder path is available in the Configuration Service!");
 		}
-		File temp = new File(path.get().toFile(), "metacontent");
-		databaseFolderAlreadyExist = temp.exists();
+        databaseFolder = new File(path.get().toFile(), "metacontent");
+        databaseFolderExists = databaseFolder.exists();
 
-		temp.mkdir();
-		if (!temp.isDirectory()) {
-			throw new RuntimeException(
-					"Cannot initialize MetaContent Store - was unable to create " + temp.getAbsolutePath());
-		}
-		initialize(temp, "service_", false);
+        databaseFolder.mkdir();
+        if (!databaseFolder.isDirectory()) {
+            throw new RuntimeException("Cannot initialize MetaContent Store - was unable to create " + databaseFolder.getAbsolutePath());
+        }
+        initialize(databaseFolder, "service_", false);
 	}
 
 	/**
@@ -178,8 +183,19 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 		store.removeMap(store.openMap(storeName));
 	}
 
-	@Override
-	public boolean databaseExistsBeforeStartup() {
-		return databaseFolderAlreadyExist;
-	}
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database). MV Store will always be empty. But that shouldn't cause an exception.
+            return true;
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
+    }
 }
