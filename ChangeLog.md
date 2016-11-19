@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/11/?? - 3.19
-
+    * Enhancements and bug fixes to VETs XML Export
 
 * 2016/11/17 - 3.18: 
     * Enhancements to VETs XML Export
