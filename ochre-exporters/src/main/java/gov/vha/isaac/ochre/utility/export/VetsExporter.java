@@ -136,7 +136,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.RELATIONSHIP_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Attributes => PropertyType UUID
@@ -153,7 +153,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.PROPERTY_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Descriptions => DesignationType UUID
@@ -171,7 +171,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.DESIGNATION_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
@@ -194,7 +194,8 @@ public class VetsExporter {
 						
 						if (sememeVersion.isPresent()) {
 							List<String> _subsetList = new ArrayList<>();
-							_subsetList.add("add"); // Action
+							ActionType action = determineAction(sememeVersion.get().value().getChronology(), startDate, endDate);
+							_subsetList.add(action.toString()); // Action
 							String subsetName = concept.getConceptDescriptionText();
 							_subsetList.add(sememeVersion.get().value().getString()); // VUID
 							// I'm assuming this will always be 'true' or 'false' - never empty or another identifier
@@ -215,9 +216,7 @@ public class VetsExporter {
 			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
 			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-			if (al.equals("add")) { // TODO: fix this for date range?
-				_xmlSubset.setAction(ActionType.ADD); 
-			}
+			_xmlSubset.setAction(ActionType.fromValue(al.get(0)));
 			_xmlSubset.setName(name);
 			long vuid = Long.valueOf(al.get(1));
 			_xmlSubset.setVUID(vuid);
