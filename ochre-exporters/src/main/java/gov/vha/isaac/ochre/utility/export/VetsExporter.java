@@ -136,7 +136,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.RELATIONSHIP_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Attributes => PropertyType UUID
@@ -153,7 +153,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.PROPERTY_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Descriptions => DesignationType UUID
@@ -171,7 +171,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.DESIGNATION_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
@@ -194,7 +194,8 @@ public class VetsExporter {
 						
 						if (sememeVersion.isPresent()) {
 							List<String> _subsetList = new ArrayList<>();
-							_subsetList.add("add"); // Action
+							ActionType action = determineAction(sememeVersion.get().value().getChronology(), startDate, endDate);
+							_subsetList.add(action.toString()); // Action
 							String subsetName = concept.getConceptDescriptionText();
 							_subsetList.add(sememeVersion.get().value().getString()); // VUID
 							// I'm assuming this will always be 'true' or 'false' - never empty or another identifier
@@ -215,14 +216,12 @@ public class VetsExporter {
 			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
 			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-			if (al.equals("add")) { // TODO: fix this for date range?
-				_xmlSubset.setAction(ActionType.ADD); 
-			}
+			//_xmlSubset.setAction(ActionType.fromValue(al.get(0)));
 			_xmlSubset.setName(name);
 			long vuid = Long.valueOf(al.get(1));
 			_xmlSubset.setVUID(vuid);
 			_xmlSubset.setActive(Boolean.parseBoolean(al.get(2)));
-			terminology.getSubsets().getSubset().add(_xmlSubset);
+			//terminology.getSubsets().getSubset().add(_xmlSubset);
 			subsetMap.put(name, vuid);
 		}
 		
@@ -600,9 +599,14 @@ public class VetsExporter {
 		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 		
 		if (sememeVersion.isPresent()) {
-			// TODO: this same date logic here?
-			@SuppressWarnings({ "unchecked" })
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			SememeChronology<?> sc = sememeVersion.get().value().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
@@ -669,8 +673,14 @@ public class VetsExporter {
 				}
 			}
 			
-			@SuppressWarnings("unchecked")
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			SememeChronology<?> sc = sememeVersion.get().value().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			String code = getCodeFromNid(sememeVersion.get().value().getNid());
@@ -719,8 +729,14 @@ public class VetsExporter {
 				@SuppressWarnings("unchecked")
 				SememeChronology<? extends SememeVersion<?>> sc = sememeVersion.get().value().getChronology();
 				
-            	ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
-            	tmpMap.put("Action", action);
+            	ActionType action;
+				if (sememeChanged(sc, startDate, endDate))
+				{
+					action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+				} else {
+					action = ActionType.NONE;
+				}
+				tmpMap.put("Action", action);
             	
              	long vuid = 0L;
              	if (subsetMap.containsKey(name)) {
@@ -753,7 +769,14 @@ public class VetsExporter {
 		for (AssociationInstance ai : aiList) {
 			Map<String, Object> tmpMap = new HashMap<>();
 			
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) concept, startDate, endDate);
+			SememeChronology<?> sc = ai.getData().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			String typeName = ai.getAssociationType().getAssociationName();
@@ -894,6 +917,17 @@ public class VetsExporter {
 			}
 			return false;
 		});
+	}
+	
+	/**
+	 * @param sc
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	private boolean sememeChanged(SememeChronology sc, long startDate, long endDate)
+	{
+		return hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate);
 	}
 
 
