@@ -80,11 +80,16 @@ public class SememeProvider implements SememeService {
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
 
+ 	private Boolean databaseFolderExists;
+    private boolean databasePopulated;
+
     //For HK2
     private SememeProvider() throws IOException {
         try {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
+            databaseFolderExists = Files.exists(sememePath);
+
             loadRequired.set(!Files.exists(sememePath));
             Files.createDirectories(sememePath);
             LOG.info("Setting up sememe provider at " + sememePath.toAbsolutePath().toString());
@@ -102,7 +107,7 @@ public class SememeProvider implements SememeService {
             LOG.info("Loading sememeMap.");
             if (!loadRequired.get()) {
                 LOG.info("Reading existing sememeMap.");
-                sememeMap.initialize();
+                databasePopulated = sememeMap.initialize();
 
                 LOG.info("Reading existing SememeKeys.");
 
@@ -404,5 +409,31 @@ public class SememeProvider implements SememeService {
     @Override
     public IntStream getSememeKeyParallelStream() {
         return sememeMap.getKeyParallelStream();
+    }
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).  
+            return Files.exists(sememePath);
+        }
+    }
+    
+    @Override
+    public void clearDatabaseValiditySettings() {
+        // Reset to enforce analysis
+        databaseFolderExists = null;
+        
+        // Database is being re-downloaded.  Data will be populated.
+        databasePopulated = true;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
+        return databasePopulated;
     }
 }

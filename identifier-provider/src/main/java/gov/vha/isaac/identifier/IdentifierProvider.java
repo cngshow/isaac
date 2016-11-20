@@ -16,6 +16,7 @@
 package gov.vha.isaac.identifier;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,10 +88,16 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final SequenceMap sememeSequenceMap;
      private final AtomicBoolean loadRequired = new AtomicBoolean();
 
+    private Boolean databaseFolderExists;
+    private boolean databasePopulated;
+
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
+
+        databaseFolderExists = Files.exists(folderPath);
+
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
         uuidIntMapMap = UuidIntMapMap.create(new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map"));
@@ -114,6 +121,10 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuid-nid-map can do dynamic load, no need to read all at the beginning.
                 // LOG.info("Loading uuid-nid-map.");
                 // uuidIntMapMap.read();
+            }
+
+            if (databaseFolderExists) {
+                validateUuidIntMap();
             }
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Identifier Provider", e);
@@ -476,5 +487,54 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         
         //We could also clear refs from the uuid map here... but that would take longer / 
         //provide minimal gain
+    }
+
+    private void validateUuidIntMap() {
+        File segmentDirectory = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
+        int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File segmentDirectory, String name) {
+                return (name.endsWith("map"));
+            }
+        }).length;
+
+        int segmentIndex = 0;
+        while (segmentIndex < numberOfSegmentFiles) {
+            File segmentFile = new File(segmentDirectory, segmentIndex + "-uuid-nid.map");
+
+            if (!segmentFile.exists()) {
+                throw new RuntimeException("Missing database file: " + segmentFile.getName());
+            }
+
+            segmentIndex++;
+        }
+
+        databasePopulated = numberOfSegmentFiles > 0;
+    }
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).
+            return Files.exists(folderPath);
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        // Reset to enforce analysis
+        databaseFolderExists = null;
+        
+        // Database is being re-downloaded.  Data will be populated.
+        databasePopulated = true;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
+        return databasePopulated;
     }
 }

@@ -131,13 +131,16 @@ public class CommitProvider implements CommitService {
     private final SememeSequenceSet uncommittedSememesWithChecksSequenceSet = SememeSequenceSet.concurrent();
     private final SememeSequenceSet uncommittedSememesNoChecksSequenceSet = SememeSequenceSet.concurrent();
 
+    private Boolean databaseFolderExists;
+
     private CommitProvider() throws IOException {
         try {
             dbFolderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("commit-provider");
             loadRequired.set(Files.exists(dbFolderPath));
             Files.createDirectories(dbFolderPath);
             commitManagerFolder = dbFolderPath.resolve(DEFAULT_CRADLE_COMMIT_MANAGER_FOLDER);
-            Files.createDirectories(commitManagerFolder);
+            databaseFolderExists = Files.exists(commitManagerFolder);
+			Files.createDirectories(commitManagerFolder);
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Provider", e);
             throw e;
@@ -745,5 +748,21 @@ public class CommitProvider implements CommitService {
                 throw new UnsupportedOperationException("Unexpected nid in deferred set: " + nid);
             }
         }
+    }
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).
+            return Files.exists(commitManagerFolder);
+        }
+    }
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
     }
 }

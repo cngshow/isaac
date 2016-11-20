@@ -55,6 +55,7 @@ public class StampProvider implements StampService {
     private AtomicBoolean loadRequired = new AtomicBoolean();
     private final Path dbFolderPath;
     private final Path stampManagerFolder;
+	private Boolean databaseFolderExists;
 
 
     /**
@@ -69,6 +70,7 @@ public class StampProvider implements StampService {
         inverseStampMap = new ConcurrentSequenceSerializedObjectMap<>(new StampSerializer(),
                 dbFolderPath, null, null);
         stampManagerFolder = dbFolderPath.resolve(DEFAULT_STAMP_MANAGER_FOLDER);
+        databaseFolderExists = Files.exists(stampManagerFolder);
         Files.createDirectories(stampManagerFolder);
     }
 
@@ -422,5 +424,21 @@ public class StampProvider implements StampService {
     @Override
      synchronized public void setPendingStampsForCommit(Map<UncommittedStamp, Integer> pendingStamps) {
         UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.putAll(pendingStamps);
+    }
+
+    @Override
+    public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).  
+            return Files.exists(stampManagerFolder);
+        }
+    }
+    
+    @Override
+    public void clearDatabaseValiditySettings() {
+        databaseFolderExists = null;
     }
 }

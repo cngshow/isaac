@@ -192,4 +192,8 @@ public interface IndexServiceBI {
      * @return the merged results, in a collection that iterates in the same order as they were passed in.
      */
     Collection<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult);
+    
+    void clearLuceneValiditySettings();
+    
+    boolean indexExists();
 }

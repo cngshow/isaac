@@ -15,7 +15,6 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.api.ConceptActiveService;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.*;
@@ -105,12 +104,16 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
-    
+	private Boolean databaseFolderExists;
+    private boolean databasePopulated;
+
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
+        databaseFolderExists = Files.exists(taxonomyProviderFolder);
+        
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
         originDestinationTaxonomyRecordMap
@@ -125,7 +128,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LOG.info("Starting TaxonomyService post-construct");
             if (!loadRequired.get()) {
                 LOG.info("Reading taxonomy.");
-                originDestinationTaxonomyRecordMap.initialize();
+                databasePopulated  = originDestinationTaxonomyRecordMap.initialize();
                 File inputFile = new File(taxonomyProviderFolder.toFile(), ORIGIN_DESTINATION_MAP);
                 try (DataInputStream in = new DataInputStream(new BufferedInputStream(
                         new FileInputStream(inputFile)))) {
@@ -1057,4 +1060,29 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         originDestinationTaxonomyRecordMap.put(conceptSequence, parentTaxonomyRecord);
     }
 
+	@Override
+	public boolean folderExists() {
+        if (databaseFolderExists != null) {
+            // Initial Processing Time
+            return databaseFolderExists;
+        } else {
+            // Second time processing (due to download of new database).  
+            return Files.exists(taxonomyProviderFolder);
+        }
+	}
+
+    @Override
+    public void clearDatabaseValiditySettings() {
+        // Reset to enforce analysis
+        databaseFolderExists = null;
+        
+        // Database is being re-downloaded.  Data will be populated.
+        databasePopulated = true;
+    }
+
+    @Override
+    public boolean isPopulated() {
+        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
+        return databasePopulated;
+    }
 }

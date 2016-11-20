@@ -15,23 +15,27 @@
  */
 package gov.vha.isaac.ochre.api;
 
-import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
-import gov.vha.isaac.ochre.api.constants.Constants;
-import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import java.awt.GraphicsEnvironment;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.BiConsumer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.runlevel.RunLevelController;
-import com.sun.javafx.application.PlatformImpl;
-import java.io.IOException;
 import org.glassfish.hk2.api.MultiException;
+import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.runlevel.RunLevelController;
+
+import com.sun.javafx.application.PlatformImpl;
+
+import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
+import gov.vha.isaac.ochre.api.constants.Constants;
+import gov.vha.isaac.ochre.api.index.IndexServiceBI;
+import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 
 /**
  *
@@ -48,6 +52,9 @@ public class LookupService {
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
     public static final int ISAAC_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
+
+    private static Boolean databaseFolderExists = null;
+    private static Boolean databasePopulated = null;
 
     /**
      * @return the {@link ServiceLocator} that is managing this ISAAC instance
@@ -210,9 +217,91 @@ public class LookupService {
      * Start all core isaac services, blocking until started (or failed)
      */
     public static void startupIsaac() {
-        setRunLevel(ISAAC_STARTED_RUNLEVEL);
+        try {
+            setRunLevel(ISAAC_STARTED_RUNLEVEL);
+            validateDatabaseFolderStatus();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            clearDatabaseFolderValidationValues();
+        }
     }
-    
+
+    private static void validateDatabaseFolderStatus() {
+        // Check database directories. Either all must exist or none may exist. Inconsistent state suggests database
+        // corruption. Only do this upon startup, not every time run level is set.
+        databaseFolderExists = null;
+
+        looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+            if (handle.isActive()) {
+                if (databaseFolderExists == null) {
+                    // Initial time through. All other database directories and lucene directories must have same state.
+                    databaseFolderExists = handle.getService().folderExists();
+                    LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
+                            + ") has database existing prior to startup status is: " + databaseFolderExists);
+                } else {
+                    // Verify database directories have same state as identified in first time through.
+                    LOG.info("With starting validation that database directories are consistent at startup with status: "
+                            + databaseFolderExists.toString() + " for Provider " + handle.getActiveDescriptor().getImplementation());
+
+                    if (databaseFolderExists.booleanValue() != handle.getService().folderExists()) {
+                        throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
+                                + " has inconsistent existance of database directory prior to startup");
+                    }
+                }
+            }
+        });
+
+        databasePopulated = null;
+        looker.getAllServiceHandles(PopulatedDatabaseServices.class).forEach(handle -> {
+            if (handle.isActive()) {
+                if (databasePopulated == null) {
+                    // Initial time through. All other database directories and lucene directories must have same state.
+                    databasePopulated = handle.getService().isPopulated();
+                    LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
+                            + ") has database populated status is: " + databasePopulated);
+                } else {
+                    // Verify database directories have same state as identified in first time through.
+                    LOG.info("With starting validation that database directories are consistent at startup with status: "
+                            + databasePopulated.toString() + " for Provider " + handle.getActiveDescriptor().getImplementation());
+
+                    if (databasePopulated.booleanValue() != handle.getService().isPopulated()) {
+                        throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
+                                + " has inconsistent database populated status");
+                    }
+                }
+            }
+        });
+
+        // Check Lucene directories. Both must exist if database exists. Neither must not exist if database doesn't
+        // exist. Inconsistent state suggests database corruption.
+        looker.getAllServiceHandles(IndexServiceBI.class).forEach(handle -> {
+            if (handle.isActive()) {
+                LOG.info("Checking lucene directories existing prior to startup has same status as database directories (value must be = "
+                        + databaseFolderExists + ")");
+
+                if (databaseFolderExists.booleanValue() != handle.getService().indexExists()) {
+                    throw new RuntimeException("Database Corruption Observed: Lucene index " + handle.getActiveDescriptor().getImplementation()
+                            + " has inconsistent existance prior to startup compared with directory");
+                }
+            }
+        });
+    }
+
+    private static void clearDatabaseFolderValidationValues() {
+        looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+            if (handle.isActive()) {
+                handle.getService().clearDatabaseValiditySettings();
+            }
+        });
+
+        looker.getAllServiceHandles(IndexServiceBI.class).forEach(handle -> {
+            if (handle.isActive()) {
+                handle.getService().clearLuceneValiditySettings();
+            }
+        });
+    }
+
     /**
      * Stop all core isaac service, blocking until stopped (or failed)
      */

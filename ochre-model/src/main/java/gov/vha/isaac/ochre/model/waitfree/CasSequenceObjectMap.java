@@ -68,19 +68,33 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
      * Read from disk
      *
      */
-    public void initialize() {
+    public boolean initialize() {
         objectByteList.clear();
         int segmentIndex = 0;
-        File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
+        File segmentDirectory = new File(dbFolderPath.toString());
 
-        while (segmentFile.exists()) {
-            MemoryManagedReference<SerializedAtomicReferenceArray> reference =
-                    new MemoryManagedReference<>(null, segmentFile, segmentSerializer);
-            objectByteList.add(segmentIndex, reference);
-            segmentIndex++;
-            segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
-        }
-    }
+		int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return (name.endsWith(fileSuffix.toString()));
+			}
+		}).length;
+
+		while (segmentIndex < numberOfSegmentFiles) {
+			File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
+
+			if (!segmentFile.exists()) {
+				throw new RuntimeException("Missing database file: " + segmentFile.getName());
+			}
+
+			MemoryManagedReference<SerializedAtomicReferenceArray> reference = new MemoryManagedReference<>(null,
+					segmentFile, segmentSerializer);
+			objectByteList.add(segmentIndex, reference);
+			segmentIndex++;
+		}
+		
+		return numberOfSegmentFiles > 0;
+	}
 
     private class CasSequenceMapSerializer implements DataSerializer<SerializedAtomicReferenceArray> {
 
