@@ -92,6 +92,7 @@ public class ConceptSuite {
 
         ConceptBuilderOchreImpl testConceptBuilder = new ConceptBuilderOchreImpl(conceptName,
                 semanticTag,
+                null,
                 defaultLanguageForDescriptions,
                 defaultDialectAssemblageForDescriptions,
                 defaultLogicCoordinate);

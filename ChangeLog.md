@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/11/?? - 3.20
-    
+    * Changes to make the concept builder more flexible with respect to creation of FSN and preferred term.
 
 * 2016/11/22 - 3.19
     * Enhancements and bug fixes to VETs XML Export

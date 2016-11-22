@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,29 +24,42 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
  *
  * @author kec
  */
-public interface ConceptBuilder extends IdentifiedComponentBuilder<ConceptChronology<?>>, ConceptSpecification {
-    
-    DescriptionBuilder<?,?> getFullySpecifiedDescriptionBuilder();
-    
-    DescriptionBuilder<?,?> getSynonymPreferredDescriptionBuilder();
-    
-    ConceptBuilder addDescription(DescriptionBuilder<?,?> descriptionBuilder);
-    
-    /**
-     * Use when adding a secondary definition in a different description logic 
-     * profile. 
-     * @param logicalExpressionBuilder
-     * @return a ConceptBuilder for use in method chaining/fluent API. 
-     */
-    ConceptBuilder addLogicalExpressionBuilder(LogicalExpressionBuilder logicalExpressionBuilder);
-    
-    /**
-     * Use when adding a secondary definition in a different description logic 
-     * profile. 
-     * @param logicalExpression
-     * @return a ConceptBuilder for use in method chaining/fluent API. 
-     */
-    ConceptBuilder addLogicalExpression(LogicalExpression logicalExpression);
-    
-    
+public interface ConceptBuilder extends IdentifiedComponentBuilder<ConceptChronology<?>>, ConceptSpecification
+{
+
+	/**
+	 * This may return null, if no description creation information was passed into the Concept Builder
+	 */
+	DescriptionBuilder<?, ?> getFullySpecifiedDescriptionBuilder();
+
+	/**
+	 * This may return null, if no description creation information was passed into the Concept Builder,
+	 * or if no semantic tag was passed in.
+	 */
+	DescriptionBuilder<?, ?> getSynonymPreferredDescriptionBuilder();
+
+	/**
+	 * Used to add another arbitrary description type to the concept
+	 * @param descriptionBuilder
+	 */
+	ConceptBuilder addDescription(DescriptionBuilder<?, ?> descriptionBuilder);
+
+	/**
+	 * Use when adding a secondary definition in a different description logic
+	 * profile.
+	 * 
+	 * @param logicalExpressionBuilder
+	 * @return a ConceptBuilder for use in method chaining/fluent API.
+	 */
+	ConceptBuilder addLogicalExpressionBuilder(LogicalExpressionBuilder logicalExpressionBuilder);
+
+	/**
+	 * Use when adding a secondary definition in a different description logic
+	 * profile.
+	 * 
+	 * @param logicalExpression
+	 * @return a ConceptBuilder for use in method chaining/fluent API.
+	 */
+	ConceptBuilder addLogicalExpression(LogicalExpression logicalExpression);
+
 }
