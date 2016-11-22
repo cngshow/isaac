@@ -55,7 +55,7 @@ public class VetsExporter {
 	private Map<UUID, String> designationTypes = new HashMap<>();
 	private Map<UUID, String> propertyTypes = new HashMap<>();
 	private Map<UUID, String> relationshipTypes = new HashMap<>();
-	private Map<String, List<String>> subsets = new TreeMap<>();
+	private Map<String, List<Object>> subsets = new TreeMap<>();
 	
 	private Map<UUID, String> assemblagesMap = new HashMap<>();
 	private Map<String, Long> subsetMap = new HashMap<>();
@@ -136,7 +136,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.RELATIONSHIP_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Attributes => PropertyType UUID
@@ -153,7 +153,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.PROPERTY_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC Descriptions => DesignationType UUID
@@ -171,7 +171,7 @@ public class VetsExporter {
 			_xmlType = new Terminology.Types.Type();
 			_xmlType.setKind(KindType.DESIGNATION_TYPE);
 			_xmlType.setName(s);
-			terminology.getTypes().getType().add(_xmlType);
+			//terminology.getTypes().getType().add(_xmlType);
 		}
 		
 		// ISAAC VHAT Refsets => Subsets UUID
@@ -193,15 +193,17 @@ public class VetsExporter {
 						Optional<LatestVersion<? extends StringSememe<?>>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 						
 						if (sememeVersion.isPresent()) {
-							List<String> _subsetList = new ArrayList<>();
-							_subsetList.add("add"); // Action
+							List<Object> _subsetList = new ArrayList<>();
+							ActionType action = determineAction(sememeVersion.get().value().getChronology(), startDate, endDate);
+							_subsetList.add(action); // Action
 							String subsetName = concept.getConceptDescriptionText();
 							_subsetList.add(sememeVersion.get().value().getString()); // VUID
 							// I'm assuming this will always be 'true' or 'false' - never empty or another identifier
-							String active = Boolean.toString(sememe.isLatestVersionActive(STAMP_COORDINATES));
+							//String active = Boolean.toString(sememe.isLatestVersionActive(STAMP_COORDINATES));
+							boolean active = sememe.isLatestVersionActive(STAMP_COORDINATES);
 							_subsetList.add(active); // Active
 							// Just incase it's needed, might as well have it
-							_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
+							//_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
 							// Add to map
 							subsets.put(subsetName, _subsetList);
 						}
@@ -211,18 +213,20 @@ public class VetsExporter {
 		});
 		
 		// Build XML
-		for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
+		for (Map.Entry<String, List<Object>> entry : subsets.entrySet()) {
 			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
-			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-			if (al.equals("add")) { // TODO: fix this for date range?
-				_xmlSubset.setAction(ActionType.ADD); 
-			}
+			List<Object> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
+			ActionType action = (ActionType) al.get(0);
+			_xmlSubset.setAction(action);
 			_xmlSubset.setName(name);
-			long vuid = Long.valueOf(al.get(1));
+			long vuid = Long.valueOf((String) al.get(1));
 			_xmlSubset.setVUID(vuid);
-			_xmlSubset.setActive(Boolean.parseBoolean(al.get(2)));
-			terminology.getSubsets().getSubset().add(_xmlSubset);
+			_xmlSubset.setActive((Boolean) al.get(2));
+			if (action != ActionType.NONE)
+			{
+				terminology.getSubsets().getSubset().add(_xmlSubset);
+			}
 			subsetMap.put(name, vuid);
 		}
 		
@@ -600,9 +604,14 @@ public class VetsExporter {
 		Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 		
 		if (sememeVersion.isPresent()) {
-			// TODO: this same date logic here?
-			@SuppressWarnings({ "unchecked" })
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			SememeChronology<?> sc = sememeVersion.get().value().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			DynamicSememeUsageDescription dsud = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence());
@@ -669,8 +678,14 @@ public class VetsExporter {
 				}
 			}
 			
-			@SuppressWarnings("unchecked")
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sememeVersion.get().value().getChronology(), startDate, endDate);
+			SememeChronology<?> sc = sememeVersion.get().value().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			String code = getCodeFromNid(sememeVersion.get().value().getNid());
@@ -719,8 +734,14 @@ public class VetsExporter {
 				@SuppressWarnings("unchecked")
 				SememeChronology<? extends SememeVersion<?>> sc = sememeVersion.get().value().getChronology();
 				
-            	ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
-            	tmpMap.put("Action", action);
+            	ActionType action;
+				if (sememeChanged(sc, startDate, endDate))
+				{
+					action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+				} else {
+					action = ActionType.NONE;
+				}
+				tmpMap.put("Action", action);
             	
              	long vuid = 0L;
              	if (subsetMap.containsKey(name)) {
@@ -753,7 +774,14 @@ public class VetsExporter {
 		for (AssociationInstance ai : aiList) {
 			Map<String, Object> tmpMap = new HashMap<>();
 			
-			ActionType action = determineAction((ObjectChronology<? extends StampedVersion>) concept, startDate, endDate);
+			SememeChronology<?> sc = ai.getData().getChronology();
+			ActionType action;
+			if (sememeChanged(sc, startDate, endDate))
+			{
+				action = determineAction((ObjectChronology<? extends StampedVersion>) sc, startDate, endDate);
+			} else {
+				action = ActionType.NONE;
+			}
 			tmpMap.put("Action", action);
 			
 			String typeName = ai.getAssociationType().getAssociationName();
@@ -806,7 +834,7 @@ public class VetsExporter {
 			{
 				actionCountPriorToStartDate++;
 			}
-			if (sv.getTime() <= endDate || sv.getTime() >= startDate)
+			if (sv.getTime() <= endDate && sv.getTime() >= startDate)
 			{
 				if (latest && sv.getState() != State.ACTIVE)
 				{
@@ -834,7 +862,7 @@ public class VetsExporter {
 			return ActionType.NONE;
 		}
 		
-		if (actionCountPriorToStartDate > 0)
+		if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
 		{
 			return ActionType.UPDATE;
 		}
@@ -894,6 +922,32 @@ public class VetsExporter {
 			}
 			return false;
 		});
+	}
+	
+	/**
+	 * @param sc
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	private boolean sememeChanged(SememeChronology<?> sc, long startDate, long endDate)
+	{
+		//return hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
+		if (sv.isPresent())
+		{
+			if (sv.get().value().getTime() > startDate && sv.get().value().getTime() < endDate)
+			{
+				return true;
+			}
+		}
+		//recurse
+		/*if (hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate))
+		{
+			return true;
+		}*/
+		return false;
 	}
 
 
