@@ -55,7 +55,7 @@ public class VetsExporter {
 	private Map<UUID, String> designationTypes = new HashMap<>();
 	private Map<UUID, String> propertyTypes = new HashMap<>();
 	private Map<UUID, String> relationshipTypes = new HashMap<>();
-	private Map<String, List<String>> subsets = new TreeMap<>();
+	private Map<String, List<Object>> subsets = new TreeMap<>();
 	
 	private Map<UUID, String> assemblagesMap = new HashMap<>();
 	private Map<String, Long> subsetMap = new HashMap<>();
@@ -193,16 +193,17 @@ public class VetsExporter {
 						Optional<LatestVersion<? extends StringSememe<?>>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(StringSememe.class, STAMP_COORDINATES);
 						
 						if (sememeVersion.isPresent()) {
-							List<String> _subsetList = new ArrayList<>();
+							List<Object> _subsetList = new ArrayList<>();
 							ActionType action = determineAction(sememeVersion.get().value().getChronology(), startDate, endDate);
-							_subsetList.add(action.toString()); // Action
+							_subsetList.add(action); // Action
 							String subsetName = concept.getConceptDescriptionText();
 							_subsetList.add(sememeVersion.get().value().getString()); // VUID
 							// I'm assuming this will always be 'true' or 'false' - never empty or another identifier
-							String active = Boolean.toString(sememe.isLatestVersionActive(STAMP_COORDINATES));
+							//String active = Boolean.toString(sememe.isLatestVersionActive(STAMP_COORDINATES));
+							boolean active = sememe.isLatestVersionActive(STAMP_COORDINATES);
 							_subsetList.add(active); // Active
 							// Just incase it's needed, might as well have it
-							_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
+							//_subsetList.add(concept.getPrimordialUuid().toString()); // UUID
 							// Add to map
 							subsets.put(subsetName, _subsetList);
 						}
@@ -212,16 +213,20 @@ public class VetsExporter {
 		});
 		
 		// Build XML
-		for (Map.Entry<String, List<String>> entry : subsets.entrySet()) {
+		for (Map.Entry<String, List<Object>> entry : subsets.entrySet()) {
 			_xmlSubset = new Terminology.Subsets.Subset();
 			String name = entry.getKey();
-			List<String> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
-			//_xmlSubset.setAction(ActionType.fromValue(al.get(0)));
+			List<Object> al = entry.getValue(); // 0: action, 1: VUID, 2: active, 3: UUID
+			ActionType action = (ActionType) al.get(0);
+			_xmlSubset.setAction(action);
 			_xmlSubset.setName(name);
-			long vuid = Long.valueOf(al.get(1));
+			long vuid = Long.valueOf((String) al.get(1));
 			_xmlSubset.setVUID(vuid);
-			_xmlSubset.setActive(Boolean.parseBoolean(al.get(2)));
-			//terminology.getSubsets().getSubset().add(_xmlSubset);
+			_xmlSubset.setActive((Boolean) al.get(2));
+			if (action != ActionType.NONE)
+			{
+				terminology.getSubsets().getSubset().add(_xmlSubset);
+			}
 			subsetMap.put(name, vuid);
 		}
 		
@@ -829,7 +834,7 @@ public class VetsExporter {
 			{
 				actionCountPriorToStartDate++;
 			}
-			if (sv.getTime() <= endDate || sv.getTime() >= startDate)
+			if (sv.getTime() <= endDate && sv.getTime() >= startDate)
 			{
 				if (latest && sv.getState() != State.ACTIVE)
 				{
@@ -857,7 +862,7 @@ public class VetsExporter {
 			return ActionType.NONE;
 		}
 		
-		if (actionCountPriorToStartDate > 0)
+		if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
 		{
 			return ActionType.UPDATE;
 		}
@@ -925,9 +930,24 @@ public class VetsExporter {
 	 * @param endDate
 	 * @return
 	 */
-	private boolean sememeChanged(SememeChronology sc, long startDate, long endDate)
+	private boolean sememeChanged(SememeChronology<?> sc, long startDate, long endDate)
 	{
-		return hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate);
+		//return hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate);
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
+		if (sv.isPresent())
+		{
+			if (sv.get().value().getTime() > startDate && sv.get().value().getTime() < endDate)
+			{
+				return true;
+			}
+		}
+		//recurse
+		/*if (hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate))
+		{
+			return true;
+		}*/
+		return false;
 	}
 
 
