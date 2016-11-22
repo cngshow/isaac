@@ -54,8 +54,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	MVStore store;
 	MVMap<Integer, byte[]> userPrefsMap;
 
-    private Boolean databaseFolderExists;
-
 	@SuppressWarnings("unused")
 	private MVStoreMetaContentProvider() {
 		// For HK2
@@ -79,8 +77,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 	 */
 	public MVStoreMetaContentProvider(File storageFolder, String storePrefix, boolean wipeExisting) {
 		LOG.info("Starting a user-requested MVStoreMetaContent instance");
-
-        databaseFolderExists = storageFolder.exists();
 		initialize(storageFolder, storePrefix, wipeExisting);
 	}
 
@@ -110,7 +106,6 @@ public class MVStoreMetaContentProvider implements MetaContentService {
 			throw new RuntimeException("Unable to start MVStore - no folder path is available in the Configuration Service!");
 		}
 		File temp = new File(path.get().toFile(), "metacontent");
-        databaseFolderExists = temp.exists();
 		temp.mkdir();
 		if (!temp.isDirectory()) {
 			throw new RuntimeException(

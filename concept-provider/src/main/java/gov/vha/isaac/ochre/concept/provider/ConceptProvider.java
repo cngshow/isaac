@@ -75,9 +75,6 @@ public class ConceptProvider implements ConceptService {
 
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
-    
-    private Boolean databaseFolderExists;
-    private boolean databasePopulated;
 
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
@@ -103,8 +100,6 @@ public class ConceptProvider implements ConceptService {
 
             Path ochreConceptPath = folderPath.resolve("ochre");
 
-            databaseFolderExists = Files.exists(ochreConceptPath);
-
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
         } catch (IOException | IllegalStateException e) {
@@ -120,7 +115,7 @@ public class ConceptProvider implements ConceptService {
         if (!loadRequired.compareAndSet(true, false)) {
 
             LOG.info("Reading existing OCHRE concept-map.");
-            databasePopulated = conceptMap.initialize();
+            conceptMap.initialize();
 
             LOG.info("Finished OCHRE read.");
         }
@@ -326,33 +321,5 @@ public class ConceptProvider implements ConceptService {
     @Override
     public IntStream getConceptKeyParallelStream() {
         return conceptMap.getKeyParallelStream();
-    }
-
-    @Override
-    public boolean folderExists() {
-        if (databaseFolderExists != null) {
-            // Initial Processing Time
-            return databaseFolderExists;
-        } else {
-            // Second time processing (due to download of new database).
-            Path folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("ochre-concepts");
-            Path ochreConceptPath = folderPath.resolve("ochre");
-            return Files.exists(ochreConceptPath);
-        }
-    }
-
-    @Override
-    public void clearDatabaseValiditySettings() {
-        // Reset to enforce analysis
-        databaseFolderExists = null;
-        
-        // Database is being re-downloaded.  Data will be populated.
-        databasePopulated = true;
-    }
-
-    @Override
-    public boolean isPopulated() {
-        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
-        return databasePopulated;
     }
 }

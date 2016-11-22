@@ -141,8 +141,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
 
-	protected Boolean luceneIndexExists;
-
     protected LuceneIndexer(String indexName) throws IOException {
         try {
             indexName_ = indexName;
@@ -156,7 +154,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             }
             
             indexFolder_ = new File(luceneRootFolder_.get(), indexName);
-            luceneIndexExists = indexFolder_.exists();
             indexFolder_.mkdirs();
 
             log.info("Index: " + indexFolder_.getAbsolutePath());
@@ -763,20 +760,4 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);
     protected abstract void addFields(ObjectChronology<?> chronicle, Document doc);
-    
-    @Override
-    public boolean indexExists() {
-        if (luceneIndexExists != null) {
-            // Initial Processing Time
-            return luceneIndexExists;
-        } else {
-            // Secondary Processing Time
-            return indexFolder_.exists();
-        }
-    }
-    
-    @Override
-    public void clearLuceneValiditySettings() {
-        luceneIndexExists = null;
-    }
 }

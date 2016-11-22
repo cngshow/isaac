@@ -28,7 +28,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author kec
  */
 @Contract
-public interface TaxonomyService extends PopulatedDatabaseServices {
+public interface TaxonomyService {
 
     TaxonomySnapshotService getSnapshot(TaxonomyCoordinate tc);
 
