@@ -61,9 +61,7 @@ public class StampCoordinateImpl implements StampCoordinate {
 		//for jaxb
 	}
 
-	public StampCoordinateImpl(StampPrecedence stampPrecedence,
-			  StampPosition stampPosition,
-			  ConceptSequenceSet moduleSequences, EnumSet<State> allowedStates) {
+	public StampCoordinateImpl(StampPrecedence stampPrecedence, StampPosition stampPosition, ConceptSequenceSet moduleSequences, EnumSet<State> allowedStates) {
 		this.stampPrecedence = stampPrecedence;
 		this.stampPosition = stampPosition;
 		this.moduleSequences = moduleSequences;
@@ -79,22 +77,6 @@ public class StampCoordinateImpl implements StampCoordinate {
 		this(stampPrecedence, stampPosition,
 				  ConceptSequenceSet.of(moduleSpecifications.stream().mapToInt((spec) -> spec.getConceptSequence())),
 				  allowedStates);
-	}
-
-	/**
-	 *
-	 * @param stampPrecedence
-	 * @param stampPosition
-	 * @param moduleSequencesArray
-	 * @param allowedStates
-	 * @deprecated moduleSequencesArray not typesafe. Use a different
-	 * constructor.
-	 */
-	@Deprecated
-	public StampCoordinateImpl(StampPrecedence stampPrecedence,
-			  StampPosition stampPosition,
-			  int[] moduleSequencesArray, EnumSet<State> allowedStates) {
-		this(stampPrecedence, stampPosition, ConceptSequenceSet.of(moduleSequencesArray), allowedStates);
 	}
 
 	public SetChangeListener<State> setAllowedStatesProperty(SetProperty<State> allowedStatesProperty) {
