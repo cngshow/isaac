@@ -89,6 +89,11 @@ public class RelationshipAdaptorChronologyImpl
     }
 
     @Override
+    public List<? extends RelationshipVersionAdaptorImpl> getUnwrittenVersionList() {
+        throw new UnsupportedOperationException("Not supported."); 
+    }
+
+    @Override
     public IntStream getVersionStampSequences() {
         IntStream.Builder stampSequences = IntStream.builder();
         versionList.forEach((version) -> {stampSequences.accept(version.stampSequence);});
