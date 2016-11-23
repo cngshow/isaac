@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.commit.manager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 
+import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
@@ -70,15 +70,14 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	public ChangeSetWriterHandler() throws Exception {
 
-		filePath = Paths.get("C:/Users/Nuno/Desktop/test/");
-		//filePath = LookupService.getService(ChangeSetWriterService.class).getChronicleFolderPath().resolve("changeset-service");
+		Optional<Path> filePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-		if (!Files.exists(filePath)) {
-			Files.createDirectories(filePath);
+		if (!Files.exists(filePath.get())) {
+			Files.createDirectories(filePath.get());
 		}
 
-		Optional<Path> jsonPath = Optional.of(filePath.resolve("ChangeSet" + jsonFileSuffix));
-		Optional<Path> ibdfPath = Optional.of(filePath.resolve("ChangeSet" + ibdfFileSuffix));
+		Optional<Path> jsonPath = Optional.of(filePath.get().resolve("ChangeSet" + jsonFileSuffix));
+		Optional<Path> ibdfPath = Optional.of(filePath.get().resolve("ChangeSet" + ibdfFileSuffix));
 		writer = new MultipleDataWriterService(jsonPath, ibdfPath);
 	}
 
