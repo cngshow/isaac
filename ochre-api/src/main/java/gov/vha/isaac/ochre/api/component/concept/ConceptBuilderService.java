@@ -15,10 +15,9 @@
  */
 package gov.vha.isaac.ochre.api.component.concept;
 
+import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
-import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
-import org.jvnet.hk2.annotations.Contract;
 
 /**
  *
@@ -31,9 +30,12 @@ public interface ConceptBuilderService
 	/**
 	 * @param conceptName - Optional - if specified, a FSN will be created using this value (but see additional information on semanticTag)
 	 * @param semanticTag - Optional - if specified, conceptName must be specified, and two descriptions will be created using the following forms:
-	 *   FSN:       "conceptName (semanticTag)"
-	 *   Preferred: "conceptName"
-	 * If not specified, only a FSN will be created, using exactly the conceptName value. No Preferred term will be created.
+	 * - FSN: "conceptName (semanticTag)"
+	 * - Preferred: "conceptName"
+	 * If not specified:
+	 *    - If the specified FSN contains a semantic tag, the FSN will be created using that value. A preferred term will be created by stripping the
+	 * supplied semantic tag.
+	 *   - If the specified FSN does not contain a semantic tag, no preferred term will be created.
 	 * @param logicalExpression - Optional
 	 */
 	ConceptBuilder getDefaultConceptBuilder(String conceptName, String semanticTag, LogicalExpression logicalExpression);
@@ -53,9 +55,12 @@ public interface ConceptBuilderService
 	/**
 	 * @param conceptName - Optional - if specified, a FSN will be created using this value (but see additional information on semanticTag)
 	 * @param semanticTag - Optional - if specified, conceptName must be specified, and two descriptions will be created using the following forms:
-	 * FSN: - "conceptName (semanticTag)"
-	 * Preferred: "conceptName"
-	 * If not specified, only a FSN will be created, using exactly the conceptName value. No Preferred term will be created.
+	 * - FSN: "conceptName (semanticTag)"
+	 * - Preferred: "conceptName"
+	 * If not specified:
+	 *    - If the specified FSN contains a semantic tag, the FSN will be created using that value. A preferred term will be created by stripping the
+	 * supplied semantic tag.
+	 *   - If the specified FSN does not contain a semantic tag, no preferred term will be created.
 	 * @param logicalExpression - Optional
 	 * @param languageForDescriptions - Optional - used as the language for the created FSN and preferred term
 	 * @param dialectForDescriptions - Optional - used as the language for the created FSN and preferred term

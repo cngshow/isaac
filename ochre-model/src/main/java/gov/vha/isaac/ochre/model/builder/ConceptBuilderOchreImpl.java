@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -30,6 +31,7 @@ import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderS
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilderService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
@@ -59,7 +61,10 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
      * @param semanticTag - Optional - if specified, conceptName must be specified, and two descriptions will be created using the following forms: 
      *   FSN: -     "conceptName (semanticTag)"
      *   Preferred: "conceptName"
-     * If not specified, only a FSN will be created, using exactly the conceptName value.  No Preferred term will be created.
+     * If not specified: 
+     *   If the specified FSN contains a semantic tag, the FSN will be created using that value.  A preferred term will be created by stripping the 
+     *   supplied semantic tag.
+     *   If the specified FSN does not contain a semantic tag, no preferred term will be created.
      * @param logicalExpression - Optional
      * @param defaultLanguageForDescriptions - Optional - used as the language for the created FSN and preferred term
      * @param defaultDialectAssemblageForDescriptions - Optional - used as the language for the created FSN and preferred term
@@ -90,6 +95,9 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
                 StringBuilder descriptionTextBuilder = new StringBuilder();
                 descriptionTextBuilder.append(conceptName);
                 if (StringUtils.isNotBlank(semanticTag)) {
+                    if (conceptName.lastIndexOf('(') > 0 && conceptName.lastIndexOf(')') == conceptName.length()) {
+                        throw new IllegalArgumentException("A semantic tag was passed, but this fsn description already appears to contain a semantic tag");
+                    }
                     descriptionTextBuilder.append(" (");
                     descriptionTextBuilder.append(semanticTag);
                     descriptionTextBuilder.append(")");
@@ -110,15 +118,29 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     @Override
     public DescriptionBuilder<?, ?> getSynonymPreferredDescriptionBuilder() {
         synchronized (this) {
-            if (preferredDescriptionBuilder == null && StringUtils.isNotBlank(conceptName) && StringUtils.isNotBlank(semanticTag)) {
+            if (preferredDescriptionBuilder == null) {
                 if (defaultLanguageForDescriptions == null || defaultDialectAssemblageForDescriptions == null) {
                     throw new IllegalStateException("language and dialect are required if a concept name is provided");
                 }
-                preferredDescriptionBuilder = LookupService.getService(DescriptionBuilderService.class).
-                getDescriptionBuilder(conceptName, this,
-                        TermAux.SYNONYM_DESCRIPTION_TYPE,
-                        defaultLanguageForDescriptions).
-                addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+                
+                String prefName = null;
+                if (StringUtils.isNotBlank(semanticTag)) {
+                    prefName = conceptName;
+                }
+                else if (conceptName.lastIndexOf('(') > 0 && conceptName.lastIndexOf(')') == conceptName.length()) {
+                    //they didn't provide a stand-alone semantic tag.  If they included a semantic tag in what they provided, strip it.
+                    //If not, don't create a preferred term, as it would just be identical to the FSN.
+                    prefName = conceptName.substring(0,  conceptName.lastIndexOf('(')).trim();
+                }
+                
+                if (prefName != null)
+                {
+                    preferredDescriptionBuilder = LookupService.getService(DescriptionBuilderService.class).
+                    getDescriptionBuilder(prefName, this,
+                            TermAux.SYNONYM_DESCRIPTION_TYPE,
+                            defaultLanguageForDescriptions).
+                    addPreferredInDialectAssemblage(defaultDialectAssemblageForDescriptions);
+                }
             }
         }
         return preferredDescriptionBuilder;
@@ -143,7 +165,8 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public OptionalWaitTask<ConceptChronology<?>> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode, List builtObjects) throws IllegalStateException {
+    public OptionalWaitTask<ConceptChronology<?>> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode, 
+            List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
 
         ArrayList<OptionalWaitTask<?>> nestedBuilders = new ArrayList<>();
         ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
@@ -181,7 +204,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public ConceptChronology build(int stampCoordinate, List builtObjects) throws IllegalStateException {
+    public ConceptChronology build(int stampCoordinate, List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
 
         ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(stampCoordinate);
