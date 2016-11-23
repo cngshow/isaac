@@ -21,6 +21,7 @@ import java.util.List;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
@@ -30,6 +31,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeBuilderService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
@@ -87,7 +89,8 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
     }
 
     @Override
-    public OptionalWaitTask<T> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode, List builtObjects) throws IllegalStateException {
+    public OptionalWaitTask<T> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode, 
+            List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
         if (conceptSequence == Integer.MAX_VALUE) {
             conceptSequence = Get.identifierService().getConceptSequenceForUuids(conceptBuilder.getUuids());
         }
@@ -125,7 +128,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
     }
 
     @Override
-    public T build(int stampSequence, List builtObjects) throws IllegalStateException {
+    public T build(int stampSequence, List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
         if (conceptSequence == Integer.MAX_VALUE) {
             conceptSequence = Get.identifierService().getConceptSequenceForUuids(conceptBuilder.getUuids());
         }

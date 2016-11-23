@@ -276,7 +276,7 @@ public class BinaryDataDifferProviderUtility {
 			if (type == OchreExternalizableObjectType.CONCEPT) {
 				return newChron;
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
-				ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+				List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 				SememeChronology<?> sememe = null;
 				for (StampedVersion version : newChron.getVersionList()) {
 					SememeBuilder<?> builder = getBuilder((SememeVersion<?>) version);
