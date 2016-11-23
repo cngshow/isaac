@@ -22,6 +22,7 @@ import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -29,6 +30,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
@@ -75,7 +77,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     @Override
     public OptionalWaitTask<C> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode,
-            List builtObjects) throws IllegalStateException {
+            List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
@@ -162,7 +164,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
 
     @Override
     public C build(int stampSequence,
-            List builtObjects) throws IllegalStateException {
+        List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }

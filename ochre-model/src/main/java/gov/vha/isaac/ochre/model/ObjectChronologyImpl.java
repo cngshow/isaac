@@ -498,6 +498,20 @@ public abstract class ObjectChronologyImpl<V extends ObjectVersionImpl>
         }
         return results;
     }
+    
+    /**
+    *
+    * @return a list of all unwritten versions contained in this chronicle.
+    */
+   @Override
+   public List<? extends V> getUnwrittenVersionList() {
+       ArrayList<V> results = new ArrayList<>();
+       
+       if (unwrittenData != null) {
+           results.addAll(unwrittenData.values());
+       }
+       return results;
+   }
 
     private void readVersionList(ByteArrayDataBuffer bb) {
         if (bb.isExternalData()) {

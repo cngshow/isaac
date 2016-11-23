@@ -17,11 +17,13 @@ package gov.vha.isaac.ochre.api;
 
 import java.util.List;
 import java.util.UUID;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.IdentifiedObject;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 
 /**
@@ -90,14 +92,14 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * Create a component with a state of ACTIVE. 
      * @param editCoordinate the edit coordinate that determines the author, module and path for the change
      * @param changeCheckerMode determines if added to the commit manager with or without checks. 
-     * @param subordinateBuiltObjects a list of subordinate objects also build as a result of building this object.
+     * @param subordinateBuiltObjects a list of subordinate objects also build as a result of building this object.  Includes top-level object being built. 
      * @return a task which will return the constructed component after it has been added to the commit manager - 
      * the write to the commit manager is not complete until the task is complete (the task has already been launched)
      * @throws IllegalStateException 
      */
     OptionalWaitTask<T> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode,
-            List<?> subordinateBuiltObjects) throws IllegalStateException;
+            List<ObjectChronology<? extends StampedVersion>> subordinateBuiltObjects) throws IllegalStateException;
 
     /**
      * The caller is responsible to write the component to the proper store when 
@@ -109,7 +111,7 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * @return the constructed component, not yet written to the database. 
      * @throws IllegalStateException 
      */
-    T build(int stampSequence, List<?> builtObjects) throws IllegalStateException;
+    T build(int stampSequence, List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException;
  
     /**
      * Add a nested Sememe that should be chained / built when build is called on this component

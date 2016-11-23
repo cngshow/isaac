@@ -48,6 +48,11 @@ public interface ObjectChronology<V extends StampedVersion>
     List<? extends V> getVersionList();
     
     /**
+     * @return a list of all unwritten versions of this object chronology, with no order guarantee. 
+     */
+    List<? extends V> getUnwrittenVersionList();
+    
+    /**
      * 
      * @return Get a graph representation of the versions of this object chronology, where the root of the 
      * graph is the original version of this component on a path, and the children are in sequential order, taking path 
