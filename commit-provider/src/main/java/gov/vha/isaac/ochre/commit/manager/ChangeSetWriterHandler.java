@@ -57,12 +57,11 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service(name = "Change Set Writer Handler")
-@RunLevel(value = 2)
+@RunLevel(value = 3)
 public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSetListener {
 
 	private static final Logger LOG = LogManager.getLogger();
 
-	private Path filePath;
 	private static final String jsonFileSuffix = ".json";
 	private static final String ibdfFileSuffix = ".ibdf";
 	private BinaryDataWriterService writer;
@@ -72,12 +71,12 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 		Optional<Path> filePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-		if (!Files.exists(filePath.get())) {
-			Files.createDirectories(filePath.get());
+		if (!Files.exists(filePath.get().getParent())) {
+			Files.createDirectories(filePath.get().getParent());
 		}
 
-		Optional<Path> jsonPath = Optional.of(filePath.get().resolve("ChangeSet" + jsonFileSuffix));
-		Optional<Path> ibdfPath = Optional.of(filePath.get().resolve("ChangeSet" + ibdfFileSuffix));
+		Optional<Path> jsonPath = Optional.of(filePath.get().getParent().resolve("ChangeSet" + jsonFileSuffix));
+		Optional<Path> ibdfPath = Optional.of(filePath.get().getParent().resolve("ChangeSet" + ibdfFileSuffix));
 		writer = new MultipleDataWriterService(jsonPath, ibdfPath);
 	}
 
