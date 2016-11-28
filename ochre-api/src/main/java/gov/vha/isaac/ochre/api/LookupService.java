@@ -46,7 +46,7 @@ public class LookupService {
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
-    public static final int ISAAC_STOPPED_RUNLEVEL = -3;
+    public static final int SYSTEM_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
 
     /**
@@ -219,10 +219,23 @@ public class LookupService {
     public static void shutdownIsaac() {
         if (isInitialized())
         {
-            setRunLevel(ISAAC_STOPPED_RUNLEVEL);
+            setRunLevel(WORKERS_STARTED_RUNLEVEL);
             looker.shutdown();
             ServiceLocatorFactory.getInstance().destroy(looker);
             looker = null;
+            
+            // Fully release any system locks to database
+            System.gc();
+        }
+    }
+    
+    /**
+     * Stop all system services, blocking until stopped (or failed)
+     */
+   public static void shutdownSystem () {
+       if (isInitialized())
+       {
+           setRunLevel(SYSTEM_STOPPED_RUNLEVEL);
         }
     }
     
