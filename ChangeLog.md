@@ -3,7 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/11/?? - 3.21
+* 2016/11/?? - 3.22
+    *
+
+* 2016/11/28 - 3.21
     * Fixed a null pointer in association reading.
 
 * 2016/11/28 - 3.20
