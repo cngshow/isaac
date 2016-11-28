@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2016/11/?? - 3.21
+    *
+
 * 2016/11/28 - 3.20
     * Changes to make the concept builder more flexible with respect to creation of FSN and preferred term.
     * Integrating commit handling / notification
