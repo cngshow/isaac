@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/11/?? - 3.22
-    *
+    * Move the changesets down into a changesets folder to resolve db build issues.
 
 * 2016/11/28 - 3.21
     * Fixed a null pointer in association reading.
