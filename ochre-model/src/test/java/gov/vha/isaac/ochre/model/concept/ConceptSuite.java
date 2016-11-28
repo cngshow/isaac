@@ -5,6 +5,7 @@ import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
@@ -25,7 +26,7 @@ import java.nio.file.Paths;
 
 import static gov.vha.isaac.ochre.api.constants.Constants.DATA_STORE_ROOT_LOCATION_PROPERTY;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
-
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -92,6 +93,7 @@ public class ConceptSuite {
 
         ConceptBuilderOchreImpl testConceptBuilder = new ConceptBuilderOchreImpl(conceptName,
                 semanticTag,
+                null,
                 defaultLanguageForDescriptions,
                 defaultDialectAssemblageForDescriptions,
                 defaultLogicCoordinate);
@@ -104,7 +106,7 @@ public class ConceptSuite {
         int stampSequence = Get.stampService().getStampSequence(State.ACTIVE, time,
                 authorSequence, moduleSequence, pathSequence);
 
-        List<?> builtObjects = new ArrayList<>();
+        List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
         ConceptChronology concept = testConceptBuilder.build(stampSequence, builtObjects);
 
         for (Object obj: builtObjects) {

@@ -185,6 +185,34 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
+	 * Construct a stamp coordinate from an existing stamp coordinate, and the path from the edit coordinate, ensuring that the returned 
+	 * stamp coordinate includes the module edit coordinate.
+	 * 
+	 * @param stampCoordinate - optional - used to fill in the stamp details not available from the edit coordinate.  If not provided, 
+	 * uses the system defaults.
+	 * @param editCoordinate - ensure that the returned stamp coordinate includes the module and path from this edit coordinate.
+	 * @return a new stamp coordinate
+	 */
+	public static StampCoordinate getStampCoordinateFromEditCoordinate(StampCoordinate stampCoordinate, EditCoordinate editCoordinate)
+	{
+		if (stampCoordinate == null)
+		{
+			stampCoordinate = Get.configurationService().getDefaultStampCoordinate();
+		}
+		
+		StampPosition stampPosition = new StampPositionImpl(stampCoordinate.getStampPosition().getTime(), editCoordinate.getPathSequence());
+		
+		StampCoordinateImpl temp = new StampCoordinateImpl(stampCoordinate.getStampPrecedence(), stampPosition,
+				stampCoordinate.getModuleSequences(), stampCoordinate.getAllowedStates());
+		
+		if (temp.getModuleSequences().size() > 0)
+		{
+			temp.getModuleSequences().add(editCoordinate.getModuleSequence());
+		}
+		return temp;
+	}
+	
+	/**
 	 * 
 	 * {@link IdInfo}
 	 *

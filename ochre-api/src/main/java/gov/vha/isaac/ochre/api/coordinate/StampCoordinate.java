@@ -1,10 +1,10 @@
 package gov.vha.isaac.ochre.api.coordinate;
 
-import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 
 /**
  * Coordinate to control the retrieval and display of
@@ -61,5 +61,5 @@ public interface StampCoordinate extends TimeBasedAnalogMaker<StampCoordinate>, 
      * the allowed states must include {@code State.INACTIVE}
      * @return the set of allowed states for results based on this stamp coordinate. 
      */
-    Set<State> getAllowedStates();
+    EnumSet<State> getAllowedStates();
 }

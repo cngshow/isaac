@@ -96,7 +96,7 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
 
     @Override
     public final OptionalWaitTask<T> build(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode) throws IllegalStateException {
-        return build(editCoordinate, changeCheckerMode, new ArrayList());
+        return build(editCoordinate, changeCheckerMode, new ArrayList<>());
     }
     
     @Override

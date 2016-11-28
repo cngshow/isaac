@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,32 +15,57 @@
  */
 package gov.vha.isaac.ochre.api.component.concept;
 
+import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
-import org.jvnet.hk2.annotations.Contract;
 
 /**
  *
  * @author kec
  */
 @Contract
-public interface ConceptBuilderService {
-    
-    ConceptBuilder getDefaultConceptBuilder(String conceptName, 
-            String semanticTag, LogicalExpression logicalExpression);
-    
-    ConceptBuilderService setDefaultLanguageForDescriptions(ConceptSpecification languageForDescriptions);
-    ConceptSpecification getDefaultLanguageForDescriptions();
-    
-    ConceptBuilderService setDefaultDialectAssemblageForDescriptions(ConceptSpecification dialectForDescriptions);
-    ConceptSpecification getDefaultDialectForDescriptions();
-    
-    ConceptBuilderService setDefaultLogicCoordinate(LogicCoordinate logicCoordinate);
-    LogicCoordinate getDefaultLogicCoordinate();
-    
-    ConceptBuilder getConceptBuilder(String conceptName, String semanticTag, 
-            LogicalExpression logicalExpression,
-            ConceptSpecification languageForDescriptions, 
-            ConceptSpecification dialectForDescriptions,
-            LogicCoordinate logicCoordinate);
+public interface ConceptBuilderService
+{
+
+	/**
+	 * @param conceptName - Optional - if specified, a FSN will be created using this value (but see additional information on semanticTag)
+	 * @param semanticTag - Optional - if specified, conceptName must be specified, and two descriptions will be created using the following forms:
+	 * - FSN: "conceptName (semanticTag)"
+	 * - Preferred: "conceptName"
+	 * If not specified:
+	 *    - If the specified FSN contains a semantic tag, the FSN will be created using that value. A preferred term will be created by stripping the
+	 * supplied semantic tag.
+	 *   - If the specified FSN does not contain a semantic tag, no preferred term will be created.
+	 * @param logicalExpression - Optional
+	 */
+	ConceptBuilder getDefaultConceptBuilder(String conceptName, String semanticTag, LogicalExpression logicalExpression);
+
+	ConceptBuilderService setDefaultLanguageForDescriptions(ConceptSpecification languageForDescriptions);
+
+	ConceptSpecification getDefaultLanguageForDescriptions();
+
+	ConceptBuilderService setDefaultDialectAssemblageForDescriptions(ConceptSpecification dialectForDescriptions);
+
+	ConceptSpecification getDefaultDialectForDescriptions();
+
+	ConceptBuilderService setDefaultLogicCoordinate(LogicCoordinate logicCoordinate);
+
+	LogicCoordinate getDefaultLogicCoordinate();
+
+	/**
+	 * @param conceptName - Optional - if specified, a FSN will be created using this value (but see additional information on semanticTag)
+	 * @param semanticTag - Optional - if specified, conceptName must be specified, and two descriptions will be created using the following forms:
+	 * - FSN: "conceptName (semanticTag)"
+	 * - Preferred: "conceptName"
+	 * If not specified:
+	 *    - If the specified FSN contains a semantic tag, the FSN will be created using that value. A preferred term will be created by stripping the
+	 * supplied semantic tag.
+	 *   - If the specified FSN does not contain a semantic tag, no preferred term will be created.
+	 * @param logicalExpression - Optional
+	 * @param languageForDescriptions - Optional - used as the language for the created FSN and preferred term
+	 * @param dialectForDescriptions - Optional - used as the language for the created FSN and preferred term
+	 * @param logicCoordinate - Optional - used during the creation of the logical expression, if any are passed for creation.
+	 */
+	ConceptBuilder getConceptBuilder(String conceptName, String semanticTag, LogicalExpression logicalExpression, ConceptSpecification languageForDescriptions,
+			ConceptSpecification dialectForDescriptions, LogicCoordinate logicCoordinate);
 }

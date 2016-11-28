@@ -15,12 +15,13 @@
  */
 package gov.vha.isaac.ochre.model.observable.coordinate;
 
+import java.util.EnumSet;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampPosition;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.observable.ObservableFields;
 import javafx.beans.property.ObjectProperty;
@@ -29,7 +30,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleSetProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableIntegerArray;
-import javafx.collections.ObservableSet;
 
 /**
  *
@@ -76,11 +76,9 @@ public class ObservableStampCoordinateImpl extends ObservableCoordinateImpl impl
     }
 
     @Override
-    public ObservableSet<State> getAllowedStates() {
-        return allowedStatesProperty().getValue();
+    public EnumSet<State> getAllowedStates() {
+        return stampCoordinate.getAllowedStates();
     }
-    
-    
 
     @Override
     public ObjectProperty<StampPrecedence> stampPrecedenceProperty() {
