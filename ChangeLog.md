@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/11/?? - 3.21
-    *
+    * Fixed a null pointer in association reading.
 
 * 2016/11/28 - 3.20
     * Changes to make the concept builder more flexible with respect to creation of FSN and preferred term.
