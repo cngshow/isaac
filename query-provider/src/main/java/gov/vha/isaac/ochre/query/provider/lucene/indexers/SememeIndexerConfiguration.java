@@ -197,8 +197,8 @@ public class SememeIndexerConfiguration
 		}
 		
 		SememeBuilder<? extends SememeChronology<? extends DynamicSememe<?>>> sb = 
-				Get.sememeBuilderService().getDynamicSememeBuilder(assemblageNidOrSequence,
-						DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getSequence(), data);
+				Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(assemblageNidOrSequence),
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getNid(), data);
 		
 		sb.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
 		Get.commitService().commit("Index Config Change").get();
@@ -221,12 +221,12 @@ public class SememeIndexerConfiguration
 		return LookupService.get().getService(SememeIndexerConfiguration.class).whatColumnsToIndex(assemblageSequence);
 	}
 	
-	private static DynamicSememe<? extends DynamicSememe<?>> findCurrentIndexConfigRefex(int assemblageNidOrSequence) throws RuntimeException
+	private static DynamicSememe<? extends DynamicSememe<?>> findCurrentIndexConfigRefex(int indexedSememeId) throws RuntimeException
 	{
 		@SuppressWarnings("rawtypes")
 		SememeSnapshotService<DynamicSememe> sss = Get.sememeService().getSnapshot(DynamicSememe.class, StampCoordinates.getDevelopmentLatest());
 		@SuppressWarnings("rawtypes")
-		Stream<LatestVersion<DynamicSememe>> sememes = sss.getLatestSememeVersionsForComponentFromAssemblage(assemblageNidOrSequence, 
+		Stream<LatestVersion<DynamicSememe>> sememes = sss.getLatestSememeVersionsForComponentFromAssemblage(Get.identifierService().getConceptNid(indexedSememeId), 
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getSequence());
 
 		@SuppressWarnings("rawtypes")

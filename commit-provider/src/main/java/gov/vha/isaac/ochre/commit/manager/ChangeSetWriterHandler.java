@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.commit.manager;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,14 +70,18 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	public ChangeSetWriterHandler() throws Exception {
 
-		Optional<Path> filePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
+		Optional<Path> databasePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-		if (!Files.exists(filePath.get().getParent())) {
-			Files.createDirectories(filePath.get().getParent());
+		
+		Path changeSetFolder = databasePath.get().resolve("changesets");
+		Files.createDirectories(changeSetFolder);
+		if (!changeSetFolder.toFile().isDirectory()) {
+			throw new RuntimeException(
+					"Cannot initialize Changeset Store - was unable to create " + changeSetFolder.toAbsolutePath());
 		}
 
-		Optional<Path> jsonPath = Optional.of(filePath.get().getParent().resolve("ChangeSet" + jsonFileSuffix));
-		Optional<Path> ibdfPath = Optional.of(filePath.get().getParent().resolve("ChangeSet" + ibdfFileSuffix));
+		Optional<Path> jsonPath = Optional.of(changeSetFolder.resolve("ChangeSet" + jsonFileSuffix));
+		Optional<Path> ibdfPath = Optional.of(changeSetFolder.resolve("ChangeSet" + ibdfFileSuffix));
 		writer = new MultipleDataWriterService(jsonPath, ibdfPath);
 	}
 
