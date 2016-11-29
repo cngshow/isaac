@@ -1328,7 +1328,7 @@ public class EConceptUtility
 	public void shutdown()	
 	{
 		writer_.close();
-		LookupService.shutdownIsaac();
+		LookupService.shutdownSystem();
 		ConverterUUID.clearCache();
 		clearLoadStats();
 	}
