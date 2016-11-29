@@ -15,7 +15,6 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.api.ConceptActiveService;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.*;
@@ -105,12 +104,19 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
+    private boolean validityCalculated = true;
+    private boolean databaseMissing = false;
+    private boolean databasePopulated = false;
     
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
+        if (!Files.exists(taxonomyProviderFolder)) {
+            databaseMissing  = true;
+        }
+
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
         originDestinationTaxonomyRecordMap
@@ -125,7 +131,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LOG.info("Starting TaxonomyService post-construct");
             if (!loadRequired.get()) {
                 LOG.info("Reading taxonomy.");
-                originDestinationTaxonomyRecordMap.initialize();
+                boolean isPopulated = originDestinationTaxonomyRecordMap.initialize();
                 File inputFile = new File(taxonomyProviderFolder.toFile(), ORIGIN_DESTINATION_MAP);
                 try (DataInputStream in = new DataInputStream(new BufferedInputStream(
                         new FileInputStream(inputFile)))) {
@@ -133,6 +139,10 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                     for (int i = 0; i < size; i++) {
                         destinationOriginRecordSet.add(new DestinationOriginRecord(in.readInt(), in.readInt()));
                     }
+                }
+
+                if (isPopulated) {
+                    databasePopulated = true;
                 }
             }
             Get.commitService().addChangeListener(this);
@@ -1057,4 +1067,29 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         originDestinationTaxonomyRecordMap.put(conceptSequence, parentTaxonomyRecord);
     }
 
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        validityCalculated = false;
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return validityCalculated;
+    }
+    
+    @Override
+    public boolean isDatabaseMissing() {
+        return databaseMissing;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return databasePopulated;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return taxonomyProviderFolder; 
+    }
 }

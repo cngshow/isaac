@@ -76,6 +76,11 @@ public class ConceptProvider implements ConceptService {
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
 
+    private boolean validityCalculated = true;
+    private boolean databaseMissing = false;
+    private boolean databasePopulated = false;
+    private Path ochreConceptPath;
+
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
             Path propertiesPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_PROPERTIES_FILE_NAME);
@@ -98,7 +103,11 @@ public class ConceptProvider implements ConceptService {
                 }
             }
 
-            Path ochreConceptPath = folderPath.resolve("ochre");
+            ochreConceptPath = folderPath.resolve("ochre");
+
+            if (!Files.exists(ochreConceptPath)) {
+                databaseMissing  = true;
+            }
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
@@ -115,8 +124,10 @@ public class ConceptProvider implements ConceptService {
         if (!loadRequired.compareAndSet(true, false)) {
 
             LOG.info("Reading existing OCHRE concept-map.");
-            conceptMap.initialize();
-
+            if (conceptMap.initialize()) {
+                databasePopulated = true;
+            }
+            
             LOG.info("Finished OCHRE read.");
         }
     }
@@ -321,5 +332,31 @@ public class ConceptProvider implements ConceptService {
     @Override
     public IntStream getConceptKeyParallelStream() {
         return conceptMap.getKeyParallelStream();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        validityCalculated = false;
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return validityCalculated;
+    }
+    
+    @Override
+    public boolean isDatabaseMissing() {
+        return databaseMissing;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return databasePopulated;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return ochreConceptPath; 
     }
 }

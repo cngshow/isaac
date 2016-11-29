@@ -79,12 +79,19 @@ public class SememeProvider implements SememeService {
     final Path sememePath;
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
+    private boolean validityCalculated = true;
+    private boolean databaseMissing = false;
+    private boolean databasePopulated = false;
 
     //For HK2
     private SememeProvider() throws IOException {
         try {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
+            if (!Files.exists(sememePath)) {
+                databaseMissing  = true;
+            }
+
             loadRequired.set(!Files.exists(sememePath));
             Files.createDirectories(sememePath);
             LOG.info("Setting up sememe provider at " + sememePath.toAbsolutePath().toString());
@@ -102,7 +109,7 @@ public class SememeProvider implements SememeService {
             LOG.info("Loading sememeMap.");
             if (!loadRequired.get()) {
                 LOG.info("Reading existing sememeMap.");
-                sememeMap.initialize();
+                boolean isPopulated = sememeMap.initialize();
 
                 LOG.info("Reading existing SememeKeys.");
 
@@ -123,6 +130,10 @@ public class SememeProvider implements SememeService {
                         int sequence = in.readInt();
                         referencedNidAssemblageSequenceSememeSequenceMap.add(new ReferencedNidAssemblageSequenceSememeSequenceKey(referencedNid, assemblageSequence, sequence));
                     }
+                }
+
+                if (isPopulated) {
+                    databasePopulated = true;
                 }
             }
 
@@ -404,5 +415,31 @@ public class SememeProvider implements SememeService {
     @Override
     public IntStream getSememeKeyParallelStream() {
         return sememeMap.getKeyParallelStream();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        validityCalculated = false;
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return validityCalculated;
+    }
+    
+    @Override
+    public boolean isDatabaseMissing() {
+        return databaseMissing;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return databasePopulated;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return sememePath; 
     }
 }

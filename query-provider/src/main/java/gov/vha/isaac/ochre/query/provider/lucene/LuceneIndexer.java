@@ -141,6 +141,10 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
 
+    private boolean validityCalculated = true;
+    private boolean databaseMissing = false;
+    private boolean databasePopulated = false;
+
     protected LuceneIndexer(String indexName) throws IOException {
         try {
             indexName_ = indexName;
@@ -154,6 +158,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             }
             
             indexFolder_ = new File(luceneRootFolder_.get(), indexName);
+            if (!indexFolder_.exists()) {
+                databaseMissing  = true;
+            } else if (indexFolder_.list().length > 0) {
+                databasePopulated = true;
+            }
+
             indexFolder_.mkdirs();
 
             log.info("Index: " + indexFolder_.getAbsolutePath());
@@ -760,4 +770,30 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);
     protected abstract void addFields(ObjectChronology<?> chronicle, Document doc);
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        validityCalculated = false;
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return validityCalculated;
+    }
+    
+    @Override
+    public boolean isDatabaseMissing() {
+        return databaseMissing;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return databasePopulated;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return indexFolder_.toPath(); 
+    }
 }

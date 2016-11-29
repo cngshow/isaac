@@ -10,6 +10,7 @@ import gov.vha.isaac.ochre.api.coordinate.LanguageCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import org.jvnet.hk2.annotations.Service;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
@@ -109,5 +110,30 @@ public class MockConceptService implements ConceptService {
     @Override
     public IntStream getConceptKeyParallelStream() {
         return conceptsMap.keySet().parallelStream().mapToInt(i -> i);
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Placeholder as databaseFolderExists always returns true.
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return false;
+    }
+
+    @Override
+    public boolean isDatabaseMissing() {
+        return false;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return false;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return null;
     }
 }

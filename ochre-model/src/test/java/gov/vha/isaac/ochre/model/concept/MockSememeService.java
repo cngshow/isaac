@@ -1,5 +1,6 @@
 package gov.vha.isaac.ochre.model.concept;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -160,5 +161,30 @@ public class MockSememeService implements SememeService {
     @Override
     public int getSememeCount() {
         return sememeMap.size();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Placeholder as databaseFolderExists always returns true.
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return false;
+    }
+
+    @Override
+    public boolean isDatabaseMissing() {
+        return false;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return false;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return null;
     }
 }

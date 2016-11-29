@@ -16,6 +16,7 @@
 package gov.vha.isaac.identifier;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -86,11 +87,17 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
      private final AtomicBoolean loadRequired = new AtomicBoolean();
+    private boolean validityCalculated = true;
+    private boolean databaseMissing = false;
+    private boolean databasePopulated = false;
 
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
+        if (!Files.exists(folderPath)) {
+            databaseMissing  = true;
+        }
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
         uuidIntMapMap = UuidIntMapMap.create(new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map"));
@@ -114,6 +121,10 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuid-nid-map can do dynamic load, no need to read all at the beginning.
                 // LOG.info("Loading uuid-nid-map.");
                 // uuidIntMapMap.read();
+
+                if (isPopulated()) {
+                    databasePopulated = true;
+                }
             }
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Identifier Provider", e);
@@ -476,5 +487,44 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         
         //We could also clear refs from the uuid map here... but that would take longer / 
         //provide minimal gain
+    }
+
+    private boolean isPopulated() {
+        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
+        File segmentDirectory = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
+        int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File segmentDirectory, String name) {
+                return (name.endsWith("map"));
+            }
+        }).length;
+
+       return numberOfSegmentFiles > 0;
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        validityCalculated = false;
+    }
+
+    @Override
+    public boolean isValidityCalculated() {
+        return validityCalculated;
+    }
+    
+    @Override
+    public boolean isDatabaseMissing() {
+        return databaseMissing;
+    }
+
+    @Override
+    public boolean isDatabasePopulated() {
+        return databasePopulated;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return folderPath; 
     }
 }

@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.api;
 
 import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.constants.Constants;
 import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import java.awt.GraphicsEnvironment;
@@ -48,6 +49,7 @@ public class LookupService {
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
     public static final int SYSTEM_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
+    private static DatabaseValidity discoveredValidityValue = null;
 
     /**
      * @return the {@link ServiceLocator} that is managing this ISAAC instance
@@ -210,9 +212,48 @@ public class LookupService {
      * Start all core isaac services, blocking until started (or failed)
      */
     public static void startupIsaac() {
-        setRunLevel(ISAAC_STARTED_RUNLEVEL);
+        try {
+            setRunLevel(ISAAC_STARTED_RUNLEVEL);
+            validateDatabaseFolderStatus();
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+                if (handle.isActive()) {
+                    handle.getService().clearDatabaseValidityValue();
+                }
+            });
+        }
     }
-    
+
+    /* 
+     * Check database directories. Either all must exist or none may exist. Inconsistent state suggests database
+     * corruption. Only do this upon startup, not every time run level is set.
+     */
+    private static void validateDatabaseFolderStatus() {
+        discoveredValidityValue = null;
+
+        looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+            if (handle.isActive()) {
+                if (discoveredValidityValue == null) {
+                    // Initial time through. All other database directories and lucene directories must have same state.
+                    discoveredValidityValue = handle.getService().getDatabaseValidity();
+                    LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
+                            + ") has database validity value: " + discoveredValidityValue);
+                } else {
+                    // Verify database directories have same state as identified in first time through.
+                    LOG.info("Comparing database validity value for Provider " + handle.getActiveDescriptor().getImplementation() + " to see if consistent at startup.  Status: "
+                            + handle.getService().getDatabaseValidity());
+
+                    if (discoveredValidityValue != handle.getService().getDatabaseValidity()) {
+                        throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
+                                + " has inconsistent database validity value prior to startup");
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Stop all core isaac service, blocking until stopped (or failed)
      */

@@ -18,6 +18,7 @@ package gov.vha.isaac.ochre.api.commit;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.jvnet.hk2.annotations.Contract;
+import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -32,7 +33,7 @@ import javafx.concurrent.Task;
  * @author kec
  */
 @Contract
-public interface CommitService {
+public interface CommitService extends DatabaseServices {
 
 
     /**

@@ -134,12 +134,19 @@ public class CommitProvider implements CommitService {
 	private final SememeSequenceSet uncommittedSememesWithChecksSequenceSet = SememeSequenceSet.concurrent();
 	private final SememeSequenceSet uncommittedSememesNoChecksSequenceSet = SememeSequenceSet.concurrent();
 
+	private boolean validityCalculated = true;
+	private boolean databaseMissing = false;
+	private boolean databasePopulated = false;
+
 	private CommitProvider() throws IOException {
 		try {
 			dbFolderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("commit-provider");
 			loadRequired.set(Files.exists(dbFolderPath));
 			Files.createDirectories(dbFolderPath);
 			commitManagerFolder = dbFolderPath.resolve(DEFAULT_CRADLE_COMMIT_MANAGER_FOLDER);
+			if (!Files.exists(commitManagerFolder)) {
+				databaseMissing  = true;
+			}
 			Files.createDirectories(commitManagerFolder);
 		} catch (Exception e) {
 			LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Provider", e);
@@ -168,6 +175,7 @@ public class CommitProvider implements CommitService {
 				stampAliasMap.read(new File(commitManagerFolder.toFile(), STAMP_ALIAS_MAP_FILENAME));
 				LOG.info("Reading: " + STAMP_COMMENT_MAP_FILENAME);
 				stampCommentMap.read(new File(commitManagerFolder.toFile(), STAMP_COMMENT_MAP_FILENAME));
+				databasePopulated = true;
 			}
 
 		} catch (Exception e) {
@@ -752,5 +760,31 @@ public class CommitProvider implements CommitService {
 				}
 			}
 		}
+	}
+	
+	@Override
+	public void clearDatabaseValidityValue() {
+		// Reset to enforce analysis
+		validityCalculated = false;
+	}
+
+	@Override
+	public boolean isValidityCalculated() {
+		return validityCalculated;
+	}
+	
+	@Override
+	public boolean isDatabaseMissing() {
+		return databaseMissing;
+	}
+
+	@Override
+	public boolean isDatabasePopulated() {
+		return databasePopulated;
+	}
+
+	@Override
+	public Path getDatabaseFolder() {
+		return commitManagerFolder; 
 	}
 }
