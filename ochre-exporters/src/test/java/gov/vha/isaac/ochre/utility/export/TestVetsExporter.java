@@ -71,7 +71,7 @@ public class TestVetsExporter
 	private static void isaacStop()
 	{
 		log.info("Stopping ISAAC");
-		LookupService.shutdownIsaac();
+		LookupService.shutdownSystem();
 		log.info("ISAAC stopped");
 	}
 }
