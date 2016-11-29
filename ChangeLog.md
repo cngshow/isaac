@@ -5,6 +5,7 @@ where provided, and the git commit history.
 
 * 2016/11/?? - 3.22
     * Move the changesets down into a changesets folder to resolve db build issues.
+    * Fix some indexer config API issues that previously went undetected (but came out due to better edge case checking)
 
 * 2016/11/28 - 3.21
     * Fixed a null pointer in association reading.
