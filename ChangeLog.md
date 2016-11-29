@@ -3,7 +3,7 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/11/?? - 3.22
+* 2016/11/29 - 3.22
     * Move the changesets down into a changesets folder to resolve db build issues.
     * Fix some indexer config API issues that previously went undetected (but came out due to better edge case checking)
 
