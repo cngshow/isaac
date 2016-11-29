@@ -54,7 +54,7 @@ import gov.vha.isaac.ochre.api.commit.CommitService;
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service
-@RunLevel(value = 2)
+@RunLevel(value = 3)
 public class ChangeSetLoadProvider implements ChangeSetLoadService {
 
 	private static final Logger LOG = LogManager.getLogger();

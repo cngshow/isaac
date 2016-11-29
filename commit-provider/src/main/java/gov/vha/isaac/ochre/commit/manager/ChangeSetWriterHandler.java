@@ -58,7 +58,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service(name = "Change Set Writer Handler")
-@RunLevel(value = 3)
+@RunLevel(value = 4)
 public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSetListener {
 
 	private static final Logger LOG = LogManager.getLogger();
