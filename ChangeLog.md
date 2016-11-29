@@ -3,8 +3,15 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/11/?? - 3.21
+* 2016/11/?? - 3.23
     *
+
+* 2016/11/29 - 3.22
+    * Move the changesets down into a changesets folder to resolve db build issues.
+    * Fix some indexer config API issues that previously went undetected (but came out due to better edge case checking)
+
+* 2016/11/28 - 3.21
+    * Fixed a null pointer in association reading.
 
 * 2016/11/28 - 3.20
     * Changes to make the concept builder more flexible with respect to creation of FSN and preferred term.

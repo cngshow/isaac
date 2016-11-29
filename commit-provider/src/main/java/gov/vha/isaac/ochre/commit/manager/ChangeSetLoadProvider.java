@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.commit.manager;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,9 +71,17 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService {
 		try {
 			LOG.info("Loading change set files.");
 			databasePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
-			LOG.debug("Looking for .ibdf file in {}.", databasePath.get().getParent().toAbsolutePath());
+			
+			Path changesetPath = databasePath.get().resolve("changesets");
+			Files.createDirectories(changesetPath);
+			if (!changesetPath.toFile().isDirectory()) {
+				throw new RuntimeException(
+						"Cannot initialize Changeset Store - was unable to create " + changesetPath.toAbsolutePath());
+			}
+			
+			LOG.debug("Looking for .ibdf file in {}.", changesetPath.toAbsolutePath());
 			CommitService commitService = Get.commitService();
-			Files.newDirectoryStream(databasePath.get().getParent(),
+			Files.newDirectoryStream(changesetPath,
 					path -> path.toFile().isFile() && path.toString().endsWith(".ibdf"))
 			.forEach(path -> {
 				LOG.debug("File {}", path.toAbsolutePath());
@@ -91,7 +100,7 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService {
 			});
 
 			//rename ChangeSet files after load otherwise ChangeSetWriterHandler will overwrite the files when it starts up.
-			renameFiles(databasePath.get());
+			renameFiles(changesetPath);
 
 			LOG.info("Finished Change Set Load Provider load.");
 
@@ -107,11 +116,11 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService {
 		LOG.info("Finished ChangeSet Load Provider pre-destory.");
 	}
 
-	private void renameFiles(Path path) throws IOException {
+	private void renameFiles(Path changeSetPath) throws IOException {
 
-		LOG.debug("Rename files for directory {}", path.getParent().toAbsolutePath());
+		LOG.debug("Rename files for directory {}", changeSetPath.toAbsolutePath());
 
-		Files.newDirectoryStream(path.getParent(),
+		Files.newDirectoryStream(changeSetPath,
 				filePath -> filePath.toFile().isFile()
 				&& (filePath.getFileName().toString().equalsIgnoreCase("ChangeSet.ibdf")
 						|| filePath.getFileName().toString().equalsIgnoreCase("ChangeSet.json" )))
