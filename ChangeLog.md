@@ -4,7 +4,8 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/11/?? - 3.24
-    * 
+    * Ensure system shuts down cleanly preventing database locks from corrupting database
+	* Add mechanism to review database to ensure isn't corrupt
 
 * 2016/11/30 - 3.23
     * (Jazz 418368) Fix the lucene indexer so it doesn't miss commit notifications
