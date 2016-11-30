@@ -155,6 +155,15 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("{DynamicSememeData≤");
+        DynamicSememeData[] data = getData();
+        //make sure the column numbers are set, so lookups can happen for column names.
+        for (int i = 0; i < data.length; i++)
+        {
+            if (data[i] != null)
+            {
+                data[i].configureNameProvider(getAssemblageSequence(), i);
+            }
+        }
         sb.append(Arrays.toString(getData()));
         toString(sb);//stamp info
         sb.append("≥DSD}");

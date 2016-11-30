@@ -46,12 +46,10 @@ public class DynamicSememeSequenceTest
 	private void test(int value) throws PropertyVetoException, IOException
 	{
 		DynamicSememeSequenceImpl i = new DynamicSememeSequenceImpl(value);
-		i.setNameIfAbsent("foo");
 		
 		assertEquals(value, i.getDataSequence());
 		assertEquals(value, ((Integer) i.getDataObject()).intValue());
 		assertEquals(value, ((Integer) i.getDataObjectProperty().get()).intValue());
 		assertEquals(i.getDynamicSememeDataType(), DynamicSememeDataType.SEQUENCE);
-		assertEquals(i.getDataObjectProperty().getName(), "foo");
 	}
 }

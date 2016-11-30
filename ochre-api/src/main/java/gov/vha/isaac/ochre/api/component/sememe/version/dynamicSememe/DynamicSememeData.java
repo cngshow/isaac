@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 import javafx.beans.property.ReadOnlyObjectProperty;
 
 /**
@@ -62,4 +63,13 @@ public interface DynamicSememeData {
      * @return
      */
     public String dataToString();
+    
+    /**
+     * In some cases, data objects are created without the necessary data to calculate their names.
+     * If necessary, the missing information can be set via this method, so that the toString and getDataXXXProperty() methods
+     * can have an appropriate name in them.  This method does nothing, if it already had the information necessary to calculate
+     * 
+     * @param nameProvider
+     */
+    public void configureNameProvider(int assemblageSequence, int columnNumber);
 }

@@ -38,8 +38,7 @@ public class DynamicSememeArrayTest
 		DynamicSememeIntegerImpl[] testDataOne = new DynamicSememeIntegerImpl[] {new DynamicSememeIntegerImpl(5), new DynamicSememeIntegerImpl(8), new DynamicSememeIntegerImpl(Integer.MAX_VALUE)};
 		
 		DynamicSememeArrayImpl<DynamicSememeIntegerImpl> testOne = new DynamicSememeArrayImpl<DynamicSememeIntegerImpl>(testDataOne);
-		testOne.setNameIfAbsent("bar");
-		
+	
 		assertEquals(3, testOne.getDataArray().length);
 		
 		assertEquals(5, testOne.getDataArray()[0].getDataInteger());
@@ -56,7 +55,6 @@ public class DynamicSememeArrayTest
 		
 		assertEquals(testOne.getDynamicSememeDataType(), DynamicSememeDataType.ARRAY);
 		assertEquals(testOne.getDataArray()[0].getDynamicSememeDataType(), DynamicSememeDataType.INTEGER);
-		assertEquals(testOne.getDataObjectProperty().getName(), "bar");
 	}
 	
 	@Test
@@ -66,7 +64,6 @@ public class DynamicSememeArrayTest
 		DynamicSememeStringImpl[] testDataTwo = new DynamicSememeStringImpl[] {new DynamicSememeStringImpl("hi"), new DynamicSememeStringImpl("bye")};
 		
 		DynamicSememeArrayImpl<DynamicSememeStringImpl> testTwo = new DynamicSememeArrayImpl<DynamicSememeStringImpl>(testDataTwo);
-		testTwo.setNameIfAbsent("bar");
 		
 		assertEquals(2, testTwo.getDataArray().length);
 		
@@ -81,6 +78,5 @@ public class DynamicSememeArrayTest
 		
 		assertEquals(testTwo.getDynamicSememeDataType(), DynamicSememeDataType.ARRAY);
 		assertEquals(testTwo.getDataArray()[0].getDynamicSememeDataType(), DynamicSememeDataType.STRING);
-		assertEquals(testTwo.getDataObjectProperty().getName(), "bar");
 	}
 }

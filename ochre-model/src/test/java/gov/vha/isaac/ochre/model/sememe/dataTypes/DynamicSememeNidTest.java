@@ -46,12 +46,10 @@ public class DynamicSememeNidTest
 	private void test(int value) throws PropertyVetoException, IOException
 	{
 		DynamicSememeNidImpl i = new DynamicSememeNidImpl(value);
-		i.setNameIfAbsent("foo");
 		
 		assertEquals(value, i.getDataNid());
 		assertEquals(value, ((Integer) i.getDataObject()).intValue());
 		assertEquals(value, ((Integer) i.getDataObjectProperty().get()).intValue());
 		assertEquals(i.getDynamicSememeDataType(), DynamicSememeDataType.NID);
-		assertEquals(i.getDataObjectProperty().getName(), "foo");
 	}
 }
