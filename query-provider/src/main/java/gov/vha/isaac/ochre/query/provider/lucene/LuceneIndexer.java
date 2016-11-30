@@ -197,15 +197,18 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 @Override
                 public void handleCommit(CommitRecord commitRecord)
                 {
-                    //noop - we already indexed when it was added uncommitted
+                    commitRecord.getSememesInCommit().stream().forEach(sememeId -> 
+                    {
+                        SememeChronology<?> sc = Get.sememeService().getSememe(sememeId);
+                        log.debug("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
+                        index(sc);
+                    });
                 }
                 
                 @Override
                 public void handleChange(SememeChronology<? extends SememeVersion<?>> sc)
                 {
-                    log.debug("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
-                    index(sc);
-                    
+                    //noop
                 }
                 
                 @Override
