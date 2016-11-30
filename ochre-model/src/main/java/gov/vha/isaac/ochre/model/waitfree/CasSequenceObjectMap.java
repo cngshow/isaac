@@ -65,15 +65,17 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
     }
 
     /**
-     * Read from disk
+     * Read from disk.
      *
+     * As part of initialization, ensure that all map files are found. Calculation made by ensuring that the number of files with the appropriate
+     * fileSuffix are sequentially found.
      */
     public boolean initialize() {
         objectByteList.clear();
         int segmentIndex = 0;
         File segmentDirectory = new File(dbFolderPath.toString());
 
-        // As part of initialization, ensure that all map files are found.
+        // Identify number of files with fileSuffix
         int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -81,6 +83,7 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
             }
         }).length;
 
+        // While initializing, if cannot find expected *.fileSuffix file sequentially, database is corrupt.
         while (segmentIndex < numberOfSegmentFiles) {
             File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
 

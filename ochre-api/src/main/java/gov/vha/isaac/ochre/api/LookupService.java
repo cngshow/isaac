@@ -214,12 +214,19 @@ public class LookupService {
      */
     public static void startupIsaac() {
         try {
+            // Set run level to startup database and lucene services
             setRunLevel(DATABASE_STARTED_RUNLEVEL);
+
+            // Validate that databases & lucene directories uniformly exist and are uniformly populated during startup 
             validateDatabaseFolderStatus();
+
+            // If database is validated, startup remaining run levels
             setRunLevel(ISAAC_STARTED_RUNLEVEL);
         } catch (Exception e) {
+            // Will inform calling routines that database is corrupt
             throw e;
         } finally {
+            // Regardless of successful or failed startup, reset database and lucene services' validityCalculated flag for next startup attempt
             looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
                 if (handle.isActive()) {
                     handle.getService().clearDatabaseValidityValue();
@@ -230,7 +237,7 @@ public class LookupService {
 
     /* 
      * Check database directories. Either all must exist or none may exist. Inconsistent state suggests database
-     * corruption. Only do this upon startup, not every time run level is set.
+     * corruption
      */
     private static void validateDatabaseFolderStatus() {
         discoveredValidityValue = null;
@@ -238,16 +245,17 @@ public class LookupService {
         looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
             if (handle.isActive()) {
                 if (discoveredValidityValue == null) {
-                    // Initial time through. All other database directories and lucene directories must have same state.
+                    // Initial time through. All other database directories and lucene directories must have same state
                     discoveredValidityValue = handle.getService().getDatabaseValidity();
                     LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
                             + ") has database validity value: " + discoveredValidityValue);
                 } else {
-                    // Verify database directories have same state as identified in first time through.
+                    // Verify database directories have same state as identified in first time through
                     LOG.info("Comparing database validity value for Provider " + handle.getActiveDescriptor().getImplementation() + " to see if consistent at startup.  Status: "
                             + handle.getService().getDatabaseValidity());
 
                     if (discoveredValidityValue != handle.getService().getDatabaseValidity()) {
+                        // Inconsistency discovered
                         throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
                                 + " has inconsistent database validity value prior to startup");
                     }

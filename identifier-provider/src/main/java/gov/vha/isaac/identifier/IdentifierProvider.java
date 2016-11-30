@@ -489,8 +489,10 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         //provide minimal gain
     }
 
+    /*
+     * Investigate if "uuid-nid-map" directory is populated with at least one *.map file. 
+     */
     private boolean isPopulated() {
-        // First time through is analysis.  If a database downloaded, all values will have common value of 'true'.
         File segmentDirectory = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
         int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
             @Override
