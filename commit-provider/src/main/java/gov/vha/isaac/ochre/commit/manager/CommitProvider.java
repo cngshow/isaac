@@ -631,6 +631,11 @@ public class CommitProvider implements CommitService {
 	}
 
 
+	/**
+	 * Due to the use of Weak References in the implementation, you MUST maintain a reference to the change listener that is passed in here, 
+	 * otherwise, it will be rapidly garbage collected, and you will randomly stop getting change notifications!
+	 * @see gov.vha.isaac.ochre.api.commit.CommitService#addChangeListener(gov.vha.isaac.ochre.api.commit.ChronologyChangeListener)
+	 */
 	@Override
 	public void addChangeListener(ChronologyChangeListener changeListener) {
 		changeListeners.add(new ChangeListenerReference(changeListener));
