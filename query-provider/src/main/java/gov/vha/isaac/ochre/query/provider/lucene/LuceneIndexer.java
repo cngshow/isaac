@@ -111,6 +111,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     
     private static AtomicReference<File> luceneRootFolder_ = new AtomicReference<>();
     private File indexFolder_ = null;
+    private ChronologyChangeListener changeListenerRef_;
     
     //don't need to analyze this - and even though it is an integer, we index it as a string, as that is faster when we are only doing
     //exact matches.
@@ -200,7 +201,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             //Register for commits:
             
             log.info("Registering indexer " + getIndexerName() + " for commits");
-            Get.commitService().addChangeListener(new ChronologyChangeListener()
+            changeListenerRef_ = new ChronologyChangeListener()
             {
                 
                 @Override
@@ -208,17 +209,16 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 {
                     commitRecord.getSememesInCommit().stream().forEach(sememeId -> 
                     {
-                        handleChange(Get.sememeService().getSememe(sememeId));
+                        SememeChronology<?> sc = Get.sememeService().getSememe(sememeId);
+                        log.debug("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
+                        index(sc);
                     });
-                    
                 }
                 
                 @Override
                 public void handleChange(SememeChronology<? extends SememeVersion<?>> sc)
                 {
-                    log.info("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
-                    index(sc);
-                    
+                    //noop
                 }
                 
                 @Override
@@ -232,7 +232,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 {
                     return UuidT5Generator.get(getIndexerName());
                 }
-            });
+            };
+            Get.commitService().addChangeListener(changeListenerRef_);
             
         }
         catch (Exception e) {

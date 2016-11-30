@@ -32,8 +32,6 @@ import org.jvnet.hk2.annotations.Contract;
 @Contract
 public interface PostCommitService {
 
-	public void postCommitNotification(CommitRecord commitRecord);
-
 	public void addChangeSetListener(ChangeSetListener changeSetListener);
 
 	public void removeChangeSetListener(ChangeSetListener changeSetListener);
