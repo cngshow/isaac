@@ -31,10 +31,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.commit.ChangeSetListener;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.commit.PostCommitService;
+import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.identity.StampedVersion;
 
 /**
  *
@@ -42,36 +47,25 @@ import gov.vha.isaac.ochre.api.commit.PostCommitService;
  */
 @Service(name = "Post Commit Provider")
 @RunLevel(value = 1)
-public class PostCommitProvider implements PostCommitService {
+public class PostCommitProvider implements PostCommitService, ChronologyChangeListener {
 
 	private static final Logger LOG = LogManager.getLogger();
+	private UUID listenerId = UUID.randomUUID();
 	ConcurrentSkipListSet<WeakReference<ChangeSetListener>> changeSetListeners = new ConcurrentSkipListSet<>();
 
 	private PostCommitProvider() {
 		//for HK2
 	}
-
+	
 	@PostConstruct
 	private void startMe() {
 		LOG.info("Starting PostCommitProvider post-construct");
+		Get.commitService().addChangeListener(this);
 	}
 
 	@PreDestroy
 	private void stopMe() {
 		LOG.info("Stopping PostCommitProvider pre-destroy. ");
-	}
-
-	@Override
-	public void postCommitNotification(CommitRecord commitRecord) {
-		LOG.debug("change set listeners size: {}", changeSetListeners.size());
-		changeSetListeners.forEach((listenerReference) -> {
-			ChangeSetListener listener = listenerReference.get();
-			if (listener == null) {
-				changeSetListeners.remove(listenerReference);
-			} else {
-				listener.handlePostCommit(commitRecord);
-			}
-		});
 	}
 
 	@Override
@@ -86,6 +80,38 @@ public class PostCommitProvider implements PostCommitService {
 		changeSetListeners.remove(new ChangeSetListenerReference(changeSetListener));
 	}
 
+	//ChronologyChangeListener interfaces
+	@Override
+	public UUID getListenerUuid()
+	{
+		return listenerId;
+	}
+
+	@Override
+	public void handleChange(ConceptChronology<? extends StampedVersion> cc)
+	{
+		// not interested
+	}
+
+	@Override
+	public void handleChange(SememeChronology<? extends SememeVersion<?>> sc)
+	{
+		// not interested
+	}
+
+	@Override
+	public void handleCommit(CommitRecord commitRecord)
+	{
+		LOG.debug("change set listeners size: {}", changeSetListeners.size());
+		changeSetListeners.forEach((listenerReference) -> {
+			ChangeSetListener listener = listenerReference.get();
+			if (listener == null) {
+				changeSetListeners.remove(listenerReference);
+			} else {
+				listener.handlePostCommit(commitRecord);
+			}
+		});
+	}
 
 	private static class ChangeSetListenerReference extends WeakReference<ChangeSetListener> implements Comparable<ChangeSetListenerReference> {
 
