@@ -47,12 +47,10 @@ public class DynamicSememeUUIDTest
 	private void test(UUID value) throws PropertyVetoException, IOException
 	{
 		DynamicSememeUUIDImpl uuid = new DynamicSememeUUIDImpl(value);
-		uuid.setNameIfAbsent("foo");
 
 		assertEquals(value, uuid.getDataUUID());
 		assertEquals(value, (UUID) uuid.getDataObject());
 		assertEquals(value, (UUID) uuid.getDataObjectProperty().get());
 		assertEquals(uuid.getDynamicSememeDataType(), DynamicSememeDataType.UUID);
-		assertEquals(uuid.getDataObjectProperty().getName(), "foo");
 	}
 }

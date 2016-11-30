@@ -46,12 +46,10 @@ public class DynamicSememeDoubleTest
 	private void test(double value) throws PropertyVetoException, IOException
 	{
 		DynamicSememeDoubleImpl l = new DynamicSememeDoubleImpl(value);
-		l.setNameIfAbsent("foo");
 
 		assertEquals(value, l.getDataDouble(), 0);
 		assertEquals(value, (Double) l.getDataObject(), 0);
 		assertEquals(value, (Double) l.getDataObjectProperty().get(), 0);
 		assertEquals(l.getDynamicSememeDataType(), DynamicSememeDataType.DOUBLE);
-		assertEquals(l.getDataObjectProperty().getName(), "foo");
 	}
 }

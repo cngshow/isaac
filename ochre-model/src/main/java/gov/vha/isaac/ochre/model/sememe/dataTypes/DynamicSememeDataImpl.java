@@ -19,8 +19,7 @@
 package gov.vha.isaac.ochre.model.sememe.dataTypes;
 
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.Supplier;
 import org.slf4j.LoggerFactory;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
@@ -35,12 +34,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
  */
 public abstract class DynamicSememeDataImpl implements DynamicSememeData
 {
-	//name_ is a cache of data looked up from the assemblageNid and columnNumber.
-	//Note that name is only required by the JavaFX getDataXXXProperty() calls in the subclasses
-	//normally, this is never used at all.
-	private transient int assemblageSequence_;
-	private transient int columnNumber_ = -1;
-	private transient String name_;
+	private transient Supplier<String> nameProvider_ = null;
 	
 	protected byte[] data_;
 	
@@ -52,9 +46,7 @@ public abstract class DynamicSememeDataImpl implements DynamicSememeData
 	protected DynamicSememeDataImpl(byte[] data, int assemblageSequence, int columnNumber)
 	{
 		data_ = data;
-		assemblageSequence_ = assemblageSequence;
-		columnNumber_ = columnNumber;
-		name_ = null;
+		configureNameProvider(assemblageSequence, columnNumber);
 	}
 	
 	protected DynamicSememeDataImpl()
@@ -63,42 +55,42 @@ public abstract class DynamicSememeDataImpl implements DynamicSememeData
 	
 	protected String getName()
 	{
-		if (name_ == null)
-		{
-			if (columnNumber_ == -1)
-			{
-				throw new RuntimeException("No data is available to lookup the name.  Has this refex been added to a DynamicSememeCAB via a setData(...) call?");
-			}
-			else
-			{
-				DynamicSememeUtility ls =  LookupService.get().getService(DynamicSememeUtility.class);
-				if (ls == null)
-				{
-					throw new RuntimeException("An implementation of DynamicSememeUtiltyBI is not available on the classpath");
-				}
-				else
-				{
-					name_ = ls.readDynamicSememeUsageDescription(assemblageSequence_).getColumnInfo()[columnNumber_].getColumnName();
-				}
-			}
-		}
-		return name_;
+		return (nameProvider_ == null ? "???" : nameProvider_.get());
 	}
 	
-	/**
-	 * This method is not intended for public use.
-	 * @see org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataBI#setNameIfAbsent(java.lang.String)
-	 */
-	protected void setNameIfAbsent(String name)
+	
+	
+	@Override
+	public void configureNameProvider(int assemblageSequence, int columnNumber)
 	{
-		if (name_ == null && columnNumber_ == -1)
+		if (nameProvider_ == null)
 		{
-			name_ = name;
+			nameProvider_ = new Supplier<String>()
+			{
+				private String nameCache_ = null;
+				@Override
+				public String get()
+				{
+					if (nameCache_ == null)
+					{
+						DynamicSememeUtility ls =  LookupService.get().getService(DynamicSememeUtility.class);
+						if (ls == null)
+						{
+							throw new RuntimeException("An implementation of DynamicSememeUtility is not available on the classpath");
+						}
+						else
+						{
+							nameCache_ = ls.readDynamicSememeUsageDescription(assemblageSequence).getColumnInfo()[columnNumber].getColumnName();
+						}
+					}
+					return nameCache_;
+				}
+			};
 		}
 	}
-	
+
 	/**
-	 * @see org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataBI#getDynamicSememeDataType()
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData#getDynamicSememeDataType()
 	 */
 	@Override
 	public DynamicSememeDataType getDynamicSememeDataType()
@@ -107,7 +99,8 @@ public abstract class DynamicSememeDataImpl implements DynamicSememeData
 	}
 	
 	/**
-	 * @see org.ihtsdo.otf.tcc.api.refexDynamic.data.DynamicSememeDataBI#getData()
+	 * 
+	 * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData#getData()
 	 */
 	@Override
 	public byte[] getData()
@@ -121,18 +114,7 @@ public abstract class DynamicSememeDataImpl implements DynamicSememeData
 	@Override
 	public String toString()
 	{
-		String name;
-		try
-		{
-			name = getName();
-		}
-		catch (Exception e)
-		{
-			Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Error reading name", e);
-			name = "???";
-		}
-		
-		return "(" + getDynamicSememeDataType().name() + " - " + name + " - " + getDataObject() +")";
+		return "(" + getDynamicSememeDataType().name() + " - " + getName() + " - " + getDataObject() +")";
 	}
 	
 	@Override

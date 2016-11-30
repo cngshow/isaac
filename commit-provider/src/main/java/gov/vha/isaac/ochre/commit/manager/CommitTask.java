@@ -193,9 +193,6 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 
 				commitProvider.handleCommitNotification(commitRecord);
 
-				//post commit notification
-				Get.postCommitService().postCommitNotification(commitRecord);
-
 				return Optional.of(commitRecord);
 			}
 			// TODO Indexers need to be change listeners
