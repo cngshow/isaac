@@ -44,7 +44,7 @@ public class LookupService {
     private static final Logger LOG = LogManager.getLogger();
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
-    public static final int DATABASE_STARTED_RUNLEVEL = 2;
+    public static final int DATABASE_SERVICES_STARTED_RUNLEVEL = 2;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
@@ -214,10 +214,10 @@ public class LookupService {
      */
     public static void startupIsaac() {
         try {
-            // Set run level to startup database and lucene services
-            setRunLevel(DATABASE_STARTED_RUNLEVEL);
+            // Set run level to startup database and associated services running on top of database
+            setRunLevel(DATABASE_SERVICES_STARTED_RUNLEVEL);
 
-            // Validate that databases & lucene directories uniformly exist and are uniformly populated during startup 
+            // Validate that databases and associated services directories uniformly exist and are uniformly populated during startup 
             validateDatabaseFolderStatus();
 
             // If database is validated, startup remaining run levels
