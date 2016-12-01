@@ -25,8 +25,10 @@ import gov.va.med.term.vhat.xml.model.Terminology;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.TaxonomyService;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -39,12 +41,16 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPosition;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.associations.AssociationInstance;
 import gov.vha.isaac.ochre.associations.AssociationUtilities;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 
 
@@ -64,14 +70,13 @@ public class VetsExporter {
 	
 	private List<Terminology.CodeSystem.Version.MapSets.MapSet>_xmlMapSetCollection = new ArrayList<>();
 	
-	private StampCoordinate STAMP_COORDINATES = StampCoordinates.getDevelopmentLatest();
+	private StampCoordinate STAMP_COORDINATES = null;
 	
 	
 	public VetsExporter()
 	{
 	}
-	
-	
+
 	private UUID getFromMapByValue(Map<UUID, String> haystack, String needle) {
 		if (haystack == null || needle == null || (haystack.size() == 0) | (needle.length() == 0)) {
 			return null;
@@ -89,7 +94,6 @@ public class VetsExporter {
 		return null;
 	}
 
-	
 	/**
 	 * 
 	 * @param writeTo
@@ -97,6 +101,11 @@ public class VetsExporter {
 	 * @param endDate - only export concepts where their most recent modified date is on or before this date.  Set to Long.MAX_VALUE to get everything.
 	 */
 	public void export(OutputStream writeTo, long startDate, long endDate) {
+		STAMP_COORDINATES = new StampCoordinateImpl(
+				StampPrecedence.PATH, 
+				new StampPositionImpl(startDate, 
+						TermAux.DEVELOPMENT_PATH.getConceptSequence()), 
+				ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
 		// Build Assemblages map
 		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
@@ -797,7 +806,7 @@ public class VetsExporter {
 			tmpMap.put("OldTargetCode", oldTargetCode);
 			
 			// TODO: Is this current or target concept active?
-			boolean active = targetConcept.isLatestVersionActive(STAMP_COORDINATES);
+			boolean active = sc.isLatestVersionActive(STAMP_COORDINATES);
 			tmpMap.put("Active", active);
 			
 			tmpList.add(tmpMap);
