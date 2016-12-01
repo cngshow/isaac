@@ -103,7 +103,7 @@ public class VetsExporter {
 	public void export(OutputStream writeTo, long startDate, long endDate) {
 		STAMP_COORDINATES = new StampCoordinateImpl(
 				StampPrecedence.PATH, 
-				new StampPositionImpl(startDate, 
+				new StampPositionImpl(endDate, 
 						TermAux.DEVELOPMENT_PATH.getConceptSequence()), 
 				ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
