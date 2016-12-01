@@ -304,7 +304,7 @@ public class VetsExporter {
 				observedVhatConcepts.getAndIncrement();
 				int _conceptNid = _concept.getNid();
 				
-				if (!wasModifiedInDateRange(_concept, startDate, endDate))
+				if (!wasModifiedInDateRange(_concept, startDate, STAMP_COORDINATES))
 				{
 					skippedDateRange.getAndIncrement();
 				}
@@ -884,48 +884,52 @@ public class VetsExporter {
 
 	/**
 	 * Scan through all (nested) components associated with this concept, and the concept itself, and see if the latest edit
-	 * date for any component is within our filter range.
+	 * date for any component is within our filter range, with stampCoordinate providing the upper bound
+	 * 
+	 * @param concept
+	 * @param startDate
+	 * @param stampCoordinate
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes")
-	private boolean wasModifiedInDateRange(ConceptChronology concept, long startDate, long endDate)
+	private static boolean wasModifiedInDateRange(ConceptChronology concept, long startDate, StampCoordinate stampCoordinate)
 	{
 		@SuppressWarnings("unchecked")
-		Optional<LatestVersion<ConceptVersion>> cv = concept.getLatestVersion(ConceptVersion.class, STAMP_COORDINATES);
+		Optional<LatestVersion<ConceptVersion>> cv = concept.getLatestVersion(ConceptVersion.class, stampCoordinate);
 		if (cv.isPresent())
 		{
-			if (cv.get().value().getTime() >= startDate && cv.get().value().getTime() <= endDate)
+			if (cv.get().value().getTime() >= startDate)
 			{
 				return true;
 			}
 		}
 		
-		return hasSememeModifiedInDateRange(concept.getNid(), startDate, endDate);
+		return hasSememeModifiedInDateRange(concept.getNid(), startDate, stampCoordinate);
 	}
 
 
 	/**
 	 * @param nid
 	 * @param startDate
-	 * @param endDate
+	 * @param stampCoordinate
 	 * @return
 	 */
-	private boolean hasSememeModifiedInDateRange(int nid, long startDate, long endDate)
+	private static boolean hasSememeModifiedInDateRange(int nid, long startDate, StampCoordinate stampCoordinate)
 	{
 		//Check all the nested sememes
 		return Get.sememeService().getSememesForComponent(nid).anyMatch(sc -> 
 		{
 			@SuppressWarnings({ "unchecked", "rawtypes" })
-			Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, STAMP_COORDINATES);
+			Optional<LatestVersion<SememeVersion>> sv = ((SememeChronology)sc).getLatestVersion(SememeVersion.class, stampCoordinate);
 			if (sv.isPresent())
 			{
-				if (sv.get().value().getTime() > startDate && sv.get().value().getTime() < endDate)
+				if (sv.get().value().getTime() >= startDate)
 				{
 					return true;
 				}
 			}
 			//recurse
-			if (hasSememeModifiedInDateRange(sc.getNid(), startDate, endDate))
+			if (hasSememeModifiedInDateRange(sc.getNid(), startDate, stampCoordinate))
 			{
 				return true;
 			}
