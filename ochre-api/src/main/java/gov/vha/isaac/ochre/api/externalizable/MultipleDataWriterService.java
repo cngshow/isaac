@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
 import gov.vha.isaac.ochre.api.LookupService;
 
 /**
@@ -40,14 +41,28 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 		{
 			//Use HK2 here to make fortify stop false-flagging an open resource error
 			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "jsonWriter");
-			writer.configure(jsonPath.get());
-			writers_.add(writer);
+			if (writer != null)
+			{
+				writer.configure(jsonPath.get());
+				writers_.add(writer);
+			}
+			else
+			{
+				LogManager.getLogger().warn("json writer was requested, but not found on classpath!");
+			}
 		}
 		if (ibdfPath.isPresent())
 		{
 			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "ibdfWriter");
-			writer.configure(ibdfPath.get());
-			writers_.add(writer);
+			if (writer != null)
+			{
+				writer.configure(ibdfPath.get());
+				writers_.add(writer);
+			}
+			else
+			{
+				LogManager.getLogger().warn("ibdf writer was requested, but not found on classpath!");
+			}
 		}
 	}
 	

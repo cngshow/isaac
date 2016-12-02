@@ -52,9 +52,11 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnUtility;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
@@ -510,15 +512,36 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @return the id, if found, or empty (will not return null)
 	 */
 	public static Optional<Long> getVuId(int componentNid, StampCoordinate stamp) {
-		try {
-			Optional<LatestVersion<StringSememeImpl>> sememe = Get.sememeService().getSnapshot(StringSememeImpl.class,
+		try 
+		{
+			ArrayList<Long> vuids = new ArrayList<>(1);
+			Get.sememeService().getSnapshot(SememeVersion.class,
 					stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp)
 					.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
-							MetaData.VUID.getConceptSequence()).findFirst();
-			if (sememe.isPresent()) {
-				return Optional.of(Long.parseLong(sememe.get().value().getString()));
+							MetaData.VUID.getConceptSequence()).forEach(latestSememe ->
+							{
+								//expected path
+								if (latestSememe.value().getChronology().getSememeType() == SememeType.STRING)
+								{
+									vuids.add(Long.parseLong(((StringSememe)latestSememe.value()).getString()));
+								}
+								//Data model bug path (can go away, after bug is fixed)
+								else if (latestSememe.value().getChronology().getSememeType() == SememeType.DYNAMIC)
+								{
+									vuids.add(Long.parseLong(((DynamicSememe)latestSememe.value()).getData()[0].dataToString()));
+								}
+							});
+			if (vuids.size() > 1)
+			{
+				log.warn("Found multiple VUIDs on component " + Get.identifierService().getUuidPrimordialForNid(componentNid));
 			}
-		} catch (Exception e) {
+			if (vuids.size() > 0)
+			{
+				return Optional.of(vuids.get(0));
+			}
+		}
+		catch (Exception e) 
+		{
 			log.error("Unexpected error trying to find VUID for nid " + componentNid, e);
 		}
 		return Optional.empty();
