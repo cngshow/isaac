@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2016/12/?? - 3.25
+    *
+
 * 2016/12/02 - 3.24
     * Fixing bugs with VHAT XML export (workaround for data model issue, many other fixes)
 
