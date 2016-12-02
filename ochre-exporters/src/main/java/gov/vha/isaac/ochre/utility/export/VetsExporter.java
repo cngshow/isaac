@@ -341,7 +341,7 @@ public class VetsExporter {
 				
 				//_xmlMapSet.setMapEntries(value);
 
-				if (xmlMapSet.getAction() != ActionType.NONE || xmlMapSet.getMapEntries().getMapEntry().size() > 0)
+				if (xmlMapSet.getAction() != ActionType.NONE || (xmlMapSet.getMapEntries() != null && xmlMapSet.getMapEntries().getMapEntry().size() > 0))
 				{
 					xmlMapSetCollection.add(xmlMapSet);
 				}
