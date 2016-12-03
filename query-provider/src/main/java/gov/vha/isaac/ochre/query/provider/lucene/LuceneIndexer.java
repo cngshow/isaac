@@ -197,10 +197,18 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 @Override
                 public void handleCommit(CommitRecord commitRecord)
                 {
+                    int size = commitRecord.getSememesInCommit().size();
+                    if (size < 100)
+                    {
+                        log.info("submitting sememes " + commitRecord.getSememesInCommit().toString() + " to indexer " + getIndexerName() + " due to commit");
+                    }
+                    else
+                    {
+                        log.info("submitting " + size + " sememes to indexer " + getIndexerName() + " due to commit");
+                    }
                     commitRecord.getSememesInCommit().stream().forEach(sememeId -> 
                     {
                         SememeChronology<?> sc = Get.sememeService().getSememe(sememeId);
-                        log.debug("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
                         index(sc);
                     });
                 }

@@ -117,18 +117,6 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	}
 
 	private void writeToFile(OchreExternalizable ochreObject) throws IOException {
-
-		/*
-		Runnable r = new Runnable() {
-			@Override
-			public void run() {
-				writer.put(ochreObject);
-			}
-		};
-		ExecutorService executor = Executors.newCachedThreadPool();
-		executor.submit(r);
-		 */
-
 		writer.put(ochreObject);
 	}
 
@@ -160,6 +148,8 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 		return changeSetWriterHandlerUuid;
 	}
 
+	//TODO this needs to happen in a background thread....
+	//TODO need to be able to disable changeset writing during DB Build
 	@Override
 	public void handlePostCommit(CommitRecord commitRecord) {
 		try {
