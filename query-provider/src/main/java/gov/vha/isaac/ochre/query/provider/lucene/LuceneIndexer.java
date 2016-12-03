@@ -716,7 +716,10 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         List<ConceptSearchResult> result = new ArrayList<>();
         for (SearchResult sr : searchResult) {
             int conSequence = Frills.findConcept(sr.getNid());
-            if (merged.containsKey(conSequence)) {
+            if (conSequence < 0) {
+                log.error("Failed to find a concept that references nid " + sr.getNid());
+            }
+            else if (merged.containsKey(conSequence)) {
                 merged.get(conSequence).merge(sr);
             }
             else {
