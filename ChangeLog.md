@@ -7,6 +7,7 @@ where provided, and the git commit history.
 	* Add threading to ChangesSetWriterHandler.  Add functionality to disable and enable writing. 
 	* Adding a db build mode, so that indexes and changesets aren't done incrementally while building
 	    a database
+	* Adjust some configuration on the lucene indexer to enhance performance during DB build.
 
 * 2016/12/02 - 3.24
     * Fixing bugs with VHAT XML export (workaround for data model issue, many other fixes)
