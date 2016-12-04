@@ -46,6 +46,7 @@ public class ExportTaxonomy extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
             Get.configurationService().setBootstrapMode();
+            Get.configurationService().setDBBuildMode();
             IsaacTaxonomy taxonomy = LookupService.get().getService(IsaacTaxonomy.class); 
             File javaDir = new File(buildDirectory, "src/generated");
             javaDir.mkdirs();

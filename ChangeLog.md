@@ -3,11 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.26
-    *
-
-* 2016/12/02 - 3.25
+* 2016/12/04 - 3.25
 	* Add threading to ChangesSetWriterHandler.  Add functionality to disable and enable writing. 
+	* Adding a db build mode, so that indexes and changesets aren't done incrementally while building
+	    a database
 
 * 2016/12/02 - 3.24
     * Fixing bugs with VHAT XML export (workaround for data model issue, many other fixes)

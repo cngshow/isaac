@@ -23,18 +23,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -70,8 +66,9 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	private static final String ibdfFileSuffix = ".ibdf";
 	private BinaryDataWriterService writer;
 	private final UUID changeSetWriterHandlerUuid = UUID.randomUUID();
-	private ThreadPoolExecutor threadPoolExecutor;
+	private ExecutorService changeSetWriteExecutor;
 	private boolean writeEnabled;
+	private Boolean dbBuildMode;
 
 	public ChangeSetWriterHandler() throws Exception {
 
@@ -128,10 +125,10 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 		try {
 			LOG.info("Starting ChangeSetWriterHandler post-construct");
 			enable();
-			Get.postCommitService().addChangeSetListener(this);
 
-			threadPoolExecutor = new ThreadPoolExecutor(1,2,120L,TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
-					new NamedThreadFactory("ISAAC-B-work-thread-changeset-write", true));
+			changeSetWriteExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("ISAAC-B-work-thread-changeset-write", false));
+					
+			Get.postCommitService().addChangeSetListener(this);
 
 		} catch(Exception e) {
 			LOG.error("Error in ChangeSetWriterHandler post-construct ", e);
@@ -145,10 +142,10 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	{
 		LOG.info("Stopping ChangeSetWriterHandler pre-destroy");
 		disable();
-		if (threadPoolExecutor != null)
+		if (changeSetWriteExecutor != null)
 		{
-			threadPoolExecutor.shutdown();
-			threadPoolExecutor = null;
+			changeSetWriteExecutor.shutdown();
+			changeSetWriteExecutor = null;
 		}
 		if (writer != null) {
 			LOG.debug("Close writer");
@@ -167,7 +164,15 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	public void handlePostCommit(CommitRecord commitRecord) {
 
 		LOG.info("handle Post Commit");
-		if (writeEnabled)
+		if (dbBuildMode == null)
+		{
+			dbBuildMode = Get.configurationService().inDBBuildMode();
+			if (dbBuildMode)
+			{
+				stopMe();
+			}
+		}
+		if (writeEnabled && !dbBuildMode)
 		{
 			//Do in the backgound
 			Runnable r = new Runnable() {
@@ -194,7 +199,11 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 				}
 			};
 
-			threadPoolExecutor.execute(r);
+			changeSetWriteExecutor.execute(r);
+		}
+		else
+		{
+			LOG.info("ChangeSetWriter ignoring commit");
 		}
 	}
 

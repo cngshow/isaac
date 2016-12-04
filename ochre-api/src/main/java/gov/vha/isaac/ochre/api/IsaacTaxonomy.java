@@ -384,14 +384,6 @@ public class IsaacTaxonomy {
 //        JAXBElement<Wrapper> jaxbElement = new JAXBElement<>(qName,
 //                Wrapper.class, wrapper);
 //        marshaller.marshal(jaxbElement, out);
-
-        for (ConceptBuilder builder : conceptBuildersInInsertionOrder) {
-
-        }
-        for (SememeBuilder<?> builder : sememeBuilders) {
-
-        }
-
     }
     /**
      * Iterator over all of the concept builders, and 'fix' any that were entered without having their 

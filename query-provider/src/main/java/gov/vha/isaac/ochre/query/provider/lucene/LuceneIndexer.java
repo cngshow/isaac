@@ -141,6 +141,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final TrackingIndexWriter trackingIndexWriter;
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
+    private Boolean dbBuildMode = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -197,6 +198,15 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 @Override
                 public void handleCommit(CommitRecord commitRecord)
                 {
+                    if (dbBuildMode == null)
+                    {
+                        dbBuildMode = Get.configurationService().inDBBuildMode();
+                    }
+                    if (dbBuildMode)
+                    {
+                        log.debug("Ignore commit due to db build mode");
+                        return;
+                    }
                     int size = commitRecord.getSememesInCommit().size();
                     if (size < 100)
                     {
