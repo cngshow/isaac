@@ -59,18 +59,9 @@ public class ExportTaxonomy extends AbstractMojo {
             File bindingFile = new File(javaDir, bindingFileDirectory + ".java");
             bindingFile.getParentFile().mkdirs();
             
-            try ( Writer writer = new BufferedWriter(new FileWriter(bindingFile));
-
-                    DataOutputStream xmlData = new DataOutputStream(
-                            new BufferedOutputStream(new FileOutputStream(metadataXmlDataFile)));
-               		
-                    FileWriter file = new FileWriter(new File(metadataDirectory.getAbsolutePath(), 
-                   		 taxonomy.getClass().getSimpleName() + ".yaml"));)
+            try ( Writer javaWriter = new BufferedWriter(new FileWriter(bindingFile));)
                {
-                   
-                   taxonomy.exportJavaBinding(writer, bindingPackage,  bindingClass);
-                   taxonomy.exportYamlBinding(file, bindingPackage, bindingClass);
-                   //taxonomy.exportJaxb(xmlData);
+                   taxonomy.exportJavaBinding(javaWriter, bindingPackage,  bindingClass);
                }
             
             //Read in the MetadataConceptConstant constant objects
@@ -86,6 +77,16 @@ public class ExportTaxonomy extends AbstractMojo {
                 getLog().info("Created " + count + " concepts (+ their children)");
             }
             
+            //Now write out the other files, so they have all of the constants.
+            try ( DataOutputStream xmlData = new DataOutputStream(
+                            new BufferedOutputStream(new FileOutputStream(metadataXmlDataFile)));
+                    FileWriter yamlFile = new FileWriter(new File(metadataDirectory.getAbsolutePath(), 
+                       taxonomy.getClass().getSimpleName() + ".yaml"));)
+               {
+                   
+                   taxonomy.exportYamlBinding(yamlFile, bindingPackage, bindingClass);
+                   taxonomy.exportJaxb(xmlData);
+               }
             Path ibdfPath = Paths.get(metadataDirectory.getAbsolutePath(), taxonomy.getClass().getSimpleName() + ".ibdf");
             Path jsonPath = Paths.get(metadataDirectory.getAbsolutePath(), taxonomy.getClass().getSimpleName() + ".json");
             taxonomy.export(Optional.of(jsonPath), Optional.of(ibdfPath));
@@ -93,6 +94,4 @@ public class ExportTaxonomy extends AbstractMojo {
             throw new MojoExecutionException(ex.getLocalizedMessage(), ex);
         }
     }
-
-    
 }
