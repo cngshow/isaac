@@ -103,7 +103,7 @@ public abstract class MetadataConceptConstant implements ConceptSpecification {
 
     @Override
     public String getConceptDescriptionText() {
-        return fsn_;
+        return preferredSynonym_;
     }
 
     @Override

@@ -141,11 +141,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final TrackingIndexWriter trackingIndexWriter;
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
+    private Boolean dbBuildMode = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
             indexName_ = indexName;
-            luceneWriterService = LookupService.getService(WorkExecutors.class).getExecutor();
+            luceneWriterService = LookupService.getService(WorkExecutors.class).getIOExecutor();
             luceneWriterFutureCheckerService = Executors.newFixedThreadPool(1, new NamedThreadFactory(indexName + " Lucene future checker", false));
             
             Path searchFolder = LookupService.getService(ConfigurationService.class).getSearchFolderPath();
@@ -197,10 +198,27 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 @Override
                 public void handleCommit(CommitRecord commitRecord)
                 {
+                    if (dbBuildMode == null)
+                    {
+                        dbBuildMode = Get.configurationService().inDBBuildMode();
+                    }
+                    if (dbBuildMode)
+                    {
+                        log.debug("Ignore commit due to db build mode");
+                        return;
+                    }
+                    int size = commitRecord.getSememesInCommit().size();
+                    if (size < 100)
+                    {
+                        log.info("submitting sememes " + commitRecord.getSememesInCommit().toString() + " to indexer " + getIndexerName() + " due to commit");
+                    }
+                    else
+                    {
+                        log.info("submitting " + size + " sememes to indexer " + getIndexerName() + " due to commit");
+                    }
                     commitRecord.getSememesInCommit().stream().forEach(sememeId -> 
                     {
                         SememeChronology<?> sc = Get.sememeService().getSememe(sememeId);
-                        log.debug("submitting sememe " + sc.toUserString() + " to indexer " + getIndexerName() + " due to commit");
                         index(sc);
                     });
                 }
@@ -716,7 +734,10 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         List<ConceptSearchResult> result = new ArrayList<>();
         for (SearchResult sr : searchResult) {
             int conSequence = Frills.findConcept(sr.getNid());
-            if (merged.containsKey(conSequence)) {
+            if (conSequence < 0) {
+                log.error("Failed to find a concept that references nid " + sr.getNid());
+            }
+            else if (merged.containsKey(conSequence)) {
                 merged.get(conSequence).merge(sr);
             }
             else {

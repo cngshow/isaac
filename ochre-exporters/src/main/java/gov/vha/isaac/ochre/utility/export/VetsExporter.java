@@ -341,7 +341,7 @@ public class VetsExporter {
 				
 				//_xmlMapSet.setMapEntries(value);
 
-				if (xmlMapSet.getAction() != ActionType.NONE || xmlMapSet.getMapEntries().getMapEntry().size() > 0)
+				if (xmlMapSet.getAction() != ActionType.NONE || (xmlMapSet.getMapEntries() != null && xmlMapSet.getMapEntries().getMapEntry().size() > 0))
 				{
 					xmlMapSetCollection.add(xmlMapSet);
 				}
@@ -757,7 +757,6 @@ public class VetsExporter {
 		List<? extends StampedVersion> versions = object.getVersionList();
 		versions.sort(new Comparator<StampedVersion>()
 		{
-			//TODO check and see if Dan got the sort backwards
 			@Override
 			public int compare(StampedVersion o1, StampedVersion o2)
 			{

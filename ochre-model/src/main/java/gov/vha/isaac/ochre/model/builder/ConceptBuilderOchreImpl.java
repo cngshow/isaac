@@ -95,7 +95,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
                 StringBuilder descriptionTextBuilder = new StringBuilder();
                 descriptionTextBuilder.append(conceptName);
                 if (StringUtils.isNotBlank(semanticTag)) {
-                    if (conceptName.lastIndexOf('(') > 0 && conceptName.lastIndexOf(')') == conceptName.length()) {
+                    if (conceptName.lastIndexOf('(') > 0 && conceptName.lastIndexOf(')') == conceptName.length() - 1) {
                         throw new IllegalArgumentException("A semantic tag was passed, but this fsn description already appears to contain a semantic tag");
                     }
                     descriptionTextBuilder.append(" (");

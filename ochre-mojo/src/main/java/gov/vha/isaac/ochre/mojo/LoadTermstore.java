@@ -100,6 +100,7 @@ public class LoadTermstore extends AbstractMojo
 	@Override
 	public void execute() throws MojoExecutionException
 	{
+		Get.configurationService().setDBBuildMode();
 		final int statedSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("1f201994-960e-11e5-8994-feff819cdc9f"));
 		int statedDups = 0;
 		long loadTime = System.currentTimeMillis();
