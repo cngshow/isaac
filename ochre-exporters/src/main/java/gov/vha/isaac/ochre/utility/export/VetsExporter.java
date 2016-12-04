@@ -757,7 +757,6 @@ public class VetsExporter {
 		List<? extends StampedVersion> versions = object.getVersionList();
 		versions.sort(new Comparator<StampedVersion>()
 		{
-			//TODO check and see if Dan got the sort backwards
 			@Override
 			public int compare(StampedVersion o1, StampedVersion o2)
 			{
