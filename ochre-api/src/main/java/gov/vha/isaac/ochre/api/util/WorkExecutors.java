@@ -56,6 +56,9 @@ import gov.vha.isaac.ochre.api.LookupService;
  * as there are cores present on the computer - with a minimum of 6 threads.  This executor has an unbounded queue 
  * depth, and FIFO behavior.
  * 
+ * The {@link #getIOExecutor()} that this provides is a standard thread pool with 4 threads.  This executor has an unbounded queue 
+ * depth, and FIFO behavior.  This executor is good for jobs that tend to block on disk IO, where you don't want many running in parallel.
+ * 
  * If you wish to use this code outside of an HK2 managed application (or in utility code that may operate in and out
  * of an HK2 environment), please use the {@link #get()} method to get a handle to this class
  *
@@ -69,6 +72,7 @@ public class WorkExecutors
 	private ForkJoinPool forkJoinExecutor_;
 	private ThreadPoolExecutor blockingThreadPoolExecutor_;
 	private ThreadPoolExecutor threadPoolExecutor_;
+	private ThreadPoolExecutor ioThreadPoolExecutor_;
 	private ScheduledExecutorService scheduledExecutor_;
 	private static final Logger log = LogManager.getLogger();
 	
@@ -117,6 +121,12 @@ public class WorkExecutors
 		threadPoolExecutor_ = new ThreadPoolExecutor(maximumPoolSize, maximumPoolSize, keepAliveTime, timeUnit, new LinkedBlockingQueue<Runnable>(),
 				new NamedThreadFactory("ISAAC-Q-work-thread", true));
 		threadPoolExecutor_.allowCoreThreadTimeOut(true);
+		
+		//The IO non-blocking executor - set core threads equal to max - otherwise, it will never increase the thread count
+		//with an unbounded queue.
+		ioThreadPoolExecutor_ = new ThreadPoolExecutor(4, 4, keepAliveTime, timeUnit, new LinkedBlockingQueue<Runnable>(),
+				new NamedThreadFactory("ISAAC-IO-work-thread", true));
+		ioThreadPoolExecutor_.allowCoreThreadTimeOut(true);
 		//Execute this once, early on, in a background thread - as randomUUID uses secure random - and the initial 
 		//init of secure random can block on many systems that don't have enough entropy occuring.  The DB load process
 		//should provide enough entropy to get it initialized, so it doesn't pause things later when someone requests a random UUID. 
@@ -147,6 +157,12 @@ public class WorkExecutors
 		{
 			threadPoolExecutor_.shutdownNow();
 			threadPoolExecutor_  = null;
+		}
+		
+		if (ioThreadPoolExecutor_ != null)
+		{
+			ioThreadPoolExecutor_.shutdownNow();
+			ioThreadPoolExecutor_  = null;
 		}
 		
 		if (scheduledExecutor_ != null)
@@ -180,10 +196,23 @@ public class WorkExecutors
 	/**
 	 * @return The ISAAC common {@link ThreadPoolExecutor} - (behavior described in the class docs).
 	 * This is backed by an unbounded queue - it won't block / reject submissions because of being full.
+	 * This executor has processing threads linkes to the number of CPUs available.  It is good for compute
+	 * intensive jobs.
 	 */
 	public ThreadPoolExecutor getExecutor()
 	{
 		return threadPoolExecutor_;
+	}
+	
+	/**
+	 * @return The ISAAC common IO {@link ThreadPoolExecutor} - (behavior described in the class docs).
+	 * This is backed by an unbounded queue - it won't block / reject submissions because of being full.
+	 * This executor differs from {@link #getExecutor()} by having a much smaller number of threads - good for 
+	 * jobs that tend to block on IO.
+	 */
+	public ThreadPoolExecutor getIOExecutor()
+	{
+		return ioThreadPoolExecutor_;
 	}
 	
 	/**
