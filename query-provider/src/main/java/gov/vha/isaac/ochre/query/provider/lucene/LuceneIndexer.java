@@ -146,7 +146,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     protected LuceneIndexer(String indexName) throws IOException {
         try {
             indexName_ = indexName;
-            luceneWriterService = LookupService.getService(WorkExecutors.class).getExecutor();
+            luceneWriterService = LookupService.getService(WorkExecutors.class).getIOExecutor();
             luceneWriterFutureCheckerService = Executors.newFixedThreadPool(1, new NamedThreadFactory(indexName + " Lucene future checker", false));
             
             Path searchFolder = LookupService.getService(ConfigurationService.class).getSearchFolderPath();
