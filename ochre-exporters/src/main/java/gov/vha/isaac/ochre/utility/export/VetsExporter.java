@@ -452,6 +452,7 @@ public class VetsExporter {
 		
 		Get.sememeService().getSememesForComponent(componentNid).forEach((sememe) -> 
 		{
+			//TODO dan messed this up - can't check the sememe nid / sequence, it needs to be the assemblage  - causing us to 
 			//skip code and vuid properties - they have special handling
 			if (sememe.getNid() != MetaData.VUID.getNid() && sememe.getSememeSequence() != codeAssemblageConceptSeq
 					&& ts.wasEverKindOf(sememe.getAssemblageSequence(), vhatPropertyTypesNid))
