@@ -544,6 +544,7 @@ public class VetsExporter {
 				{
 					DesignationType d = constructor.get(); 
 					d.setValueNew(descriptionVersion.get().value().getText());
+					//d.setValueOld(value);  TODO another value old
 					d.setAction(determineAction((ObjectChronology<? extends StampedVersion>) sememe, startDate, endDate));
 					d.setCode(getCodeFromNid(sememe.getNid()));
 					d.setVUID(Frills.getVuId(sememe.getNid(), STAMP_COORDINATES).orElse(null));
