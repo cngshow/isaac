@@ -542,7 +542,9 @@ public class VetsExporter {
 		}
 		property.setActive(isActive);
 		property.setValueNew(newValue);
-		//property.setValueOld("");  //TODO old value?
+		if (oldValue != null) {
+			property.setValueOld(oldValue);
+		}
 		property.setTypeName(getPreferredNameDescriptionType(Get.identifierService().getConceptNid(sememe.getAssemblageSequence())));
 		return property;
 	}
