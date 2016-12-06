@@ -5,6 +5,16 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import java.util.UUID;
 
+/**
+ * This class only contains manually created, hard coded constants which need to exist earlier in the classpath 
+ * than {@link MetaData} is available.  If you are down the classpath far enough to have MetaData, use that class.
+ * 
+ * Data created here does NOT automatically get created as actual concepts.  All concepts here must be referenced 
+ * by {@link IsaacMetadataAuxiliary}, or they will not get created at runtime, and you will have broken references in your DB.
+ * {@link TermAux}
+ *
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ */
 public class TermAux {
 
     public static ConceptSpecification USER
