@@ -103,7 +103,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                 createConcept("health concept").setPrimordialUuid("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8");
                 createConcept("ISAAC metadata");
                 pushParent(current());
-                    createConcept("module");
+                    createConcept("module").addUuids(TermAux.UNSPECIFIED_MODULE.getUuids());
                     pushParent(current());
                         createConcept(TermAux.ISAAC_MODULE);
                         createConcept("SNOMED CT core module").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
@@ -113,12 +113,16 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("RxNorm module");
                         createConcept("RxNorm Solor module");
                         createConcept("AMT module");
-                        createConcept("VHA module");
+                        //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
+                        //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
+                        createConcept(TermAux.VHA_MODULE).addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
                         createConcept("DOD module");
                         createConcept("IPO module");
-                        createConcept("SOLOR overlay module");
+                        //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
+                        //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
+                        createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
                     popParent();
-                    createConcept("user").setPrimordialUuid(TermAux.USER.getPrimordialUuid());
+                    createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
                     pushParent(current());
                         ConceptBuilder developmentPath = createConcept(TermAux.DEVELOPMENT_PATH);
@@ -158,7 +162,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("normal member").setPrimordialUuid("cc624429-b17d-4ac5-a69e-0b32448aaf3c");
                         createConcept("marked parent").setPrimordialUuid("125f3d04-de17-490e-afec-1431c2a39e29");
                     popParent();
-                    createConcept("assemblage").setPrimordialUuid(TermAux.ASSEMBLAGE.getPrimordialUuid()); // TODO Replace with createConcept(TermAux.ASSEMBLAGE)?
+                    createConcept(TermAux.ASSEMBLAGE); // TODO Replace with createConcept(TermAux.ASSEMBLAGE)?
                     pushParent(current());
                         createConcept("description assemblage");
                         pushParent(current());
@@ -209,11 +213,11 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept("axiom origin");
                         pushParent(current());
                         ConceptBuilder stated = createConcept("stated");
-                        stated.setPrimordialUuid(TermAux.STATED_RELATIONSHIP.getPrimordialUuid());
-                        stated.addUuids(TermAux.REL_STATED_CHAR.getPrimordialUuid());
+                        stated.setPrimordialUuid(UUID.fromString("3b0dbd3b-2e53-3a30-8576-6c7fa7773060"));  //merge with "stated relationship" SCT ID:    900000000000010007
+                        stated.addUuids(UUID.fromString("3fde38f6-e079-3cdc-a819-eda3ec74732d"));  //merge with "stated (defining characteristic type)"
                         ConceptBuilder inferred = createConcept("inferred");
-                        inferred.setPrimordialUuid(TermAux.INFERRED_RELATIONSHIP.getPrimordialUuid());
-                        inferred.addUuids(TermAux.REL_INFERED_CHAR.getPrimordialUuid());
+                        inferred.setPrimordialUuid("1290e6ba-48d0-31d2-8d62-e133373c63f5");  //merge with "Inferred" SCT ID:    900000000000011006
+                        inferred.addUuids(UUID.fromString("a4c6bf72-8fb6-11db-b606-0800200c9a66")); //merge with ""defining"
                     popParent();
     
                     createConcept("description type");
@@ -244,7 +248,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     pushParent(current());
                         ConceptBuilder isa = createConcept("is-a");
                         isa.setPrimordialUuid(TermAux.IS_A.getPrimordialUuid());
-                        isa.addUuids(TermAux.IS_A_ATTRIBUTE.getUuids());
+                        isa.addUuids(UUID.fromString("c93a30b9-ba77-3adb-a9b8-4589c9f8fb25"));  //merge with "Is a (attribute)" //SCTID 116680003
                     popParent();
                     createConcept("connective operator");
                     pushParent(current());
@@ -408,5 +412,4 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
             Logger.getLogger(IsaacMetadataAuxiliary.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }
