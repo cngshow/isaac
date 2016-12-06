@@ -103,28 +103,30 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                 createConcept("health concept").setPrimordialUuid("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8");
                 createConcept("ISAAC metadata");
                 pushParent(current());
-                    createConcept("module");
+                    createConcept("module").addUuids(TermAux.UNSPECIFIED_MODULE.getUuids());
                     pushParent(current());
                         createConcept(TermAux.ISAAC_MODULE);
-                        createConcept(TermAux.SNOMED_CT_CORE_MODULE);
+                        createConcept("SNOMED CT core module").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
                         createConcept("US Extension module");
                         createConcept("LOINC module");
                         createConcept("LOINC Solor module");
                         createConcept("RxNorm module");
                         createConcept("RxNorm Solor module");
                         createConcept("AMT module");
-                        createConcept("VHA module");
+                        //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
+                        //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
+                        createConcept(TermAux.VHA_MODULE).addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
                         createConcept("DOD module");
                         createConcept("IPO module");
-                        createConcept("SOLOR overlay module");
+                        //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
+                        //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
+                        createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
                     popParent();
-                    createConcept("user").setPrimordialUuid(TermAux.USER.getPrimordialUuid());
-                    createConcept("path").setPrimordialUuid("4459d8cf-5a6f-3952-9458-6d64324b27b7");
+                    createConcept(TermAux.USER);
+                    createConcept(TermAux.PATH);
                     pushParent(current());
-                        ConceptBuilder developmentPath = createConcept("development path");
-                        developmentPath.setPrimordialUuid("1f200ca6-960e-11e5-8994-feff819cdc9f");
-                        ConceptBuilder masterPath = createConcept("master path");
-                        masterPath.setPrimordialUuid("1f20134a-960e-11e5-8994-feff819cdc9f");
+                        ConceptBuilder developmentPath = createConcept(TermAux.DEVELOPMENT_PATH);
+                        ConceptBuilder masterPath = createConcept(TermAux.MASTER_PATH);
                         masterPath.addUuids(UUID.fromString("2faa9260-8fb2-11db-b606-0800200c9a66")); // UUID from WB_AUX_PATH
                     popParent();
                     createConcept("set operator");
@@ -134,8 +136,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     popParent();
                     createConcept("identifier source");
                     pushParent(current());
-                        createConcept("SNOMED integer id").setPrimordialUuid("0418a591-f75b-39ad-be2c-3ab849326da9");
-                        createConcept("generated UUID").setPrimordialUuid(TermAux.GENERATED_UUID.getPrimordialUuid());
+                        createConcept(TermAux.SNOMED_IDENTIFIER);
+                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66");
                         createConcept(new MetadataDynamicSememeConstant("LOINC_NUM", null, "LOINC Identifier", new DynamicSememeColumnInfo[] 
                             {new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), 
                                 DynamicSememeDataType.STRING, null, true, true)}));
@@ -144,36 +146,36 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     popParent();
                     createConcept("language");
                     pushParent(current());
-                        createConcept("English language").setPrimordialUuid("06d905ea-c647-3af9-bfe5-2514e135b558");
-                        createConcept("Spanish language").setPrimordialUuid("0fcf44fb-d0a7-3a67-bc9f-eb3065ed3c8e");
-                        createConcept("French language").setPrimordialUuid("8b23e636-a0bd-30fb-b8e2-1f77eaa3a87e");
-                        createConcept("Danish language").setPrimordialUuid("7e462e33-6d94-38ae-a044-492a857a6853");
-                        createConcept("Polish language").setPrimordialUuid("c924b887-da88-3a72-b8ea-fa86990467c9");
-                        createConcept("Dutch language").setPrimordialUuid("674ad858-0224-3f90-bcf0-bc4cab753d2d");
-                        createConcept("Lithuanian language").setPrimordialUuid("e9645d95-8a1f-3825-8feb-0bc2ee825694");
-                        createConcept("Chinese language").setPrimordialUuid("ba2efe6b-fe56-3d91-ae0f-3b389628f74c");
-                        createConcept("Japanese language").setPrimordialUuid("b90a1097-29e3-42bc-8576-8e8eb6715c44");
-                        createConcept("Swedish language").setPrimordialUuid("9784a791-8fdb-32f7-88da-74ab135fe4e3");
+                        createConcept(TermAux.ENGLISH_LANGUAGE);
+                        createConcept(TermAux.SPANISH_LANGUAGE);
+                        createConcept(TermAux.FRENCH_LANGUAGE);
+                        createConcept(TermAux.DANISH_LANGUAGE);
+                        createConcept(TermAux.POLISH_LANGUAGE);
+                        createConcept(TermAux.DUTCH_LANGUAGE);
+                        createConcept(TermAux.LITHUANIAN_LANGUAGE);
+                        createConcept(TermAux.CHINESE_LANGUAGE);
+                        createConcept(TermAux.JAPANESE_LANGUAGE);
+                        createConcept(TermAux.SWEDISH_LANGUAGE);
                     popParent();
                     createConcept("assemblage membership type");
                     pushParent(current());
                         createConcept("normal member").setPrimordialUuid("cc624429-b17d-4ac5-a69e-0b32448aaf3c");
                         createConcept("marked parent").setPrimordialUuid("125f3d04-de17-490e-afec-1431c2a39e29");
                     popParent();
-                    createConcept("assemblage").setPrimordialUuid(TermAux.ASSEMBLAGE.getPrimordialUuid());
+                    createConcept(TermAux.ASSEMBLAGE); // TODO Replace with createConcept(TermAux.ASSEMBLAGE)?
                     pushParent(current());
                         createConcept("description assemblage");
                         pushParent(current());
-                            createConcept("English description assemblage").setPrimordialUuid("45021920-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Spanish description assemblage").setPrimordialUuid("45021c36-9567-11e5-8994-feff819cdc9f");
-                            createConcept("French description assemblage").setPrimordialUuid("45021dbc-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Danish description assemblage").setPrimordialUuid("45021f10-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Polish description assemblage").setPrimordialUuid("45022140-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Dutch description assemblage").setPrimordialUuid("45022280-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Lithuanian description assemblage").setPrimordialUuid("45022410-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Chinese description assemblage").setPrimordialUuid("45022532-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Japanese description assemblage").setPrimordialUuid("450226cc-9567-11e5-8994-feff819cdc9f");
-                            createConcept("Swedish description assemblage").setPrimordialUuid("45022848-9567-11e5-8994-feff819cdc9f");
+                            createConcept(TermAux.ENGLISH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.SPANISH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.FRENCH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.DANISH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.POLISH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.DUTCH_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.LITHUANIAN_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.CHINESE_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.JAPANESE_DESCRIPTION_ASSEMBLAGE);
+                            createConcept(TermAux.SWEDISH_DESCRIPTION_ASSEMBLAGE);
                         popParent();
                         createConcept("dialect assemblage");
                         pushParent(current());
@@ -182,8 +184,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         popParent();
                         createConcept("logic assemblage");
                             pushParent(current());
-                            createConcept("EL++ stated form assemblage").setPrimordialUuid("1f201994-960e-11e5-8994-feff819cdc9f");
-                            createConcept("EL++ inferred form assemblage").setPrimordialUuid("1f20182c-960e-11e5-8994-feff819cdc9f");
+                            createConcept(TermAux.EL_PLUS_PLUS_STATED_ASSEMBLAGE);
+                            createConcept(TermAux.EL_PLUS_PLUS_INFERRED_ASSEMBLAGE);
                         popParent();
                         createConcept("assemblage related to path management");
                         pushParent(current());
@@ -211,11 +213,11 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept("axiom origin");
                         pushParent(current());
                         ConceptBuilder stated = createConcept("stated");
-                        stated.setPrimordialUuid(TermAux.STATED_RELATIONSHIP.getPrimordialUuid());
-                        stated.addUuids(TermAux.REL_STATED_CHAR.getPrimordialUuid());
+                        stated.setPrimordialUuid(UUID.fromString("3b0dbd3b-2e53-3a30-8576-6c7fa7773060"));  //merge with "stated relationship" SCT ID:    900000000000010007
+                        stated.addUuids(UUID.fromString("3fde38f6-e079-3cdc-a819-eda3ec74732d"));  //merge with "stated (defining characteristic type)"
                         ConceptBuilder inferred = createConcept("inferred");
-                        inferred.setPrimordialUuid(TermAux.INFERRED_RELATIONSHIP.getPrimordialUuid());
-                        inferred.addUuids(TermAux.REL_INFERED_CHAR.getPrimordialUuid());
+                        inferred.setPrimordialUuid("1290e6ba-48d0-31d2-8d62-e133373c63f5");  //merge with "Inferred" SCT ID:    900000000000011006
+                        inferred.addUuids(UUID.fromString("a4c6bf72-8fb6-11db-b606-0800200c9a66")); //merge with ""defining"
                     popParent();
     
                     createConcept("description type");
@@ -223,8 +225,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         ConceptBuilder fsn = createConcept("fully specified name");
                         fsn.setPrimordialUuid(TermAux.FULLY_SPECIFIED_DESCRIPTION_TYPE.getPrimordialUuid());
                         fsn.addUuids(UUID.fromString("5e1fe940-8faf-11db-b606-0800200c9a66")); // RF1 FSN
-                        ConceptBuilder syn = createConcept("synonym");
-                        syn.setPrimordialUuid(TermAux.SYNONYM_DESCRIPTION_TYPE.getPrimordialUuid());
+                        ConceptBuilder syn = createConcept(TermAux.SYNONYM_DESCRIPTION_TYPE);
                         syn.addUuids(UUID.fromString("d6fad981-7df6-3388-94d8-238cc0465a79"));
                         createConcept("definition description type").setPrimordialUuid(TermAux.DEFINITION_DESCRIPTION_TYPE.getPrimordialUuid());
                     popParent();
@@ -232,21 +233,21 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept(TermAux.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY);//RxNorm relationship types are created under this node
                     createConcept("description case significance");
                     pushParent(current());
-                        createConcept("description case sensitive").setPrimordialUuid("0def37bc-7e1b-384b-a6a3-3e3ceee9c52e");
-                        createConcept("description not case sensitive").setPrimordialUuid("ecea41a2-f596-3d98-99d1-771b667e55b8");
-                        createConcept("description initial character sensitive").setPrimordialUuid("17915e0d-ed38-3488-a35c-cda966db306a");
+                        createConcept(TermAux.DESCRIPTION_CASE_SENSITIVE);
+                        createConcept(TermAux.DESCRIPTION_NOT_CASE_SENSITIVE);
+                        createConcept(TermAux.DESCRIPTION_INITIAL_CHARACTER_SENSITIVE);
                     popParent();
                     createConcept("description acceptability");
                     pushParent(current());
-                        createConcept("acceptable").setPrimordialUuid(TermAux.ACCEPTABLE.getPrimordialUuid());
-                        createConcept("preferred").setPrimordialUuid(TermAux.PREFERRED.getPrimordialUuid());
+                        createConcept(TermAux.ACCEPTABLE);
+                        createConcept(TermAux.PREFERRED);
                     popParent();
                     
                     createConcept("taxonomy operator");
                     pushParent(current());
                         ConceptBuilder isa = createConcept("is-a");
                         isa.setPrimordialUuid(TermAux.IS_A.getPrimordialUuid());
-                        isa.addUuids(TermAux.IS_A_ATTRIBUTE.getUuids());
+                        isa.addUuids(UUID.fromString("c93a30b9-ba77-3adb-a9b8-4589c9f8fb25"));  //merge with "Is a (attribute)" //SCTID 116680003
                     popParent();
                     createConcept("connective operator");
                     pushParent(current());
@@ -299,13 +300,13 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     popParent();
                     createConcept("description-logic profile");
                     pushParent(current());
-                        createConcept("EL++ profile").setPrimordialUuid("1f201e12-960e-11e5-8994-feff819cdc9f");
+                        createConcept("EL++ profile").setPrimordialUuid(TermAux.EL_PLUS_PLUS_LOGIC_PROFILE.getPrimordialUuid());
                         createConcept("SH profile");
                     popParent();
                     createConcept("description-logic classifier");
                     pushParent(current());
-                        createConcept("IHTSDO classifier").setPrimordialUuid("7e87cc5b-e85f-3860-99eb-7a44f2b9e6f9");
-                        createConcept("SnoRocket classifier").setPrimordialUuid("1f201fac-960e-11e5-8994-feff819cdc9f");
+                        createConcept(TermAux.IHTSDO_CLASSIFIER);
+                        createConcept("SnoRocket classifier").setPrimordialUuid(TermAux.SNOROCKET_CLASSIFIER.getPrimordialUuid());
                         createConcept("ConDOR classifier");
                     popParent();
                     createConcept("role").setPrimordialUuid("6155818b-09ed-388e-82ce-caa143423e99");
@@ -315,7 +316,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     pushParent(current());
                         createConcept("intrinsic role");
                         pushParent(current());
-                            createConcept("role group").setPrimordialUuid("a63f4bf2-a040-11e5-8994-feff819cdc9f");
+                            createConcept(TermAux.ROLE_GROUP);
                         popParent();
                     popParent();
                     createConcept("unmodeled concept");
@@ -410,5 +411,4 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
             Logger.getLogger(IsaacMetadataAuxiliary.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
 }

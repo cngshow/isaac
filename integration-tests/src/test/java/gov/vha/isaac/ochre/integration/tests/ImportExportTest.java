@@ -196,7 +196,7 @@ public class ImportExportTest {
                     SomeRole(MetaData.ROLE_GROUP,
                         And(
                             Feature(MetaData.HAS_STRENGTH, FloatLiteral(1.2345F, defBuilder)),
-                            ConceptAssertion(TermAux.MASTER_PATH, defBuilder)))));
+                            ConceptAssertion(MetaData.MASTER_PATH, defBuilder)))));
         LogicalExpression logicGraphDef = defBuilder.build();
 
         LogicByteArrayConverterService converter = new LogicByteArrayConverterService();
