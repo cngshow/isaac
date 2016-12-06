@@ -131,7 +131,8 @@ public class VetsExporter {
 					Get.conceptSpecification(assemblageSeqId).getConceptDescriptionText());
 		});
 		
-		codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(getFromMapByValue(assemblagesMap, "Code"));
+		 UUID codeAssemblageUUID = UUID.fromString("803af596-aea8-5184-b8e1-45f801585d17");
+		 codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(codeAssemblageUUID);
 		
 		// XML object
 		terminology = new Terminology();
@@ -452,9 +453,8 @@ public class VetsExporter {
 		
 		Get.sememeService().getSememesForComponent(componentNid).forEach((sememe) -> 
 		{
-			//TODO dan messed this up - can't check the sememe nid / sequence, it needs to be the assemblage  - causing us to 
 			//skip code and vuid properties - they have special handling
-			if (sememe.getNid() != MetaData.VUID.getNid() && sememe.getSememeSequence() != codeAssemblageConceptSeq
+			 if (sememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() && sememe.getAssemblageSequence() != codeAssemblageConceptSeq
 					&& ts.wasEverKindOf(sememe.getAssemblageSequence(), vhatPropertyTypesNid))
 			{
 				PropertyType property = buildProperty(sememe, startDate, endDate, constructor);
@@ -572,7 +572,7 @@ public class VetsExporter {
 						
 						Get.sememeService().getSememesForComponent(sememe.getNid()).forEach((nestedSememe) -> {
 							//skip code and vuid properties - they are handled already
-							if (sememe.getNid() != MetaData.VUID.getNid() && sememe.getSememeSequence() != codeAssemblageConceptSeq)
+							if (nestedSememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() && nestedSememe.getAssemblageSequence() != codeAssemblageConceptSeq)
 							{
 								if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), vhatPropertyTypesNid)) 
 								{
