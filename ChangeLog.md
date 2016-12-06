@@ -5,8 +5,7 @@ where provided, and the git commit history.
 
 
 * 2016/12/05 - 3.26
-	* Add ValueOld to VetsExporter. 
-
+	* Add ValueOld to VetsExporter in buildProperty and getDesignations.
 
 * 2016/12/04 - 3.25
 	* Add threading to ChangesSetWriterHandler.  Add functionality to disable and enable writing. 

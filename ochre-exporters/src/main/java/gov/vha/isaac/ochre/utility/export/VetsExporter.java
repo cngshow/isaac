@@ -571,7 +571,16 @@ public class VetsExporter {
 				{
 					DesignationType d = constructor.get();
 					d.setValueNew(descriptionVersion.get().value().getText());
-					//d.setValueOld(value);  TODO another value old
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					List<DescriptionSememe<?>> coll = ((SememeChronology) sememe).getVisibleOrderedVersionList(STAMP_COORDINATES);
+					Collections.reverse(coll);
+					for(DescriptionSememe<?> s : coll)
+					{
+						if (s.getTime() < startDate) {
+							d.setValueOld(s.getText());
+							break;
+						}
+					}
 					d.setAction(determineAction(sememe, startDate, endDate));
 					d.setCode(getCodeFromNid(sememe.getNid()));
 					d.setVUID(Frills.getVuId(sememe.getNid(), STAMP_COORDINATES).orElse(null));
