@@ -3,6 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+
+* 2016/12/05 - 3.26
+	* Add ValueOld to VetsExporter. 
+
+
 * 2016/12/04 - 3.25
 	* Add threading to ChangesSetWriterHandler.  Add functionality to disable and enable writing. 
 	* Adding a db build mode, so that indexes and changesets aren't done incrementally while building
