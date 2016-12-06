@@ -225,8 +225,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         ConceptBuilder fsn = createConcept("fully specified name");
                         fsn.setPrimordialUuid(TermAux.FULLY_SPECIFIED_DESCRIPTION_TYPE.getPrimordialUuid());
                         fsn.addUuids(UUID.fromString("5e1fe940-8faf-11db-b606-0800200c9a66")); // RF1 FSN
-                        ConceptBuilder syn = createConcept(TermAux.SYNONYM_DESCRIPTION_TYPE.getConceptDescriptionText());
-                        syn.setPrimordialUuid(TermAux.SYNONYM_DESCRIPTION_TYPE.getPrimordialUuid());
+                        ConceptBuilder syn = createConcept(TermAux.SYNONYM_DESCRIPTION_TYPE);
                         syn.addUuids(UUID.fromString("d6fad981-7df6-3388-94d8-238cc0465a79"));
                         createConcept("definition description type").setPrimordialUuid(TermAux.DEFINITION_DESCRIPTION_TYPE.getPrimordialUuid());
                     popParent();
