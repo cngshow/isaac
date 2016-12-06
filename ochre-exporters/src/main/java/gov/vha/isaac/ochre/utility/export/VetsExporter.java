@@ -127,7 +127,7 @@ public class VetsExporter {
 
 		this.fullExportMode = fullExportMode;
 
-		STAMP_COORDINATES = new StampCoordinateImpl(StampPrecedence.PATH, new StampPositionImpl(endDate, TermAux.DEVELOPMENT_PATH.getConceptSequence()),
+		STAMP_COORDINATES = new StampCoordinateImpl(StampPrecedence.PATH, new StampPositionImpl(endDate, MetaData.DEVELOPMENT_PATH.getConceptSequence()),
 				ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		// Build Assemblages map
 		Get.sememeService().getAssemblageTypes().forEach((assemblageSeqId) -> {
