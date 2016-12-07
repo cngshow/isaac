@@ -4,7 +4,8 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/12/?? - 3.27 - PENDING
-    *
+    * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
+        concept to ensure correct action is updated.
 
 * 2016/12/06 - 3.26
     * Add ValueOld to VetsExporter in buildProperty and getDesignations.
