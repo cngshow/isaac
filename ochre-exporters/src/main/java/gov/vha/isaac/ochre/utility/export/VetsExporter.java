@@ -536,15 +536,27 @@ public class VetsExporter {
 
 		PropertyType property = constructor == null ? new gov.va.med.term.vhat.xml.model.PropertyType() : constructor.get();
 		property.setAction(determineAction(sememe, startDate, endDate));
-		if (property.getAction() == ActionType.NONE)
+		if (isActive && property.getAction() == ActionType.NONE && newValue.equals(oldValue))
 		{
 			return null;
 		}
+		else if(!newValue.equals(oldValue) && property.getAction() == ActionType.NONE)
+		{
+			// change action to update if the new and old values are not the same.
+			property.setAction(ActionType.UPDATE);
+		}
+		//got to here, there is change.
 		property.setActive(isActive);
-		property.setValueNew(newValue);
-		if (oldValue != null) {
+		
+		if ((property.getAction() == ActionType.UPDATE || property.getAction() == ActionType.ADD)
+				&& !newValue.equals(oldValue)) {
+			property.setValueNew(newValue);			
+		}
+		
+		if (oldValue != null && property.getAction() != ActionType.ADD) {
 			property.setValueOld(oldValue);
 		}
+		
 		property.setTypeName(getPreferredNameDescriptionType(Get.identifierService().getConceptNid(sememe.getAssemblageSequence())));
 		return property;
 	}
@@ -570,18 +582,27 @@ public class VetsExporter {
 				if (descriptionVersion.isPresent())
 				{
 					DesignationType d = constructor.get();
-					d.setValueNew(descriptionVersion.get().value().getText());
-					@SuppressWarnings({ "unchecked", "rawtypes" })
-					List<DescriptionSememe<?>> coll = ((SememeChronology) sememe).getVisibleOrderedVersionList(STAMP_COORDINATES);
-					Collections.reverse(coll);
-					for(DescriptionSememe<?> s : coll)
+					
+					d.setAction(determineAction(sememe, startDate, endDate));
+					
+					if (d.getAction() != ActionType.ADD)
 					{
-						if (s.getTime() < startDate) {
-							d.setValueOld(s.getText());
-							break;
+						@SuppressWarnings({ "unchecked", "rawtypes" })
+						List<DescriptionSememe<?>> coll = ((SememeChronology) sememe).getVisibleOrderedVersionList(STAMP_COORDINATES);
+						Collections.reverse(coll);
+						for(DescriptionSememe<?> s : coll)
+						{
+							if (s.getTime() < startDate) {
+								d.setValueOld(s.getText());
+								break;
+							}
 						}
 					}
-					d.setAction(determineAction(sememe, startDate, endDate));
+					
+					if (d.getAction() == ActionType.UPDATE || d.getAction() == ActionType.ADD) {
+						d.setValueNew(descriptionVersion.get().value().getText());
+					}
+					
 					d.setCode(getCodeFromNid(sememe.getNid()));
 					d.setVUID(Frills.getVuId(sememe.getNid(), STAMP_COORDINATES).orElse(null));
 					d.setActive(descriptionVersion.get().value().getState() == State.ACTIVE);
@@ -608,6 +629,7 @@ public class VetsExporter {
 
 						Get.sememeService().getSememesForComponent(sememe.getNid()).forEach((nestedSememe) -> {
 							//skip code and vuid properties - they are handled already
+							
 							if (nestedSememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() && nestedSememe.getAssemblageSequence() != codeAssemblageConceptSeq)
 							{
 								if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), vhatPropertyTypesNid))
@@ -747,7 +769,6 @@ public class VetsExporter {
 					&& preferredNameExtendedType.equals(Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememeChronology.getNid()).orElse(null)))
 			{
 				if (latestVersion.get().value().getState() == State.ACTIVE)
-
 				{
 					descriptions.add(latestVersion.get().value().getText());
 				}
@@ -803,23 +824,30 @@ public class VetsExporter {
 		});
 
 		boolean latest = true;
-		boolean finalStateIsInactive = false;
-		boolean firstStateIsInactive = false;
 		int versionCountInDateRange = 0;
 		int actionCountPriorToStartDate = 0;
+		State beginState = null;
+		State endState = null;
+	
 		for (StampedVersion sv : versions)
 		{
+			
 			if (sv.getTime() < startDate)
 			{
+				//last value prior to start date
+				if (beginState == null )
+				{
+					beginState = sv.getState();
+				}
 				actionCountPriorToStartDate++;
 			}
 			if (sv.getTime() <= endDate && sv.getTime() >= startDate)
 			{
-				if (latest && sv.getState() != State.ACTIVE)
+				//last value prior to end date
+				if (endState == null)
 				{
-					finalStateIsInactive = true;
+					endState = sv.getState();
 				}
-				firstStateIsInactive = sv.getState() != State.ACTIVE ? true : false;
 				versionCountInDateRange++;
 			}
 			latest = false;
@@ -827,19 +855,23 @@ public class VetsExporter {
 		}
 
 		//TODO this logic needs some serious sanity checking / junit tests.  Dan is up to late to get it right on the first try.
-		if (firstStateIsInactive && finalStateIsInactive)
+		if (beginState == endState || versionCountInDateRange == 0)
 		{
 			return ActionType.NONE;
 		}
+		/* The UI does not allow Remove. Only Active and Inactive. May be revisited in R3 
 		else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
 		{
 			return ActionType.REMOVE;
 		}
+		*/
 
+		/*
 		if (versionCountInDateRange == 0)
 		{
 			return ActionType.NONE;
 		}
+		*/
 
 		if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
 		{
