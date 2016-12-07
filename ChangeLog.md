@@ -3,7 +3,7 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.27 - PENDING
+* 2016/12/07 - 3.27
     * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
         concept to ensure correct action is updated.
 
