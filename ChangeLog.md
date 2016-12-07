@@ -3,8 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2016/12/07 - 3.27
+    * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
+        concept to ensure correct action is updated.
 
-* 2016/12/05 - 3.26
+* 2016/12/06 - 3.26
     * Add ValueOld to VetsExporter in buildProperty and getDesignations.
     * Fix a nasty bug dealing with the metadata for VHAT Module and SOLOR Module Overlay, which lead to phantom / missing 
         modules in the database.
