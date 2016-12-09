@@ -734,26 +734,72 @@ public class VetsExporter {
 		{
 			SememeChronology<?> sc = ai.getData().getChronology();
 			ActionType action = determineAction(sc, startDate, endDate);
-			if (action != ActionType.NONE)
+			
+			Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship xmlRelationship =
+					new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
+			
+			try
 			{
-				Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship xmlRelationship =
-						new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship();
-				xmlRelationship.setAction(action);
-				xmlRelationship.setActive(ai.getData().getState() == State.ACTIVE);
-
-				//xmlRelationship.setOldTargetCode("");  //TODO old value?
-				xmlRelationship.setTypeName(ai.getAssociationType().getAssociationName());
+				String newTargetCode = null;
+				String oldTargetCode = null;
 				if (ai.getTargetComponent().isPresent())
 				{
-					xmlRelationship.setNewTargetCode(getCodeFromNid(Get.identifierService().getNidForUuids(ai.getTargetComponent().get().getPrimordialUuid())));
-					if (xmlRelationship.getNewTargetCode() == null)
+					newTargetCode = getCodeFromNid(Get.identifierService().getNidForUuids(ai.getTargetComponent().get().getPrimordialUuid()));
+					if (newTargetCode == null || newTargetCode.isEmpty())
 					{
-						log.warn("Failed to find target code for concept " + ai.getTargetComponent().get().getPrimordialUuid());
+						log.warn("Failed to find new target code for concept " + ai.getTargetComponent().get().getPrimordialUuid());
 					}
 				}
-				relationships.add(xmlRelationship);
+				
+				if (action == ActionType.UPDATE) 
+				{
+					// This is an active/inactive change
+					oldTargetCode = newTargetCode;
+					newTargetCode = null;
+				}
+				else if (action != ActionType.ADD)
+				{
+					// Get the old target value
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					List<DynamicSememe<?>> coll = ((SememeChronology) sc).getVisibleOrderedVersionList(STAMP_COORDINATES);
+					Collections.reverse(coll);
+					for(DynamicSememe<?> s : coll)
+					{
+						if (s.getTime() < startDate) {
+							AssociationInstance assocInst = AssociationInstance.read(s, null);
+							oldTargetCode = getCodeFromNid(Get.identifierService().getNidForUuids(assocInst.getTargetComponent().get().getPrimordialUuid()));
+							if (oldTargetCode == null || oldTargetCode.isEmpty())
+							{
+								log.error("Failed to find old target code for concept " + ai.getTargetComponent().get().getPrimordialUuid());
+							}
+							break;
+						}
+					}
+					// if NONE && old != new => UPDATE
+					if (!newTargetCode.equals(oldTargetCode) && action == ActionType.NONE) {
+						action = ActionType.UPDATE;
+					}
+				}
+				
+				xmlRelationship.setAction(action);
+				xmlRelationship.setActive(ai.getData().getState() == State.ACTIVE);
+				xmlRelationship.setTypeName(ai.getAssociationType().getAssociationName());
+				xmlRelationship.setOldTargetCode(oldTargetCode);
+				xmlRelationship.setNewTargetCode(newTargetCode);
+				
+				if (action != ActionType.NONE)
+				{
+					relationships.add(xmlRelationship);
+				}			
+			}
+			catch (Exception e)
+			{
+				// Per Dan, catch()-ing to protect against export failure if this were to cause a problem
+				// as this code is being added very late to Release 2
+				log.error("Association build failure");
 			}
 		}
+			
 		return relationships;
 	}
 
