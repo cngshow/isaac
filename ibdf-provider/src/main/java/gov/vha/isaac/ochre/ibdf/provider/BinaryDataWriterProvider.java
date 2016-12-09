@@ -15,36 +15,34 @@
  */
 package gov.vha.isaac.ochre.ibdf.provider;
 
-import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.Semaphore;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
+import gov.vha.isaac.ochre.api.util.TimeFlushBufferedOutputStream;
 
 /**
  * @author kec
  */
 @Service(name="ibdfWriter")
 @PerLookup
-public class BinaryDataWriterProvider implements BinaryDataWriterService {
-
-    private static final int MAX_DEBUG_COUNT = 10;
-    private boolean DEBUG = false;
+public class BinaryDataWriterProvider implements DataWriterService {
 
     private static final int BUFFER_SIZE = 1024;
+    private Logger logger = LoggerFactory.getLogger(BinaryDataWriterProvider.class);
+    private Semaphore pauseBlock = new Semaphore(1);
+    
     Path dataPath;
     ByteArrayDataBuffer buffer = new ByteArrayDataBuffer(BUFFER_SIZE);
     DataOutputStream output;
-    int writtenObjects = 0;
-    int debugCount = 0;
-    OchreExternalizableObjectType lastObjectType;
 
     private BinaryDataWriterProvider() throws IOException {
         //for HK2
@@ -62,49 +60,87 @@ public class BinaryDataWriterProvider implements BinaryDataWriterService {
 
     @Override
     public void configure(Path path) throws IOException {
-        if (this.dataPath != null) {
+        if (this.output != null) {
             throw new RuntimeException("Reconfiguration is not supported");
         }
-        this.dataPath = path;
-        this.output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(dataPath.toFile())));
-        this.buffer.setExternalData(true);
-        DEBUG = Get.configurationService().enableVerboseDebug();
-	}
+        dataPath = path;
+        output = new DataOutputStream(new TimeFlushBufferedOutputStream(new FileOutputStream(dataPath.toFile())));
+        buffer.setExternalData(true);
+        logger.info("ibdf changeset writer has been configured to write to " + dataPath.toAbsolutePath().toString());
+    }
 
-	@Override
-    public void put(OchreExternalizable ochreObject) {
-        if (ochreObject.getOchreObjectType() != lastObjectType) {
-            debugCount = 0;
-            lastObjectType = ochreObject.getOchreObjectType();
-        }
-        try {
+    @Override
+    public void put(OchreExternalizable ochreObject) throws RuntimeException 
+    {
+        try 
+        {
+            pauseBlock.acquireUninterruptibly();
             buffer.clear();
             ochreObject.putExternal(buffer);
             output.writeByte(ochreObject.getOchreObjectType().getToken());
             output.writeByte(ochreObject.getDataFormatVersion());
             output.writeInt(buffer.getLimit());
             output.write(buffer.getData(), 0, buffer.getLimit());
-            if (DEBUG && debugCount < MAX_DEBUG_COUNT) {
-                System.out.println("Writing "+ debugCount +" : " + ochreObject);
-                //byte[] data = new byte[buffer.getLimit()];
-                //System.arraycopy(buffer.getData(), 0, data, 0, buffer.getLimit());
-                //System.out.println("Data: " + DatatypeConverter.printHexBinary(data));
-            }
-            writtenObjects++;
-            debugCount++;
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+        finally
+        {
+            pauseBlock.release();
         }
     }
 
     @Override
-    public void close() {
-        try {
-            this.output.flush();
-            this.output.close();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+    public void close() throws IOException {
+        try 
+        {
+            output.flush();
+            output.close();
+        } 
+        finally
+        {
+            output =  null;
         }
     }
 
+    /**
+     * @throws IOException 
+     * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#flush()
+     */
+    @Override
+    public void flush() throws IOException
+    {
+        if (output != null)
+        {
+            output.flush();
+        }
+    }
+
+    @Override
+    public void pause() throws IOException
+    {
+        if (output == null)
+        {
+            logger.warn("already paused!");
+            return;
+        }
+        pauseBlock.acquireUninterruptibly();
+        close();
+        logger.debug("ibdf writer paused");
+    }
+
+    @Override
+    public void resume() throws IOException
+    {
+        if (output != null)
+        {
+            logger.warn("asked to resume but not paused!");
+            return;
+        }
+        configure(dataPath);
+        pauseBlock.release();
+        logger.debug("ibdf writer resumed");
+    }
 }

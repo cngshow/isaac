@@ -44,16 +44,13 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 
 /**
  * {@link ChangeSetWriterHandler}
- *
- *
- *
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service(name = "Change Set Writer Handler")
@@ -64,7 +61,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	private static final String jsonFileSuffix = ".json";
 	private static final String ibdfFileSuffix = ".ibdf";
-	private BinaryDataWriterService writer;
+	private DataWriterService writer;
 	private final UUID changeSetWriterHandlerUuid = UUID.randomUUID();
 	private ExecutorService changeSetWriteExecutor;
 	private boolean writeEnabled;
@@ -149,7 +146,14 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 		}
 		if (writer != null) {
 			LOG.debug("Close writer");
-			writer.close();
+			try
+			{
+				writer.close();
+			}
+			catch (IOException e)
+			{
+				LOG.error("Error closing changeset writer!", e);
+			}
 			writer = null;
 		}
 

@@ -18,20 +18,23 @@
  */
 package gov.vha.isaac.ochre.api.externalizable.json;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.cedarsoftware.util.io.JsonWriter;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.util.TimeFlushBufferedOutputStream;
 
 /**
  * {@link JsonDataWriterService} - serialize to JSON
@@ -40,10 +43,15 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
  */
 @Service(name="jsonWriter")
 @PerLookup
-public class JsonDataWriterService implements BinaryDataWriterService
+public class JsonDataWriterService implements DataWriterService
 {
 	private JsonWriter json_;
 	private FileOutputStream fos_;
+	private Logger logger = LoggerFactory.getLogger(JsonDataWriterService.class);
+	
+	private Semaphore pauseBlock = new Semaphore(1);
+	
+	Path dataPath;
 	
 	private JsonDataWriterService() throws IOException
 	{
@@ -76,16 +84,26 @@ public class JsonDataWriterService implements BinaryDataWriterService
 		}
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
+		dataPath = path;
 		fos_ = new FileOutputStream(path.toFile());
-		json_ = new JsonWriter(new BufferedOutputStream(fos_), args);
+		json_ = new JsonWriter(new TimeFlushBufferedOutputStream(fos_), args);
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
+		logger.info("json changeset writer has been configured to write to " + dataPath.toAbsolutePath().toString());
 	}
 
 	@Override
 	public void put(OchreExternalizable ochreObject)
 	{
-		json_.write(ochreObject);
+		try
+		{
+			pauseBlock.acquireUninterruptibly();
+			json_.write(ochreObject);
+		}
+		finally
+		{
+			pauseBlock.release();
+		}
 	}
 	
 	/**
@@ -94,20 +112,69 @@ public class JsonDataWriterService implements BinaryDataWriterService
 	 */
 	public void put(String string)
 	{
-		json_.write(string);
+		try
+		{
+			pauseBlock.acquireUninterruptibly();
+			json_.write(string);
+		}
+		finally
+		{
+			pauseBlock.release();
+		}
 	}
 
 	@Override
-	public void close()
+	public void close() throws IOException
 	{
-		json_.close();
-		
-		try {
+		try 
+		{
+			json_.close();
 			fos_.close();
 		}
-		catch (IOException e)
+		finally
 		{
-			//noop
+			json_ = null;
+			fos_ = null;
 		}
+	}
+	
+	/**
+	 * @throws IOException 
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#flush()
+	 */
+	@Override
+	public void flush() throws IOException
+	{
+		if (json_ != null)
+		{
+			json_.flush();
+		}
+	}
+
+	@Override
+	public void pause() throws IOException
+	{
+		if (json_ == null)
+		{
+			logger.warn("already paused!");
+			return;
+		}
+		pauseBlock.acquireUninterruptibly();
+		close();
+
+		logger.debug("json writer paused");
+	}
+
+	@Override
+	public void resume() throws IOException
+	{
+		if (json_ != null)
+		{
+			logger.warn("asked to resume but not paused!");
+			return;
+		}
+		configure(dataPath);
+		pauseBlock.release();
+		logger.debug("json writer resumed");
 	}
 }
