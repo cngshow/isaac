@@ -5,6 +5,7 @@ where provided, and the git commit history.
 
 * 2016/12/?? - 3.28 - PENDING
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
+    * Fixed a 'null dereference' issue that was flagged by Fortify.
 
 * 2016/12/07 - 3.27
     * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded

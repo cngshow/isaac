@@ -776,7 +776,7 @@ public class VetsExporter {
 						}
 					}
 					// if NONE && old != new => UPDATE
-					if (!newTargetCode.equals(oldTargetCode) && action == ActionType.NONE) {
+					if (newTargetCode != null && !newTargetCode.equals(oldTargetCode) && action == ActionType.NONE) {
 						action = ActionType.UPDATE;
 					}
 				}
