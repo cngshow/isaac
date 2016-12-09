@@ -55,7 +55,7 @@ import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstant;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstantGroup;
 import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
@@ -343,7 +343,7 @@ public class IsaacTaxonomy {
         
         commitService.addAlias(stampSequence, stampAliasForPromotion, "promoted by maven");
         
-        try (BinaryDataWriterService writer = new MultipleDataWriterService(jsonPath, ibdfPath)) {
+        try (DataWriterService writer = new MultipleDataWriterService(jsonPath, ibdfPath)) {
             Get.ochreExternalizableStream().forEach((ochreExternalizable) -> writer.put(ochreExternalizable));
         }
     }

@@ -22,6 +22,7 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,7 +79,7 @@ import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPosition;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -169,7 +170,7 @@ public class EConceptUtility
 	private SememeBuilderService<?> sememeBuilderService_;
 	protected static StampCoordinate readBackStamp_;
 	
-	private BinaryDataWriterService writer_;
+	private DataWriterService writer_;
 
 	private LoadStats ls_ = new LoadStats();
 	
@@ -1325,7 +1326,7 @@ public class EConceptUtility
 		}
 	}
 
-	public void shutdown()	
+	public void shutdown() throws IOException	
 	{
 		writer_.close();
 		LookupService.shutdownIsaac();

@@ -50,7 +50,7 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderQueueService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataServiceFactory;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableSpliterator;
 import gov.vha.isaac.ochre.api.index.GenerateIndexes;
@@ -378,7 +378,7 @@ public class Get implements OchreCache {
 		return getService(BinaryDataServiceFactory.class).getQueueReader(dataPath);
 	}
 
-	public static BinaryDataWriterService binaryDataWriter(Path dataPath) throws IOException {
+	public static DataWriterService binaryDataWriter(Path dataPath) throws IOException {
 		return getService(BinaryDataServiceFactory.class).getWriter(dataPath);
 	}
 

@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gov.vha.isaac.ochre.api.LookupService;
 
 /**
@@ -31,16 +34,17 @@ import gov.vha.isaac.ochre.api.LookupService;
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class MultipleDataWriterService implements BinaryDataWriterService
+public class MultipleDataWriterService implements DataWriterService
 {
-	ArrayList<BinaryDataWriterService> writers_ = new ArrayList<>();
+	ArrayList<DataWriterService> writers_ = new ArrayList<>();
+	private Logger logger = LoggerFactory.getLogger(MultipleDataWriterService.class);
 	
 	public MultipleDataWriterService(Optional<Path> jsonPath, Optional<Path> ibdfPath) throws IOException
 	{
 		if (jsonPath.isPresent())
 		{
 			//Use HK2 here to make fortify stop false-flagging an open resource error
-			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "jsonWriter");
+			DataWriterService writer = LookupService.get().getService(DataWriterService.class, "jsonWriter");
 			if (writer != null)
 			{
 				writer.configure(jsonPath.get());
@@ -53,7 +57,7 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 		}
 		if (ibdfPath.isPresent())
 		{
-			BinaryDataWriterService writer = LookupService.get().getService(BinaryDataWriterService.class, "ibdfWriter");
+			DataWriterService writer = LookupService.get().getService(DataWriterService.class, "ibdfWriter");
 			if (writer != null)
 			{
 				writer.configure(ibdfPath.get());
@@ -66,24 +70,152 @@ public class MultipleDataWriterService implements BinaryDataWriterService
 		}
 	}
 	
+	/**
+	 * @throws IOException 
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#put(gov.vha.isaac.ochre.api.externalizable.OchreExternalizable)
+	 */
 	@Override
-	public void put(OchreExternalizable ochreObject)
+	public void put(OchreExternalizable ochreObject) throws RuntimeException
 	{
-		for (BinaryDataWriterService writer : writers_)
+		try
 		{
-			writer.put(ochreObject);
+			handleMulti((writer) -> 
+			{
+				try
+				{
+					writer.put(ochreObject);
+					return null;
+				}
+				catch (RuntimeException e)
+				{
+					return new IOException(e);
+				}
+			});
+		}
+		catch (IOException e)
+		{
+			if (e.getCause() != null && e.getCause() instanceof RuntimeException)
+			{
+				throw (RuntimeException)e.getCause();
+			}
+			else
+			{
+				logger.warn("Unexpected", e);
+				throw new RuntimeException(e);
+			}
+		}
+	}
+	
+	/**
+	 * @throws IOException 
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#close()
+	 */
+	@Override
+	public void close() throws IOException
+	{
+		handleMulti((writer) -> 
+		{
+			try
+			{
+				writer.close();
+				return null;
+			}
+			catch (IOException e)
+			{
+				return e;
+			}
+		});
+	}
+	
+	/**
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#flush()
+	 */
+	@Override
+	public void flush() throws IOException
+	{
+		handleMulti((writer) -> 
+		{
+			try
+			{
+				writer.flush();
+				return null;
+			}
+			catch (IOException e)
+			{
+				return e;
+			}
+		});
+	}
+
+	/**
+	 * @throws IOException 
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#pause()
+	 */
+	@Override
+	public void pause() throws IOException
+	{
+		handleMulti((writer) -> 
+		{
+			try
+			{
+				writer.pause();
+				return null;
+			}
+			catch (IOException e)
+			{
+				return e;
+			}
+		});
+	}
+
+	/**
+	 * @throws IOException 
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#resume()
+	 */
+	@Override
+	public void resume() throws IOException
+	{
+		handleMulti((writer) -> 
+		{
+			try
+			{
+				writer.resume();
+				return null;
+			}
+			catch (IOException e)
+			{
+				return e;
+			}
+		});
+	}
+	
+	public void handleMulti(Function<DataWriterService, IOException> function) throws IOException
+	{
+		ArrayList<IOException> exceptions = new ArrayList<>();
+		for (DataWriterService writer : writers_)
+		{
+			IOException e = function.apply(writer);
+			if (e != null)
+			{
+				exceptions.add(e);
+			}
+		}
+		if (exceptions.size() > 0)
+		{
+			if (exceptions.size() > 1)
+			{
+				for (int i = 1; i < exceptions.size(); i++)
+				{
+					logger.error("extra, unthrown exception: ", exceptions.get(i));
+				}
+			}
+			throw exceptions.get(0);
 		}
 	}
 
-	@Override
-	public void close()
-	{
-		for (BinaryDataWriterService writer : writers_)
-		{
-			writer.close();
-		}
-	}
-
+	/**
+	 * @see gov.vha.isaac.ochre.api.externalizable.DataWriterService#configure(java.nio.file.Path)
+	 */
 	@Override
 	public void configure(Path path) throws UnsupportedOperationException
 	{
