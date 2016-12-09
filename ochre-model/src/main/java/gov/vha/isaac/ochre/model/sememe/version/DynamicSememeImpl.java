@@ -32,6 +32,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
+import gov.vha.isaac.ochre.model.sememe.DynamicSememeUtilityImpl;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeTypeToClassUtility;
@@ -153,43 +154,11 @@ public class DynamicSememeImpl extends SememeVersionImpl<DynamicSememeImpl> impl
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{DynamicSememeData≤");
-        DynamicSememeData[] data = getData();
-        //make sure the column numbers are set, so lookups can happen for column names.
-        for (int i = 0; i < data.length; i++)
-        {
-            if (data[i] != null)
-            {
-                data[i].configureNameProvider(getAssemblageSequence(), i);
-            }
-        }
-        sb.append(Arrays.toString(getData()));
-        toString(sb);//stamp info
-        sb.append("≥DSD}");
-        return sb.toString();
+        return DynamicSememeUtilityImpl.toString(this);
     }
 
     @Override
     public String dataToString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        if (data_ != null)
-        {
-            for (DynamicSememeData dsd : data_)
-            {
-                if (dsd != null)
-                {
-                    sb.append(dsd.dataToString());
-                }
-                sb.append(", ");
-            }
-            if (sb.length() > 1)
-            {
-                sb.setLength(sb.length() - 2);
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+        return DynamicSememeUtilityImpl.toString(getData());
     }
 }
