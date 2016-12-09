@@ -18,7 +18,7 @@ package gov.vha.isaac.ochre.ibdf.provider;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderQueueService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataServiceFactory;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,7 +43,7 @@ public class BinaryDataProviderFactory implements BinaryDataServiceFactory {
     }
 
     @Override
-    public BinaryDataWriterService getWriter(Path dataPath) throws IOException {
+    public DataWriterService getWriter(Path dataPath) throws IOException {
        return new BinaryDataWriterProvider(dataPath);
     }
 }

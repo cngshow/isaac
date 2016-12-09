@@ -114,8 +114,8 @@ public class WorkflowFrameworkTest {
 		wp_ = LookupService.get().getService(WorkflowProvider.class);
 		cancelAction = wp_.getBPMNInfo().getEndWorkflowTypeMap().get(EndWorkflowType.CONCLUDED).iterator().next();
 
-		defaultEditCoordinate = new EditCoordinateImpl(TermAux.USER.getNid(), TermAux.ISAAC_MODULE.getNid(),
-				TermAux.DEVELOPMENT_PATH.getNid());
+		defaultEditCoordinate = new EditCoordinateImpl(TermAux.USER.getNid(), MetaData.ISAAC_MODULE.getNid(),
+				MetaData.DEVELOPMENT_PATH.getNid());
 
 		ObservableStampCoordinate defaultSC = Get.configurationService().getDefaultStampCoordinate();
 		defaultStampCoordinate = new StampCoordinateImpl(defaultSC.getStampPrecedence(), defaultSC.getStampPosition(),

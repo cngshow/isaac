@@ -3,9 +3,28 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/11/?? - 3.24
+* 2016/12/?? - 3.28 - PENDING
+    * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
     * Ensure system shuts down cleanly preventing database locks from corrupting database
 	* Add mechanism to review database to ensure isn't corrupt
+
+* 2016/12/07 - 3.27
+    * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
+        concept to ensure correct action is updated.
+
+* 2016/12/06 - 3.26
+    * Add ValueOld to VetsExporter in buildProperty and getDesignations.
+    * Fix a nasty bug dealing with the metadata for VHAT Module and SOLOR Module Overlay, which lead to phantom / missing 
+        modules in the database.
+
+* 2016/12/04 - 3.25
+    * Add threading to ChangesSetWriterHandler.  Add functionality to disable and enable writing. 
+    * Adding a db build mode, so that indexes and changesets aren't done incrementally while building
+        a database
+    * Adjust some configuration on the lucene indexer to enhance performance during DB build.
+
+* 2016/12/02 - 3.24
+    * Fixing bugs with VHAT XML export (workaround for data model issue, many other fixes)
 
 * 2016/11/30 - 3.23
     * (Jazz 418368) Fix the lucene indexer so it doesn't miss commit notifications

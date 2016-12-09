@@ -5,8 +5,11 @@ import java.util.Arrays;
 import java.util.UUID;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
+
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
@@ -58,7 +61,56 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 @Singleton
 public class DynamicSememeUtilityImpl implements DynamicSememeUtility
 {
-	
+	/**
+	 * @param sememe DynamicSememe<?>
+	 * @return
+	 */
+	public static String toString(DynamicSememe<?> sememe) {
+		StringBuilder sb = new StringBuilder();
+        sb.append("{DynamicSememeData≤");
+        DynamicSememeData[] data = sememe.getData();
+        //make sure the column numbers are set, so lookups can happen for column names.
+        for (int i = 0; i < data.length; i++)
+        {
+            if (data[i] != null)
+            {
+                data[i].configureNameProvider(sememe.getAssemblageSequence(), i);
+            }
+        }
+        sb.append(Arrays.toString(sememe.getData()));
+
+        //stamp info
+        sb.append(" ").append(Get.stampService().describeStampSequence(sememe.getStampSequence()));
+
+        sb.append("≥DSD}");
+        return sb.toString();
+	}
+	/**
+	 * @param data DynamicSememeData[]
+	 * @return
+	 */
+	public static String toString(DynamicSememeData[] data) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("[");
+		if (data != null)
+		{
+			for (DynamicSememeData dsd : data)
+			{
+				if (dsd != null)
+				{
+					sb.append(dsd.dataToString());
+				}
+				sb.append(", ");
+			}
+			if (sb.length() > 1)
+			{
+				sb.setLength(sb.length() - 2);
+			}
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+
 	/**
 	 * Read the {@link DynamicSememeUsageDescription} for the specified assemblage concept
 	 */

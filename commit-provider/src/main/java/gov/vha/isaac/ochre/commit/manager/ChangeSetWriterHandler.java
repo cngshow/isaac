@@ -18,21 +18,19 @@
  */
 package gov.vha.isaac.ochre.commit.manager;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -46,15 +44,13 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 
 /**
  * {@link ChangeSetWriterHandler}
- *
- *
- *
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service(name = "Change Set Writer Handler")
@@ -65,14 +61,16 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	private static final String jsonFileSuffix = ".json";
 	private static final String ibdfFileSuffix = ".ibdf";
-	private BinaryDataWriterService writer;
+	private DataWriterService writer;
 	private final UUID changeSetWriterHandlerUuid = UUID.randomUUID();
+	private ExecutorService changeSetWriteExecutor;
+	private boolean writeEnabled;
+	private Boolean dbBuildMode;
 
 	public ChangeSetWriterHandler() throws Exception {
 
 		Optional<Path> databasePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-		
 		Path changeSetFolder = databasePath.get().resolve("changesets");
 		Files.createDirectories(changeSetFolder);
 		if (!changeSetFolder.toFile().isDirectory()) {
@@ -88,8 +86,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	/*
 	 */
-	@Override
-	public void sequenceSetChange(ConceptSequenceSet conceptSequenceSet) {
+	private void sequenceSetChange(ConceptSequenceSet conceptSequenceSet) {
 
 		conceptSequenceSet.stream().forEach((conceptSequence) -> {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptSequence);
@@ -103,8 +100,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	/*
 	 */
-	@Override
-	public void sequenceSetChange(SememeSequenceSet sememeSequenceSet) {
+	private void sequenceSetChange(SememeSequenceSet sememeSequenceSet) {
 
 		sememeSequenceSet.stream().forEach((sememeSequence) -> {
 			SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeService().getSememe(sememeSequence);
@@ -117,18 +113,6 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	}
 
 	private void writeToFile(OchreExternalizable ochreObject) throws IOException {
-
-		/*
-		Runnable r = new Runnable() {
-			@Override
-			public void run() {
-				writer.put(ochreObject);
-			}
-		};
-		ExecutorService executor = Executors.newCachedThreadPool();
-		executor.submit(r);
-		 */
-
 		writer.put(ochreObject);
 	}
 
@@ -137,7 +121,12 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	private void startMe() {
 		try {
 			LOG.info("Starting ChangeSetWriterHandler post-construct");
+			enable();
+
+			changeSetWriteExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("ISAAC-B-work-thread-changeset-write", false));
+					
 			Get.postCommitService().addChangeSetListener(this);
+
 		} catch(Exception e) {
 			LOG.error("Error in ChangeSetWriterHandler post-construct ", e);
 			LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Change Set Writer Handler", e);
@@ -149,10 +138,25 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 	private void stopMe()
 	{
 		LOG.info("Stopping ChangeSetWriterHandler pre-destroy");
+		disable();
+		if (changeSetWriteExecutor != null)
+		{
+			changeSetWriteExecutor.shutdown();
+			changeSetWriteExecutor = null;
+		}
 		if (writer != null) {
 			LOG.debug("Close writer");
-			writer.close();
+			try
+			{
+				writer.close();
+			}
+			catch (IOException e)
+			{
+				LOG.error("Error closing changeset writer!", e);
+			}
+			writer = null;
 		}
+
 	}
 
 	@Override
@@ -162,18 +166,67 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	@Override
 	public void handlePostCommit(CommitRecord commitRecord) {
-		try {
-			if (commitRecord.getConceptsInCommit() != null) {
-				sequenceSetChange(commitRecord.getConceptsInCommit());
-			}
-			if (commitRecord.getSememesInCommit() != null) {
-				sequenceSetChange(commitRecord.getSememesInCommit());
-			}
-		} catch (Exception e) {
-			LOG.error("Error in Change set writer handler ", e.getMessage());
-			throw new RuntimeException(e);
-		}
 
+		LOG.info("handle Post Commit");
+		if (dbBuildMode == null)
+		{
+			dbBuildMode = Get.configurationService().inDBBuildMode();
+			if (dbBuildMode)
+			{
+				stopMe();
+			}
+		}
+		if (writeEnabled && !dbBuildMode)
+		{
+			//Do in the backgound
+			Runnable r = new Runnable() {
+
+				@Override
+				public void run()
+				{
+					try
+					{
+						if (commitRecord.getConceptsInCommit() != null && commitRecord.getConceptsInCommit().size() > 0)
+						{
+							sequenceSetChange(commitRecord.getConceptsInCommit());
+							LOG.debug("handle Post Commit: {} concepts", commitRecord.getConceptsInCommit().size() );
+						}
+						if (commitRecord.getSememesInCommit() != null && commitRecord.getSememesInCommit().size() > 0)
+						{
+							sequenceSetChange(commitRecord.getSememesInCommit());
+							LOG.debug("handle Post Commit: {} sememes", commitRecord.getSememesInCommit().size());
+						}
+					} catch (Exception e) {
+						LOG.error("Error in Change set writer handler ", e.getMessage());
+						throw new RuntimeException(e);
+					}
+				}
+			};
+
+			changeSetWriteExecutor.execute(r);
+		}
+		else
+		{
+			LOG.info("ChangeSetWriter ignoring commit");
+		}
+	}
+
+	@Override
+	public void disable()
+	{
+		writeEnabled = false;
+	}
+
+	@Override
+	public void enable()
+	{
+		writeEnabled = true;
+	}
+
+	@Override
+	public boolean getWriteStatus()
+	{
+		return writeEnabled;
 	}
 
 }

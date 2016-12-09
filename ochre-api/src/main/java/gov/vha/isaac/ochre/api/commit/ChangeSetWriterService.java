@@ -20,9 +20,6 @@ package gov.vha.isaac.ochre.api.commit;
 
 import org.jvnet.hk2.annotations.Contract;
 
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
-import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
-
 /**
  * {@link ChangeSetWriterService}
  *
@@ -35,8 +32,25 @@ import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 @Contract
 public interface ChangeSetWriterService {
 
-	public void sequenceSetChange(ConceptSequenceSet conceptSequenceSet);
 
-	public void sequenceSetChange(SememeSequenceSet sememeSequenceSet);
+	/**
+	 * Disable {@link ChangeSetWriterService} from writing.  Anything received
+	 * while service is disabled is skipped.
+	 *
+	 */
+	public void disable ();
+
+	/**
+	 * Enable {@link ChangeSetWriterService} to write.
+	 *
+	 */
+	public void enable();
+
+	/**
+	 * Determine if the writer in the service is disabled or enabled for writing.
+	 *
+	 * @return {@code true} if enabled or {@code false} if disabled.
+	 */
+	public boolean getWriteStatus();
 
 }

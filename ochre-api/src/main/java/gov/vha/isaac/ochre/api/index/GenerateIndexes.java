@@ -84,7 +84,7 @@ public class GenerateIndexes extends TimedTask<Void> {
             
             for (SememeChronology<?> sememe : (Iterable<SememeChronology<? extends SememeVersion<?>>>) Get.sememeService().getParallelSememeStream()::iterator)
             {
-            	for (IndexServiceBI i : indexers) {
+                for (IndexServiceBI i : indexers) {
                     try {
                         if (sememe == null) {
                             //noop - this error is already logged elsewhere.  Just skip.
@@ -96,8 +96,8 @@ public class GenerateIndexes extends TimedTask<Void> {
                     catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-	            }
-	            updateProcessedCount();
+                }
+                updateProcessedCount();
             }
             
             List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
@@ -105,16 +105,16 @@ public class GenerateIndexes extends TimedTask<Void> {
             for (IndexServiceBI i : indexers) {
                 if (islList != null)
                 {
-                	for(IndexStatusListenerBI isl : islList) {
-                		isl.reindexCompleted(i);
-                	}
+                    for(IndexStatusListenerBI isl : islList) {
+                        isl.reindexCompleted(i);
+                    }
                 }
                 i.commitWriter();
                 i.forceMerge();
                 log.info(i.getIndexerName() + " indexing complete.  Statistics follow:");
                 
                 for (Map.Entry<String, Integer> entry : i.reportIndexedItems().entrySet()){
-                	log.info(entry.getKey() + ": " + entry.getValue());
+                    log.info(entry.getKey() + ": " + entry.getValue());
                 }
                 
                 i.clearIndexedStatistics();
@@ -133,7 +133,7 @@ public class GenerateIndexes extends TimedTask<Void> {
             //We were committing too often every 1000 components, it was bad for performance.
             if (processedCount % 100000 == 0)
             {
-            	for (IndexServiceBI i : indexers) {
+                for (IndexServiceBI i : indexers) {
                     i.commitWriter();
                 }
             }

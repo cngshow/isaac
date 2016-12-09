@@ -2,7 +2,6 @@ package gov.vha.isaac.ochre.utility.export;
 
 import static gov.vha.isaac.ochre.api.constants.Constants.DATA_STORE_ROOT_LOCATION_PROPERTY;
 import java.io.File;
-import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +19,7 @@ public class TestVetsExporter
 		new TestVetsExporter();
 		issacInit();
 		VetsExporter ve = new VetsExporter();
-		ve.export(System.out, 1451628000000l, System.currentTimeMillis());
+		ve.export(System.out, 1451628000000l, System.currentTimeMillis(), false);
 		isaacStop();
 		javafx.application.Platform.exit();
 	}

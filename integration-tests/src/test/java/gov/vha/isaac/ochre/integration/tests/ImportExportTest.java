@@ -9,7 +9,7 @@ import gov.vha.isaac.ochre.api.classifier.ClassifierService;
 import gov.vha.isaac.ochre.api.commit.CommitService;
 import gov.vha.isaac.ochre.api.coordinate.*;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
@@ -87,7 +87,7 @@ public class ImportExportTest {
             AtomicInteger exportCount = new AtomicInteger(0);
             AtomicInteger importCount = new AtomicInteger(0);
             OchreExternalizableStatsTestFilter exportStats = new OchreExternalizableStatsTestFilter();
-            BinaryDataWriterService writer = Get.binaryDataWriter(Paths.get("target", "data", "IsaacMetadataAuxiliary.export.ibdf"));
+            DataWriterService writer = Get.binaryDataWriter(Paths.get("target", "data", "IsaacMetadataAuxiliary.export.ibdf"));
             Get.ochreExternalizableStream().filter(exportStats).forEach((ochreExternalizable) -> {
                 writer.put(ochreExternalizable);
                 exportCount.incrementAndGet();
@@ -162,7 +162,7 @@ public class ImportExportTest {
         LOG.info("Testing export after classify");
         try {
             OchreExternalizableStatsTestFilter exportStats = new OchreExternalizableStatsTestFilter();
-            BinaryDataWriterService writer = Get.binaryDataWriter(Paths.get("target", "data", "IsaacMetadataAuxiliary.export.ibdf"));
+            DataWriterService writer = Get.binaryDataWriter(Paths.get("target", "data", "IsaacMetadataAuxiliary.export.ibdf"));
             Get.ochreExternalizableStream().filter(exportStats).forEach((ochreExternalizable) -> {
                 writer.put(ochreExternalizable);
                 if (ochreExternalizable.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
@@ -196,7 +196,7 @@ public class ImportExportTest {
                     SomeRole(MetaData.ROLE_GROUP,
                         And(
                             Feature(MetaData.HAS_STRENGTH, FloatLiteral(1.2345F, defBuilder)),
-                            ConceptAssertion(TermAux.MASTER_PATH, defBuilder)))));
+                            ConceptAssertion(MetaData.MASTER_PATH, defBuilder)))));
         LogicalExpression logicGraphDef = defBuilder.build();
 
         LogicByteArrayConverterService converter = new LogicByteArrayConverterService();

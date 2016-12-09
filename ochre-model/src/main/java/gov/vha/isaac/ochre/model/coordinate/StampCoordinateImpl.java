@@ -156,6 +156,8 @@ public class StampCoordinateImpl implements StampCoordinate {
 		int hash = 7;
 		hash = 11 * hash + Objects.hashCode(this.stampPrecedence);
 		hash = 11 * hash + Objects.hashCode(this.stampPosition);
+		hash = 11 * hash + Objects.hashCode(this.moduleSequences);
+		hash = 11 * hash + Objects.hashCode(this.allowedStates);
 		return hash;
 	}
 

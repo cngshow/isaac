@@ -61,6 +61,8 @@ public class DefaultConfigurationService implements ConfigurationService {
     private volatile boolean initComplete_ = false;
     
     private boolean bootstrapMode = false;
+    
+    private boolean dbBuildMode = false;
 
     private DefaultConfigurationService() {
         //only for HK2
@@ -215,5 +217,15 @@ public class DefaultConfigurationService implements ConfigurationService {
     @Override
     public void setBootstrapMode() {
         bootstrapMode = true;
+    }
+    
+    @Override
+    public boolean inDBBuildMode() {
+        return dbBuildMode;
+    }
+
+    @Override
+    public void setDBBuildMode() {
+        dbBuildMode = true;
     }
 }
