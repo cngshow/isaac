@@ -62,6 +62,8 @@ public class TimeFlushBufferedOutputStream extends BufferedOutputStream
 	@Override
 	public void close() throws IOException
 	{
+		super.close();
+
 		synchronized(instances_)
 		{
 			Iterator<WeakReference<TimeFlushBufferedOutputStream>> it = instances_.iterator();

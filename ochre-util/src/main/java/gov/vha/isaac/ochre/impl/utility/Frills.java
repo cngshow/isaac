@@ -911,6 +911,45 @@ public class Frills implements DynamicSememeColumnUtility {
 	public static DynamicSememeUsageDescription createNewDynamicSememeUsageDescriptionConcept(String sememeFSN, String sememePreferredTerm, 
 			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
 			SememeType referencedComponentSubRestriction, EditCoordinate editCoord)
+	{	
+		ConceptChronology<? extends ConceptVersion<?>> newDynamicSememeUsageDescriptionConcept = buildUncommittedNewDynamicSememeUsageDescription(
+				sememeFSN,
+				sememePreferredTerm,
+				sememeDescription,
+				columns,
+				parentConceptNidOrSequence,
+				referencedComponentRestriction,
+				referencedComponentSubRestriction,
+				editCoord);
+		
+		try {
+			Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newDynamicSememeUsageDescriptionConcept.getNid() + ", FSN=" + sememeFSN 
+					+ ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription).get();
+		} catch (InterruptedException | ExecutionException e) {
+			throw new RuntimeException("Commit of Dynamic Sememe Failed!", e);
+		}
+
+		return new DynamicSememeUsageDescriptionImpl(newDynamicSememeUsageDescriptionConcept.getNid());			
+	}
+
+	/**
+	 * This method returns an uncommitted refexUsageDescriptor concept chronology.
+	 * A DynamicSememeUsageDescription may be constructed by passing it to the DynamicSememeUsageDescriptionImpl ctor.
+	 * 
+	 * @param sememeFSN
+	 * @param sememePreferredTerm
+	 * @param sememeDescription
+	 * @param columns
+	 * @param parentConceptNidOrSequence
+	 * @param referencedComponentRestriction
+	 * @param referencedComponentSubRestriction
+	 * @param editCoord
+	 * @return
+	 */
+	@SuppressWarnings("deprecation")
+	public static ConceptChronology<? extends ConceptVersion<?>> buildUncommittedNewDynamicSememeUsageDescription(String sememeFSN, String sememePreferredTerm, 
+			String sememeDescription, DynamicSememeColumnInfo[] columns, Integer parentConceptNidOrSequence, ObjectChronologyType referencedComponentRestriction,
+			SememeType referencedComponentSubRestriction, EditCoordinate editCoord)
 	{
 		try
 		{
@@ -978,16 +1017,14 @@ public class Frills implements DynamicSememeColumnUtility {
 					.build(localEditCoord, ChangeCheckerMode.ACTIVE).getNoThrow();
 			}
 
-			Get.commitService().commit("creating new dynamic sememe assemblage (DynamicSememeUsageDescription): NID=" + newCon.getNid() + ", FSN=" + sememeFSN 
-					+ ", PT=" + sememePreferredTerm + ", DESC=" + sememeDescription).get();
-			return new DynamicSememeUsageDescriptionImpl(newCon.getNid());
+			return newCon;
 		}
-		catch (IllegalStateException | InterruptedException | ExecutionException e)
+		catch (IllegalStateException e)
 		{
 			throw new RuntimeException("Creation of Dynamic Sememe Failed!", e);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public String[] readDynamicSememeColumnNameDescription(UUID columnDescriptionConcept)
