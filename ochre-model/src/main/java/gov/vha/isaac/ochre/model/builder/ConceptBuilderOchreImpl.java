@@ -147,6 +147,18 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
+    public ConceptBuilder addDescription(String value, ConceptSpecification descriptionType) {
+        if (defaultLanguageForDescriptions == null || defaultDialectAssemblageForDescriptions == null) {
+            throw new IllegalStateException("language and dialect are required if a concept name is provided");
+        }
+        if (!conceptName.equals(value)) {
+            descriptionBuilders.add(LookupService.getService(DescriptionBuilderService.class).getDescriptionBuilder(value, this,
+                descriptionType,defaultLanguageForDescriptions).addAcceptableInDialectAssemblage(defaultDialectAssemblageForDescriptions));
+        }
+        return this;
+    }
+
+    @Override
     public ConceptBuilder addDescription(DescriptionBuilder<?, ?> descriptionBuilder) {
         descriptionBuilders.add(descriptionBuilder);
         return this;
@@ -161,6 +173,16 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     @Override
     public ConceptBuilder addLogicalExpression(LogicalExpression logicalExpression) {
         this.logicalExpressions.add(logicalExpression);
+        return this;
+    }
+
+    @Override
+    public ConceptBuilder mergeFromSpec(ConceptSpecification conceptSpec) {
+        setPrimordialUuid(conceptSpec.getPrimordialUuid());
+        addUuids(conceptSpec.getUuids());
+        if (!conceptName.equals(conceptSpec.getConceptDescriptionText())) {
+            addDescription(conceptSpec.getConceptDescriptionText(), TermAux.SYNONYM_DESCRIPTION_TYPE);
+        }
         return this;
     }
 
