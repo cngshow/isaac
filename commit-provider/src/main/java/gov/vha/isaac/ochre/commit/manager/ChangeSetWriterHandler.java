@@ -154,7 +154,10 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 			{
 				LOG.error("Error closing changeset writer!", e);
 			}
-			writer = null;
+			finally
+			{
+				writer = null;
+			}
 		}
 
 	}
