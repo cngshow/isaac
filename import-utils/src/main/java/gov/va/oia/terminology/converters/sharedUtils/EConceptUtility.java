@@ -158,7 +158,7 @@ public class EConceptUtility
 	private final long defaultTime_;
 	
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
-	private final static String metadataSemanticTag_ = " (ISAAC)";
+	public final static String metadataSemanticTag_ = " (ISAAC)";
 	
 	private int moduleSeq_ = 0;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
