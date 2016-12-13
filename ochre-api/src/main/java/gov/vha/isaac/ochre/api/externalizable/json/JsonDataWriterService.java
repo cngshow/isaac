@@ -85,7 +85,7 @@ public class JsonDataWriterService implements DataWriterService
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 		dataPath = path;
-		fos_ = new FileOutputStream(path.toFile());
+		fos_ = new FileOutputStream(path.toFile(), true);
 		json_ = new JsonWriter(new TimeFlushBufferedOutputStream(fos_), args);
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
