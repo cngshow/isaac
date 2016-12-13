@@ -19,12 +19,9 @@ import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -55,11 +52,12 @@ import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstant;
 import gov.vha.isaac.ochre.api.constants.MetadataConceptConstantGroup;
 import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.MultipleDataWriterService;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.util.StringUtils;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 
 /**
@@ -101,7 +99,11 @@ public class IsaacTaxonomy {
     }
 
     protected final ConceptBuilder createConcept(String name) {
-        return createConcept(name, null);
+        return createConcept(name, null, null);
+    }
+    
+    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym) {
+        return createConcept(name, null, nonPreferredSynonym);
     }
     
     /**
@@ -109,7 +111,7 @@ public class IsaacTaxonomy {
      * If parent is not provided, it uses the parentStack (if populated), otherwise, it creates
      * the concept without setting a parent.
      */
-    protected final ConceptBuilder createConcept(String name, Integer parentId) {
+    protected final ConceptBuilder createConcept(String name, Integer parentId, String nonPreferredSynonym) {
         checkConceptDescriptionText(name);
 
         if (parentStack.isEmpty() && parentId == null) {
@@ -126,6 +128,9 @@ public class IsaacTaxonomy {
             current = Get.conceptBuilderService().getDefaultConceptBuilder(name, semanticTag, logicalExpression);
         }
 
+        if (StringUtils.isNotBlank(nonPreferredSynonym)) {
+            current.addDescription(nonPreferredSynonym, TermAux.SYNONYM_DESCRIPTION_TYPE);
+        }
         conceptBuilders.put(name, current);
         conceptBuildersInInsertionOrder.add(current);
 
@@ -134,10 +139,8 @@ public class IsaacTaxonomy {
     
     public ConceptBuilder createConcept(MetadataConceptConstant cc) throws Exception {
         try {
-            ConceptBuilder cb = createConcept(cc.getFSN(), cc.getParent() != null ? cc.getParent().getConceptSequence() : null);
+            ConceptBuilder cb = createConcept(cc.getPrimaryName(), cc.getParent() != null ? cc.getParent().getConceptSequence() : null, null);
             cb.setPrimordialUuid(cc.getUUID());
-            
-            addDescription(cc.getPreferredSynonym(), cb, TermAux.SYNONYM_DESCRIPTION_TYPE, true);
             
             for (String definition : cc.getDefinitions()) {
                 addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
@@ -197,7 +200,7 @@ public class IsaacTaxonomy {
             
             return cb;
         } catch (Exception e) {
-            throw new Exception("Problem with '" + cc.getFSN() + "'", e);
+            throw new Exception("Problem with '" + cc.getPrimaryName() + "'", e);
         }
     }
 
@@ -343,7 +346,7 @@ public class IsaacTaxonomy {
         
         commitService.addAlias(stampSequence, stampAliasForPromotion, "promoted by maven");
         
-        try (BinaryDataWriterService writer = new MultipleDataWriterService(jsonPath, ibdfPath)) {
+        try (DataWriterService writer = new MultipleDataWriterService(jsonPath, ibdfPath)) {
             Get.ochreExternalizableStream().forEach((ochreExternalizable) -> writer.put(ochreExternalizable));
         }
     }

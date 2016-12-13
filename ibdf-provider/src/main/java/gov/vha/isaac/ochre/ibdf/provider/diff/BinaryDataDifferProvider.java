@@ -49,7 +49,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderQueueService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
-import gov.vha.isaac.ochre.api.externalizable.BinaryDataWriterService;
+import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
@@ -86,7 +86,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private final String textOutputFileName = "allChangedComponents.txt";
 
 	// Changeset File Writer
-	private BinaryDataWriterService componentCSWriter = null;
+	private DataWriterService componentCSWriter = null;
 	private String ibdfFileOutputDir;
 	private String changesetFileName;
 

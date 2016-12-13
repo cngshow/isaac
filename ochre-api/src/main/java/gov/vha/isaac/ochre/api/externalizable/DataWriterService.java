@@ -24,7 +24,7 @@ import org.jvnet.hk2.annotations.Contract;
  * @author kec
  */
 @Contract
-public interface BinaryDataWriterService extends AutoCloseable {
+public interface DataWriterService extends AutoCloseable {
     
     /**
      * Used when constructed via a no arg constructor (HK2 patterns) to configure the writer after the initial 
@@ -36,8 +36,36 @@ public interface BinaryDataWriterService extends AutoCloseable {
      */
     public void configure(Path path) throws IOException, UnsupportedOperationException;
 
-    public void put(OchreExternalizable ochreObject);
+    /**
+     * This does not throw an IOException, rather, they are possible, but mapped to runtime exceptions for stream convenience.
+     * they still may occur, however, and should be handled.
+     * @param ochreObject
+     * @throws RuntimeException
+     */
+    public void put(OchreExternalizable ochreObject) throws RuntimeException;
     
     @Override
-    public void close();
+    public void close() throws IOException;;
+    
+    /**
+     * flush any buffered data out to disk
+     */
+    public void flush() throws IOException;
+    
+    /**
+     * flush any unwritten data, close the file writer, and block any {@link DataWriterService#put(OchreExternalizable)} calls until 
+     * resume is called.  This feature is useful when you want to ensure the file on disk doesn't change while another thread picks
+     * up the file and pushes it to git, for example.
+     * 
+     * Ensure that if pause() is called, that resume is called from the same thread.
+     * @throws IOException 
+     */
+    public void pause() throws IOException;
+    
+    /**
+     * open the file writer (closed by a {@link #pause()}) and unblock any blocked  {@link DataWriterService#put(OchreExternalizable)} calls.
+     * Ensure that if pause() is called, that resume is called from the same thread.
+     * @throws IOException 
+     */
+    public void resume() throws IOException;
 }

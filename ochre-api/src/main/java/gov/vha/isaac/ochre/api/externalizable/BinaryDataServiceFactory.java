@@ -48,5 +48,5 @@ public interface BinaryDataServiceFactory {
      * @return the BinaryDataWriterService for the given dataPath
      * @throws java.io.FileNotFoundException
      */
-    BinaryDataWriterService getWriter(Path dataPath) throws IOException;
+    DataWriterService getWriter(Path dataPath) throws IOException;
 }
