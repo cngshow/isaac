@@ -3,9 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.28 - PENDING
+* 2016/12/13 - 3.28
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
     * Fixed a 'null dereference' issue that was flagged by Fortify.
+    * Long overdue metadata cleanup / alignment between ISAAC and DB Loaders
+    * Added a time-based write to the changeset writers, to ensure they are flushed to disk frequently
 
 * 2016/12/07 - 3.27
     * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
