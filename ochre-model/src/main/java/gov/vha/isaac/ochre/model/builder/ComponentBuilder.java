@@ -60,7 +60,13 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
 
     @Override
     public IdentifiedComponentBuilder<T> addUuids(UUID... uuids) {
-        additionalUuids.addAll(Arrays.asList(uuids));
+        if (uuids != null) {
+            for (UUID uuid : uuids) {
+                if (!uuid.equals(primordialUuid)) {
+                    additionalUuids.add(uuid);
+                }
+            }
+        }
         return this;
     }
 
