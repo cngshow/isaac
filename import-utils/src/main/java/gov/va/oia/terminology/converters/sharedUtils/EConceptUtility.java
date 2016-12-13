@@ -1138,7 +1138,7 @@ public class EConceptUtility
 			UUID secondParent = null;
 			if (pt instanceof BPT_Refsets)
 			{
-				ConceptChronology<? extends ConceptVersion<?>> refsetTermGroup = createConcept(pt.getPropertyTypeReferenceSetName(), true, 
+				ConceptChronology<? extends ConceptVersion<?>> refsetTermGroup = createConcept(pt.getPropertyTypeReferenceSetName() +  metadataSemanticTag_, true, 
 						MetaData.SOLOR_REFSETS.getPrimordialUuid());
 				((BPT_Refsets) pt).setRefsetIdentityParent(refsetTermGroup.getPrimordialUuid());
 				secondParent = refsetTermGroup.getPrimordialUuid(); 
@@ -1250,7 +1250,7 @@ public class EConceptUtility
 		//Create the terminology specific refset type as a child - this is just an organization concept
 		//under description type in source terminology or relationship type in source terminology
 		return createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getPropertyTypeReferenceSetName(), true), 
-				pt.getPropertyTypeReferenceSetName(), true, refsetValueParent).getPrimordialUuid();
+				pt.getPropertyTypeReferenceSetName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
 	}
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
