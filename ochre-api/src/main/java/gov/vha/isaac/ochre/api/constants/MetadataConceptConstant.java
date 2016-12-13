@@ -9,35 +9,25 @@ import java.util.UUID;
 
 public abstract class MetadataConceptConstant implements ConceptSpecification {
 
-    private final String fsn_;
-    private final String preferredSynonym_;
+    private final String primaryName_;
     private final List<String> synonyms_ = new ArrayList<>();
     private final List<String> definitions_ = new ArrayList<>();
     private final UUID uuid_;
     private ConceptSpecification parent_ = null;  //Optional use - most constants have their parent set by the IsaacMetadataAuxiliary parent/child mechanism
 
-    protected MetadataConceptConstant(String fsn, String preferredSynonym, UUID uuid) {
-        fsn_ = fsn;
-        preferredSynonym_ = (preferredSynonym == null ? fsn_ : preferredSynonym);
+    protected MetadataConceptConstant(String primaryName, UUID uuid) {
+        primaryName_ = primaryName;
         uuid_ = uuid;
     }
 
-    protected MetadataConceptConstant(String fsn, UUID uuid) {
-        fsn_ = fsn;
-        preferredSynonym_ = fsn_;
-        uuid_ = uuid;
-    }
-
-    protected MetadataConceptConstant(String fsn, UUID uuid, String definition) {
-        fsn_ = fsn;
-        preferredSynonym_ = fsn_;
+    protected MetadataConceptConstant(String primaryName, UUID uuid, String definition) {
+        primaryName_ = primaryName;
         uuid_ = uuid;
         addDefinition(definition);
     }
     
-    protected MetadataConceptConstant(String fsn, UUID uuid, String definition, ConceptSpecification parent) {
-        fsn_ = fsn;
-        preferredSynonym_ = fsn_;
+    protected MetadataConceptConstant(String primaryName, UUID uuid, String definition, ConceptSpecification parent) {
+        primaryName_ = primaryName;
         uuid_ = uuid;
         addDefinition(definition);
         setParent(parent);
@@ -52,17 +42,11 @@ public abstract class MetadataConceptConstant implements ConceptSpecification {
     }
 
     /**
-     * @return The FSN for this concept
+     * @return The name for this concept, used to construct the FSN and preferred term.  
+     * This method is identical to {@link #getConceptDescriptionText()}
      */
-    public String getFSN() {
-        return fsn_;
-    }
-
-    /**
-     * @return The preferred synonym for this concept
-     */
-    public String getPreferredSynonym() {
-        return preferredSynonym_;
+    public String getPrimaryName() {
+        return primaryName_;
     }
 
     /**
@@ -101,9 +85,13 @@ public abstract class MetadataConceptConstant implements ConceptSpecification {
         return getUUID();
     }
 
+    /**
+     * This method is identical to {@link #getPrimaryName()}
+     * @see gov.vha.isaac.ochre.api.component.concept.ConceptSpecification#getConceptDescriptionText()
+     */
     @Override
     public String getConceptDescriptionText() {
-        return preferredSynonym_;
+        return primaryName_;
     }
 
     @Override

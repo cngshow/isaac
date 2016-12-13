@@ -161,51 +161,28 @@ public abstract class PropertyType
 				throw new RuntimeException("Alt Indexing Error - duplicate!");
 			}
 		}
-		if (altNamePropertyMap_ != null && StringUtils.isNotEmpty(property.getSourcePropertyPreferredName()))
-		{
-			String s = altNamePropertyMap_.put(property.getSourcePropertyPreferredName(), property.getSourcePropertyNameFSN());
-			if (s != null)
-			{
-				throw new RuntimeException("Alt Indexing Error - duplicate!");
-			}
-		}
 		return property;
 	}
 
 	public Property addProperty(String propertyNameFSN)
 	{
-		return addProperty(propertyNameFSN, propertyNameFSN, null, false);
+		return addProperty(propertyNameFSN, -1);
 	}
 	
 	public Property addProperty(String propertyNameFSN, int propertySubType)
 	{
-		return addProperty(propertyNameFSN, propertyNameFSN, null, false, propertySubType);
-	}
-
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition)
-	{
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyDefinition, false);
+		return addProperty(propertyNameFSN, null, null, false, propertySubType, null);
 	}
 	
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, String sourcePropertyDefinition)
+	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition)
 	{
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyAltName, sourcePropertyDefinition, false, -1, null);
+		return addProperty(sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, -1, null);
 	}
 	
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, boolean disabled)
-	{
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyDefinition, disabled, -1);
-	}
-	
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, boolean disabled, int propertySubType)
-	{
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, null, sourcePropertyDefinition, disabled, propertySubType, null);
-	}
-
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, String sourcePropertyDefinition, 
+	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, 
 			boolean disabled, int propertySubType, DynamicSememeColumnInfo[] dataColumnForDynamicRefex)
 	{
-		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyAltName, sourcePropertyDefinition, disabled, 
+		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, 
 				propertySubType, dataColumnForDynamicRefex));
 	}
 
@@ -215,31 +192,30 @@ public abstract class PropertyType
 	 */
 	public Property addProperty(String propertyNameFSN, int minVersion, int maxVersion)
 	{
-		return addProperty(propertyNameFSN, propertyNameFSN, null, minVersion, maxVersion, false);
+		return addProperty(propertyNameFSN, null, null, minVersion, maxVersion, false, -1);
 	}
 	
 	/**
 	 * Only adds the property if the version of the data file falls between min and max, inclusive.
 	 * pass 0 in min or max to specify no min or no max, respectively
 	 */
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, 
-			int minVersion, int maxVersion, boolean disabled)
+	public Property addProperty(String propertyNameFSN, int minVersion, int maxVersion, boolean disabled)
 	{
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyDefinition, minVersion, maxVersion, disabled, -1);
+		return addProperty(propertyNameFSN, null, null, minVersion, maxVersion, disabled, -1);
 	}
 
 	/**
 	 * Only adds the property if the version of the data file falls between min and max, inclusive.
 	 * pass 0 in min or max to specify no min or no max, respectively
 	 */
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, 
+	public Property addProperty(String sourcePropertyNameFSN, String altName, String sourcePropertyDefinition, 
 			int minVersion, int maxVersion, boolean disabled, int propertySubType)
 	{
 		if ((minVersion != 0 && srcVersion_ < minVersion) || (maxVersion != 0 && srcVersion_ > maxVersion))
 		{
 			return null;
 		}
-		return addProperty(sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyDefinition, disabled, propertySubType);
+		return addProperty(sourcePropertyNameFSN, altName, sourcePropertyDefinition, disabled, propertySubType, null);
 	}
 	
 	public UUID getPropertyTypeReferenceSetUUID()

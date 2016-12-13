@@ -14,25 +14,25 @@ public class MetadataDynamicSememeConstant extends MetadataConceptConstant
 
 	/**
 	 * @param fsn
-	 * @param preferredSynonym
-	 * @param uuid - optional - the UUID to assign to this sememe
-	 * @param sememeDescription - describe the purpose of the use of this dynamic sememe
-	 * @param columns - The definitions of the attached data columns that are allowed on this sememe (may be empty)
-	 */
-	protected MetadataDynamicSememeConstant(String fsn, String preferredSynonym, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns)
-	{
-		this(fsn, preferredSynonym, uuid, sememeDescription, columns, null, null, null, null);
-	}
-	
-	/**
-	 * @param fsn
 	 * @param uuid - optional - the UUID to assign to this sememe
 	 * @param sememeDescription - describe the purpose of the use of this dynamic sememe
 	 * @param columns - The definitions of the attached data columns that are allowed on this sememe (may be empty)
 	 */
 	public MetadataDynamicSememeConstant(String fsn, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns)
 	{
-		this(fsn, null, uuid, sememeDescription, columns, null, null, null, null);
+		this(fsn, uuid, sememeDescription, columns, null, null, null, null);
+	}
+	
+	/**
+	 * @param fsn
+	 * @param uuid - optional - the UUID to assign to this sememe
+	 * @param alternateName - optional - the non-preferred synonym to add to this concept
+	 * @param sememeDescription - describe the purpose of the use of this dynamic sememe
+	 * @param columns - The definitions of the attached data columns that are allowed on this sememe (may be empty)
+	 */
+	public MetadataDynamicSememeConstant(String fsn, UUID uuid, String alternateName, String sememeDescription, DynamicSememeColumnInfo[] columns)
+	{
+		this(fsn, uuid, sememeDescription, columns, new String[] {alternateName}, null, null, null);
 	}
 	
 	/**
@@ -45,7 +45,7 @@ public class MetadataDynamicSememeConstant extends MetadataConceptConstant
 	public MetadataDynamicSememeConstant(String fsn, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns,
 			String[] synonyms)
 	{
-		this(fsn, null, uuid, sememeDescription, columns, synonyms, null, null, null);
+		this(fsn, uuid, sememeDescription, columns, synonyms, null, null, null);
 	}
 	
 	/**
@@ -62,7 +62,7 @@ public class MetadataDynamicSememeConstant extends MetadataConceptConstant
 	public MetadataDynamicSememeConstant(String fsn, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns,
 			String[] synonyms, String[] definitions, Integer[] requiresIndex)
 	{
-		this(fsn, null, uuid, sememeDescription, columns, synonyms, definitions, null, null);
+		this(fsn, uuid, sememeDescription, columns, synonyms, definitions, null, null);
 	}
 	
 	/**
@@ -78,10 +78,10 @@ public class MetadataDynamicSememeConstant extends MetadataConceptConstant
 	 * @param referencedComponentSubRestriction - optional - used to limit the type of sememe that can be used as the referenced component in an instance
 	 * of this sememe.
 	 */
-	public MetadataDynamicSememeConstant(String fsn, String preferredSynonym, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns,
+	public MetadataDynamicSememeConstant(String fsn, UUID uuid, String sememeDescription, DynamicSememeColumnInfo[] columns,
 			String[] synonyms, String[] definitions, ObjectChronologyType referencedComponentRestriction, SememeType refererenceComponentSubRestriction)
 	{
-		super(fsn, preferredSynonym, uuid);
+		super(fsn, uuid);
 		if (definitions != null)
 		{
 			for (String s : definitions)

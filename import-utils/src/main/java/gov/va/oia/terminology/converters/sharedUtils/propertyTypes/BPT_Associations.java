@@ -83,29 +83,6 @@ public class BPT_Associations extends PropertyType
 	}
 
 	@Override
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, String sourcePropertyDefinition)
-	{
-		throw new UnsupportedOperationException();	
-	}
-
-	@Override
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, boolean disabled)
-	{
-		throw new UnsupportedOperationException();	
-	}
-	@Override
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, boolean disabled, int propertySubType)
-	{
-		throw new UnsupportedOperationException();	
-	}
-	@Override
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, String sourcePropertyDefinition,
-			boolean disabled, int propertySubType, DynamicSememeColumnInfo[] dataColumnForDynamicRefex)
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public Property addProperty(String propertyNameFSN, int minVersion, int maxVersion)
 	{
 		throw new UnsupportedOperationException();	
@@ -113,14 +90,20 @@ public class BPT_Associations extends PropertyType
 	
 	@Override
 	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, int minVersion, int maxVersion,
-			boolean disabled)
+			boolean disabled, int propertySubType)
 	{
 		throw new UnsupportedOperationException();	
 	}
-	
+
 	@Override
-	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, int minVersion, int maxVersion,
-			boolean disabled, int propertySubType)
+	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean disabled, int propertySubType,
+			DynamicSememeColumnInfo[] dataColumnForDynamicRefex)
+	{
+		throw new UnsupportedOperationException();	
+	}
+
+	@Override
+	public Property addProperty(String propertyNameFSN, int minVersion, int maxVersion, boolean disabled)
 	{
 		throw new UnsupportedOperationException();	
 	}

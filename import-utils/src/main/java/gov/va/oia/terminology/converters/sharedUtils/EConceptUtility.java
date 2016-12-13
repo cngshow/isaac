@@ -158,6 +158,7 @@ public class EConceptUtility
 	private final long defaultTime_;
 	
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
+	public final static String metadataSemanticTag_ = " (ISAAC)";
 	
 	private int moduleSeq_ = 0;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
@@ -356,7 +357,8 @@ public class EConceptUtility
 		addFullySpecifiedName(concept, fsn);
 		if (createSynonymFromFSN)
 		{
-			addDescription(concept, fsn, DescriptionType.SYNONYM, true, null, State.ACTIVE);
+			addDescription(concept, fsn.endsWith(metadataSemanticTag_) ? fsn.substring(0, fsn.lastIndexOf(metadataSemanticTag_) - 1) : fsn, 
+					DescriptionType.SYNONYM, true, null, State.ACTIVE);
 		}
 		return cc;
 	}
@@ -1131,12 +1133,12 @@ public class EConceptUtility
 				continue;
 			}
 			
-			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription(), true, parentPrimordial);
+			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true, parentPrimordial);
 			
 			UUID secondParent = null;
 			if (pt instanceof BPT_Refsets)
 			{
-				ConceptChronology<? extends ConceptVersion<?>> refsetTermGroup = createConcept(pt.getPropertyTypeReferenceSetName(), true, 
+				ConceptChronology<? extends ConceptVersion<?>> refsetTermGroup = createConcept(pt.getPropertyTypeReferenceSetName() +  metadataSemanticTag_, true, 
 						MetaData.SOLOR_REFSETS.getPrimordialUuid());
 				((BPT_Refsets) pt).setRefsetIdentityParent(refsetTermGroup.getPrimordialUuid());
 				secondParent = refsetTermGroup.getPrimordialUuid(); 
@@ -1164,15 +1166,15 @@ public class EConceptUtility
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
-					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN(), p.getSourcePropertyPreferredName(), 
+					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
+							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
 							pt.getPropertyTypeUUID(), secondParent);
 					
 					if (pt.createAsDynamicRefex())
 					{
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
-								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyPreferredName(),
-										p.getSourcePropertyNameFSN()),
+								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),
 								p.getDataColumnsForDynamicRefex(), null, null);
 					}
 					
@@ -1248,7 +1250,7 @@ public class EConceptUtility
 		//Create the terminology specific refset type as a child - this is just an organization concept
 		//under description type in source terminology or relationship type in source terminology
 		return createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getPropertyTypeReferenceSetName(), true), 
-				pt.getPropertyTypeReferenceSetName(), true, refsetValueParent).getPrimordialUuid();
+				pt.getPropertyTypeReferenceSetName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
 	}
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
