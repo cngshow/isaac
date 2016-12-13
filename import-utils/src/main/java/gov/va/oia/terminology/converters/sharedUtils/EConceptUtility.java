@@ -158,6 +158,7 @@ public class EConceptUtility
 	private final long defaultTime_;
 	
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
+	private final static String metadataSemanticTag_ = " (ISAAC)";
 	
 	private int moduleSeq_ = 0;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
@@ -356,7 +357,8 @@ public class EConceptUtility
 		addFullySpecifiedName(concept, fsn);
 		if (createSynonymFromFSN)
 		{
-			addDescription(concept, fsn, DescriptionType.SYNONYM, true, null, State.ACTIVE);
+			addDescription(concept, fsn.endsWith(metadataSemanticTag_) ? fsn.substring(0, fsn.lastIndexOf(metadataSemanticTag_) - 1) : fsn, 
+					DescriptionType.SYNONYM, true, null, State.ACTIVE);
 		}
 		return cc;
 	}
@@ -1131,7 +1133,7 @@ public class EConceptUtility
 				continue;
 			}
 			
-			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription(), true, parentPrimordial);
+			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true, parentPrimordial);
 			
 			UUID secondParent = null;
 			if (pt instanceof BPT_Refsets)
@@ -1164,15 +1166,15 @@ public class EConceptUtility
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
-					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN(), p.getSourcePropertyPreferredName(), 
+					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
+							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
 							pt.getPropertyTypeUUID(), secondParent);
 					
 					if (pt.createAsDynamicRefex())
 					{
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
-								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyPreferredName(),
-										p.getSourcePropertyNameFSN()),
+								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),
 								p.getDataColumnsForDynamicRefex(), null, null);
 					}
 					
