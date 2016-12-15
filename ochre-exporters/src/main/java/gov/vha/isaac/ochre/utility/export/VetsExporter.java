@@ -705,7 +705,18 @@ public class VetsExporter {
 				{
 					return null;
 				}
-				subsetMembership.setVUID(subsetMap.get(DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence()).getDynamicSememeName()));
+				
+				String fsn = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence()).getDynamicSememeName();
+				if (subsetMap.containsKey(fsn))
+				{
+					long vuid = subsetMap.get(fsn).longValue();
+					subsetMembership.setVUID(vuid);
+				}
+				else
+				{
+					log.warn("No VUID found for Subset: " + fsn);
+				}
+				
 				return subsetMembership;
 			}
 			return null;

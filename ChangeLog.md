@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/12/?? - 3.29 - PENDING
-    * 
+    * Fixed NPE found during SQA testing (SubsetMemberships)
 
 * 2016/12/13 - 3.28
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
