@@ -98,25 +98,6 @@ public class VetsExporter {
 	{
 	}
 
-
-//	private UUID getFromMapByValue(Map<UUID, String> haystack, String needle) {
-//		if (haystack == null || needle == null || (haystack.size() == 0) | (needle.length() == 0)) {
-//			return null;
-//		}
-//
-//		String nddl = needle.toLowerCase();
-//
-//		for (Map.Entry<UUID, String> entry : haystack.entrySet()) {
-//			String hstk = entry.getValue().toLowerCase();
-//			if (hstk.equals(nddl)) {
-//				return entry.getKey();
-//			}
-//		}
-//
-//		return null;
-//	}
-
-
 	/**
 	 *
 	 * @param writeTo
