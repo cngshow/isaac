@@ -1,3 +1,21 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright 
+ * protection in the United States. Foreign copyrights may apply.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.vha.isaac.ochre.utility.export;
 
 import java.io.OutputStream;
@@ -100,10 +118,10 @@ public class VetsExporter {
 
 	/**
 	 *
-	 * @param writeTo
-	 * @param startDate - only export concepts modified on or after this date.  Set to 0, if you want to start from the beginning
-	 * @param endDate - only export concepts where their most recent modified date is on or before this date.  Set to Long.MAX_VALUE to get everything.
-	 * @param fullExportMode - if true, exports all content present at the end of the date range, ignoring start date.  All actions are set to add.
+	 * @param writeTo the output stream object handling the export
+	 * @param startDate only export concepts modified on or after this date.  Set to 0, if you want to start from the beginning
+	 * @param endDate only export concepts where their most recent modified date is on or before this date.  Set to Long.MAX_VALUE to get everything.
+	 * @param fullExportMode if true, exports all content present at the end of the date range, ignoring start date.  All actions are set to add.
 	 *   If false - delta mode - calculates the action based on the start and end dates, and includes only the minimum required elements in the xml file.
 	 */
 	public void export(OutputStream writeTo, long startDate, long endDate, boolean fullExportMode) {
@@ -484,7 +502,7 @@ public class VetsExporter {
 	 * @param startDate
 	 * @param endDate
 	 * @param constructor
-	 * @return
+	 * @return a List of the PropertyType objects for the specific component
 	 */
 	private List<PropertyType> readPropertyTypes(int componentNid, long startDate, long endDate, Supplier<PropertyType> constructor)
 	{
@@ -512,7 +530,7 @@ public class VetsExporter {
 	 * @param componentNid
 	 * @param startDate
 	 * @param endDate
-	 * @return
+	 * @return a List of the MapEntry objects for the MapSet item
 	 */
 	private List<Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry> readMapEntryTypes(int componentNid, long startDate, long endDate)
 	{
@@ -636,7 +654,7 @@ public class VetsExporter {
 	 * @param startDate
 	 * @param endDate
 	 * @param constructor
-	 * @return
+	 * @return A PropertyType object for the property, or null
 	 */
 	private PropertyType buildProperty(SememeChronology<?> sememe, long startDate, long endDate, Supplier<PropertyType> constructor)
 	{
@@ -727,7 +745,7 @@ public class VetsExporter {
 	 * @param startDate
 	 * @param endDate
 	 * @param constructor
-	 * @return
+	 * @return a List of DesignationTypes for the concept
 	 */
 	private List<DesignationType> getDesignations(ConceptChronology<?> concept, long startDate, long endDate, Supplier<DesignationType> constructor) {
 
@@ -844,7 +862,7 @@ public class VetsExporter {
 	 * @param sememe
 	 * @param startDate
 	 * @param endDate
-	 * @return SubsetMembership object built, or null
+	 * @return the SubsetMembership object built for the sememe, or null
 	 */
 	private SubsetMembership buildSubsetMembership(SememeChronology<?> sememe, long startDate, long endDate)
 	{
@@ -896,7 +914,7 @@ public class VetsExporter {
 	 * @param concept
 	 * @param startDate
 	 * @param endDate
-	 * @return List of Maps of relationship Objects
+	 * @return a List of Relationship objects for the concept
 	 */
 	private List<Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship> getRelationships(ConceptChronology<?> concept,
 			long startDate, long endDate)
@@ -980,7 +998,7 @@ public class VetsExporter {
 	/**
 	 * 
 	 * @param conceptNid
-	 * @return
+	 * @return the preferred description type for the concept 
 	 */
 	private String getPreferredNameDescriptionType(int conceptNid)
 	{
@@ -1033,7 +1051,7 @@ public class VetsExporter {
 	 * @param object
 	 * @param startDate
 	 * @param endDate
-	 * @return
+	 * @return the ActionType object representing the change
 	 */
 	private ActionType determineAction(ObjectChronology<? extends StampedVersion> object, long startDate, long endDate)
 	{
@@ -1114,7 +1132,7 @@ public class VetsExporter {
 	/**
 	 * Scan through all (nested) components associated with this concept, and the concept itself, and see if the latest edit
 	 * date for any component is within our filter range.
-	 * @return
+	 * @return true or false, if the concept or a nested value was modified within the date range
 	 */
 	@SuppressWarnings("rawtypes")
 	private boolean wasConceptOrNestedValueModifiedInDateRange(ConceptChronology concept, long startDate)
@@ -1136,7 +1154,7 @@ public class VetsExporter {
 	 * 
 	 * @param nid
 	 * @param startDate
-	 * @return
+	 * @return true or false, if the sememe was modified in the date range
 	 */
 	private boolean hasSememeModifiedInDateRange(int nid, long startDate)
 	{
@@ -1164,7 +1182,7 @@ public class VetsExporter {
 	/**
 	 * 
 	 * @param componentNid
-	 * @return
+	 * @return the Code value found based on the Nid
 	 */
 	private String getCodeFromNid(int componentNid)
 	{
