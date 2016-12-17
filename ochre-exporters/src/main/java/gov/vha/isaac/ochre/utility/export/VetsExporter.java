@@ -161,7 +161,7 @@ public class VetsExporter {
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatAssociationTypesUUID)).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					relationshipTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
+					relationshipTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
 
 		if (fullExportMode)
@@ -179,7 +179,7 @@ public class VetsExporter {
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatPropertyTypesUUID)).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					propertyTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
+					propertyTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
 
 		if (fullExportMode)
@@ -199,7 +199,7 @@ public class VetsExporter {
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatDesignationTypesUUID)).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					designationTypes.put(concept.getPrimordialUuid(), concept.getConceptDescriptionText());
+					designationTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
 
 		if (fullExportMode)
