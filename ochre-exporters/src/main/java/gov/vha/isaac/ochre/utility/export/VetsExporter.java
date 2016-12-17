@@ -494,6 +494,7 @@ public class VetsExporter {
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 
 		writeXml(writeTo);
+		
 	}
 
 	/**
@@ -783,6 +784,12 @@ public class VetsExporter {
 						d.setValueNew(descriptionVersion.get().value().getText());
 					}
 					
+					if (d.getValueNew() != null && d.getValueOld() != null && d.getValueNew().equals(d.getValueOld()))
+					{
+						d.setValueOld(null);
+						d.setValueNew(null);
+					}
+					
 					d.setCode(getCodeFromNid(sememe.getNid()));
 					d.setVUID(Frills.getVuId(sememe.getNid(), STAMP_COORDINATES).orElse(null));
 					d.setActive(descriptionVersion.get().value().getState() == State.ACTIVE);
@@ -856,6 +863,7 @@ public class VetsExporter {
 		});
 		return designations;
 	}
+
 
 	/**
 	 *
