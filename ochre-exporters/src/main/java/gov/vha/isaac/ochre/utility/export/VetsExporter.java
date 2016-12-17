@@ -494,7 +494,6 @@ public class VetsExporter {
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 
 		writeXml(writeTo);
-		
 	}
 
 	/**
@@ -867,7 +866,7 @@ public class VetsExporter {
 
 	/**
 	 *
-	 * @param sememe
+	 * @param sememe the Chronicle object (concept) representing the Subset
 	 * @param startDate
 	 * @param endDate
 	 * @return the SubsetMembership object built for the sememe, or null
@@ -876,39 +875,27 @@ public class VetsExporter {
 	{
 		if (sememe.getSememeType() == SememeType.DYNAMIC)
 		{
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
-			if (sememeVersion.isPresent())
-			{
-				if (sememeVersion.get().value().getData() != null && sememeVersion.get().value().getData().length > 0)
-				{
-					log.warn("A sememe with data was passed to readSubsetMembership!");
-					return null;
-				}
-
 				SubsetMembership subsetMembership = new SubsetMembership();
-				subsetMembership.setActive(sememeVersion.get().value().getState() == State.ACTIVE);
+				subsetMembership.setActive(sememe.isLatestVersionActive(STAMP_COORDINATES));
 				subsetMembership.setAction(determineAction(sememe, startDate, endDate));
-
+				
 				if (subsetMembership.getAction() == ActionType.NONE)
 				{
 					return null;
 				}
 				
-				String fsn = DynamicSememeUsageDescriptionImpl.read(sememeVersion.get().value().getAssemblageSequence()).getDynamicSememeName();
-				if (subsetMap.containsKey(fsn))
+				long vuid = Frills.getVuId(Get.identifierService().getConceptNid(sememe.getAssemblageSequence()), 
+						STAMP_COORDINATES).orElse(0L).longValue();
+				if (vuid > 0)
 				{
-					long vuid = subsetMap.get(fsn).longValue();
 					subsetMembership.setVUID(vuid);
 				}
 				else
 				{
-					log.warn("No VUID found for Subset: " + fsn);
+					log.warn("No VUID found for Subset UUID: " + sememe.getPrimordialUuid());
 				}
 				
 				return subsetMembership;
-			}
-			return null;
 		}
 		else
 		{
