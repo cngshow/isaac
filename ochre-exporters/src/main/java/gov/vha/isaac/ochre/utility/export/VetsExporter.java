@@ -50,6 +50,7 @@ import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcep
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship;
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.TaxonomyService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -63,7 +64,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -74,7 +77,6 @@ import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
-import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 
 
 public class VetsExporter {
@@ -538,13 +540,13 @@ public class VetsExporter {
 		
 		Get.sememeService().getSememesFromAssemblage(Get.identifierService().getConceptSequence(componentNid)).forEach(sememe ->
 		{
-			Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry me = new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry();
-			
 			@SuppressWarnings({ "unchecked", "rawtypes" })
 			Optional<LatestVersion<? extends DynamicSememe>> sememeVersion = ((SememeChronology) sememe).getLatestVersion(DynamicSememe.class, STAMP_COORDINATES);
 			if (sememeVersion.isPresent() && sememeVersion.get().value().getData() != null && sememeVersion.get().value().getData().length > 0)
 			{
 				try {
+					Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry me = new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry();
+					
 					me.setAction(ActionType.ADD); // TODO: There is currently no requirement or ability to deploy MapSet deltas, this if for the full export only
 					me.setVUID(Frills.getVuId(sememe.getNid(), STAMP_COORDINATES).orElse(null));
 					String code = getCodeFromNid(sememeVersion.get().value().getReferencedComponentNid());
@@ -556,72 +558,69 @@ public class VetsExporter {
 					boolean isActive = sememeVersion.get().value().getState() == State.ACTIVE;
 					me.setActive(isActive);
 					
-					DynamicSememeData dsd[] = sememeVersion.get().value().getData();
-					
-					if (dsd.length == 5)
+					DynamicSememeUtility ls =  LookupService.get().getService(DynamicSememeUtility.class);
+					if (ls == null)
 					{
-						if (null != dsd[0] && null != dsd[0].getDataObject()) // DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
-						{
-							me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[0].getDataObject().toString())).orElse(""));
-						}
-						if (null != dsd[1] && null != dsd[1].getDataObject()) // DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
-						{
-							// Ignored?
-						}
-						if (null != dsd[2] && null != dsd[2].getDataObject()) // DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
-						{
-							me.setSequence(Integer.parseInt(dsd[2].getDataObject().toString()));
-						}
-						if (null != dsd[3] && null != dsd[3].getDataObject()) //DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING
-						{
-							me.setGrouping(dsd[3].getDataObject());
-						}
-						if (null != dsd[4] && null != dsd[4].getDataObject()) //DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE
-						{
-							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-							String formattedDate = sdf.format(dsd[4].getDataObject());
-							me.setEffectiveDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate));
-						}
+						throw new RuntimeException("An implementation of DynamicSememeUtility is not available on the classpath");
 					}
-					else if (dsd.length == 6)
+					else
 					{
-						if (null != dsd[0] && null != dsd[0].getDataObject()) // DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
+						DynamicSememeColumnInfo[] dsci = ls.readDynamicSememeUsageDescription(sememeVersion.get().value().getAssemblageSequence()).getColumnInfo();
+						DynamicSememeData dsd[] = sememeVersion.get().value().getData();
+						
+						for (DynamicSememeColumnInfo d : dsci)
 						{
-							me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[0].getDataObject().toString())).orElse(""));
+							String column = d.getColumnName();
+							int col = d.getColumnOrder();
+							
+							// If there isn't any data, bypass this iteration
+							if (null != dsd[col] && null != dsd[col].getDataObject())
+							{
+								// TODO:DA review
+								// I don't link switching on Strings here, but I wasn't able to get the right result working with column UUIDs 
+								switch (column) {
+								case "target":
+									// DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
+									me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[col].getDataObject().toString())).orElse(""));
+									break;
+								case "mapping qualifier":
+									// DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
+									// Ignored?
+									break;
+								case "mapping sequence":
+									// DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
+									me.setSequence(Integer.parseInt(dsd[col].getDataObject().toString()));
+									break;
+								case "mapping grouping":
+									//DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING
+									me.setGrouping(dsd[col].getDataObject());
+									break;
+								case "mapping effective date":
+									//DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE
+									SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+									String formattedDate = sdf.format(dsd[col].getDataObject());
+									me.setEffectiveDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate));
+									break;
+								case "mapping GEM Flags":
+									// DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS
+									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property gem_prop 
+										= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property();
+									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties props
+										= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties();
+									gem_prop.setAction(ActionType.ADD); // See 'TODO' above
+									gem_prop.setActive(Boolean.TRUE); // TODO: Defaulting to true as it appears in the import XML, not sure how to determine otherwise
+									gem_prop.setTypeName("GEM_Flags");
+									gem_prop.setValueNew(dsd[col].getDataObject().toString());
+									props.getProperty().add(gem_prop);
+									me.setProperties(props);
+									break;
+								default:
+									break;
+								}
+							}
 						}
-						if (null != dsd[1] && null != dsd[1].getDataObject()) // DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS
-						{
-							Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property gem_prop 
-								= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property();
-							Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties props
-								= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties();
-							gem_prop.setAction(ActionType.ADD); // See 'TODO' above
-							gem_prop.setActive(Boolean.TRUE); // TODO: Defaulting to true as it appears in the import XML, not sure how to determine otherwise
-							gem_prop.setTypeName("GEM_Flags");
-							gem_prop.setValueNew(dsd[1].getDataObject().toString());
-							props.getProperty().add(gem_prop);
-							me.setProperties(props);
-						}
-						if (null != dsd[2] && null != dsd[2].getDataObject()) // DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
-						{
-							// Ignored?
-						}
-						if (null != dsd[3] && null != dsd[3].getDataObject()) // DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
-						{
-							me.setSequence(Integer.parseInt(dsd[3].getDataObject().toString()));
-						}
-						if (null != dsd[4] && null != dsd[4].getDataObject()) //DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING
-						{
-							me.setGrouping(dsd[4].getDataObject());
-						}
-						if (null != dsd[5] && null != dsd[5].getDataObject()) //DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE
-						{
-							SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-							String formattedDate = sdf.format(dsd[5].getDataObject());
-							me.setEffectiveDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate));
-						}
+						mes.add(me);
 					}
-					mes.add(me);
 				} 
 				catch (NumberFormatException nfe)
 				{

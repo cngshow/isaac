@@ -6,6 +6,7 @@ where provided, and the git commit history.
 * 2016/12/?? - 3.29 - PENDING
     * Fixed NPE found during SQA testing (SubsetMemberships)
     * Big MapSets commit with miscellaneous cleanup and comments
+    * Fixed fragile MapEntry code
 
 * 2016/12/13 - 3.28
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
