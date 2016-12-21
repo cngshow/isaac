@@ -3,7 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.29 - PENDING
+* 2016/12/?? - 3.30 - PENDING
+    * 
+
+* 2016/12/21 - 3.29
     * Fixed NPE found during SQA testing (SubsetMemberships)
     * Big MapSets commit with miscellaneous cleanup and comments
     * Fixed fragile MapEntry code
