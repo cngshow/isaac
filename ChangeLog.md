@@ -7,6 +7,7 @@ where provided, and the git commit history.
     * Fixed NPE found during SQA testing (SubsetMemberships)
     * Big MapSets commit with miscellaneous cleanup and comments
     * Fixed fragile MapEntry code
+    * Fixed minor Subset issue of including MapSets during a full export
 
 * 2016/12/13 - 3.28
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.

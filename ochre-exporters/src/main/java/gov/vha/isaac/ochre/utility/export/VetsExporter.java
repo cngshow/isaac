@@ -221,7 +221,9 @@ public class VetsExporter {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(tcs);
 			// Excluding these:
 			if (concept.getPrimordialUuid().equals(UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70")) //All vhat concepts
-					|| concept.getPrimordialUuid().equals(UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee"))) {  //Missing SDO Code Systems Concepts
+					|| concept.getPrimordialUuid().equals(UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee")) //Missing SDO Code Systems Concepts
+					|| Frills.definesMapping(concept.getConceptSequence()) ) 
+			{ 
 				// Skip
 			} else {
 				Terminology.Subsets.Subset xmlSubset = new Terminology.Subsets.Subset();
@@ -495,7 +497,12 @@ public class VetsExporter {
 		log.info("Processed " + observedVhatConcepts.get() + " concepts");
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 
-		writeXml(writeTo);
+		//writeXml(writeTo);
+		try {
+			writeXml(new java.io.FileOutputStream("exported.xml"));
+		} catch (Exception e) {
+			
+		}
 	}
 
 	/**
