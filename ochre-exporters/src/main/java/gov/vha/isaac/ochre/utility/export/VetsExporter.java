@@ -497,12 +497,7 @@ public class VetsExporter {
 		log.info("Processed " + observedVhatConcepts.get() + " concepts");
 		log.info("Exported " + exportedVhatConcepts.get() + " concepts");
 
-		//writeXml(writeTo);
-		try {
-			writeXml(new java.io.FileOutputStream("exported.xml"));
-		} catch (Exception e) {
-			
-		}
+		writeXml(writeTo);
 	}
 
 	/**
