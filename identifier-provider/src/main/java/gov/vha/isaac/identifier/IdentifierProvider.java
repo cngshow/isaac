@@ -88,9 +88,6 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
     private final AtomicBoolean loadRequired = new AtomicBoolean();
-    //private boolean validityCalculated = true;
-    //private boolean databaseMissing = false;
-    //private boolean databasePopulated = false;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     private IdentifierProvider() throws IOException {
@@ -98,7 +95,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
         if (!Files.exists(folderPath)) {
-        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY; //databaseMissing  = true;
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
         }
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
@@ -125,7 +122,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuidIntMapMap.read();
 
                 if (isPopulated()) {
-                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY; //databasePopulated = true;
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
         } catch (Exception e) {
@@ -509,7 +506,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        databaseValidity = DatabaseValidity.NOT_SET; //validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
@@ -517,23 +514,6 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     	return databaseValidity;
     }
     
-	/*
-    @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
-    }
-    
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
-    }
-	*/
-
     @Override
     public Path getDatabaseFolder() {
         return folderPath; 
