@@ -12,12 +12,11 @@ public class PropertyAssociation extends Property
 	private ObjectChronologyType associationComponentTypeRestriction_;
 	private SememeType associationComponentTypeSubRestriction_;
 	
-	public PropertyAssociation(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName,
+	public PropertyAssociation(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName,
 			String associationInverseName, String associationDescription, boolean disabled, 
 			ObjectChronologyType associationComponentTypeRestriction, SememeType associationComponentTypeSubRestriction)
 	{
-		super(owner, sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyAltName, associationDescription, disabled, Integer.MAX_VALUE, 
-				null);
+		super(owner, sourcePropertyNameFSN, sourcePropertyAltName, associationDescription, disabled, Integer.MAX_VALUE, null);
 		if (associationDescription == null)
 		{
 			throw new RuntimeException("association description is required");
@@ -27,10 +26,10 @@ public class PropertyAssociation extends Property
 		associationComponentTypeSubRestriction_ = associationComponentTypeSubRestriction;
 	}
 	
-	public PropertyAssociation(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName, 
-			String associationInverseName, String associationDescription, boolean disabled)
+	public PropertyAssociation(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, String associationInverseName, 
+			String associationDescription, boolean disabled)
 	{
-		this(owner, sourcePropertyNameFSN, sourcePropertyPreferredName, null, associationInverseName, associationDescription, disabled, null, null);
+		this(owner, sourcePropertyNameFSN, sourcePropertyAltName, associationInverseName, associationDescription, disabled, null, null);
 	}
 
 	

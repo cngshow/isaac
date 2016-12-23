@@ -282,7 +282,6 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 	//assemblage concept for DynamicSememe refexes.  The description annotated with this type describes the intent of 
 	//using the concept containing the description as an assemblage concept.
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_DEFINITION_DESCRIPTION = new MetadataDynamicSememeConstant("dynamic sememe definition description",
-			null,
 			UUID.fromString("b0372953-4f20-58b8-ad04-20c2239c7d4e"),
 			"This is the extended description type that must be attached to a description within a concept to make the concept valid for use as an "
 			+ "assemblage concept for a Dynamic Sememe.  The description annotated with this type describes the intent of "
@@ -326,7 +325,6 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 	};
 
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME = new MetadataDynamicSememeConstant("inverse name",
-			null,
 			UUID.fromString("c342d18a-ec1c-5583-bfe3-59e6324ae189"),
 			"This is the extended description type that may be attached to a description within a concept that defines an Association Refex to signify that "
 			+ "the referenced description is the inverse of the association name.",

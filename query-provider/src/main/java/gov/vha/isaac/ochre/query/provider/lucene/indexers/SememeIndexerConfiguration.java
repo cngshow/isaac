@@ -208,6 +208,53 @@ public class SememeIndexerConfiguration
 			Get.startIndexTask(new Class[] {SememeIndexer.class});
 		}
 	}
+	@SuppressWarnings("unchecked")
+	public static SememeChronology<? extends DynamicSememe<?>> buildAndConfigureColumnsToIndex(int assemblageNidOrSequence, Integer[] columnsToIndex, boolean skipReindex) throws RuntimeException, InterruptedException, ExecutionException
+	{
+		LookupService.get().getService(SememeIndexerConfiguration.class).readNeeded_.incrementAndGet();
+		List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
+		for (IndexStatusListenerBI isl : islList)
+		{
+			isl.indexConfigurationChanged(LookupService.get().getService(SememeIndexer.class));
+		}
+
+		ConceptChronology<? extends ConceptVersion<?>> referencedAssemblageConceptC = Get.conceptService().getConcept(assemblageNidOrSequence);
+		
+		log.info("Configuring index for dynamic sememe assemblage '" + referencedAssemblageConceptC.toUserString() + "' on columns " + Arrays.deepToString(columnsToIndex));
+
+		DynamicSememeData[] data = null;
+		if (columnsToIndex != null)
+		{
+			DynamicSememeIntegerImpl[] cols = new DynamicSememeIntegerImpl[columnsToIndex.length];
+			for (int i = 0; i < columnsToIndex.length; i++)
+			{
+				cols[i] = new DynamicSememeIntegerImpl(columnsToIndex[i]);
+			}
+
+			if (cols.length > 0)
+			{
+				data = new DynamicSememeData[] {new DynamicSememeArrayImpl<DynamicSememeIntegerImpl>(cols)};
+			}
+		}
+		else if ((columnsToIndex == null || columnsToIndex.length == 0))
+		{
+			throw new RuntimeException("It doesn't make sense to index a dynamic sememe without indexing any column data");
+		}
+		
+		SememeBuilder<? extends SememeChronology<? extends DynamicSememe<?>>> sb = 
+				Get.sememeBuilderService().getDynamicSememeBuilder(Get.identifierService().getConceptNid(assemblageNidOrSequence),
+						DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION.getNid(), data);
+
+		return sb.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
+
+		// TODO Dan change indexer
+//		Get.commitService().commit("Index Config Change").get();
+//		
+//		if (!skipReindex)
+//		{
+//			Get.startIndexTask(new Class[] {SememeIndexer.class});
+//		}
+	}
 	
 	/**
 	 * Read the indexing configuration for the specified dynamic sememe.

@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.api.component.concept;
 
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
@@ -43,6 +44,25 @@ public interface ConceptBuilder extends IdentifiedComponentBuilder<ConceptChrono
 	 * @param descriptionBuilder
 	 */
 	ConceptBuilder addDescription(DescriptionBuilder<?, ?> descriptionBuilder);
+	
+	/**
+	 * Used to add another acceptable arbitrary description type to the concept, using the default language
+	 * and dialect information passed into the concept builder upon construction.
+	 * This does not add a preferred description
+	 * @param value - the value of the description
+	 * @param descriptionType - One of {@link TermAux#SYNONYM_DESCRIPTION_TYPE}, {@link TermAux#DEFINITION_DESCRIPTION_TYPE} 
+	 * or {@link TermAux#FULLY_SPECIFIED_DESCRIPTION_TYPE}
+	 */
+	ConceptBuilder addDescription(String value, ConceptSpecification descriptionType);
+	
+	
+	/**
+	 * Sets the primordial UUID from the given spect, adds any additional UUIDs from the given spec, and 
+	 * adds the description from the spec as an alternate synonym (if it differs from the current preferred term)
+	 * @param conceptSpec
+	 * @return
+	 */
+	ConceptBuilder mergeFromSpec(ConceptSpecification conceptSpec);
 
 	/**
 	 * Use when adding a secondary definition in a different description logic

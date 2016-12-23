@@ -38,7 +38,6 @@ import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 public class Property
 {
 	private String sourcePropertyNameFSN_;
-	private String sourcePropertyPreferredName_;
 	private String sourcePropertyAltName_;
 	private String sourcePropertyDefinition_;
 	private boolean isDisabled_ = false;
@@ -53,19 +52,11 @@ public class Property
 	 * @param dataTypesForDynamicRefex - if null - will use the default information for the parent {@link PropertyType} - otherwise, 
 	 * uses as provided here (even if empty)
 	 */
-	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, 
+	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, 
 			String sourcePropertyDefinition, boolean disabled, int propertySubType, DynamicSememeColumnInfo[] columnInforForDynamicRefex)
 	{
 		this.owner_ = owner;
 		this.sourcePropertyNameFSN_ = sourcePropertyNameFSN;
-		if (sourcePropertyNameFSN.equals(sourcePropertyPreferredName))
-		{
-			this.sourcePropertyPreferredName_ = null;
-		}
-		else
-		{
-			this.sourcePropertyPreferredName_ = sourcePropertyPreferredName;
-		}
 		this.sourcePropertyAltName_ = sourcePropertyAltName;
 		this.sourcePropertyDefinition_ = sourcePropertyDefinition;
 		this.isDisabled_ = disabled;
@@ -92,29 +83,14 @@ public class Property
 		}
 	}
 
-	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName, int propertySubType)
-	{
-		this(owner, sourcePropertyNameFSN, sourcePropertyPreferredName, null, null, false, propertySubType, null);
-	}
-	
-	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName, boolean disabled)
-	{
-		this(owner, sourcePropertyNameFSN, sourcePropertyPreferredName, null, null, disabled, Integer.MAX_VALUE, null);
-	}
-
-	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyPreferredName)
-	{
-		this(owner, sourcePropertyNameFSN, sourcePropertyPreferredName, null, null, false, Integer.MAX_VALUE, null);
-	}
-
 	public Property(PropertyType owner, String sourcePropertyNameFSN)
 	{
-		this(owner, sourcePropertyNameFSN, sourcePropertyNameFSN, null, null, false, Integer.MAX_VALUE, null);
+		this(owner, sourcePropertyNameFSN, null, null, false, Integer.MAX_VALUE, null);
 	}
 	
 	public Property(PropertyType owner, ConceptSpecification cs)
 	{
-		this(owner, cs.getConceptDescriptionText(), null, null, null, false, Integer.MAX_VALUE, null);
+		this(owner, cs.getConceptDescriptionText(), null, null, false, Integer.MAX_VALUE, null);
 		propertyUUID = cs.getPrimordialUuid();
 		ConverterUUID.addMapping(cs.getConceptDescriptionText(), cs.getPrimordialUuid());
 		isFromConceptSpec_ = true;
@@ -123,29 +99,15 @@ public class Property
 	/**
 	 * owner must be set via the set method after using this constructor!
 	 */
-	public Property(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyDefinition, UUID wbRelType)
+	public Property(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, UUID wbRelType)
 	{
-		this(null, sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyDefinition, null, false, Integer.MAX_VALUE, null);
-		setWBPropertyType(wbRelType);
-	}
-	
-	/**
-	 * owner must be set via the set method after using this constructor!
-	 */
-	public Property(String sourcePropertyNameFSN, String sourcePropertyPreferredName, String sourcePropertyAltName, String sourcePropertyDefinition, UUID wbRelType)
-	{
-		this(null, sourcePropertyNameFSN, sourcePropertyPreferredName, sourcePropertyAltName, sourcePropertyDefinition, false, Integer.MAX_VALUE, null);
+		this(null, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, Integer.MAX_VALUE, null);
 		setWBPropertyType(wbRelType);
 	}
 
 	public String getSourcePropertyNameFSN()
 	{
 		return sourcePropertyNameFSN_;
-	}
-
-	public String getSourcePropertyPreferredName()
-	{
-		return sourcePropertyPreferredName_;
 	}
 	
 	public String getSourcePropertyAltName()

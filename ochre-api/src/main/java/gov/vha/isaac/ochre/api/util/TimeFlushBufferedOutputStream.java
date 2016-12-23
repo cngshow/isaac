@@ -74,6 +74,7 @@ public class TimeFlushBufferedOutputStream extends BufferedOutputStream
 				}
 			}
 		}
+		super.close();
 	}
 	
 	private void scheduleFlush()

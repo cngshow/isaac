@@ -3,8 +3,20 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.28 - PENDING
+* 2016/12/?? - 3.30 - PENDING
+    * 
+
+* 2016/12/21 - 3.29
+    * Fixed NPE found during SQA testing (SubsetMemberships)
+    * Big MapSets commit with miscellaneous cleanup and comments
+    * Fixed fragile MapEntry code
+    * Fixed minor Subset issue of including MapSets during a full export
+
+* 2016/12/13 - 3.28
     * Fixed Association code to use correct Actions and NewTargetCode/OldTargetCode values.
+    * Fixed a 'null dereference' issue that was flagged by Fortify.
+    * Long overdue metadata cleanup / alignment between ISAAC and DB Loaders
+    * Added a time-based write to the changeset writers, to ensure they are flushed to disk frequently
     * Ensure system shuts down cleanly preventing database locks from corrupting database
 	* Add mechanism to review database to ensure isn't corrupt
 

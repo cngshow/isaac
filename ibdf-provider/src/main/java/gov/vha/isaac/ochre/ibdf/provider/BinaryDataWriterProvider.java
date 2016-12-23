@@ -64,7 +64,7 @@ public class BinaryDataWriterProvider implements DataWriterService {
             throw new RuntimeException("Reconfiguration is not supported");
         }
         dataPath = path;
-        output = new DataOutputStream(new TimeFlushBufferedOutputStream(new FileOutputStream(dataPath.toFile())));
+        output = new DataOutputStream(new TimeFlushBufferedOutputStream(new FileOutputStream(dataPath.toFile(), true)));
         buffer.setExternalData(true);
         logger.info("ibdf changeset writer has been configured to write to " + dataPath.toAbsolutePath().toString());
     }

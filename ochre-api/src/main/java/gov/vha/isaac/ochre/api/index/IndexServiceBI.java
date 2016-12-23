@@ -148,7 +148,7 @@ public interface IndexServiceBI extends DatabaseServices {
      * @param query The query to apply
      * @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within.  If null, 
      * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
-     * or the concept sequence {@link MetaData#SNOMED_INTEGER_ID} for example.
+     * or the concept sequence {@link MetaData#SCTID} for example.
      * @param sizeLimit The maximum size of the result list.  Pass Integer.MAX_VALUE for unlimited results.
      * @param targetGeneration (optional) target generation that must be included in the search
      * or Long.MIN_VALUE if there is no need to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until 
@@ -175,7 +175,7 @@ public interface IndexServiceBI extends DatabaseServices {
      * 
      * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null, 
      * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
-     * or the concept sequence {@link MetaData#SNOMED_INTEGER_ID} for example.
+     * or the concept sequence {@link MetaData#SCTID} for example.
      * @param sizeLimit The maximum size of the result list.  Pass Integer.MAX_VALUE for unlimited results.
      * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
      * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 

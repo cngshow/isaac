@@ -8,12 +8,8 @@ public abstract class MetadataConceptConstantGroup extends MetadataConceptConsta
 
     private List<MetadataConceptConstant> children_ = new ArrayList<>();
 
-    protected MetadataConceptConstantGroup(String fsn, String preferredSynonym, UUID uuid) {
-        super(fsn, preferredSynonym, uuid);
-    }
-
     protected MetadataConceptConstantGroup(String fsn, UUID uuid) {
-        super(fsn, fsn, uuid);
+        super(fsn, uuid);
     }
 
     protected MetadataConceptConstantGroup(String fsn, UUID uuid, String definition) {
