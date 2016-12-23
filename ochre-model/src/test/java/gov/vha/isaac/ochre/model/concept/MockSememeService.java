@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -169,18 +170,8 @@ public class MockSememeService implements SememeService {
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return false;
-    }
-
-    @Override
-    public boolean isDatabaseMissing() {
-        return false;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return false;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return null;
     }
 
     @Override

@@ -42,6 +42,7 @@ import gov.vha.isaac.ochre.api.IdentifiedObjectService;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -86,17 +87,18 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final UuidIntMapMap uuidIntMapMap;
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
-     private final AtomicBoolean loadRequired = new AtomicBoolean();
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
+    private final AtomicBoolean loadRequired = new AtomicBoolean();
+    //private boolean validityCalculated = true;
+    //private boolean databaseMissing = false;
+    //private boolean databasePopulated = false;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
         if (!Files.exists(folderPath)) {
-            databaseMissing  = true;
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY; //databaseMissing  = true;
         }
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
@@ -123,7 +125,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuidIntMapMap.read();
 
                 if (isPopulated()) {
-                    databasePopulated = true;
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY; //databasePopulated = true;
                 }
             }
         } catch (Exception e) {
@@ -507,9 +509,15 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET; //validityCalculated = false;
     }
 
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+    
+	/*
     @Override
     public boolean isValidityCalculated() {
         return validityCalculated;
@@ -524,6 +532,7 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     public boolean isDatabasePopulated() {
         return databasePopulated;
     }
+	*/
 
     @Override
     public Path getDatabaseFolder() {

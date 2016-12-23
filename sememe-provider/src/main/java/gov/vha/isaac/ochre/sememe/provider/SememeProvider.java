@@ -46,6 +46,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
@@ -79,9 +80,7 @@ public class SememeProvider implements SememeService {
     final Path sememePath;
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     //For HK2
     private SememeProvider() throws IOException {
@@ -89,7 +88,7 @@ public class SememeProvider implements SememeService {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
             if (!Files.exists(sememePath)) {
-                databaseMissing  = true;
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             }
 
             loadRequired.set(!Files.exists(sememePath));
@@ -133,7 +132,7 @@ public class SememeProvider implements SememeService {
                 }
 
                 if (isPopulated) {
-                    databasePopulated = true;
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
 
@@ -420,22 +419,12 @@ public class SememeProvider implements SememeService {
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
-    }
-    
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
     }
 
     @Override

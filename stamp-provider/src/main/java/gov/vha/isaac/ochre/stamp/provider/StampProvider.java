@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.stamp.provider;
 
 import gov.vha.isaac.ochre.api.*;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.collections.ConcurrentObjectIntMap;
 import gov.vha.isaac.ochre.api.collections.ConcurrentSequenceSerializedObjectMap;
@@ -55,10 +56,8 @@ public class StampProvider implements StampService {
     private AtomicBoolean loadRequired = new AtomicBoolean();
     private final Path dbFolderPath;
     private final Path stampManagerFolder;
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
-
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+    
 
     /**
      * Persistent as a result of reading and writing the stampMap.
@@ -73,7 +72,7 @@ public class StampProvider implements StampService {
                 dbFolderPath, null, null);
         stampManagerFolder = dbFolderPath.resolve(DEFAULT_STAMP_MANAGER_FOLDER);
         if (!Files.exists(stampManagerFolder)) {
-            databaseMissing  = true;
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
         }
 
         Files.createDirectories(stampManagerFolder);
@@ -102,7 +101,7 @@ public class StampProvider implements StampService {
                     }
                 }
 
-                databasePopulated = true;
+                databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
             }
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Stamp Provider", e);
@@ -436,24 +435,14 @@ public class StampProvider implements StampService {
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
     }
     
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
-    }
-
     @Override
     public Path getDatabaseFolder() {
         return stampManagerFolder; 

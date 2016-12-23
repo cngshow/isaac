@@ -18,6 +18,7 @@ package gov.vha.isaac.taxonomy;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.*;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -104,9 +105,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
@@ -114,7 +113,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
         if (!Files.exists(taxonomyProviderFolder)) {
-            databaseMissing  = true;
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
         }
 
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
@@ -142,7 +141,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                 }
 
                 if (isPopulated) {
-                    databasePopulated = true;
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
             Get.commitService().addChangeListener(this);
@@ -1070,24 +1069,14 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
     }
     
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
-    }
-
     @Override
     public Path getDatabaseFolder() {
         return taxonomyProviderFolder; 

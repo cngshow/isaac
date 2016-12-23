@@ -1,6 +1,7 @@
 package gov.vha.isaac.ochre.model.concept;
 
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -118,18 +119,8 @@ public class MockConceptService implements ConceptService {
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return false;
-    }
-
-    @Override
-    public boolean isDatabaseMissing() {
-        return false;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return false;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return null;
     }
 
     @Override

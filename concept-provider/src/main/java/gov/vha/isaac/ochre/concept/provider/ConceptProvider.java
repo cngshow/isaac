@@ -22,6 +22,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -76,9 +77,7 @@ public class ConceptProvider implements ConceptService {
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
 
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     private Path ochreConceptPath;
 
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
@@ -106,7 +105,7 @@ public class ConceptProvider implements ConceptService {
             ochreConceptPath = folderPath.resolve("ochre");
 
             if (!Files.exists(ochreConceptPath)) {
-                databaseMissing  = true;
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             }
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
@@ -125,7 +124,7 @@ public class ConceptProvider implements ConceptService {
 
             LOG.info("Reading existing OCHRE concept-map.");
             if (conceptMap.initialize()) {
-                databasePopulated = true;
+            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
             }
             
             LOG.info("Finished OCHRE read.");
@@ -337,22 +336,12 @@ public class ConceptProvider implements ConceptService {
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
-    }
-    
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
     }
 
     @Override

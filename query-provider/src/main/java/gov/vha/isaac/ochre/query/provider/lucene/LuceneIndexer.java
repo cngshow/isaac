@@ -79,6 +79,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -142,10 +143,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
     private Boolean dbBuildMode = null;
-
-    private boolean validityCalculated = true;
-    private boolean databaseMissing = false;
-    private boolean databasePopulated = false;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -161,9 +159,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             
             indexFolder_ = new File(luceneRootFolder_.get(), indexName);
             if (!indexFolder_.exists()) {
-                databaseMissing  = true;
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             } else if (indexFolder_.list().length > 0) {
-                databasePopulated = true;
+            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
             }
 
             indexFolder_.mkdirs();
@@ -796,22 +794,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public void clearDatabaseValidityValue() {
         // Reset to enforce analysis
-        validityCalculated = false;
+        databaseValidity = DatabaseValidity.NOT_SET;
     }
 
     @Override
-    public boolean isValidityCalculated() {
-        return validityCalculated;
-    }
-    
-    @Override
-    public boolean isDatabaseMissing() {
-        return databaseMissing;
-    }
-
-    @Override
-    public boolean isDatabasePopulated() {
-        return databasePopulated;
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
     }
 
     @Override
