@@ -47,6 +47,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
@@ -133,13 +134,17 @@ public class CommitProvider implements CommitService {
 	private final ConceptSequenceSet uncommittedConceptsNoChecksSequenceSet = ConceptSequenceSet.concurrent();
 	private final SememeSequenceSet uncommittedSememesWithChecksSequenceSet = SememeSequenceSet.concurrent();
 	private final SememeSequenceSet uncommittedSememesNoChecksSequenceSet = SememeSequenceSet.concurrent();
-
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+    
 	private CommitProvider() throws IOException {
 		try {
 			dbFolderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("commit-provider");
 			loadRequired.set(Files.exists(dbFolderPath));
 			Files.createDirectories(dbFolderPath);
 			commitManagerFolder = dbFolderPath.resolve(DEFAULT_CRADLE_COMMIT_MANAGER_FOLDER);
+			if (!Files.exists(commitManagerFolder)) {
+				databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+			}
 			Files.createDirectories(commitManagerFolder);
 		} catch (Exception e) {
 			LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Provider", e);
@@ -168,6 +173,7 @@ public class CommitProvider implements CommitService {
 				stampAliasMap.read(new File(commitManagerFolder.toFile(), STAMP_ALIAS_MAP_FILENAME));
 				LOG.info("Reading: " + STAMP_COMMENT_MAP_FILENAME);
 				stampCommentMap.read(new File(commitManagerFolder.toFile(), STAMP_COMMENT_MAP_FILENAME));
+				databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
 			}
 
 		} catch (Exception e) {
@@ -757,5 +763,21 @@ public class CommitProvider implements CommitService {
 				}
 			}
 		}
+	}
+	
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+
+	@Override
+	public Path getDatabaseFolder() {
+		return commitManagerFolder; 
 	}
 }

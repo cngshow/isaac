@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Future;
 import org.jvnet.hk2.annotations.Contract;
+import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 
 /**
@@ -38,7 +39,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
  * @author kec
  */
 @Contract
-public interface IndexServiceBI {
+public interface IndexServiceBI extends DatabaseServices {
 
     /**
      * Clear index, resulting in an empty index. Used prior to the

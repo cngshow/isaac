@@ -44,8 +44,6 @@ public abstract class PropertyType
 	protected static int srcVersion_ = 1;
 	private UUID propertyTypeUUID = null;
 	private String propertyTypeDescription_;
-	private String propertyTypeReferenceSetName_;
-	private UUID propertyTypeReferenceSetUUID;
 	private boolean createAsDynamicRefex_ = false;  //It could make sense to set this at the individual Property level... but in general, everything of the same type 
 	//will be handled in the same way - relationships are not dynamic sememes, assoications are, for example.
 	private DynamicSememeDataType defaultDataColumn_;  //If the property is specified without further column instructions, and createAsDynamicRefex is true, 
@@ -62,22 +60,18 @@ public abstract class PropertyType
 		srcVersion_ = version;
 	}
 	
+	/**
+	 * @param propertyTypeDescription - The name used for the property category within the terminology specific hierarchy -typically something like
+	 * "Attribute Types" or "Association Types".  This text is also used to construct the UUID for this property type grouping. 
+	 * @param createAsDynamicRefex - true to mark as a dynamic refex, false otherwise.
+	 * @param defaultDynamicRefexColumnType - If the property is specified without further column instructions, and createAsDynamicRefex is true, 
+	//use this information to configure the (single) data column.
+	 */
 	protected PropertyType(String propertyTypeDescription, boolean createAsDynamicRefex, DynamicSememeDataType defaultDynamicRefexColumnType)
-	{
-		this(propertyTypeDescription, null, createAsDynamicRefex, defaultDynamicRefexColumnType);
-	}
-	
-	protected PropertyType(String propertyTypeDescription, String propertyTypeRefSetName, boolean createAsDynamicRefex, DynamicSememeDataType defaultDynamicRefexColumnType)
 	{
 		this.properties_ = new HashMap<String, Property>();
 		this.propertyTypeDescription_ = propertyTypeDescription;
 		this.createAsDynamicRefex_ = createAsDynamicRefex;
-		propertyTypeReferenceSetName_ = propertyTypeRefSetName;
-		propertyTypeReferenceSetUUID = (propertyTypeReferenceSetName_ == null ? null : ConverterUUID.createNamespaceUUIDFromString(propertyTypeReferenceSetName_));
-		if (propertyTypeReferenceSetUUID != null)
-		{
-			ConverterUUID.removeMapping(propertyTypeReferenceSetUUID);  //disable dupe detection for this one (at least, don't let this trigger it)
-		}
 		this.defaultDataColumn_ = defaultDynamicRefexColumnType;
 	}
 
@@ -216,16 +210,6 @@ public abstract class PropertyType
 			return null;
 		}
 		return addProperty(sourcePropertyNameFSN, altName, sourcePropertyDefinition, disabled, propertySubType, null);
-	}
-	
-	public UUID getPropertyTypeReferenceSetUUID()
-	{
-		return propertyTypeReferenceSetUUID;
-	}
-	
-	public String getPropertyTypeReferenceSetName()
-	{
-		return propertyTypeReferenceSetName_;
 	}
 	
 	public boolean createAsDynamicRefex()

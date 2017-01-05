@@ -26,7 +26,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Goal which shuts down an open data store. Note that this duplicates
- * functionality found in {@link ShutdownIsaac} but we can't use that in
+ * functionality found in {@link ShutdownSystem} but we can't use that in
  * combination with other things in this mojo package, due to limitations of
  * maven.
  */
@@ -46,7 +46,7 @@ public class Shutdown extends AbstractMojo {
 
             getLog().info("  Shutting Down");
 
-            LookupService.shutdownIsaac();
+            LookupService.shutdownSystem();
 
             getLog().info("Done shutting down terminology store");
         } catch (Exception e) {

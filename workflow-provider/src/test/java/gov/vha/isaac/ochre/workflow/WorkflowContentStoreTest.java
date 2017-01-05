@@ -68,7 +68,7 @@ public class WorkflowContentStoreTest {
 	 */
 	@After
 	public void tearDown() throws IOException {
-		LookupService.shutdownIsaac();
+		LookupService.shutdownSystem();
 		RecursiveDelete.delete(new File("target/store"));
 	}
 

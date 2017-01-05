@@ -53,7 +53,7 @@ public class IntegrationSuiteManagement {
     @AfterGroups(groups = {"db", "load", "wf"})
     public void tearDownSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement teardown");
-        LookupService.shutdownIsaac();
+        LookupService.shutdownSystem();
         ActiveTasksTicker.stop();
         HeapUseTicker.stop();
     }

@@ -16,6 +16,7 @@
 package gov.vha.isaac.identifier;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +42,7 @@ import gov.vha.isaac.ochre.api.IdentifiedObjectService;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
@@ -85,12 +87,16 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
     private final UuidIntMapMap uuidIntMapMap;
     private final SequenceMap conceptSequenceMap;
     private final SequenceMap sememeSequenceMap;
-     private final AtomicBoolean loadRequired = new AtomicBoolean();
+    private final AtomicBoolean loadRequired = new AtomicBoolean();
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     private IdentifierProvider() throws IOException {
         //for HK2
         LOG.info("IdentifierProvider constructed");
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("identifier-provider");
+        if (!Files.exists(folderPath)) {
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+        }
         loadRequired.set(!Files.exists(folderPath));
         Files.createDirectories(folderPath);
         uuidIntMapMap = UuidIntMapMap.create(new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map"));
@@ -114,6 +120,10 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
                 // uuid-nid-map can do dynamic load, no need to read all at the beginning.
                 // LOG.info("Loading uuid-nid-map.");
                 // uuidIntMapMap.read();
+
+                if (isPopulated()) {
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+                }
             }
         } catch (Exception e) {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Identifier Provider", e);
@@ -476,5 +486,36 @@ public class IdentifierProvider implements IdentifierService, IdentifiedObjectSe
         
         //We could also clear refs from the uuid map here... but that would take longer / 
         //provide minimal gain
+    }
+
+    /*
+     * Investigate if "uuid-nid-map" directory is populated with at least one *.map file. 
+     */
+    private boolean isPopulated() {
+        File segmentDirectory = new File(folderPath.toAbsolutePath().toFile(), "uuid-nid-map");
+        int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File segmentDirectory, String name) {
+                return (name.endsWith("map"));
+            }
+        }).length;
+
+       return numberOfSegmentFiles > 0;
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+    
+    @Override
+    public Path getDatabaseFolder() {
+        return folderPath; 
     }
 }
