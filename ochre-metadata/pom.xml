@@ -99,7 +99,7 @@
                 <executions>
                     <execution>
                         <id>export-metadata</id>
-                        <phase>initialize</phase>
+                        <phase>process-sources</phase> <!-- Run later than generate-sources, to not trigger a maven ugliness where this can get called twice. -->
                         <goals>
                             <goal>setup-isaac</goal>
                             <goal>export-taxonomy</goal>
@@ -119,7 +119,7 @@
                 <executions>
                     <execution>
                         <id>add-source</id>
-                        <phase>generate-sources</phase>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
