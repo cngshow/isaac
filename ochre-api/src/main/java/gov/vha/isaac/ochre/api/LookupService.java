@@ -127,6 +127,18 @@ public class LookupService {
     }
     
     /**
+     * Return the highest ranked service that implements the requested contract or implementation class.
+     * @see ServiceLocator#getService(Class, Annotation...)
+     * 
+     * This method does not log
+     */
+    public static <T> T getServiceWithNoLog(Class<T> contractOrImpl) {
+        T service = get().getService(contractOrImpl, new Annotation[0]);
+
+        return service;
+    }
+    
+    /**
      * Find the best ranked service with the specified name.  If no service with the specified name is available, 
      * this returns null (even if there is a service with another name [or no name] which would meet the contract)
      * 
