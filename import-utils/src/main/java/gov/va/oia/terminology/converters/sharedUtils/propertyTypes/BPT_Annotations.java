@@ -27,13 +27,13 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
  */
 public class BPT_Annotations extends PropertyType
 {
-	public BPT_Annotations(String terminologyName)
+	public BPT_Annotations()
 	{
-		super("Attribute Types", terminologyName + " Attribute Types", true, DynamicSememeDataType.STRING);
+		super("Attribute Types", true, DynamicSememeDataType.STRING);
 	}
 	
-	public BPT_Annotations(String fsnPrefix, String terminologyName)
+	public BPT_Annotations(String fsnPrefix)
 	{
-		super(fsnPrefix + " Attribute Types", terminologyName + fsnPrefix + " Attribute Types", true, DynamicSememeDataType.STRING);
+		super(fsnPrefix + " Attribute Types", true, DynamicSememeDataType.STRING);
 	}
 }

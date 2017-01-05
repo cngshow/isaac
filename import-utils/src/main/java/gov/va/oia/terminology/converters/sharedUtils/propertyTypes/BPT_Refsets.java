@@ -18,30 +18,16 @@
  */
 package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
-import java.util.UUID;
-
 /**
  * Fields to treat as refsets
  * 
  * @author Daniel Armbrust
  * 
  */
-public class BPT_Refsets extends PropertyType
+public class BPT_Refsets extends BPT_DualParentPropertyType
 {
-	private UUID refsetIdentityParent_;  //Typically "Term-name Refsets" under "Project Refsets"
-
 	public BPT_Refsets(String terminologyName)
 	{
 		super("Refsets", terminologyName + " Refsets", true, null);
-	}
-	
-	public void setRefsetIdentityParent(UUID refsetIdentityParent)
-	{
-		refsetIdentityParent_ = refsetIdentityParent; 
-	}
-	
-	public UUID getRefsetIdentityParent()
-	{
-		return refsetIdentityParent_;
 	}
 }
