@@ -37,6 +37,7 @@ import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.util.FileUtils;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Associations;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Descriptions;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_DualParentPropertyType;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Refsets;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Relations;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Skip;
@@ -357,7 +358,7 @@ public class EConceptUtility
 		addFullySpecifiedName(concept, fsn);
 		if (createSynonymFromFSN)
 		{
-			addDescription(concept, fsn.endsWith(metadataSemanticTag_) ? fsn.substring(0, fsn.lastIndexOf(metadataSemanticTag_) - 1) : fsn, 
+			addDescription(concept, fsn.endsWith(metadataSemanticTag_) ? fsn.substring(0, fsn.lastIndexOf(metadataSemanticTag_)) : fsn, 
 					DescriptionType.SYNONYM, true, null, State.ACTIVE);
 		}
 		return cc;
@@ -1138,21 +1139,18 @@ public class EConceptUtility
 			UUID secondParent = null;
 			if (pt instanceof BPT_Refsets)
 			{
-				ConceptChronology<? extends ConceptVersion<?>> refsetTermGroup = createConcept(pt.getPropertyTypeReferenceSetName() +  metadataSemanticTag_, true, 
-						MetaData.SOLOR_REFSETS.getPrimordialUuid());
-				((BPT_Refsets) pt).setRefsetIdentityParent(refsetTermGroup.getPrimordialUuid());
-				secondParent = refsetTermGroup.getPrimordialUuid(); 
+				secondParent = setupWbPropertyMetadata(MetaData.SOLOR_REFSETS.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
 			}
 			else if (pt instanceof BPT_Descriptions)
 			{
 				//should only do this once, in case we see a BPT_Descriptions more than once
-				secondParent = setupWbPropertyMetadata(MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), pt);
+				secondParent = setupWbPropertyMetadata(MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
 			}
 			
 			else if (pt instanceof BPT_Relations)
 			{
 				//should only do this once, in case we see a BPT_Relations more than once
-				secondParent = setupWbPropertyMetadata(MetaData.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), pt);
+				secondParent = setupWbPropertyMetadata(MetaData.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
 			}
 			
 			for (Property p : pt.getProperties())
@@ -1241,16 +1239,18 @@ public class EConceptUtility
 		return "";
 	}
 	
-	private UUID setupWbPropertyMetadata(UUID refsetValueParent, PropertyType pt) throws Exception
+	private UUID setupWbPropertyMetadata(UUID refsetValueParent, BPT_DualParentPropertyType pt) throws Exception
 	{
-		if (pt.getPropertyTypeReferenceSetName() == null)
+		if (pt.getSecondParentName() == null)
 		{
 			throw new RuntimeException("Unhandled case!");
 		}
 		//Create the terminology specific refset type as a child - this is just an organization concept
 		//under description type in source terminology or relationship type in source terminology
-		return createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getPropertyTypeReferenceSetName(), true), 
-				pt.getPropertyTypeReferenceSetName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
+		UUID temp =  createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getSecondParentName(), true), 
+				pt.getSecondParentName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
+		pt.setSecondParentId(temp);
+		return temp;
 	}
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)

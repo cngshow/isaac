@@ -34,9 +34,9 @@ public class BPT_Associations extends PropertyType
 {
 	private static HashSet<UUID> allAssociations_ = new HashSet<>();
 	
-	public BPT_Associations(String terminologyName)
+	public BPT_Associations()
 	{
-		super("Association Types", terminologyName + " Association Type", false, null);
+		super("Association Types", false, null);
 	}
 	
 	@Override
