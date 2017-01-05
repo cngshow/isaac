@@ -5,6 +5,8 @@ where provided, and the git commit history.
 
 * 2016/12/?? - 3.30 - PENDING
     * Adding MAPPING_QUALIFIER_UNMAPPED as child of MAPPING_QUALIFIERS
+    * Ensure system shuts down cleanly preventing database locks from corrupting database
+    * Add mechanism to review database to ensure isn't corrupt
 
 * 2016/12/21 - 3.29
     * Fixed NPE found during SQA testing (SubsetMemberships)
@@ -17,8 +19,6 @@ where provided, and the git commit history.
     * Fixed a 'null dereference' issue that was flagged by Fortify.
     * Long overdue metadata cleanup / alignment between ISAAC and DB Loaders
     * Added a time-based write to the changeset writers, to ensure they are flushed to disk frequently
-    * Ensure system shuts down cleanly preventing database locks from corrupting database
-	* Add mechanism to review database to ensure isn't corrupt
 
 * 2016/12/07 - 3.27
     * Fix properties on to ensure they export and have correct action. Make sure new value is not present when the same as old value. Fix coded
