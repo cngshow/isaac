@@ -3,10 +3,13 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2016/12/?? - 3.30 - PENDING
+* 2017/01/05 - 3.30
     * Adding MAPPING_QUALIFIER_UNMAPPED as child of MAPPING_QUALIFIERS
     * Ensure system shuts down cleanly preventing database locks from corrupting database
     * Add mechanism to review database to ensure isn't corrupt
+    * Fix an issue that caused invalid UUIDs to be generated after adding the semantic tag into FSNs of metadata concepts
+    * Clean up APIs to make it clear what is going on
+    * Adding non-logging getServiceWithNoLog() and Removing getServiceWithNoLog() from LookupService
 
 * 2016/12/21 - 3.29
     * Fixed NPE found during SQA testing (SubsetMemberships)
