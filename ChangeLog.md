@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2016/12/?? - 3.30 - PENDING
-    * 
+    * Adding MAPPING_QUALIFIER_UNMAPPED as child of MAPPING_QUALIFIERS
 
 * 2016/12/21 - 3.29
     * Fixed NPE found during SQA testing (SubsetMemberships)
