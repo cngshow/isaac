@@ -62,30 +62,6 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 public class DynamicSememeUtilityImpl implements DynamicSememeUtility
 {
 	/**
-	 * @param sememe DynamicSememe<?>
-	 * @return
-	 */
-	public static String toString(DynamicSememe<?> sememe) {
-		StringBuilder sb = new StringBuilder();
-        sb.append("{DynamicSememeData≤");
-        DynamicSememeData[] data = sememe.getData();
-        //make sure the column numbers are set, so lookups can happen for column names.
-        for (int i = 0; i < data.length; i++)
-        {
-            if (data[i] != null)
-            {
-                data[i].configureNameProvider(sememe.getAssemblageSequence(), i);
-            }
-        }
-        sb.append(Arrays.toString(sememe.getData()));
-
-        //stamp info
-        sb.append(" ").append(Get.stampService().describeStampSequence(sememe.getStampSequence()));
-
-        sb.append("≥DSD}");
-        return sb.toString();
-	}
-	/**
 	 * @param data DynamicSememeData[]
 	 * @return
 	 */
