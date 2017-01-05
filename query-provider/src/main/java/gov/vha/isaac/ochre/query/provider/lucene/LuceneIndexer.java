@@ -79,6 +79,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -142,6 +143,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final ReferenceManager<IndexSearcher> searcherManager;
     private final String indexName_;
     private Boolean dbBuildMode = null;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -156,6 +158,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             }
             
             indexFolder_ = new File(luceneRootFolder_.get(), indexName);
+            if (!indexFolder_.exists()) {
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+            } else if (indexFolder_.list().length > 0) {
+            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+            }
+
             indexFolder_.mkdirs();
 
             log.info("Index: " + indexFolder_.getAbsolutePath());
@@ -782,4 +790,20 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);
     protected abstract void addFields(ObjectChronology<?> chronicle, Document doc);
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return indexFolder_.toPath(); 
+    }
 }

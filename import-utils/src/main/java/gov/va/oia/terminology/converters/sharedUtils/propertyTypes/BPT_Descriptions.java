@@ -26,7 +26,7 @@ package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
  * @author Daniel Armbrust
  *
  */
-public class BPT_Descriptions extends PropertyType
+public class BPT_Descriptions extends BPT_DualParentPropertyType
 {
 	//These values can be used as the starting point for establishing the hierarchy of synonym types.
 	//Descriptions are typically sorted (ascending) by the propertySubType values.

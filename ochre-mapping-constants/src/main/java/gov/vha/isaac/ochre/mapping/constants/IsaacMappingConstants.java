@@ -95,7 +95,10 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	
 	public static final MetadataConceptConstant MAPPING_QUALIFIER_NARROWER = new MetadataConceptConstant("Narrower Than", 
 		UUID.fromString("250d3a08-4f28-5127-8758-e8df4947f89c")) {};
-		
+
+	public static final MetadataConceptConstant MAPPING_QUALIFIER_UNMAPPED = new MetadataConceptConstant("Unmapped", 
+		UUID.fromString("e5f7f98f-9607-55a7-bbc4-25f2e61df23d")) {};
+			
 	public final MetadataConceptConstantGroup MAPPING_QUALIFIERS = new MetadataConceptConstantGroup("mapping qualifiers", 
 		UUID.fromString("83204ca8-bd51-530c-af04-5edbec04a7c6"), 
 		"A grouping of different types types of allowed mapping qualifiers") 
@@ -104,6 +107,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 				addChild(MAPPING_QUALIFIER_BROADER);
 				addChild(MAPPING_QUALIFIER_EXACT);
 				addChild(MAPPING_QUALIFIER_NARROWER);
+				addChild(MAPPING_QUALIFIER_UNMAPPED);
 			}
 		};
 		

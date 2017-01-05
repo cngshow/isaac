@@ -15,10 +15,10 @@
  */
 package gov.vha.isaac.taxonomy;
 
-import gov.vha.isaac.ochre.api.ConceptActiveService;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.*;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -105,12 +105,17 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledChanges = new ConcurrentSkipListSet<>();
     private final StampedLock stampedLock = new StampedLock();
     private IdentifierService identifierService;
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     
     private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
+        if (!Files.exists(taxonomyProviderFolder)) {
+        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+        }
+
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
         Files.createDirectories(taxonomyProviderFolder);
         originDestinationTaxonomyRecordMap
@@ -125,7 +130,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LOG.info("Starting TaxonomyService post-construct");
             if (!loadRequired.get()) {
                 LOG.info("Reading taxonomy.");
-                originDestinationTaxonomyRecordMap.initialize();
+                boolean isPopulated = originDestinationTaxonomyRecordMap.initialize();
                 File inputFile = new File(taxonomyProviderFolder.toFile(), ORIGIN_DESTINATION_MAP);
                 try (DataInputStream in = new DataInputStream(new BufferedInputStream(
                         new FileInputStream(inputFile)))) {
@@ -133,6 +138,10 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                     for (int i = 0; i < size; i++) {
                         destinationOriginRecordSet.add(new DestinationOriginRecord(in.readInt(), in.readInt()));
                     }
+                }
+
+                if (isPopulated) {
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
             Get.commitService().addChangeListener(this);
@@ -1057,4 +1066,19 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         originDestinationTaxonomyRecordMap.put(conceptSequence, parentTaxonomyRecord);
     }
 
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+    
+    @Override
+    public Path getDatabaseFolder() {
+        return taxonomyProviderFolder; 
+    }
 }

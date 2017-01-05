@@ -58,7 +58,7 @@ public class ConceptSuite {
     @AfterGroups(groups = {"services"})
     public void tearDownSuite() throws Exception {
         LOG.info("ModelSuiteManagement tear down");
-        LookupService.shutdownIsaac();
+        LookupService.shutdownSystem();
         ActiveTasksTicker.stop();
         HeapUseTicker.stop();
     }

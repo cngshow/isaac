@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.api;
 
 import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.constants.Constants;
 import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import java.awt.GraphicsEnvironment;
@@ -43,11 +44,13 @@ public class LookupService {
     private static final Logger LOG = LogManager.getLogger();
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
+    public static final int DATABASE_SERVICES_STARTED_RUNLEVEL = 2;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
-    public static final int ISAAC_STOPPED_RUNLEVEL = -3;
+    public static final int SYSTEM_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
+    private static DatabaseValidity discoveredValidityValue = null;
 
     /**
      * @return the {@link ServiceLocator} that is managing this ISAAC instance
@@ -210,19 +213,80 @@ public class LookupService {
      * Start all core isaac services, blocking until started (or failed)
      */
     public static void startupIsaac() {
-        setRunLevel(ISAAC_STARTED_RUNLEVEL);
+        try {
+            // Set run level to startup database and associated services running on top of database
+            setRunLevel(DATABASE_SERVICES_STARTED_RUNLEVEL);
+
+            // Validate that databases and associated services directories uniformly exist and are uniformly populated during startup 
+            validateDatabaseFolderStatus();
+
+            // If database is validated, startup remaining run levels
+            setRunLevel(ISAAC_STARTED_RUNLEVEL);
+        } catch (Exception e) {
+            // Will inform calling routines that database is corrupt
+            throw e;
+        } finally {
+            // Regardless of successful or failed startup, reset database and lucene services' validityCalculated flag for next startup attempt
+            looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+                if (handle.isActive()) {
+                    handle.getService().clearDatabaseValidityValue();
+                }
+            });
+        }
     }
-    
+
+    /* 
+     * Check database directories. Either all must exist or none may exist. Inconsistent state suggests database
+     * corruption
+     */
+    private static void validateDatabaseFolderStatus() {
+        discoveredValidityValue = null;
+
+        looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+            if (handle.isActive()) {
+                if (discoveredValidityValue == null) {
+                    // Initial time through. All other database directories and lucene directories must have same state
+                	discoveredValidityValue = handle.getService().getDatabaseValidityStatus();
+                    LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
+                            + ") has database validity value: " + discoveredValidityValue);
+                } else {
+                    // Verify database directories have same state as identified in first time through
+                    LOG.info("Comparing database validity value for Provider " + handle.getActiveDescriptor().getImplementation() + " to see if consistent at startup.  Status: "
+                            + handle.getService().getDatabaseValidityStatus());
+
+                    if (discoveredValidityValue != handle.getService().getDatabaseValidityStatus()) {
+                        // Inconsistency discovered
+                        throw new RuntimeException("Database Corruption Observed: Provider " + handle.getActiveDescriptor().getImplementation()
+                                + " has inconsistent database validity value prior to startup");
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Stop all core isaac service, blocking until stopped (or failed)
      */
     public static void shutdownIsaac() {
         if (isInitialized())
         {
-            setRunLevel(ISAAC_STOPPED_RUNLEVEL);
+            setRunLevel(WORKERS_STARTED_RUNLEVEL);
             looker.shutdown();
             ServiceLocatorFactory.getInstance().destroy(looker);
             looker = null;
+            
+            // Fully release any system locks to database
+            System.gc();
+        }
+    }
+    
+    /**
+     * Stop all system services, blocking until stopped (or failed)
+     */
+   public static void shutdownSystem () {
+       if (isInitialized())
+       {
+           setRunLevel(SYSTEM_STOPPED_RUNLEVEL);
         }
     }
     

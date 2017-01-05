@@ -22,6 +22,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -76,6 +77,9 @@ public class ConceptProvider implements ConceptService {
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
     private AtomicBoolean loadRequired = new AtomicBoolean();
 
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+    private Path ochreConceptPath;
+
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
             Path propertiesPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_PROPERTIES_FILE_NAME);
@@ -98,7 +102,11 @@ public class ConceptProvider implements ConceptService {
                 }
             }
 
-            Path ochreConceptPath = folderPath.resolve("ochre");
+            ochreConceptPath = folderPath.resolve("ochre");
+
+            if (!Files.exists(ochreConceptPath)) {
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+            }
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
                     ochreConceptPath, "seg.", ".ochre-concepts.map");
@@ -115,8 +123,10 @@ public class ConceptProvider implements ConceptService {
         if (!loadRequired.compareAndSet(true, false)) {
 
             LOG.info("Reading existing OCHRE concept-map.");
-            conceptMap.initialize();
-
+            if (conceptMap.initialize()) {
+            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+            }
+            
             LOG.info("Finished OCHRE read.");
         }
     }
@@ -321,5 +331,21 @@ public class ConceptProvider implements ConceptService {
     @Override
     public IntStream getConceptKeyParallelStream() {
         return conceptMap.getKeyParallelStream();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return ochreConceptPath; 
     }
 }

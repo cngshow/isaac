@@ -65,21 +65,40 @@ public class CasSequenceObjectMap<T extends WaitFreeComparable> {
     }
 
     /**
-     * Read from disk
+     * Read from disk.
      *
+     * As part of initialization, ensure that all map files are found. Calculation made by ensuring that the number of files with the appropriate
+     * fileSuffix are sequentially found.
      */
-    public void initialize() {
+    public boolean initialize() {
         objectByteList.clear();
         int segmentIndex = 0;
-        File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
+        File segmentDirectory = new File(dbFolderPath.toString());
 
-        while (segmentFile.exists()) {
-            MemoryManagedReference<SerializedAtomicReferenceArray> reference =
-                    new MemoryManagedReference<>(null, segmentFile, segmentSerializer);
+        // Identify number of files with fileSuffix
+        int numberOfSegmentFiles = segmentDirectory.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return (name.endsWith(fileSuffix.toString()));
+            }
+        }).length;
+
+        // While initializing, if cannot find expected *.fileSuffix file sequentially, database is corrupt.
+        while (segmentIndex < numberOfSegmentFiles) {
+            File segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
+
+            if (!segmentFile.exists()) {
+                throw new RuntimeException("Missing database file: " + segmentFile.getName());
+            }
+
+            MemoryManagedReference<SerializedAtomicReferenceArray> reference = new MemoryManagedReference<>(null,
+                    segmentFile, segmentSerializer);
             objectByteList.add(segmentIndex, reference);
             segmentIndex++;
-            segmentFile = new File(dbFolderPath.toFile(), filePrefix + segmentIndex + fileSuffix);
         }
+
+        // Inform calling method if map directory is populated
+        return numberOfSegmentFiles > 0;
     }
 
     private class CasSequenceMapSerializer implements DataSerializer<SerializedAtomicReferenceArray> {

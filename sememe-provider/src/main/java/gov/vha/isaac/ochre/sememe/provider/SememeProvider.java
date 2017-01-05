@@ -46,6 +46,7 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
@@ -79,12 +80,17 @@ public class SememeProvider implements SememeService {
     final Path sememePath;
     private transient HashSet<Integer> inUseAssemblages = new HashSet<>();
     private AtomicBoolean loadRequired = new AtomicBoolean();
+    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 
     //For HK2
     private SememeProvider() throws IOException {
         try {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
+            if (!Files.exists(sememePath)) {
+            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+            }
+
             loadRequired.set(!Files.exists(sememePath));
             Files.createDirectories(sememePath);
             LOG.info("Setting up sememe provider at " + sememePath.toAbsolutePath().toString());
@@ -102,7 +108,7 @@ public class SememeProvider implements SememeService {
             LOG.info("Loading sememeMap.");
             if (!loadRequired.get()) {
                 LOG.info("Reading existing sememeMap.");
-                sememeMap.initialize();
+                boolean isPopulated = sememeMap.initialize();
 
                 LOG.info("Reading existing SememeKeys.");
 
@@ -123,6 +129,10 @@ public class SememeProvider implements SememeService {
                         int sequence = in.readInt();
                         referencedNidAssemblageSequenceSememeSequenceMap.add(new ReferencedNidAssemblageSequenceSememeSequenceKey(referencedNid, assemblageSequence, sequence));
                     }
+                }
+
+                if (isPopulated) {
+                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
 
@@ -404,5 +414,21 @@ public class SememeProvider implements SememeService {
     @Override
     public IntStream getSememeKeyParallelStream() {
         return sememeMap.getKeyParallelStream();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Reset to enforce analysis
+        databaseValidity = DatabaseValidity.NOT_SET;
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return databaseValidity;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return sememePath; 
     }
 }

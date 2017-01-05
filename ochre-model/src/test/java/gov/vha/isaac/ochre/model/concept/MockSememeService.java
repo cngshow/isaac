@@ -1,5 +1,6 @@
 package gov.vha.isaac.ochre.model.concept;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +9,7 @@ import java.util.stream.Stream;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -160,5 +162,20 @@ public class MockSememeService implements SememeService {
     @Override
     public int getSememeCount() {
         return sememeMap.size();
+    }
+
+    @Override
+    public void clearDatabaseValidityValue() {
+        // Placeholder as databaseFolderExists always returns true.
+    }
+
+    @Override
+    public DatabaseValidity getDatabaseValidityStatus() {
+    	return null;
+    }
+
+    @Override
+    public Path getDatabaseFolder() {
+        return null;
     }
 }

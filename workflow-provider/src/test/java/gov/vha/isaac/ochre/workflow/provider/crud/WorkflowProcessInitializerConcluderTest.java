@@ -65,7 +65,7 @@ public class WorkflowProcessInitializerConcluderTest extends AbstractWorkflowPro
 
 	@AfterClass
 	public static void tearDownClass() throws IOException {
-		LookupService.shutdownIsaac();
+		LookupService.shutdownSystem();
 		RecursiveDelete.delete(new File("target/store"));
 	}
 
