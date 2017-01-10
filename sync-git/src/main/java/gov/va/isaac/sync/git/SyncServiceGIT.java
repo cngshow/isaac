@@ -25,7 +25,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -85,8 +84,6 @@ import org.slf4j.LoggerFactory;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
-import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
-import gov.va.isaac.sync.git.gitblit.utils.RpcUtils;
 import gov.vha.isaac.ochre.api.sync.MergeFailOption;
 import gov.vha.isaac.ochre.api.sync.MergeFailure;
 import gov.vha.isaac.ochre.api.sync.SyncFiles;
@@ -1121,32 +1118,6 @@ public class SyncServiceGIT implements SyncFiles
 				log.error("Unexpected", e);
 				throw new IOException("Internal error", e);
 			}
-		}
-	}
-
-	/**
-	 * Create a repository on the Gitblit server.
-	 *
-	 * @param serverUrl
-	 * @param repo name
-	 * @param repo description 
-	 * @param account
-	 * @param password
-	 * @return true if the action succeeded
-	 * @throws IOException
-	 */	
-	public boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password) throws IOException
-	{
-		try
-		{
-			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password);
-			log.info("Repository: "+repoName +", create successfully: " + status);
-			return status;
-		}
-		catch (Exception e)
-		{
-			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
-			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
 		}
 	}
 }
