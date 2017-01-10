@@ -20,10 +20,12 @@ package gov.va.isaac.sync.git.gitblit;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
 import gov.va.isaac.sync.git.gitblit.utils.RpcUtils;
+
 
 /**
  * {@link GitBlitUtils}
@@ -51,18 +53,26 @@ public class GitBlitUtils
 	 * @return true if the action succeeded
 	 * @throws IOException
 	 */	
-	public static boolean createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password) throws IOException
+	public static void createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password) throws IOException
 	{
 		try
 		{
 			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), baseRemoteAddress, username, password);
 			log.info("Repository: "+repoName +", create successfully: " + status);
-			return status;
+			if (!status)
+			{
+				throw new IOException("Create of repo '" + repoName + "' failed");
+			}
 		}
 		catch (Exception e)
 		{
 			log.error("Failed to create repository: "+repoName +", Unexpected Error: ", e);
 			throw new IOException("Failed to create repository: "+repoName +",Internal error", e);
 		}
+	}
+	
+	public static Set<String> readRepositories(String baseRemoteAddress, String username, char[] password) throws IOException
+	{
+		return RpcUtils.getRepositories(baseRemoteAddress, username, password).keySet();
 	}
 }

@@ -28,15 +28,22 @@ import gov.va.isaac.sync.git.gitblit.GitBlitUtils;
  */
 public class GitBlitTests
 {
-
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException
 	{
-		boolean repoCreated = GitBlitUtils.createRepository("http://localhost:8080/gitblit/","test/test2","gilblit test/test2","admin","admin".toCharArray());
-		System.out.println("Repo created: "+ repoCreated);
+		for (String s : GitBlitUtils.readRepositories("https://vadev.mantech.com:4848/git/", "", "".toCharArray()))
+		{
+			System.out.println(s);
+		}
+		
+		GitBlitUtils.createRepository("https://vadev.mantech.com:4848/git/","db-silly","testing db creation","", "".toCharArray());
+		
+		for (String s : GitBlitUtils.readRepositories("https://vadev.mantech.com:4848/git/", "", "".toCharArray()))
+		{
+			System.out.println(s);
+		}
 	}
-
 }
