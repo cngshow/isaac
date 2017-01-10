@@ -17,6 +17,12 @@ import java.util.UUID;
  */
 public class TermAux {
 
+    public static ConceptSpecification ISAAC_ROOT
+            = new ConceptProxy("ISAAC root",
+                    UUID.fromString("7c21b6c5-cf11-5af9-893b-743f004c97f5"));
+    public static ConceptSpecification DATABASE_UUID
+            = new ConceptProxy("Database UUID",
+                    UUID.fromString("49b882a1-05e4-52cf-96d8-5de024b24632"));
     public static ConceptSpecification USER
             = new ConceptProxy("user",
                     UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c"));
