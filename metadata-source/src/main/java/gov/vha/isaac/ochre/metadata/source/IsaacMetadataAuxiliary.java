@@ -98,7 +98,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
         super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, "ISAAC");
 
         try {
-            createConcept("ISAAC root");
+            createConcept(TermAux.ISAAC_ROOT);
             pushParent(current());
                 createConcept("health concept").setPrimordialUuid("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8");
                 createConcept("ISAAC metadata");
@@ -205,6 +205,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         
                         createConcept("SOLOR Content Metadata");
                         pushParent(current());
+                            createConcept(TermAux.DATABASE_UUID);
                             createConcept("Source Artifact Version");
                             createConcept("Source Release Date");
                             createConcept("Converter Version");

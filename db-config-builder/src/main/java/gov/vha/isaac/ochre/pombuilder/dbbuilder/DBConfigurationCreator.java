@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.pombuilder.dbbuilder;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.pom._4_0.Build;
@@ -218,6 +219,7 @@ public class DBConfigurationCreator
 		}
 		files.getIbdfFile().add("${project.build.directory}/data/IsaacMetadataAuxiliary.ibdf");
 		configuration.setIbdfFiles(files);
+		configuration.setDbId(UUID.randomUUID().toString());  //Assign a random ID to help align changeset repos
 		pe.setConfiguration(configuration);
 		executions.getExecution().add(pe);
 		

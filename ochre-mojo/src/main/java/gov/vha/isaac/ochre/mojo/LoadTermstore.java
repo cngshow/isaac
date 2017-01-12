@@ -2,6 +2,8 @@ package gov.vha.isaac.ochre.mojo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -25,10 +28,12 @@ import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
@@ -64,9 +69,6 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 
 public class LoadTermstore extends AbstractMojo
 {
-	/**
-	 * {@code ibdf format} files to import.
-	 */
 	@Parameter(required = true) 
 	private File[] ibdfFiles;
 	
@@ -75,9 +77,6 @@ public class LoadTermstore extends AbstractMojo
 		ibdfFiles = files;
 	}
 	
-	/**
-	 * {@code ibdf format} files to import.
-	 */
 	@Parameter(required = false) 
 	private boolean activeOnly = false;
 	
@@ -92,6 +91,14 @@ public class LoadTermstore extends AbstractMojo
 		sememeTypesToSkip.addAll(types);
 	}
 	
+	@Parameter(required = false) 
+	private String dbId = "";
+	
+	public void setDbId(String dbId)
+	{
+		this.dbId = dbId;
+	}
+	
 	private int conceptCount, sememeCount, stampAliasCount, stampCommentCount, itemCount, itemFailure;
 	private final HashSet<Integer> skippedItems = new HashSet<>();
 	private boolean skippedAny = false;
@@ -101,7 +108,22 @@ public class LoadTermstore extends AbstractMojo
 	public void execute() throws MojoExecutionException
 	{
 		Get.configurationService().setDBBuildMode();
-		final int statedSequence = Get.identifierService().getConceptSequenceForUuids(UUID.fromString("1f201994-960e-11e5-8994-feff819cdc9f"));
+		UUID dbIdUUID;
+		try
+		{
+			dbIdUUID = StringUtils.isNotBlank(dbId) ? UUID.fromString(dbId) : UUID.randomUUID();
+			Files.write(Get.configurationService().getDataStoreFolderPath().get().resolve("dbid.txt"), dbIdUUID.toString().getBytes());
+		}
+		catch (IllegalArgumentException e1)
+		{
+			throw new MojoExecutionException("The provided value for the dbId configuration parameter is not a UUID!");
+		}
+		catch (IOException e)
+		{
+			throw new MojoExecutionException("Problem writing DB Identity file", e);
+		}
+		
+		final int statedSequence = Get.identifierService().getConceptSequenceForUuids(TermAux.EL_PLUS_PLUS_STATED_ASSEMBLAGE.getPrimordialUuid());
 		int statedDups = 0;
 		long loadTime = System.currentTimeMillis();
 		//Load IsaacMetadataAuxiliary first, otherwise, we have issues....
@@ -293,6 +315,15 @@ public class LoadTermstore extends AbstractMojo
 				//Loading with activeOnly set to true causes a number of gaps in the concept / sememe providers
 				Get.identifierService().clearUnusedIds();
 			}
+			
+			//Add a sememe to isaac root, that carries that db id
+			getLog().info("Writing DB ID of '" + dbIdUUID.toString() + "' to root concept");
+			int ss = Get.stampService().getStampSequence(State.ACTIVE, System.currentTimeMillis(), TermAux.USER.getConceptSequence(),
+					TermAux.ISAAC_MODULE.getConceptSequence(), TermAux.DEVELOPMENT_PATH.getConceptSequence());
+			ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+			((SememeBuilder)Get.sememeBuilderService().getStringSememeBuilder(dbIdUUID.toString(), TermAux.ISAAC_ROOT.getNid(), 
+					TermAux.DATABASE_UUID.getConceptSequence())).build(ss, builtObjects);
+			Get.sememeService().writeSememe((SememeChronology)builtObjects.get(0));
 		}
 		catch (Exception ex)
 		{

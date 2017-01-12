@@ -3,6 +3,12 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/01/17 - 3.31
+    * Workflow changes to align with web, correct time conversion.
+    * Refactoring the gitblit repo create code.
+    * Add a UUID to the DB, when the db is created, to aid in changeset repo alignment.
+    * Adding ISAAC_DEPENDENTS_RUNLEVEL = 5
+
 * 2017/01/05 - 3.30
     * Adding MAPPING_QUALIFIER_UNMAPPED as child of MAPPING_QUALIFIERS
     * Ensure system shuts down cleanly preventing database locks from corrupting database

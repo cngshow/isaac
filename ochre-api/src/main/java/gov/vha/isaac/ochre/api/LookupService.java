@@ -45,6 +45,7 @@ public class LookupService {
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
     public static final int DATABASE_SERVICES_STARTED_RUNLEVEL = 2;
+    public static final int ISAAC_DEPENDENTS_RUNLEVEL = 5;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
@@ -222,6 +223,8 @@ public class LookupService {
 
             // If database is validated, startup remaining run levels
             setRunLevel(ISAAC_STARTED_RUNLEVEL);
+
+            setRunLevel(ISAAC_DEPENDENTS_RUNLEVEL);
         } catch (Exception e) {
             // Will inform calling routines that database is corrupt
             throw e;
@@ -317,7 +320,7 @@ public class LookupService {
     }
     
     public static boolean isIsaacStarted() {
-        return isInitialized() ? getService(RunLevelController.class).getCurrentRunLevel() == ISAAC_STARTED_RUNLEVEL : false;
+        return isInitialized() ? getService(RunLevelController.class).getCurrentRunLevel() >= ISAAC_STARTED_RUNLEVEL : false;
     }
     
     public static boolean isInitialized() {

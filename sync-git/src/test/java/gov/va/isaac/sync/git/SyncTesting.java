@@ -56,9 +56,5 @@ public class SyncTesting
 		resolutions.put("b", MergeFailOption.KEEP_REMOTE);
 		System.out.println("resolve merge failures result: " + ssg.resolveMergeFailures(resolutions));
 		System.out.println("UpdateCommitAndPush result: " + ssg.updateCommitAndPush("mergetest2", username, password, MergeFailOption.FAIL, (String[])null));
-
-		SyncServiceGIT gss = new SyncServiceGIT();
-		boolean repoCreated = gss.createRepository("http://localhost:8080/gitblit/","test/test2","gilblit test/test2","admin","admin".toCharArray());
-		System.out.println("Repo created: "+ repoCreated);
 	}
 }

@@ -27,8 +27,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+
 import javax.inject.Singleton;
+
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.UserRole;
@@ -55,6 +58,7 @@ import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail;
+import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.ProcessStatus;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessHistory.ProcessHistoryComparator;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
@@ -136,6 +140,28 @@ public class WorkflowAccessor {
 	}
 
 	/**
+	 * Returns last Process History entry associated with the process id.
+	 * Used to identify the history of a given workflow process (i.e. an
+	 * instance of a definition)
+	 *
+	 * @param processId
+	 *            The key the the Process Detail entry
+	 *
+	 * @return the sorted history of the process.
+	 */
+	public ProcessHistory getLastProcessHistory(UUID processId) {
+
+		for (ProcessDetail process : workflowProvider_.getProcessDetailStore().values()) {
+			if (process.getId().compareTo(processId) == 0) {
+				SortedSet<ProcessHistory> hx = getProcessHistory(process.getId());
+				return hx.last();
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Examines the definition to see if the component is in an active workflow.
 	 * An active workflow is a workflow in either DEFINED or LAUNCHED process
 	 * status.
@@ -209,42 +235,39 @@ public class WorkflowAccessor {
 
 	}
 
+
+
+
 	/**
-	 * Provide a list of processes for a given user.  Can request any or all workflow statuses of DEFINED, LAUNCHED, CANCELED or CONCLUDED.
+	 * Request a list of workflow processes.  Can request any or all workflow statuses of DEFINED, LAUNCHED, CANCELED or CONCLUDED.
 	 *
 	 * @param definitionId
-	 *            The definition being examined
-	 * @param userId
-	 *            The user for whom relevant processes are being determined
+	 *            The workflow definition (type) being examined.
+	 * @param status
+	 *            A list of statuses to include.
 	 *
-	 * @return The map of advanceable processes to their roles including canceled or concluded if requested
+	 * @return The list of processes filtered by the status provided.
 	 */
-	public ArrayList<ProcessDetail> getProcessInformation(UUID definitionId, UUID userId, ArrayList<String> status)
+	public ArrayList<ProcessDetail> getProcessInformation(UUID definitionId, UUID userId, ArrayList<ProcessStatus> status)
 	{
 		ArrayList<ProcessDetail> processes = new ArrayList<>();
 
 		// Get User Roles
+		/*
 		Map<String, Set<AvailableAction>> actionsByInitialState = getUserAvailableActionsByInitialState(
 				definitionId, userId);
+		 */
 
 		// For each process, see if its current state is "applicable current state"
 		for (ProcessDetail process : workflowProvider_.getProcessDetailStore().values()) {
-			if (status.contains(process.getStatus().toString()) && process.getDefinitionId().equals(definitionId)) {
-				//for active, make sure it is advanceable by the user
-				if (process.isActive()) {
-					SortedSet<ProcessHistory> hx = getProcessHistory(process.getId());
-					if (actionsByInitialState.containsKey(hx.last().getOutcomeState())) {
-						processes.add(process);
-					}
-				}
-				//inactive (CANCELED or CONCLUDED)
-				else {
-					processes.add(process);
-				}
+			if (process.getDefinitionId().equals(definitionId) && status.contains(process.getStatus())) {
+				processes.add(process);
 			}
 		}
 		return processes;
 	}
+
+
 
 	/**
 	 * Identifies the set of Available Actions containing actions which the user
@@ -371,7 +394,7 @@ public class WorkflowAccessor {
 	 * Includes Concept, Description, Map, Association, or Value.
 	 *
 	 *  @param processId UUID - identifier of the process.
-	 *  @return ArrayList<String>
+	 *  @return ArrayList<String> - collection of formatted string of component modifications.
 	 *
 	 *  @exception Exception
 	 */
@@ -384,12 +407,11 @@ public class WorkflowAccessor {
 		for(Map.Entry<Integer, Stamp> entry : processDetail.getComponentToInitialEditMap().entrySet()) {
 			try {
 				componentModificationString.add(
-						//TODO: get stamp coordinate and language coordinate
-						//						getComponentModification(entry.getKey(),
-						//								Get.conceptSnapshot().getStampCoordinate(),
-						//								Get.conceptSnapshot().getLanguageCoordinate()
-						//								)
-						"");
+						getComponentModification(entry.getKey(),
+								// Verify these two parameters.
+								(StampCoordinate) entry.getValue(),
+								(LanguageCoordinate) entry.getValue())
+						);
 			} catch (Exception ex) {
 				throw ex;
 			}
