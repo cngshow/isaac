@@ -23,7 +23,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -416,16 +418,17 @@ public class ProcessDetail extends AbstractStorableWorkflowContents
 	{
 		StringBuffer buf = new StringBuffer();
 
-		for (Integer compNid : componentToIntitialEditMap.keySet())
+		for (Integer compNid : componentToIntitialEditMap.keySet()) {
 			buf.append("\n\t\t\tFor Component Nid: " + compNid + " first edited in workflow at Stamp: " + componentToIntitialEditMap.get(compNid));
+		}
 
-		LocalDate date = LocalDate.ofEpochDay(timeCreated);
+		LocalDateTime date = LocalDateTime.from(Instant.ofEpochMilli(timeCreated).atZone(ZoneId.systemDefault()));
 		String timeCreatedString = BPMNInfo.workflowDateFormatter.format(date);
 
-		date = LocalDate.ofEpochDay(timeLaunched);
+		date = LocalDateTime.from(Instant.ofEpochMilli(timeLaunched).atZone(ZoneId.systemDefault()));
 		String timeLaunchedString = BPMNInfo.workflowDateFormatter.format(date);
 
-		date = LocalDate.ofEpochDay(timeCanceledOrConcluded);
+		date = LocalDateTime.from(Instant.ofEpochMilli(timeCanceledOrConcluded).atZone(ZoneId.systemDefault()));
 		String timeCanceledOrConcludedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tDefinition Id: " + definitionId.toString() + "\n\t\tComponents to Sequences Map: " + buf.toString() + "\n\t\tCreator Id: "

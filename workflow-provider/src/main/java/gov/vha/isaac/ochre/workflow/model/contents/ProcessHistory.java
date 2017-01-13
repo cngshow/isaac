@@ -3,7 +3,7 @@
  *
  * This is a work of the U.S. Government and is not subject to copyright
  * protection in the United States. Foreign copyrights may apply.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,9 @@
  */
 package gov.vha.isaac.ochre.workflow.model.contents;
 
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.UUID;
 
@@ -28,7 +30,7 @@ import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 /**
  * A single advancement (history) of a given workflow process. A new entry is
  * added for every workflow action a user takes.
- * 
+ *
  * {@link AbstractStorableWorkflowContents}
  *
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
@@ -59,29 +61,29 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 	/** The sequence in the process which the history represents. */
 	private int historySequence;
 
-    /**
-     * Process uuid most significant bits
-     */
+	/**
+	 * Process uuid most significant bits
+	 */
 	private long processIdMsb;
-    
-	/**
-     * Process uuid least significant bits
-     */
-    private long processIdLsb;
 
-    /**
-     * User uuid most significant bits
-     */
+	/**
+	 * Process uuid least significant bits
+	 */
+	private long processIdLsb;
+
+	/**
+	 * User uuid most significant bits
+	 */
 	private long userIdMsb;
-    
-	/**
-     * User uuid least significant bits
-     */
-    private long userIdLsb;
 
-    /**
+	/**
+	 * User uuid least significant bits
+	 */
+	private long userIdLsb;
+
+	/**
 	 * Constructor for a new process history based on specified entry fields.
-	 * 
+	 *
 	 * @param processId
 	 * @param userId
 	 * @param timeAdvanced
@@ -101,15 +103,15 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 		this.comment = comment;
 		this.historySequence = historySequence;
 
-        this.processIdMsb = processId.getMostSignificantBits();
-        this.processIdLsb = processId.getLeastSignificantBits();
-        this.userIdMsb = userId.getMostSignificantBits();
-        this.userIdLsb = userId.getLeastSignificantBits();
+		this.processIdMsb = processId.getMostSignificantBits();
+		this.processIdLsb = processId.getLeastSignificantBits();
+		this.userIdMsb = userId.getMostSignificantBits();
+		this.userIdLsb = userId.getLeastSignificantBits();
 	}
 
 	/**
 	 * Constructor for a new process history based on serialized content.
-	 * 
+	 *
 	 * @param data
 	 * The data to deserialize into its components
 	 */
@@ -233,12 +235,13 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		LocalDate date = LocalDate.ofEpochDay(timeAdvanced);
+
+		LocalDateTime date = LocalDateTime.from(Instant.ofEpochMilli(timeAdvanced).atZone(ZoneId.systemDefault()));
 		String timeAdvancedString = BPMNInfo.workflowDateFormatter.format(date);
 
 		return "\n\t\tId: " + id + "\n\t\tProcess Id: " + processId + "\n\t\tWorkflowUser Id: " + userId + "\n\t\tTime Advanced as Long: " + timeAdvanced
@@ -248,7 +251,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -262,13 +265,13 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		return processId.hashCode() + userId.hashCode() + new Long(timeAdvanced).hashCode() + initialState.hashCode() + action.hashCode() + outcomeState.hashCode()
-				+ comment.hashCode() + historySequence;
+		+ comment.hashCode() + historySequence;
 	}
 
 	/**
@@ -283,7 +286,7 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 		 */
 		@Override
@@ -293,10 +296,11 @@ public class ProcessHistory extends AbstractStorableWorkflowContents {
 				long seq1 = o1.getHistorySequence();
 				long seq2 = o2.getHistorySequence();
 
-				if (seq1 > seq2)
+				if (seq1 > seq2) {
 					return 1;
-				else if (seq1 < seq2)
+				} else if (seq1 < seq2) {
 					return -1;
+				}
 			}
 
 			return 0;
