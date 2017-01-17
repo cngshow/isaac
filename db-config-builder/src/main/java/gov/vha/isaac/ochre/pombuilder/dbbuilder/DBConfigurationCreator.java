@@ -219,7 +219,6 @@ public class DBConfigurationCreator
 		}
 		files.getIbdfFile().add("${project.build.directory}/data/IsaacMetadataAuxiliary.ibdf");
 		configuration.setIbdfFiles(files);
-		configuration.setDbId(UUID.randomUUID().toString());  //Assign a random ID to help align changeset repos
 		pe.setConfiguration(configuration);
 		executions.getExecution().add(pe);
 		

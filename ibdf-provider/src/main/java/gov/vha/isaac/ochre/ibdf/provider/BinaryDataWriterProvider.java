@@ -19,14 +19,18 @@ import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.util.TimeFlushBufferedOutputStream;
 
 /**
@@ -67,6 +71,20 @@ public class BinaryDataWriterProvider implements DataWriterService {
         output = new DataOutputStream(new TimeFlushBufferedOutputStream(new FileOutputStream(dataPath.toFile(), true)));
         buffer.setExternalData(true);
         logger.info("ibdf changeset writer has been configured to write to " + dataPath.toAbsolutePath().toString());
+        if (!Get.configurationService().inDBBuildMode()) {
+            //record this file as already being in the database if we are in 'normal' run mode.
+            MetaContentService mcs = LookupService.get().getService(MetaContentService.class);
+            if (mcs != null) {
+               ConcurrentMap<String, Boolean> processedChangesets = mcs.<String, Boolean>openStore("processedChangesets");
+               processedChangesets.put(path.getFileName().toString(), true);
+            }
+        }
+    }
+    
+    @Override
+    public Path getCurrentPath()
+    {
+        return dataPath;
     }
 
     @Override
@@ -134,12 +152,15 @@ public class BinaryDataWriterProvider implements DataWriterService {
     @Override
     public void resume() throws IOException
     {
-        if (output != null)
+        if (pauseBlock.availablePermits() == 1)
         {
-            logger.warn("asked to resume but not paused!");
+            logger.warn("asked to resume, but not paused?");
             return;
         }
-        configure(dataPath);
+        if (output == null)
+        {
+            configure(dataPath);
+        }
         pauseBlock.release();
         logger.debug("ibdf writer resumed");
     }

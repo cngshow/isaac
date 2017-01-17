@@ -16,9 +16,4 @@
 			<outputDirectory>META-INF</outputDirectory>
 		</fileSet>
 	</fileSets>
-	<files>
-		<file>
-			<source>${project.build.directory}/${project.build.finalName}${resultArtifactClassifierWithLeadingHyphen}.data/dbid.txt</source>
-		</file>
-	</files>
 </assembly>

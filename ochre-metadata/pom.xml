@@ -106,6 +106,8 @@
                             <goal>shutdown-isaac</goal>
                         </goals>
                         <configuration>
+                            <dbBuildMode>true</dbBuildMode>
+                            <bootstrapMode>true</bootstrapMode>
                             <dataStoreLocation>${project.build.directory}/datastore</dataStoreLocation>
                             <bindingPackage>gov.vha.isaac</bindingPackage>
                             <bindingClass>MetaData</bindingClass>

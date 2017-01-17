@@ -59,8 +59,8 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	private static final Logger LOG = LogManager.getLogger();
 
-	private static final String jsonFileSuffix = ".json";
-	private static final String ibdfFileSuffix = ".ibdf";
+	private static final String jsonFileSuffix = "json";
+	private static final String ibdfFileSuffix = "ibdf";
 	private DataWriterService writer;
 	private final UUID changeSetWriterHandlerUuid = UUID.randomUUID();
 	private ExecutorService changeSetWriteExecutor;
@@ -78,9 +78,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 					"Cannot initialize Changeset Store - was unable to create " + changeSetFolder.toAbsolutePath());
 		}
 
-		Optional<Path> jsonPath = Optional.of(changeSetFolder.resolve("ChangeSet" + jsonFileSuffix));
-		Optional<Path> ibdfPath = Optional.of(changeSetFolder.resolve("ChangeSet" + ibdfFileSuffix));
-		writer = new MultipleDataWriterService(jsonPath, ibdfPath);
+		writer = new MultipleDataWriterService(changeSetFolder, "ChangeSet-", Optional.of(jsonFileSuffix), Optional.of(ibdfFileSuffix));
 	}
 
 

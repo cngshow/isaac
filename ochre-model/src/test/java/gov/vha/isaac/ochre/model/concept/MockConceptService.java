@@ -26,6 +26,8 @@ import java.util.stream.Stream;
 public class MockConceptService implements ConceptService {
 
     ConcurrentHashMap<Integer, ConceptChronology<? extends ConceptVersion<?>>> conceptsMap = new ConcurrentHashMap<>();
+    UUID dbId = UUID.randomUUID();
+    
     @Override
     public ConceptChronology<? extends ConceptVersion<?>> getConcept(int conceptId) {
         return conceptsMap.get(Get.identifierService().getConceptSequence(conceptId));
@@ -120,11 +122,16 @@ public class MockConceptService implements ConceptService {
 
     @Override
     public DatabaseValidity getDatabaseValidityStatus() {
-    	return null;
+        return null;
     }
 
     @Override
     public Path getDatabaseFolder() {
         return null;
+    }
+
+    @Override
+    public UUID getDataStoreId() {
+        return dbId;
     }
 }

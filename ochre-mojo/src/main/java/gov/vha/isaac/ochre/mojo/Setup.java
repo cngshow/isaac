@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import gov.vha.isaac.ochre.api.ConfigurationService;
+import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.DBLocator;
 
@@ -54,7 +55,19 @@ public class Setup extends AbstractMojo {
      */
     @Parameter(required = false)
     private File userProfileFolderLocation;
-
+    
+    /**
+     * See {@link ConfigurationService#setDBBuildMode()} for details on this option.
+     */
+    @Parameter(required = false)
+    private boolean dbBuildMode = false;
+    
+    /**
+     * See {@link ConfigurationService#setBootstrapMode()} for details on this option.
+     */
+    @Parameter(required = false)
+    private boolean bootstrapMode = false;
+    
     /**
      * @throws org.apache.maven.plugin.MojoExecutionException
      * @see org.apache.maven.plugin.Mojo#execute()
@@ -66,6 +79,14 @@ public class Setup extends AbstractMojo {
             
             //Make sure the service Locator comes up ok
             LookupService.get();
+            
+            if (dbBuildMode) {
+                Get.configurationService().setDBBuildMode();
+            }
+            
+            if (bootstrapMode) {
+                Get.configurationService().setBootstrapMode();
+            }
             
             dataStoreLocation = DBLocator.findDBFolder(dataStoreLocation);
 
@@ -96,5 +117,4 @@ public class Setup extends AbstractMojo {
     public void setUserProfileFolderLocation(File inputUserProfileLocation) {
         userProfileFolderLocation = inputUserProfileLocation;
     }
-
 }

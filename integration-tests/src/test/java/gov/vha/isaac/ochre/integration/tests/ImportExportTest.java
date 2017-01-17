@@ -58,6 +58,8 @@ public class ImportExportTest {
                 commitService.importNoChecks(object);
             });
             commitService.postProcessImportNoChecks();
+            importStats.sememes.incrementAndGet();  //For the commit that the ChangeSetLoadProvider makes on startup
+            importStats.stampComments.incrementAndGet(); //For the commit that the ChangeSetLoadProvider makes on startup
             LOG.info("Loaded components: " + importStats);
         } catch (FileNotFoundException e) {
             Assert.fail("File not found", e);
