@@ -290,14 +290,14 @@ public interface ConfigurationService {
     /**
      * There are some cases where validators and such cannot be properly executed if we are in bootstrap mode - building 
      * the system for the first time.  The default implementation of this returns false.
-     * 
-     * Note that this is a setter only.  If you start in dbBuildMode, the mode cannot be turned off later.
      */
     public default boolean inBootstrapMode()
     {
         return false;
     }
-    
+    /**
+     * See {@link #inBootstrapMode()}
+     */
     public default void setBootstrapMode()
     {
         throw new UnsupportedOperationException();
@@ -306,13 +306,16 @@ public interface ConfigurationService {
     /**
      * When building a DB, we don't want to index per commit, or write changeset files, among other things.
      * 
-     * Note that this is a setter only.  If you start in dbBuildMode, the mode cannot be turned off later.
+     * Note that this mode can be enabled-only only.  If you enable dbBuildMode, the mode cannot be turned off later.
      */
     public default boolean inDBBuildMode()
     {
         return false;
     }
     
+    /**
+     * See {@link #inDBBuildMode()}
+     */
     public default void setDBBuildMode()
     {
         throw new UnsupportedOperationException();

@@ -134,8 +134,8 @@ public class CommitProvider implements CommitService {
 	private final ConceptSequenceSet uncommittedConceptsNoChecksSequenceSet = ConceptSequenceSet.concurrent();
 	private final SememeSequenceSet uncommittedSememesWithChecksSequenceSet = SememeSequenceSet.concurrent();
 	private final SememeSequenceSet uncommittedSememesNoChecksSequenceSet = SememeSequenceSet.concurrent();
-    private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
-    
+	private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+	
 	private CommitProvider() throws IOException {
 		try {
 			dbFolderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("commit-provider");
@@ -388,36 +388,36 @@ public class CommitProvider implements CommitService {
 		throw new UnsupportedOperationException("This implementation is broken");
 		//TODO this needs repair... pendingStampsForCommit, for example, is never populated.
 		//Also do we need to lock around the CommitTask creation to makre sure the uncommitted lists are consistent during copy?
-		//        Semaphore pendingWrites = writePermitReference.getAndSet(new Semaphore(WRITE_POOL_SIZE));
-		//        pendingWrites.acquireUninterruptibly(WRITE_POOL_SIZE);
-		//        alertCollection.clear();
-		//        lastCommit = databaseSequence.incrementAndGet();
+		//		Semaphore pendingWrites = writePermitReference.getAndSet(new Semaphore(WRITE_POOL_SIZE));
+		//		pendingWrites.acquireUninterruptibly(WRITE_POOL_SIZE);
+		//		alertCollection.clear();
+		//		lastCommit = databaseSequence.incrementAndGet();
 		//
-		//        Map<UncommittedStamp, Integer> pendingStampsForCommit = new HashMap<>();
-		//        UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.forEach((uncommittedStamp, stampSequence) -> {
-		//            if (uncommittedStamp.authorSequence == editCoordinate.getAuthorSequence()) {
-		//                Stamp stamp = new Stamp(Status.getStatusFromState(uncommittedStamp.status),
-		//                          Long.MIN_VALUE,
-		//                          Get.identifierService().getConceptNid(uncommittedStamp.authorSequence),
-		//                          Get.identifierService().getConceptNid(uncommittedStamp.moduleSequence),
-		//                          Get.identifierService().getConceptNid(uncommittedStamp.pathSequence));
-		//                addStamp(stamp, stampSequence);
-		//                UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.remove(uncommittedStamp);
-		//            }
-		//        });
-		//        UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.clear();
+		//		Map<UncommittedStamp, Integer> pendingStampsForCommit = new HashMap<>();
+		//		UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.forEach((uncommittedStamp, stampSequence) -> {
+		//			if (uncommittedStamp.authorSequence == editCoordinate.getAuthorSequence()) {
+		//				Stamp stamp = new Stamp(Status.getStatusFromState(uncommittedStamp.status),
+		//						  Long.MIN_VALUE,
+		//						  Get.identifierService().getConceptNid(uncommittedStamp.authorSequence),
+		//						  Get.identifierService().getConceptNid(uncommittedStamp.moduleSequence),
+		//						  Get.identifierService().getConceptNid(uncommittedStamp.pathSequence));
+		//				addStamp(stamp, stampSequence);
+		//				UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.remove(uncommittedStamp);
+		//			}
+		//		});
+		//		UNCOMMITTED_STAMP_TO_STAMP_SEQUENCE_MAP.clear();
 		//
-		//        CommitTask task = CommitTask.get(commitComment,
-		//                  uncommittedConceptsWithChecksSequenceSet,
-		//                  uncommittedConceptsNoChecksSequenceSet,
-		//                  uncommittedSememesWithChecksSequenceSet,
-		//                  uncommittedSememesNoChecksSequenceSet,
-		//                  lastCommit,
-		//                  checkers,
-		//                  alertCollection,
-		//                  pendingStampsForCommit,
-		//                  this);
-		//        return task;
+		//		CommitTask task = CommitTask.get(commitComment,
+		//				  uncommittedConceptsWithChecksSequenceSet,
+		//				  uncommittedConceptsNoChecksSequenceSet,
+		//				  uncommittedSememesWithChecksSequenceSet,
+		//				  uncommittedSememesNoChecksSequenceSet,
+		//				  lastCommit,
+		//				  checkers,
+		//				  alertCollection,
+		//				  pendingStampsForCommit,
+		//				  this);
+		//		return task;
 	}
 
 	/**
@@ -431,7 +431,7 @@ public class CommitProvider implements CommitService {
 	 */
 	@Override
 	public synchronized Task<Optional<CommitRecord>> commit(String commitComment) {
-		//        return commit(Get.configurationService().getDefaultEditCoordinate(), commitComment);
+		//		return commit(Get.configurationService().getDefaultEditCoordinate(), commitComment);
 		Semaphore pendingWrites = writePermitReference.getAndSet(new Semaphore(WRITE_POOL_SIZE));
 		pendingWrites.acquireUninterruptibly(WRITE_POOL_SIZE);
 		alertCollection.clear();
@@ -765,16 +765,16 @@ public class CommitProvider implements CommitService {
 		}
 	}
 	
-    @Override
-    public void clearDatabaseValidityValue() {
-        // Reset to enforce analysis
-        databaseValidity = DatabaseValidity.NOT_SET;
-    }
+	@Override
+	public void clearDatabaseValidityValue() {
+		// Reset to enforce analysis
+		databaseValidity = DatabaseValidity.NOT_SET;
+	}
 
-    @Override
-    public DatabaseValidity getDatabaseValidityStatus() {
-    	return databaseValidity;
-    }
+	@Override
+	public DatabaseValidity getDatabaseValidityStatus() {
+		return databaseValidity;
+	}
 
 	@Override
 	public Path getDatabaseFolder() {
