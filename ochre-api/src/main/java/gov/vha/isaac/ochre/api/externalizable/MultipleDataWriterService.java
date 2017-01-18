@@ -56,6 +56,9 @@ public class MultipleDataWriterService implements DataWriterService
 	 * This constructor sets up the multipleDataWriter in such a way that is will create date stamped and UUID unique file names, rotating them after 
 	 * a certain number of writes, to prevent them from growing too large.
 	 * 
+	 * This constructor will also start a mode where we do NOT keep 0 length files - therefore, if we start, and stop, and the last file that was being written
+	 * to is size 0, the last file will be deleted.
+	 * 
 	 * @param folderToWriteInto
 	 * @param prefix
 	 * @param jsonExtension
