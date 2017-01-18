@@ -11,7 +11,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import com.cedarsoftware.util.io.JsonObject;
 import com.cedarsoftware.util.io.JsonReader;
 import com.cedarsoftware.util.io.JsonWriter;
 import gov.va.isaac.sync.git.gitblit.GitBlitException.ForbiddenException;
@@ -113,14 +115,18 @@ public class JsonUtils
 	 * @throws {@link IOException}
 	 */
 	@SuppressWarnings("unchecked")
-	public static <X> X retrieveJson(String url, String username, char[] password) throws IOException
+	public static JsonObject<String, Map<String, ?>> retrieveJson(String url, String username, char[] password) throws IOException
 	{
 		String json = retrieveJsonString(url, username, password);
 		if (StringUtils.isEmpty(json))
 		{
 			return null;
 		}
-		return (X) JsonReader.jsonToJava(json);
+		DateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+		dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
+		HashMap<String, Object> config = new HashMap<>();
+		config.put(JsonWriter.DATE_FORMAT, dateformat);
+		return (JsonObject<String, Map<String, ?>>) JsonReader.jsonToJava(json, config);
 	}
 
 	/**

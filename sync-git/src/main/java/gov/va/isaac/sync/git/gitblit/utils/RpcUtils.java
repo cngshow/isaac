@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import com.cedarsoftware.util.io.JsonObject;
 import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
 
 /**
@@ -68,11 +69,10 @@ public class RpcUtils
 	 * @return a map of cloneable repositories
 	 * @throws IOException
 	 */
-	public static Map<String, RepositoryModel> getRepositories(String serverUrl, String account, char[] password) throws IOException
+	public static JsonObject<String, Map<String, ?>> getRepositories(String serverUrl, String account, char[] password) throws IOException
 	{
 		String url = asLink(serverUrl, RpcRequest.LIST_REPOSITORIES, null);
-		Map<String, RepositoryModel> models = JsonUtils.retrieveJson(url, account, password);
-		return models;
+		return JsonUtils.retrieveJson(url, account, password);
 	}
 
 	/**
