@@ -320,4 +320,23 @@ public interface ConfigurationService {
     {
         throw new UnsupportedOperationException();
     }
+    
+    /**
+     * Return the known (if any) details to utilize to make a GIT server connection.
+     * The returned URL should point to the root of the git server - not to a particular repository. 
+     * @return
+     */
+    public default Optional<RemoteServiceInfo> getGitConfiguration()
+    {
+        return Optional.empty();
+    }
+    
+    /**
+     * Specify the details to be returned by {@link #getGitConfiguration()}.  This method is optional, and may not be supported
+     * (in which case, it throws an {@link UnsupportedOperationException})
+     */
+    public default void setGitConfiguration(RemoteServiceInfo rsi)
+    {
+        throw new UnsupportedOperationException();
+    }
 }
