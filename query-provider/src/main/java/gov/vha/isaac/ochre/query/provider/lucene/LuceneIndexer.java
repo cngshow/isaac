@@ -38,7 +38,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -79,7 +78,6 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -110,7 +108,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     public static final Version luceneVersion = Version.LUCENE_4_10_3;
     private static final UnindexedFuture unindexedFuture = new UnindexedFuture();
     
-    private static AtomicReference<File> luceneRootFolder_ = new AtomicReference<>();
     private File indexFolder_ = null;
     private ChronologyChangeListener changeListenerRef_;
     
@@ -153,15 +150,14 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             
             Path searchFolder = LookupService.getService(ConfigurationService.class).getSearchFolderPath();
             
-            if (luceneRootFolder_.compareAndSet(null, new File(searchFolder.toFile(), DEFAULT_LUCENE_FOLDER))) {
-                luceneRootFolder_.get().mkdirs();
-            }
+            File luceneRootFolder = new File(searchFolder.toFile(), DEFAULT_LUCENE_FOLDER);
+            luceneRootFolder.mkdirs();
             
-            indexFolder_ = new File(luceneRootFolder_.get(), indexName);
+            indexFolder_ = new File(luceneRootFolder, indexName);
             if (!indexFolder_.exists()) {
-            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+                databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             } else if (indexFolder_.list().length > 0) {
-            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+                databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
             }
 
             indexFolder_.mkdirs();
