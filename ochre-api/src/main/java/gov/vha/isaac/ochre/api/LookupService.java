@@ -180,14 +180,14 @@ public class LookupService {
     public static void setRunLevel(int runLevel) {
         int current = getService(RunLevelController.class).getCurrentRunLevel();
         if (current > runLevel) {
-            looker.getAllServiceHandles(OchreCache.class).forEach(handle ->
+            get().getAllServiceHandles(OchreCache.class).forEach(handle ->
             {
                 if (handle.isActive()) {
                     LOG.info("Clear cache for: " + handle.getActiveDescriptor().getImplementation());
                     handle.getService().reset();
                 }
             });
-            looker.getAllServices(OchreCache.class).forEach((cache) -> {cache.reset();});
+            get().getAllServices(OchreCache.class).forEach((cache) -> {cache.reset();});
         }
         getService(RunLevelController.class).proceedTo(runLevel);
     }
@@ -230,7 +230,7 @@ public class LookupService {
             throw e;
         } finally {
             // Regardless of successful or failed startup, reset database and lucene services' validityCalculated flag for next startup attempt
-            looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+            get().getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
                 if (handle.isActive()) {
                     handle.getService().clearDatabaseValidityValue();
                 }
@@ -245,11 +245,11 @@ public class LookupService {
     private static void validateDatabaseFolderStatus() {
         discoveredValidityValue = null;
 
-        looker.getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
+        get().getAllServiceHandles(DatabaseServices.class).forEach(handle -> {
             if (handle.isActive()) {
                 if (discoveredValidityValue == null) {
                     // Initial time through. All other database directories and lucene directories must have same state
-                	discoveredValidityValue = handle.getService().getDatabaseValidityStatus();
+                    discoveredValidityValue = handle.getService().getDatabaseValidityStatus();
                     LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
                             + ") has database validity value: " + discoveredValidityValue);
                 } else {
@@ -271,25 +271,21 @@ public class LookupService {
      * Stop all core isaac service, blocking until stopped (or failed)
      */
     public static void shutdownIsaac() {
-        if (isInitialized())
-        {
-            setRunLevel(WORKERS_STARTED_RUNLEVEL);
-            looker.shutdown();
-            ServiceLocatorFactory.getInstance().destroy(looker);
-            looker = null;
-            
-            // Fully release any system locks to database
-            System.gc();
-        }
+        setRunLevel(WORKERS_STARTED_RUNLEVEL);
+        // Fully release any system locks to database
+        System.gc();
     }
     
     /**
      * Stop all system services, blocking until stopped (or failed)
      */
    public static void shutdownSystem () {
-       if (isInitialized())
-       {
+       if (isInitialized()) {
            setRunLevel(SYSTEM_STOPPED_RUNLEVEL);
+           looker.shutdown();
+           ServiceLocatorFactory.getInstance().destroy(looker);
+           looker = null;
+           
         }
     }
     
