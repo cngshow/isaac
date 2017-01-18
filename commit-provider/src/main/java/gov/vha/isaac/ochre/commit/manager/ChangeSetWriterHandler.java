@@ -61,17 +61,19 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 
 	private static final String jsonFileSuffix = "json";
 	private static final String ibdfFileSuffix = "ibdf";
+	private static final String CHANGESETS = "changesets";
 	private DataWriterService writer;
 	private final UUID changeSetWriterHandlerUuid = UUID.randomUUID();
 	private ExecutorService changeSetWriteExecutor;
 	private boolean writeEnabled;
 	private Boolean dbBuildMode;
+	private Path changeSetFolder;
 
 	public ChangeSetWriterHandler() throws Exception {
 
 		Optional<Path> databasePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-		Path changeSetFolder = databasePath.get().resolve("changesets");
+		changeSetFolder = databasePath.get().resolve(CHANGESETS);
 		Files.createDirectories(changeSetFolder);
 		if (!changeSetFolder.toFile().isDirectory()) {
 			throw new RuntimeException(
@@ -121,8 +123,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 			LOG.info("Starting ChangeSetWriterHandler post-construct");
 			enable();
 
-			changeSetWriteExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("ISAAC-B-work-thread-changeset-write", false));
-					
+			changeSetWriteExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory("ISAAC-changeset-write", false));
 			Get.postCommitService().addChangeSetListener(this);
 
 		} catch(Exception e) {
@@ -230,4 +231,28 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 		return writeEnabled;
 	}
 
+
+	@Override
+	public void pause() throws IOException
+	{
+		if (writer != null)
+		{
+			writer.pause();
+		}
+	}
+
+	@Override
+	public void resume() throws IOException
+	{
+		if (writer != null)
+		{
+			writer.resume();
+		}
+	}
+
+	@Override
+	public Path getWriteFolder()
+	{
+		return changeSetFolder;
+	}
 }

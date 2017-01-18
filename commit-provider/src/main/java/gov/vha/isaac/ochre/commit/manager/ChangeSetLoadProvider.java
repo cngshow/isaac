@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.commit.manager;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -69,6 +70,8 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 	private static Optional<Path> databasePath;
 	private static final String CHANGESETS = "changesets";
 	private static final String CHANGESETS_ID = "changesetId.txt";
+	private Path changesetPath;
+	private ConcurrentMap<String, Boolean> processedChangesets;
 
 	//For HK2
 	private ChangeSetLoadProvider()
@@ -81,13 +84,10 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 	{
 		try
 		{
-			AtomicInteger loaded = new AtomicInteger();
-			AtomicInteger skipped = new AtomicInteger();
-
 			LOG.info("Loading change set files.");
 			databasePath = LookupService.getService(ConfigurationService.class).getDataStoreFolderPath();
 
-			Path changesetPath = databasePath.get().resolve(CHANGESETS);
+			changesetPath = databasePath.get().resolve(CHANGESETS);
 			Files.createDirectories(changesetPath);
 			if (!changesetPath.toFile().isDirectory())
 			{
@@ -135,48 +135,16 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 			//during normal operation do not need to be reprocessed.  The BinaryDataWriterProvider also automatically updates this list with the 
 			//files as it writes them.
 			MetaContentService mcs = LookupService.get().getService(MetaContentService.class);
-			final ConcurrentMap<String, Boolean> processedChangesets = mcs == null ? null : mcs.<String, Boolean>openStore("processedChangesets");
+			processedChangesets = mcs == null ? null : mcs.<String, Boolean>openStore("processedChangesets");
 
-			LOG.debug("Looking for .ibdf file in {}.", changesetPath.toAbsolutePath());
-			CommitService commitService = Get.commitService();
-			Files.newDirectoryStream(changesetPath, path -> path.toFile().isFile() && path.toString().endsWith(".ibdf")).forEach(path -> {
-				LOG.debug("File {}", path.toAbsolutePath());
-				try
-				{
-					if (processedChangesets != null && processedChangesets.containsKey(path.getFileName().toString()))
-					{
-						skipped.incrementAndGet();
-						LOG.debug("Skipping already processed changeset file");
-					}
-					else
-					{
-						loaded.incrementAndGet();
-						LOG.debug("Importing changeset file");
-						Get.binaryDataReader(path).getStream().forEach(o -> {
-							commitService.importNoChecks(o);
-						});
-						commitService.postProcessImportNoChecks();
-						if (processedChangesets != null)
-						{
-							processedChangesets.put(path.getFileName().toString(), true);
-						}
-					}
-				}
-				catch (FileNotFoundException e)
-				{
-					LOG.error("Change Set Load Provider failed to load file {}", path.toAbsolutePath());
-					throw new RuntimeException(e);
-				}
-			});
-
-			LOG.info("Finished Change Set Load Provider load.  Loaded {}, Skipped {} because they were previously processed", loaded.get(), skipped.get());
+			int loaded = readChangesetFiles();
 			
 			if (sememeDbId == null)
 			{
 				sememeDbId = readSememeDbId();
 				if (!Get.configurationService().inDBBuildMode() && sememeDbId == null)
 				{
-					if (loaded.get() > 0)
+					if (loaded > 0)
 					{
 						LOG.warn("No database identify was found stored in a sememe, after loading changesets.");
 					}
@@ -200,6 +168,45 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 		LOG.info("Finished ChangeSet Load Provider pre-destory.");
 	}
 	
+	public int readChangesetFiles() throws IOException
+	{
+		AtomicInteger loaded = new AtomicInteger();
+		AtomicInteger skipped = new AtomicInteger();
+		LOG.debug("Looking for .ibdf file in {}.", changesetPath.toAbsolutePath());
+		CommitService commitService = Get.commitService();
+		Files.newDirectoryStream(changesetPath, path -> path.toFile().isFile() && path.toString().endsWith(".ibdf")).forEach(path -> {
+			LOG.debug("File {}", path.toAbsolutePath());
+			try
+			{
+				if (processedChangesets != null && processedChangesets.containsKey(path.getFileName().toString()))
+				{
+					skipped.incrementAndGet();
+					LOG.debug("Skipping already processed changeset file");
+				}
+				else
+				{
+					loaded.incrementAndGet();
+					LOG.debug("Importing changeset file");
+					Get.binaryDataReader(path).getStream().forEach(o -> {
+						commitService.importNoChecks(o);
+					});
+					commitService.postProcessImportNoChecks();
+					if (processedChangesets != null)
+					{
+						processedChangesets.put(path.getFileName().toString(), true);
+					}
+				}
+			}
+			catch (FileNotFoundException e)
+			{
+				LOG.error("Change Set Load Provider failed to load file {}", path.toAbsolutePath());
+				throw new RuntimeException(e);
+			}
+		});
+		LOG.info("Finished Change Set Load Provider load.  Loaded {}, Skipped {} because they were previously processed", loaded.get(), skipped.get());
+		return loaded.get();
+	}
+	
 	private UUID readSememeDbId()
 	{
 		Optional<SememeChronology<? extends SememeVersion<?>>> sdic = Get.sememeService()
@@ -221,5 +228,4 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 		}
 		return null;
 	}
-	
 }
