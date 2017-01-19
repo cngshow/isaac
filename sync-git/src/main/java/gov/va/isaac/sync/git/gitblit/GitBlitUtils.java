@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
 import gov.va.isaac.sync.git.gitblit.utils.RpcUtils;
+import gov.va.isaac.sync.git.gitblit.utils.RpcUtils.AccessRestrictionType;
 
 
 /**
@@ -54,11 +55,17 @@ public class GitBlitUtils
 	 * @return true if the action succeeded
 	 * @throws IOException
 	 */	
-	public static void createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password) throws IOException
+	public static void createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password, boolean allowRead) throws IOException
 	{
 		try
 		{
-			boolean status =  RpcUtils.createRepository(new RepositoryModel(repoName, repoDesc, username, new Date()), adjustUrlForGitBlit(baseRemoteAddress),
+			RepositoryModel rm = new RepositoryModel(repoName, repoDesc, username, new Date());
+			if (allowRead)
+			{
+				rm.accessRestriction = AccessRestrictionType.PUSH.toString();
+			}
+			
+			boolean status =  RpcUtils.createRepository(rm, adjustUrlForGitBlit(baseRemoteAddress),
 					username, password);
 			log.info("Repository: "+repoName +", create successfully: " + status);
 			if (!status)

@@ -89,7 +89,7 @@ public class ChangesetSyncService {
 				{
 					LOG.debug("Creating remote repository {}", changeSetRepo);
 					GitBlitUtils.createRepository(gitConfig.get().getURL(), changeSetRepo, "Storage for database changesets",  gitConfig.get().getUsername(), 
-							gitConfig.get().getPassword());
+							gitConfig.get().getPassword(), false);
 				}
 				
 				ssg = new SyncServiceGIT();

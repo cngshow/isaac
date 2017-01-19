@@ -39,7 +39,7 @@ public class GitBlitTests
 			System.out.println(s);
 		}
 		
-		GitBlitUtils.createRepository("https://vadev.mantech.com:4848/git/","db-silly","testing db creation","", "".toCharArray());
+		GitBlitUtils.createRepository("https://vadev.mantech.com:4848/git/","db-silly","testing db creation","", "".toCharArray(), true);
 		
 		for (String s : GitBlitUtils.readRepositories("https://vadev.mantech.com:4848/git/", "", "".toCharArray()))
 		{
