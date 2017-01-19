@@ -56,9 +56,9 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		UUID.fromString("9b93f811-7b66-5024-bebf-6a7019743e88"),
 		"A concept used to hold the UUID used as the namespace ID generation when creating mappings") {};
 
-	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_FIELDS = new MetadataConceptConstant("mapping fields", 
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS = new MetadataConceptConstant("mapping display fields", 
 			UUID.fromString("4e627b9c-cecb-5563-82fc-cb0ee25113b1"),
-			"Stores the mapping field ids sorted in an array",
+			"Stores the mapping field ids in an array corresponding to an ordered displayable row",
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 			
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE = new MetadataConceptConstant("mapping purpose", 
@@ -147,15 +147,15 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	};
 	
 	/** 
-	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_MAPPING_FIELDS}
-	 * see {@link #DYNAMIC_SEMEME_COLUMN_MAPPING_FIELDS}
+	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS}
+	 * see {@link #DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS}
 	 */
-	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_FIELDS = new MetadataDynamicSememeConstant("Mapping Fields", 
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS = new MetadataDynamicSememeConstant("Mapping Display Fields", 
 		UUID.fromString("8d6463c2-b0ec-5e34-a882-1208d52703ea"),
-		"A Sememe used to annotate Mapping Set concepts. This sememe carries sorted column identifiers.", 
+		"A Sememe used to annotate Mapping Set concepts. This sememe carries field identifiers for organizing an ordered columnar display row.", 
 			new DynamicSememeColumnInfo[] {
-				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_FIELDS.getUUID(), DynamicSememeDataType.ARRAY, 
-						null, false, true),},
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS.getUUID(), DynamicSememeDataType.ARRAY, 
+						null, true, true),},
 			null) 
 	{
 		{
