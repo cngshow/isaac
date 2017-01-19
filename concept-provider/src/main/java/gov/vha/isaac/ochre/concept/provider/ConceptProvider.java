@@ -102,7 +102,7 @@ public class ConceptProvider implements ConceptService {
                         dbId = UUID.fromString(new String(Files.readAllBytes(dbIdPath)));
                     }
                     catch (Exception e) {
-                    	throw new IllegalStateException("The " + CRADLE_ID_FILE_NAME + " file does not contain a valid UUID!", e);
+                        throw new IllegalStateException("The " + CRADLE_ID_FILE_NAME + " file does not contain a valid UUID!", e);
                     }
                 }
                 else {
