@@ -683,6 +683,9 @@
         <module>workflow-provider</module>
         <!-- <module>ibdf-differ</module>-->
         <module>ochre-exporters</module>
+        
+        
+        <module>hl7-messaging</module>
     </modules>
     
     <profiles>

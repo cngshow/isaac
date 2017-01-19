@@ -3,7 +3,7 @@
  *
  * This is a work of the U.S. Government and is not subject to copyright
  * protection in the United States. Foreign copyrights may apply.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,9 +26,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Base64;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -43,7 +45,7 @@ import net.lingala.zip4j.progress.ProgressMonitor;
 public class DownloadUnzipTask extends Task<File>
 {
 	private static Logger log = LoggerFactory.getLogger(DownloadUnzipTask.class);
-	String username_, password_;
+	String username_, psswrd_;
 	URL url_;
 	private boolean cancel_ = false;
 	private boolean unzip_;
@@ -52,19 +54,19 @@ public class DownloadUnzipTask extends Task<File>
 
 	/**
 	 * @param username (optional) used if provided
-	 * @param password (optional) used if provided
+	 * @param psswrd (optional) used if provided
 	 * @param url The URL to download from
 	 * @param unzip - Treat the file as a zip file, and unzip it after the download
 	 * @param failOnBadChecksum - If a checksum file is found on the repository - fail if the downloaded file doesn't match the expected value.
 	 * (If no checksum file is found on the repository, this option is ignored and the download succeeds)
-	 * @param targetFolder (optional) download and/or extract into this folder.  If not provided, a folder 
+	 * @param targetFolder (optional) download and/or extract into this folder.  If not provided, a folder
 	 * will be created in the system temp folder for this purpose.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public DownloadUnzipTask(String username, String password, URL url, boolean unzip, boolean failOnBadChecksum, File targetFolder) throws IOException
+	public DownloadUnzipTask(String username, String psswrd, URL url, boolean unzip, boolean failOnBadChecksum, File targetFolder) throws IOException
 	{
 		this.username_ = username;
-		this.password_ = password;
+		this.psswrd_ = psswrd;
 		this.url_ = url;
 		this.unzip_ = unzip;
 		this.targetFolder_ = targetFolder;
@@ -90,7 +92,7 @@ public class DownloadUnzipTask extends Task<File>
 		File dataFile = download(url_);
 		String calculatedSha1Value = null;
 		String expectedSha1Value = null;;
-		
+
 		try
 		{
 			log.debug("Attempting to get .sha1 file");
@@ -123,7 +125,7 @@ public class DownloadUnzipTask extends Task<File>
 		}
 		if (calculatedSha1Value != null && !calculatedSha1Value.equals(expectedSha1Value))
 		{
-			if (failOnBadCheksum_) 
+			if (failOnBadCheksum_)
 			{
 				throw new RuntimeException("Checksum of downloaded file '" + url_.toString() + "' does not match the expected value!");
 			}
@@ -132,13 +134,13 @@ public class DownloadUnzipTask extends Task<File>
 				log.warn("Checksum of downloaded file '" + url_.toString() + "' does not match the expected value!");
 			}
 		}
-		
+
 		if (cancel_)
 		{
 			log.debug("Download cancelled");
 			throw new Exception("Cancelled!");
 		}
-		
+
 		if (unzip_)
 		{
 			updateTitle("Unzipping");
@@ -185,15 +187,15 @@ public class DownloadUnzipTask extends Task<File>
 			return dataFile;
 		}
 	}
-	
+
 	private File download(URL url) throws Exception
 	{
 		log.debug("Beginning download from " + url);
 		updateMessage("Download from " + url);
 		HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-		if (StringUtils.isNotBlank(username_) || StringUtils.isNotBlank(password_))
+		if (StringUtils.isNotBlank(username_) || StringUtils.isNotBlank(psswrd_))
 		{
-			String encoded = Base64.getEncoder().encodeToString((username_ + ":" + password_).getBytes());
+			String encoded = Base64.getEncoder().encodeToString((username_ + ":" + psswrd_).getBytes());
 			httpCon.setRequestProperty("Authorization", "Basic " + encoded);
 		}
 		httpCon.setDoInput(true);
@@ -201,17 +203,17 @@ public class DownloadUnzipTask extends Task<File>
 		httpCon.setConnectTimeout(30 * 1000);
 		httpCon.setReadTimeout(60 * 60 * 1000);
 		long fileLength = httpCon.getContentLengthLong();
-		
+
 
 		String temp = url.toString();
 		temp = temp.substring(temp.lastIndexOf('/') + 1, temp.length());
 		File file = new File(targetFolder_, temp);
-		
+
 		try (InputStream in = httpCon.getInputStream();
-			FileOutputStream fos= new FileOutputStream(file);) {
-			
+				FileOutputStream fos= new FileOutputStream(file);) {
+
 			byte[] buf = new byte[1048576];
-			
+
 			int read = 0;
 			long totalRead = 0;
 			while (!cancel_ && (read = in.read(buf, 0, buf.length)) > 0)
@@ -219,13 +221,13 @@ public class DownloadUnzipTask extends Task<File>
 				totalRead += read;
 				//update every 1 MB
 				updateProgress(totalRead, fileLength);
-				float percentDone = (float)((int)(((float)totalRead / (float)fileLength) * 1000)) / 10f;
+				float percentDone = ((int)(((float)totalRead / (float)fileLength) * 1000)) / 10f;
 				updateMessage("Downloading - " + url + " - " + percentDone + " % - out of " + fileLength + " bytes");
 				fos.write(buf, 0, read);
 			}
 		}
-		
-		
+
+
 		if (cancel_)
 		{
 			log.debug("Download cancelled");
