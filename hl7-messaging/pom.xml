@@ -1,58 +1,35 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>gov.vha.isaac.ochre</groupId>
-    <artifactId>isaac-parent</artifactId>
-    <version>3.32-SNAPSHOT</version>
-  </parent>
-  <groupId>gov.vha.isaac.ochre.modules</groupId>
-  <artifactId>hl7-messaging</artifactId>
-  <packaging>jar</packaging>
-  <name>OCHRE: HL7 messaging</name>
- 
-	<repositories>
-	   <repository>
-	     <id>maven</id>
-	     <name>maven</name>
-	     <url>https://mvnrepository.com</url>
-	   </repository>
-	 </repositories>
-  
-  
-  <dependencies>
-  	<dependency>
-  		<groupId>ca.uhn.hapi</groupId>
-  		<artifactId>hapi-base</artifactId>
-  		<version>2.2</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>ca.uhn.hapi</groupId>
-  		<artifactId>hapi-structures-v26</artifactId>
-  		<version>2.2</version>
-  	</dependency> 
-  	<dependency>
-  		<groupId>org.hibernate</groupId>
-  		<artifactId>hibernate-core</artifactId>
-  		<version>5.2.6.Final</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.apache.commons</groupId>
-  		<artifactId>commons-lang3</artifactId>
-  	</dependency>
-  	<dependency>
-		<groupId>gov.vha.isaac.ochre.modules</groupId>
-		<artifactId>ochre-api</artifactId>
-		<version>${project.parent.version}</version>
-	</dependency>
-  	<dependency>
-  		<groupId>net.java.dev.msv</groupId>
-  		<artifactId>msv-core</artifactId>
-  		<version>2013.6.1</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.jdom</groupId>
-  		<artifactId>jdom2</artifactId>
-  		<version>2.0.6</version>
-  	</dependency>
-  </dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>gov.vha.isaac.ochre</groupId>
+		<artifactId>isaac-parent</artifactId>
+		<version>3.32-SNAPSHOT</version>
+	</parent>
+	<groupId>gov.vha.isaac.ochre.modules</groupId>
+	<artifactId>hl7-messaging</artifactId>
+	<packaging>jar</packaging>
+	<name>OCHRE: HL7 messaging</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-base</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>ca.uhn.hapi</groupId>
+			<artifactId>hapi-structures-v26</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>gov.vha.isaac.ochre.modules</groupId>
+			<artifactId>ochre-api</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+	</dependencies>
 </project>

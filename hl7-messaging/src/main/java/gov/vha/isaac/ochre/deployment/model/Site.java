@@ -20,22 +20,11 @@ package gov.vha.isaac.ochre.deployment.model;
 
 import java.io.Serializable;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
 
 /**
  * @author VHAISLMURDOH
- * @hibernate.class table="SITE"
- *
  */
-@Entity
-@javax.persistence.SequenceGenerator(name="SEQ_STORE", sequenceName="SITE_SEQ", allocationSize=1 )
-@Table(name="SITE")
+
 public class Site implements Serializable, Comparable<Site>
 {
 	private long id;
@@ -48,9 +37,7 @@ public class Site implements Serializable, Comparable<Site>
 	/**
 	 * @return Returns the id.
 	 * @hibernate.id generator-class="gov.va.med.term.services.util.TableNameSequenceGenerator"
-
 	 */
-	@Id @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="SEQ_STORE")
 	public long getId()
 	{
 		return id;
@@ -62,9 +49,7 @@ public class Site implements Serializable, Comparable<Site>
 	/**
 	 * @hibernate.property column="GROUPNAME" length="100"
 	 * @return
-
 	 */
-	@Column (name="GROUPNAME", length=100, nullable=true)
 	public String getGroupName()
 	{
 		return groupName;
@@ -79,7 +64,6 @@ public class Site implements Serializable, Comparable<Site>
 	 * @return
 
 	 */
-	@Column (name="name", nullable=false)
 	public String getName()
 	{
 		return name;
@@ -92,9 +76,7 @@ public class Site implements Serializable, Comparable<Site>
 	/**
 	 * @hibernate.property column="type" length="15" not-null="true"
 	 * @return
-
 	 */
-	@Column (name="type", length=15, nullable=false)
 	public String getType()
 	{
 		return type;
@@ -108,7 +90,6 @@ public class Site implements Serializable, Comparable<Site>
 	 * @hibernate.property column="vaSiteId" length="8" not-null="true"
 	 * @return
 	 */
-	@Column (name="vaSiteId", length=8, nullable=false)
 	public String getVaSiteId()
 	{
 		return vaSiteId;
@@ -122,7 +103,6 @@ public class Site implements Serializable, Comparable<Site>
 	 * @hibernate.property column="messageType" length="1" not-null="true"
 	 * @return
 	 */
-	@Column (name="messageType", length=1, nullable=false)
 	public String getMessageType()
 	{
 		return messageType;
