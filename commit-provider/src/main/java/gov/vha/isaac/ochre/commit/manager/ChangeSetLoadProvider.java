@@ -45,6 +45,7 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
+import gov.vha.isaac.ochre.api.util.metainf.MetaInfReader;
 import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 
@@ -70,6 +71,7 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 	private static Optional<Path> databasePath;
 	private static final String CHANGESETS = "changesets";
 	private static final String CHANGESETS_ID = "changesetId.txt";
+	private static final String MAVEN_ARTIFACT_IDENTITY = "dbMavenArtifactIdentity.txt";
 	private Path changesetPath;
 	private ConcurrentMap<String, Boolean> processedChangesets;
 
@@ -112,6 +114,20 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 				{
 					LOG.warn("The " + CHANGESETS_ID + " file does not contain a valid UUID!", e);
 				}
+			}
+			
+			try
+			{
+				Path mavenMetadataIdentityPath = changesetPath.resolve(MAVEN_ARTIFACT_IDENTITY);
+				if (!mavenMetadataIdentityPath.toFile().exists())
+				{
+					//write out this file as a debugging aid - when browsing git, can easily go from a changeset repo back to the maven artifact of the db
+					Files.write(mavenMetadataIdentityPath, MetaInfReader.readDbMetadata().toString().getBytes());
+				}
+			}
+			catch (Exception e)
+			{
+				LOG.error("Error writing maven artifact identity file", e);
 			}
 
 			UUID sememeDbId = readSememeDbId();
