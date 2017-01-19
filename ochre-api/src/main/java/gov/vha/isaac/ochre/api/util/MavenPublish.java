@@ -3,7 +3,7 @@
  *
  * This is a work of the U.S. Government and is not subject to copyright
  * protection in the United States. Foreign copyrights may apply.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,8 +31,10 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Base64;
 import java.util.concurrent.ExecutionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -53,10 +55,10 @@ public class MavenPublish extends Task<Integer>
 	File[] dataFiles_;
 	String url_;
 	String username_;
-	String password_;
-	
-	public MavenPublish(String groupId, String artifactId, String version, File pomFile, 
-			File[] dataFiles, String url, String username, String password) throws Exception
+	String psswrd_;
+
+	public MavenPublish(String groupId, String artifactId, String version, File pomFile,
+			File[] dataFiles, String url, String username, String psswrd) throws Exception
 	{
 		groupId_ = groupId;
 		artifactId_ = artifactId;
@@ -65,13 +67,13 @@ public class MavenPublish extends Task<Integer>
 		dataFiles_ = dataFiles;
 		url_ = url;
 		username_ = username;
-		password_ = password;
+		psswrd_ = psswrd;
 	}
 
 	private void writeChecksumFile(File file, String type) throws IOException, InterruptedException, ExecutionException
 	{
 		updateMessage("Calculating Checksum for " + file.getName());
-		
+
 		Task<String> gen =  ChecksumGenerator.calculateChecksum(type, file);
 		gen.messageProperty().addListener(new ChangeListener<String>()
 		{
@@ -89,13 +91,13 @@ public class MavenPublish extends Task<Integer>
 				updateProgress(gen.getWorkDone(), gen.getTotalWork());
 			}
 		});
-		
+
 		WorkExecutors.get().getExecutor().execute(gen);
 		String checksum = gen.get();
-		
+
 		updateMessage("Writing checksum file");
-		
-		Files.write(new File(file.getParentFile(), file.getName() + "." + type.toLowerCase()).toPath(), 
+
+		Files.write(new File(file.getParentFile(), file.getName() + "." + type.toLowerCase()).toPath(),
 				(checksum + "  " + file.getName()).getBytes(), StandardOpenOption.WRITE,
 				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		updateMessage("");
@@ -109,14 +111,14 @@ public class MavenPublish extends Task<Integer>
 				+ "/" + (targetFileName == null ? file.getName() : targetFileName));
 
 		log.info("Uploading " + file.getAbsolutePath() + " to " + url.toString());
-		
+
 		updateMessage("Uploading " + file.getName());
 		updateProgress(0, file.length());
 
 		HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
-		if (username_.length() > 0 || password_.length() > 0)
+		if (username_.length() > 0 || psswrd_.length() > 0)
 		{
-			String encoded = Base64.getEncoder().encodeToString((username_ + ":" + password_).getBytes());
+			String encoded = Base64.getEncoder().encodeToString((username_ + ":" + psswrd_).getBytes());
 			httpCon.setRequestProperty("Authorization", "Basic " + encoded);
 		}
 		httpCon.setDoOutput(true);
@@ -125,13 +127,13 @@ public class MavenPublish extends Task<Integer>
 		httpCon.setReadTimeout(60 * 60 * 1000);
 		long fileLength = file.length();
 		httpCon.setFixedLengthStreamingMode(fileLength);
-		
+
 		byte[] buf = new byte[8192];
 		long loopCount = 0;
 		int read = 0;
-		
+
 		try (OutputStream out = httpCon.getOutputStream();
-			FileInputStream fis = new FileInputStream(file);)
+				FileInputStream fis = new FileInputStream(file);)
 		{
 			while ((read = fis.read(buf, 0, buf.length)) > 0)
 			{
@@ -145,9 +147,9 @@ public class MavenPublish extends Task<Integer>
 			}
 			out.flush();
 		}
-		
+
 		StringBuilder sb = new StringBuilder();
-		
+
 		try (InputStream is = httpCon.getInputStream();)
 		{
 			read = 0;
@@ -162,7 +164,7 @@ public class MavenPublish extends Task<Integer>
 				}
 			}
 		}
-		
+
 		httpCon.disconnect();
 		if (sb.toString().trim().length() > 0)
 		{
@@ -184,13 +186,13 @@ public class MavenPublish extends Task<Integer>
 		updateMessage("Creating Checksum Files");
 		writeChecksumFile(pomFile_, "MD5");
 		writeChecksumFile(pomFile_, "SHA1");
-		
+
 		for (File f : dataFiles_)
 		{
 			writeChecksumFile(f, "MD5");
 			writeChecksumFile(f, "SHA1");
 		}
-		
+
 		updateMessage("Uploading data files");
 		for (File f : dataFiles_)
 		{
@@ -199,12 +201,12 @@ public class MavenPublish extends Task<Integer>
 			putFile(new File(f.getParentFile(), f.getName() + ".md5"), null);
 			putFile(new File(f.getParentFile(), f.getName() + ".sha1"), null);
 		}
-		
+
 		updateMessage("Uploading pom files");
 		putFile(pomFile_, "pom");
 		putFile(new File(pomFile_.getParentFile(), pomFile_.getName() + ".md5"), "pom.md5");
 		putFile(new File(pomFile_.getParentFile(), pomFile_.getName() + ".sha1"), "pom.sha1");
-		
+
 		updateMessage("Publish Complete");
 		updateProgress(10, 10);
 		return 0;
