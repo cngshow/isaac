@@ -98,4 +98,9 @@ public interface ConceptService extends DatabaseServices {
     Stream<ConceptChronology<? extends ConceptVersion<?>>> getConceptChronologyStream(ConceptSequenceSet conceptSequences);
     Stream<ConceptChronology<? extends ConceptVersion<?>>> getParallelConceptChronologyStream(ConceptSequenceSet conceptSequences);
     
+    /**
+     * Return the UUID that was generated for this datastore when the concept store was first created.  
+     * @return
+     */
+    public UUID getDataStoreId();
 }

@@ -3,6 +3,14 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/01/?? - 3.32 - PENDING
+    * Added configuration options for remote service configs (like git)
+    * Tweaked the way that DBIDs were created / stored, added the IDs to a sememe on root, and to the changeset data files.
+    * Fix bugs with shutdown sequence, which would crop up during a corrupt DB recovery
+    * fix a bug with the lucene index config, where it cached a reference to the data store location which it shouldn't have
+    * Added the git syncronization service.  If the configuration service is configured with valid GIT details, changeset files
+        will be automatically synced up and down from a database specific git repository. 
+
 * 2017/01/17 - 3.31
     * Workflow changes to align with web, correct time conversion.
     * Refactoring the gitblit repo create code.

@@ -16,34 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.isaac.sync.git;
-
-import java.io.IOException;
-import gov.va.isaac.sync.git.gitblit.GitBlitUtils;
+package gov.vha.isaac.ochre.api;
 
 /**
- * {@link GitBlitTests}
+ * {@link RemoteServiceInfo}
+ * 
+ * A simple interface for returning service information about external services like GIT.
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a> 
  */
-public class GitBlitTests
+public interface RemoteServiceInfo
 {
-	/**
-	 * @param args
-	 * @throws IOException 
-	 */
-	public static void main(String[] args) throws IOException
-	{
-		for (String s : GitBlitUtils.readRepositories("https://vadev.mantech.com:4848/git/", "", "".toCharArray()))
-		{
-			System.out.println(s);
-		}
-		
-		GitBlitUtils.createRepository("https://vadev.mantech.com:4848/git/","db-silly","testing db creation","", "".toCharArray(), true);
-		
-		for (String s : GitBlitUtils.readRepositories("https://vadev.mantech.com:4848/git/", "", "".toCharArray()))
-		{
-			System.out.println(s);
-		}
-	}
+	public String getURL();
+	
+	public String getUsername();
+	
+	public char[] getPassword();
 }

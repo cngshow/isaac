@@ -35,6 +35,12 @@ public interface DataWriterService extends AutoCloseable {
      * @throws UnsupportedOperationException - when method not supported at all, or for reconfiguration
      */
     public void configure(Path path) throws IOException, UnsupportedOperationException;
+    
+    /**
+     * Return the path the writer is currently configured to
+     * @return
+     */
+    public Path getCurrentPath();
 
     /**
      * This does not throw an IOException, rather, they are possible, but mapped to runtime exceptions for stream convenience.

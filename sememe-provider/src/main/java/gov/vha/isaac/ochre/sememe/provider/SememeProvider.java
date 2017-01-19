@@ -46,7 +46,6 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
@@ -88,7 +87,7 @@ public class SememeProvider implements SememeService {
             sememePath = LookupService.getService(ConfigurationService.class)
                 .getChronicleFolderPath().resolve("sememe");
             if (!Files.exists(sememePath)) {
-            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+                databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             }
 
             loadRequired.set(!Files.exists(sememePath));
@@ -132,7 +131,7 @@ public class SememeProvider implements SememeService {
                 }
 
                 if (isPopulated) {
-                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+                    databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
 
@@ -424,7 +423,7 @@ public class SememeProvider implements SememeService {
 
     @Override
     public DatabaseValidity getDatabaseValidityStatus() {
-    	return databaseValidity;
+        return databaseValidity;
     }
 
     @Override

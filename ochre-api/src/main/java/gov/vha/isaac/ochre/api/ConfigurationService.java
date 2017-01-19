@@ -290,14 +290,14 @@ public interface ConfigurationService {
     /**
      * There are some cases where validators and such cannot be properly executed if we are in bootstrap mode - building 
      * the system for the first time.  The default implementation of this returns false.
-     * 
-     * Note that this is a setter only.  If you start in dbBuildMode, the mode cannot be turned off later.
      */
     public default boolean inBootstrapMode()
     {
         return false;
     }
-    
+    /**
+     * See {@link #inBootstrapMode()}
+     */
     public default void setBootstrapMode()
     {
         throw new UnsupportedOperationException();
@@ -306,14 +306,36 @@ public interface ConfigurationService {
     /**
      * When building a DB, we don't want to index per commit, or write changeset files, among other things.
      * 
-     * Note that this is a setter only.  If you start in dbBuildMode, the mode cannot be turned off later.
+     * Note that this mode can be enabled-only only.  If you enable dbBuildMode, the mode cannot be turned off later.
      */
     public default boolean inDBBuildMode()
     {
         return false;
     }
     
+    /**
+     * See {@link #inDBBuildMode()}
+     */
     public default void setDBBuildMode()
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
+     * Return the known (if any) details to utilize to make a GIT server connection.
+     * The returned URL should point to the root of the git server - not to a particular repository. 
+     * @return
+     */
+    public default Optional<RemoteServiceInfo> getGitConfiguration()
+    {
+        return Optional.empty();
+    }
+    
+    /**
+     * Specify the details to be returned by {@link #getGitConfiguration()}.  This method is optional, and may not be supported
+     * (in which case, it throws an {@link UnsupportedOperationException})
+     */
+    public default void setGitConfiguration(RemoteServiceInfo rsi)
     {
         throw new UnsupportedOperationException();
     }

@@ -51,7 +51,7 @@ public class JsonDataWriterService implements DataWriterService
 	
 	private Semaphore pauseBlock = new Semaphore(1);
 	
-	Path dataPath;
+	private Path dataPath;
 	
 	private JsonDataWriterService() throws IOException
 	{
@@ -90,6 +90,12 @@ public class JsonDataWriterService implements DataWriterService
 		json_.addWriter(ConceptChronology.class, new Writers.ConceptChronologyJsonWriter());
 		json_.addWriter(SememeChronology.class, new Writers.SememeChronologyJsonWriter());
 		logger.info("json changeset writer has been configured to write to " + dataPath.toAbsolutePath().toString());
+	}
+	
+	@Override
+	public Path getCurrentPath()
+	{
+		return dataPath;
 	}
 
 	@Override
@@ -168,12 +174,15 @@ public class JsonDataWriterService implements DataWriterService
 	@Override
 	public void resume() throws IOException
 	{
-		if (json_ != null)
+		if (pauseBlock.availablePermits() == 1)
 		{
-			logger.warn("asked to resume but not paused!");
+			logger.warn("asked to resume, but not paused?");
 			return;
 		}
-		configure(dataPath);
+		if (json_ == null)
+		{
+			configure(dataPath);
+		}
 		pauseBlock.release();
 		logger.debug("json writer resumed");
 	}

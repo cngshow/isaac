@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.31</version>
+    <version>3.32</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -252,7 +252,7 @@
             <dependency>
                 <groupId>com.cedarsoftware</groupId>
                 <artifactId>json-io</artifactId>
-                <version>4.6.0</version>
+                <version>4.9.6</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

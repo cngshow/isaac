@@ -2,9 +2,6 @@ package gov.va.isaac.sync.git.gitblit;
 
 import java.io.IOException;
 
-/**
-
- */
 public class GitBlitException extends IOException {
 
 	private static final long serialVersionUID = 1L;

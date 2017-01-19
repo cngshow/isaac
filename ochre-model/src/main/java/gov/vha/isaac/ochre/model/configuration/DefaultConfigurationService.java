@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.model.configuration;
 
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.RemoteServiceInfo;
 import gov.vha.isaac.ochre.api.constants.Constants;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableEditCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableLanguageCoordinate;
@@ -63,6 +64,8 @@ public class DefaultConfigurationService implements ConfigurationService {
     private boolean bootstrapMode = false;
     
     private boolean dbBuildMode = false;
+    
+    private RemoteServiceInfo gitConfigInfo = null;
 
     private DefaultConfigurationService() {
         //only for HK2
@@ -227,5 +230,15 @@ public class DefaultConfigurationService implements ConfigurationService {
     @Override
     public void setDBBuildMode() {
         dbBuildMode = true;
+    }
+
+    @Override
+    public Optional<RemoteServiceInfo> getGitConfiguration() {
+        return Optional.ofNullable(gitConfigInfo);
+    }
+
+    @Override
+    public void setGitConfiguration(RemoteServiceInfo gitConfiguration) {
+        this.gitConfigInfo = gitConfiguration;
     }
 }

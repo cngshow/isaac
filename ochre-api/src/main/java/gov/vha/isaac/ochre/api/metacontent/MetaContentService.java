@@ -68,7 +68,7 @@ public interface MetaContentService {
 	 * <Long,Integer>openStore("myStore").get(54l)
 	 *  
 	 *  Data added to the ConcurrentMap is automatically flushed to disk, and is safe after the flush interval, or as long as {@link #close()} is 
-	 *  called prior to JVM exit 
+	 *  called prior to JVM exit.  Note that it is typically not the job of the caller of this method to call close on the overall MetaContentService.
 	 *  
 	 *  Any object can be utilized for the Key and Value - however, for types outside of the basic types, java serialization will be utilized, 
 	 *  which is quite inefficient.  For storing large objects, it is recommended you make your Value a byte[], and handle the serialization 

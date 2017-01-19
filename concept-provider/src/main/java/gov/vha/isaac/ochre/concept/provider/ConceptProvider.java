@@ -22,7 +22,6 @@ import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -69,43 +68,64 @@ public class ConceptProvider implements ConceptService {
 
     private static final Logger LOG = LogManager.getLogger();
     public static final String CRADLE_PROPERTIES_FILE_NAME = "cradle.properties";
+    public static final String CRADLE_ID_FILE_NAME = "dbid.txt";
     public static final String CRADLE_DATA_VERSION = "1.5";
     public static final String CRADLE_DATA_VERSION_PROPERTY = "cradle.data.version";
 
     ConceptActiveService conceptActiveService;
 
     final CasSequenceObjectMap<ConceptChronologyImpl> conceptMap;
-    private AtomicBoolean loadRequired = new AtomicBoolean();
+    private AtomicBoolean loadRequired = new AtomicBoolean(true);
 
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     private Path ochreConceptPath;
+    private UUID dbId = null;
 
     public ConceptProvider() throws IOException, NumberFormatException, ParseException {
         try {
             Path propertiesPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_PROPERTIES_FILE_NAME);
+            Path dbIdPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve(CRADLE_ID_FILE_NAME);
             Path folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath().resolve("ochre-concepts");
             Files.createDirectories(folderPath);
             LOG.info("Setting up OCHRE ConceptProvider at " + folderPath.toAbsolutePath());
             Properties cradleProps = new Properties();
             if (propertiesPath.toFile().exists()) {
+                loadRequired.set(true);
                 try (FileInputStream in = new FileInputStream(propertiesPath.toFile())) {
                     cradleProps.load(in);
                 }
                 if (!cradleProps.getProperty(CRADLE_DATA_VERSION_PROPERTY).equals(CRADLE_DATA_VERSION)) {
                     throw new IllegalStateException("Unsupported data version: " + cradleProps);
                 }
+                if (dbIdPath.toFile().exists()) {
+                    try {
+                        dbId = UUID.fromString(new String(Files.readAllBytes(dbIdPath)));
+                    }
+                    catch (Exception e) {
+                        throw new IllegalStateException("The " + CRADLE_ID_FILE_NAME + " file does not contain a valid UUID!", e);
+                    }
+                }
+                else {
+                    LOG.warn("The " + CRADLE_ID_FILE_NAME + " file is missing from the database folder - creating a new ID");
+                    dbId = UUID.randomUUID();
+                    Files.write(dbIdPath, dbId.toString().getBytes());
+                }
+                LOG.info("Reading an existing concept store at " + folderPath.toAbsolutePath() + " with the id of '" + dbId.toString() + "'");
             } else {
-                loadRequired.set(true);
+                loadRequired.set(false);
                 cradleProps.put(CRADLE_DATA_VERSION_PROPERTY, CRADLE_DATA_VERSION);
                 try (FileOutputStream out = new FileOutputStream(propertiesPath.toFile())) {
                     cradleProps.store(out, CRADLE_DATA_VERSION);
                 }
+                dbId = UUID.randomUUID();
+                Files.write(dbIdPath, dbId.toString().getBytes());
+                LOG.info("Creating a new (empty) concept store at " + folderPath.toAbsolutePath() + " with the id of ]" + dbId.toString() + "'");
             }
 
             ochreConceptPath = folderPath.resolve("ochre");
 
             if (!Files.exists(ochreConceptPath)) {
-            	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+                databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
             }
 
             conceptMap = new CasSequenceObjectMap<>(new ConceptSerializer(),
@@ -120,11 +140,11 @@ public class ConceptProvider implements ConceptService {
     private void startMe() {
         LOG.info("Starting OCHRE ConceptProvider post-construct");
         conceptActiveService = LookupService.getService(ConceptActiveService.class);
-        if (!loadRequired.compareAndSet(true, false)) {
+        if (loadRequired.compareAndSet(true, false)) {
 
             LOG.info("Reading existing OCHRE concept-map.");
             if (conceptMap.initialize()) {
-            	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+                databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
             }
             
             LOG.info("Finished OCHRE read.");
@@ -341,11 +361,16 @@ public class ConceptProvider implements ConceptService {
 
     @Override
     public DatabaseValidity getDatabaseValidityStatus() {
-    	return databaseValidity;
+        return databaseValidity;
     }
 
     @Override
     public Path getDatabaseFolder() {
         return ochreConceptPath; 
+    }
+
+    @Override
+    public UUID getDataStoreId() {
+        return dbId;
     }
 }

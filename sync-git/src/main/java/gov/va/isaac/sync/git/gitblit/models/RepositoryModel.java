@@ -24,9 +24,9 @@ public class RepositoryModel implements Serializable, Comparable<RepositoryModel
 	public String description;
 	public List<String> owners;
 	public Date lastChange;
-	public AccessRestrictionType accessRestriction;
-	public AuthorizationControl authorizationControl;
-	public FederationStrategy federationStrategy;
+	public String accessRestriction;
+	public String authorizationControl;
+	public String federationStrategy;
 	public List<String> federationSets;
 	public boolean isBare;
 	public String projectPath;
@@ -39,10 +39,10 @@ public class RepositoryModel implements Serializable, Comparable<RepositoryModel
 		this.name = name;
 		this.description = description;
 		this.lastChange = lastchange;
-		this.accessRestriction = AccessRestrictionType.NONE;
-		this.authorizationControl = AuthorizationControl.NAMED;
+		this.accessRestriction = AccessRestrictionType.VIEW.toString();
+		this.authorizationControl = AuthorizationControl.NAMED.toString();
 		this.federationSets = new ArrayList<String>();
-		this.federationStrategy = FederationStrategy.FEDERATE_THIS;
+		this.federationStrategy = FederationStrategy.FEDERATE_THIS.toString();
 		this.projectPath = StringUtils.getFirstPathElement(name);
 		this.owners = new ArrayList<String>();
 		this.isBare = true;
