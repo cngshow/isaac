@@ -1,5 +1,8 @@
 package gov.vha.isaac.ochre.mapping.constants;
 
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
@@ -215,7 +218,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
-		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
+		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
 				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER,
 				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE, 
 				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS};
