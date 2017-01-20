@@ -57,6 +57,9 @@ public class HL7Sender extends Task<Integer>
 
 	private static boolean useInterfaceEngine;
 
+	private String hl7UpdateMessage_;
+	private List<PublishMessageDTO> siteList_;
+
 	/**
 	 * Send the HL7 Message to the sites in the site list.  This method detects
 	 * the type of message and calls the correct private method to actually send
@@ -66,7 +69,14 @@ public class HL7Sender extends Task<Integer>
 	 * @return List of message IDs
 	 * @throws STSException
 	 */
-	public static void send(String hl7UpdateMessage, List<PublishMessageDTO> siteList)
+
+	public HL7Sender (String hl7UpdateMessage, List<PublishMessageDTO> siteList)
+	{
+		hl7UpdateMessage_ = hl7UpdateMessage;
+		siteList_ = siteList;
+	}
+
+	private void send(String hl7UpdateMessage, List<PublishMessageDTO> siteList)
 			throws STSException
 	{
 		useInterfaceEngine = getInterfaceEngineUsage();
@@ -89,6 +99,7 @@ public class HL7Sender extends Task<Integer>
 		else
 		{
 			log.error("Unknown message type.  Message header: {} ", MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
+			System.out.println("Unknown message type.  Message header: " + MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
 			throw new STSException("Unkown message type."
 					+ MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
 		}
@@ -299,32 +310,11 @@ public class HL7Sender extends Task<Integer>
 	{
 		updateProgress(-1, 0);
 
-		//		updateMessage("Creating Checksum Files");
-		//		writeChecksumFile(pomFile_, "MD5");
-		//		writeChecksumFile(pomFile_, "SHA1");
-		//
-		//		for (File f : dataFiles_)
-		//		{
-		//			writeChecksumFile(f, "MD5");
-		//			writeChecksumFile(f, "SHA1");
-		//		}
-		//
-		//		updateMessage("Uploading data files");
-		//		for (File f : dataFiles_)
-		//		{
-		//			//TODO check maven upload order
-		//			putFile(f, null);
-		//			putFile(new File(f.getParentFile(), f.getName() + ".md5"), null);
-		//			putFile(new File(f.getParentFile(), f.getName() + ".sha1"), null);
-		//		}
-		//
-		//		updateMessage("Uploading pom files");
-		//		putFile(pomFile_, "pom");
-		//		putFile(new File(pomFile_.getParentFile(), pomFile_.getName() + ".md5"), "pom.md5");
-		//		putFile(new File(pomFile_.getParentFile(), pomFile_.getName() + ".sha1"), "pom.sha1");
-		//
-		//		updateMessage("Publish Complete");
-		//		updateProgress(10, 10);
+		updateMessage("Send Begin");
+		send(hl7UpdateMessage_, siteList_);
+		updateMessage("Send Complete");
+
+		updateProgress(10, 10);
 		return 0;
 	}
 }
