@@ -36,6 +36,7 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.RemoteServiceInfo;
 import gov.vha.isaac.ochre.api.commit.ChangeSetWriterService;
 import gov.vha.isaac.ochre.api.sync.MergeFailOption;
+import gov.vha.isaac.ochre.api.util.StringUtils;
 
 /**
  * 
@@ -67,7 +68,7 @@ public class ChangesetSyncService {
 		
 		Optional<RemoteServiceInfo> gitConfig = Get.configurationService().getGitConfiguration();
 		
-		if (!gitConfig.isPresent())
+		if (!gitConfig.isPresent() || StringUtils.isBlank(gitConfig.get().getURL()))
 		{
 			LOG.info("No git configuration is available - Changeset sync service will not be started.");
 			return;
