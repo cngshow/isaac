@@ -103,7 +103,7 @@ public class ChangesetSyncService {
 				csw.pause();
 				
 				LOG.debug("Attempting to link and fetch from remote GIT repository");
-				String targetUrl = GitBlitUtils.adjustUrlForGitBlit(gitConfig.get().getURL()) + "r/" + changeSetRepo;
+				String targetUrl = GitBlitUtils.adjustBareUrlForGitBlit(gitConfig.get().getURL()) + "r/" + changeSetRepo;
 				ssg.linkAndFetchFromRemote(targetUrl, gitConfig.get().getUsername(), gitConfig.get().getPassword());
 				
 				LOG.debug("Reading any newly arrived changeset files");

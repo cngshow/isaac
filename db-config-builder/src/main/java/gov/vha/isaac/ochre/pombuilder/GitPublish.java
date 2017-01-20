@@ -19,11 +19,14 @@
 package gov.vha.isaac.ochre.pombuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.isaac.sync.git.SyncServiceGIT;
+import gov.va.isaac.sync.git.gitblit.GitBlitUtils;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 
 /**
@@ -42,6 +45,7 @@ public class GitPublish
 	 */
 	public static void publish(File folderWithProject, String gitRepository, String gitUserName, char[] gitPassword, String tagToCreate) throws Exception
 	{
+		createRepositoryIfNecessary(gitRepository, gitUserName, gitPassword);
 		SyncServiceGIT svc = new SyncServiceGIT();
 		svc.setReadmeFileContent("ISAAC Dataprocessing Configuration Storage\n====\nIt is highly recommended you do not manually interact with this repository.");
 		svc.setGitIgnoreContent("");
@@ -50,7 +54,7 @@ public class GitPublish
 		svc.setRootLocation(folderWithProject);
 		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
 		svc.branch(folderWithProject.getName());
-		//linkAndFetch creates these in master, but I don't want them in my branch.
+		//linkAndFetch creates these in master, but I don't want them in my branch (if they didn't exist before I linked / fetched).
 		if (!ignoreExists)
 		{
 			new File(folderWithProject, ".gitignore").delete();
@@ -67,6 +71,7 @@ public class GitPublish
 	
 	public static ArrayList<String> readTags(String gitRepository, String gitUserName, char[] gitPassword) throws Exception
 	{
+		createRepositoryIfNecessary(gitRepository, gitUserName, gitPassword);
 		SyncServiceGIT svc = new SyncServiceGIT();
 		
 		File tempFolder = Files.createTempDirectory("tagRead").toFile();
@@ -83,6 +88,25 @@ public class GitPublish
 			LOG.error("Problem cleaning up temp folder " + tempFolder, e);
 		}
 		return temp;
+	}
+	
+	public static void createRepositoryIfNecessary(String gitRepository, String gitUserName, char[] gitPassword) throws IOException
+	{
+		String baseUrl = GitBlitUtils.parseBaseRemoteAddress(gitRepository);
+		
+		Set<String> repos = GitBlitUtils.readRepositories(baseUrl, gitUserName, gitPassword);
+		
+		String repoName = gitRepository.substring(gitRepository.lastIndexOf("/") + 1);
+		
+		if (!repos.contains(repoName))
+		{
+			LOG.info("Requested repository '" + gitRepository + "' does not exist - creating");
+			GitBlitUtils.createRepository(baseUrl, repoName, "Configuration Storage Repository", gitUserName, gitPassword, true);
+		}
+		else
+		{
+			LOG.info("Requested repository '" + gitRepository + "' exists");
+		}
 	}
 	
 	/**

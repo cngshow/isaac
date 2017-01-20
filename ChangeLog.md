@@ -4,7 +4,9 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/01/?? - 3.33 - PENDING
-    *
+    * Make the GitPublish methods used by the source upload / convert / db builder portions of prisme automatically create the 
+        remote git repository if it doesn't exist.
+    
 
 * 2017/01/19 - 3.32
     * Added configuration options for remote service configs (like git)
