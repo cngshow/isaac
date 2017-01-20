@@ -39,20 +39,50 @@ public class GitPublish
 	private static final Logger LOG = LogManager.getLogger();
 	
 	/**
+	 * Take in a URL such as https://vadev.mantech.com:4848/git/ or https://vadev.mantech.com:4848/git and turn it into
+	 * https://vadev.mantech.com:4848/git/r/contentConfigurations.git
+	 * 
+	 * If a full repo URL is passed in, such as https://vadev.mantech.com:4848/git/r/contentConfigurations.git, this does no processing
+	 * and returns the passed in value.
+	 * 
+	 * @param gitblitBaseURL a URL like https://vadev.mantech.com:4848/git/
+	 * @return the full git URL to a contentConfigurations repository.
+	 * @throws IOException 
+	 */
+	public static String constructChangesetRepositoryURL(String gitblitBaseURL) throws IOException
+	{
+		if (gitblitBaseURL.matches("(?i)https?:\\/\\/[a-zA-Z0-9\\.\\-_]+:?\\d*\\/[a-zA-Z0-9\\-_]+\\/?$"))
+		{
+			return gitblitBaseURL + (gitblitBaseURL.endsWith("/") ? "" : "/") + "r/contentConfigurations.git";
+		}
+		else if (gitblitBaseURL.matches("(?i)https?:\\/\\/[a-zA-Z0-9\\.\\-_]+:?\\d*\\/[a-zA-Z0-9\\-_]+\\/r\\/[a-zA-Z0-9\\-_]+\\.git$"))
+		{
+			return gitblitBaseURL;
+		}
+		else
+		{
+			throw new IOException("Unexpected gitblit server pattern");
+		}
+	}
+	
+	/**
 	 * This routine will check out the project from the repository (which should have an empty master branch) - then locally 
 	 * commit the changes to master, then tag it - then push the tag (but not the changes to master) so the upstream repo only 
 	 * receives the tag. 
+	 * 
+	 * Calls {@link #constructChangesetRepositoryURL(String) to adjust the URL as necessary
 	 */
 	public static void publish(File folderWithProject, String gitRepository, String gitUserName, char[] gitPassword, String tagToCreate) throws Exception
 	{
-		createRepositoryIfNecessary(gitRepository, gitUserName, gitPassword);
+		String correctedURL = constructChangesetRepositoryURL(gitRepository);
+		createRepositoryIfNecessary(correctedURL, gitUserName, gitPassword);
 		SyncServiceGIT svc = new SyncServiceGIT();
 		svc.setReadmeFileContent("ISAAC Dataprocessing Configuration Storage\n====\nIt is highly recommended you do not manually interact with this repository.");
 		svc.setGitIgnoreContent("");
 		boolean ignoreExists = new File(folderWithProject, ".gitignore").exists();
 		boolean readmeExists = new File(folderWithProject, "README.md").exists();
 		svc.setRootLocation(folderWithProject);
-		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
+		svc.linkAndFetchFromRemote(correctedURL, gitUserName, gitPassword);
 		svc.branch(folderWithProject.getName());
 		//linkAndFetch creates these in master, but I don't want them in my branch (if they didn't exist before I linked / fetched).
 		if (!ignoreExists)
@@ -69,15 +99,24 @@ public class GitPublish
 		//Notice, I do NOT push the updates to the branch
 	}
 	
+	/**
+	 * Calls {@link #constructChangesetRepositoryURL(String) to adjust the URL as necessary
+	 * @param gitRepository
+	 * @param gitUserName
+	 * @param gitPassword
+	 * @return
+	 * @throws Exception
+	 */
 	public static ArrayList<String> readTags(String gitRepository, String gitUserName, char[] gitPassword) throws Exception
 	{
-		createRepositoryIfNecessary(gitRepository, gitUserName, gitPassword);
+		String correctedURL = constructChangesetRepositoryURL(gitRepository);
+		createRepositoryIfNecessary(correctedURL, gitUserName, gitPassword);
 		SyncServiceGIT svc = new SyncServiceGIT();
 		
 		File tempFolder = Files.createTempDirectory("tagRead").toFile();
 		
 		svc.setRootLocation(tempFolder);
-		svc.linkAndFetchFromRemote(gitRepository, gitUserName, gitPassword);
+		svc.linkAndFetchFromRemote(correctedURL, gitUserName, gitPassword);
 		ArrayList<String> temp = svc.readTags(gitUserName, gitPassword);
 		try
 		{
