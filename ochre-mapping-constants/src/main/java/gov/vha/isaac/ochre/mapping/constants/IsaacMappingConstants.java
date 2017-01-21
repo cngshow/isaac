@@ -1,8 +1,5 @@
 package gov.vha.isaac.ochre.mapping.constants;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import javax.inject.Singleton;
 import org.jvnet.hk2.annotations.Service;
@@ -63,7 +60,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			UUID.fromString("4e627b9c-cecb-5563-82fc-cb0ee25113b1"),
 			"Stores the mapping field ids in an array corresponding to an ordered displayable row",
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
-			
+
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE = new MetadataConceptConstant("mapping purpose", 
 		UUID.fromString("e5de9548-35b9-5e3b-9968-fd9c0a665b51"),
 		"Stores the editor stated purpose of the mapping set",
