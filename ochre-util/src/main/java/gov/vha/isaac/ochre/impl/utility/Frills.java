@@ -1562,4 +1562,18 @@ public class Frills implements DynamicSememeColumnUtility {
 	{
 		return DynamicSememeUsageDescriptionImpl.isDynamicSememe(conceptSequence);
 	}
+
+	public static Optional<String> getDynamicFieldStringValue(UUID fieldConceptSpecUuid, int componentNid, StampCoordinate stamp) {
+		try {
+			int fieldConceptSpecSeq = Get.identifierService().getConceptSequenceForUuids(fieldConceptSpecUuid);
+			Optional<LatestVersion<StringSememeImpl>> sememe = Get.sememeService().getSnapshot(StringSememeImpl.class, stamp)
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid, fieldConceptSpecSeq).findFirst();
+			if (sememe.isPresent()) {
+				return Optional.of(sememe.get().value().getString()); // TODO handle contradictions
+			}
+		} catch (Exception e) {
+			log.error("Unexpected error trying to find assemblage " + fieldConceptSpecUuid + " value for concept " + componentNid, e);
+		}
+		return Optional.empty();
+	}
 }
