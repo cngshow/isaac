@@ -117,7 +117,7 @@ public class SrcUploadCreator
 					HashMap<String, String> pomSwaps = new HashMap<>();
 					
 					pomSwaps.put("#VERSION#", version);
-					pomSwaps.put("#SCM_URL#", gitRepositoryURL);
+					pomSwaps.put("#SCM_URL#", GitPublish.constructChangesetRepositoryURL(gitRepositoryURL));
 					if (uploadType.getArtifactId().contains("*") && StringUtils.isBlank(extensionName))
 					{
 						throw new Exception("ExtensionName is required when the upload type artifact id contains a wildcard");
