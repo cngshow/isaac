@@ -48,7 +48,7 @@ import javafx.concurrent.Task;
 
 public class HL7Sender extends Task<Integer>
 {
-	private static Logger log = LogManager.getLogger(HL7Sender.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(HL7Sender.class.getPackage().getName());
 
 	private static MessageDispatcher dispatcher = new BusinessWareMessageDispatcher();
 
@@ -76,7 +76,7 @@ public class HL7Sender extends Task<Integer>
 		siteList_ = siteList;
 	}
 
-	private void send(String hl7UpdateMessage, List<PublishMessageDTO> siteList)
+	public void send(String hl7UpdateMessage, List<PublishMessageDTO> siteList)
 			throws STSException
 	{
 		useInterfaceEngine = getInterfaceEngineUsage();
@@ -98,8 +98,7 @@ public class HL7Sender extends Task<Integer>
 		}
 		else
 		{
-			log.error("Unknown message type.  Message header: {} ", MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
-			System.out.println("Unknown message type.  Message header: " + MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
+			LOG.error("Unknown message type.  Message header: {} ", MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
 			throw new STSException("Unkown message type."
 					+ MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage));
 		}
@@ -160,18 +159,18 @@ public class HL7Sender extends Task<Integer>
 		}
 		catch (DataTypeException e)
 		{
-			log.error("Exception when setting topic in message.", e);
+			LOG.error("Exception when setting topic in message.", e);
 			throw new STSException("Exception when setting topic in message.", e);
 		}
 		catch(RuntimeException e)
 		{
 			String errorMessage = "Exception when attempting to send the message.  Interface Engine may not be responding.";
-			log.error(errorMessage);
+			LOG.error(errorMessage);
 			throw new STSException(errorMessage, e);
 		}
 		catch (Exception e)
 		{
-			log.error("Exception in finding message type", e);
+			LOG.error("Exception in finding message type", e);
 			throw new STSException("Exception in finding message type", e);
 		}
 	}
@@ -200,16 +199,25 @@ public class HL7Sender extends Task<Integer>
 				// insert the topic and message id
 				MSH msh = message.getMSH();
 				String sendingFacility = ApplicationPropertyReader.getApplicationProperty("msh.sendingFacility.namespaceId");
+				LOG.info("sendingFacility: {}", sendingFacility);
+				
 				msh.getSendingFacility().getNamespaceID().setValue(sendingFacility);
+				LOG.info("getSendingFacility().getNamespaceID().setValue: {}", sendingFacility);
+				
 				msh.getReceivingFacility().getNamespaceID().setValue(publishMessageDTO.getSite().getVaSiteId());
+				LOG.info("getReceivingFacility().getNamespaceID().setValue: {}", publishMessageDTO.getSite().getVaSiteId());
+				
 				msh.getMessageControlID().setValue(((Long)publishMessageDTO.getMessageId()).toString());
+				LOG.info("getMessageControlID().setValue: {}", publishMessageDTO.getMessageId());
 
 				//insert the message type for the topic
 				msh.getProcessingID().getProcessingID().setValue(publishMessageDTO.getSite().getMessageType());
+				LOG.info("getProcessingID().getProcessingID().setValue: {}", publishMessageDTO.getSite().getMessageType());
 
 				// Send the HL7 message
 				if (useInterfaceEngine)
 				{
+					LOG.info("calling dispatcher to send message");
 					dispatcher.send(message);
 				}
 				else
@@ -232,18 +240,18 @@ public class HL7Sender extends Task<Integer>
 		}
 		catch (DataTypeException e)
 		{
-			log.error("Exception in setting topic in message.", e);
+			LOG.error("Exception in setting topic in message.", e);
 			throw new STSException("Exception generating message.", e);
 		}
 		catch(RuntimeException e)
 		{
 			String errorMessage = "Exception when attempting to send the message.  Interface Engine may not be responding.";
-			log.error(errorMessage);
+			LOG.error(errorMessage);
 			throw new STSException(errorMessage, e);
 		}
 		catch (Exception e)
 		{
-			log.error("Exception in finding message type", e);
+			LOG.error("Exception in finding message type", e);
 			throw new STSException("Exception in finding message type", e);
 		}
 	}
@@ -257,7 +265,7 @@ public class HL7Sender extends Task<Integer>
 		deploymentStatus.append("; Parameter useInterfaceEngine is set to '").append(useInterfaceEngine).append("' so a message ");
 		deploymentStatus.append(useInterfaceEngine == true ? "was " : "WAS NOT ");
 		deploymentStatus.append("deployed to ").append( site.getName()).append(".");
-		log.info(deploymentStatus.toString());
+		LOG.info(deploymentStatus.toString());
 
 		int mshBeginIndex = message.indexOf("MSH");
 
@@ -273,14 +281,13 @@ public class HL7Sender extends Task<Integer>
 
 		String messageHeader = message.substring(mshBeginIndex, mshEndIndex);
 
-		log.info("Message header: {}", messageHeader);
+		LOG.info("Message header: {}", messageHeader);
 
-		log.info("Full message: \n{}", message);
+		LOG.info("Full message: \n{}", message);
 	}
 
 	/*
 	 * Determine whether we will be using the Interface Engine when the message is sent.
-	 * @throws ETSBusinessException
 	 * @return boolean
 	 * @throws STSException
 	 */

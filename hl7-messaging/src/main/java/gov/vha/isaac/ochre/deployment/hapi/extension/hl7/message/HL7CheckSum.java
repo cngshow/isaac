@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -27,8 +28,6 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
 public class HL7CheckSum {
@@ -58,35 +57,40 @@ public class HL7CheckSum {
 			{
 				String tag = "";
 				updateMessage("Preparing");
+				LOG.info("Preparing");
 				try
 				{
 					updateTitle("Sending HL7 message");
+					LOG.info("Sending HL7 message {} ", hl7Message);
 
 					HL7Sender hl7Sender = new HL7Sender(hl7Message, siteList);
 
-					hl7Sender.progressProperty().addListener(new ChangeListener<Number>()
-					{
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-						{
-							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
-						}
-					});
-					hl7Sender.messageProperty().addListener(new ChangeListener<String>()
-					{
-						@Override
-						public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-						{
-							updateMessage(newValue);
-						}
-					});
-
-					WorkExecutors.get().getExecutor().execute(hl7Sender);
+//					hl7Sender.progressProperty().addListener(new ChangeListener<Number>()
+//					{
+//						@Override
+//						public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
+//						{
+//							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+//						}
+//					});
+//					hl7Sender.messageProperty().addListener(new ChangeListener<String>()
+//					{
+//						@Override
+//						public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+//						{
+//							updateMessage(newValue);
+//						}
+//					});
+//
+//					WorkExecutors.get().getExecutor().execute(hl7Sender);
+//					
+//					hl7Sender.get();
 
 					//updateTitle("sleep for 10 seconds");
 					//Thread.sleep(10000);
 
 					updateTitle("Complete");
+					LOG.info("Complete");
 
 					return tag;
 				}
@@ -103,22 +107,20 @@ public class HL7CheckSum {
 		return sender;
 	}
 
-	//	/**
-	//	 * A utility method to execute a task and wait for it to complete.
-	//	 * @param task
-	//	 * @return the string returned by the task
-	//	 * @throws InterruptedException
-	//	 * @throws ExecutionException
-	//	 */
-	//	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
-	//	{
-	//		LOG.trace("executeAndBlock with task " + task);
-	//		System.out.println("executeAndBlock with task " + task);
-	//		WorkExecutors.get().getExecutor().execute(task);
-	//		String result = task.get();
-	//		LOG.trace("result of task: " + result);
-	//		System.out.println("result of task: " + result);
-	//		return result;
-	//	}
+		/**
+		 * A utility method to execute a task and wait for it to complete.
+		 * @param task
+		 * @return the string returned by the task
+		 * @throws InterruptedException
+		 * @throws ExecutionException
+		 */
+		public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
+		{
+			LOG.info("executeAndBlock with task " + task);
+			WorkExecutors.get().getExecutor().execute(task);
+			String result = task.get();
+			LOG.info("result of task: " + result);
+			return result;
+		}
 
 }

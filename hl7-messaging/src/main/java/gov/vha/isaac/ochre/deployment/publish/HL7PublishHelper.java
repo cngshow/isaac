@@ -54,7 +54,7 @@ public class HL7PublishHelper
 		String receivingFacility = "";
 		String messageType = "";
 		String processingId = "";
-		String versionId = "2.4";
+		String versionId = "2.6";
 		//MSA fields
 		String msaSegmentType = "MSA";
 		String ackCode = "CA";

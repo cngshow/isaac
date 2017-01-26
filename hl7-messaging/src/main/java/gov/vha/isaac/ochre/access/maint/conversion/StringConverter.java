@@ -30,9 +30,6 @@ import java.util.ResourceBundle;
 
 import gov.vha.isaac.ochre.access.maint.util.UserErrors;
 
-//!TODO: input arrays
-//!TODO: native type support
-
 /**
  * Convert a String to a Java datatype value.
  * <p>

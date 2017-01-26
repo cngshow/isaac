@@ -43,30 +43,35 @@ import gov.vha.isaac.ochre.access.maint.messaging.hl7.Encoding;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MLLP;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MediaType;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
+import gov.vha.isaac.ochre.deployment.publish.ApplicationPropertyReader;
 
 /**
  * Sends the given HL7 message to BusinessWare for distribution.
  */
 public class BusinessWareMessageDispatcher implements MessageDispatcher {
 	/** A logger for messages produced by this class. */
-	private static Logger logger_ = LogManager.getLogger(BusinessWareMessageDispatcher.class);
+	private static Logger LOG = LogManager.getLogger(BusinessWareMessageDispatcher.class);
 
 	/** The URL for BusinessWare. */
 	private static final URL url_ = initializeURL();
 
 	private static URL initializeURL() {
 		try {
+			
 			return (URL) StringConverter.fromString(
-					// Settings.instance().value(
-					// BusinessWareMessageDispatcher.class,
-					// "url"
-					// ),
-					// TODO: remove hardcoded.
-					// "http://vhaispviev1:8080/servlet/FrameworkServletHTTPtoChannel",
-					"http://localhost:8080/va/HL7InBound", URL.class);
+					ApplicationPropertyReader.getApplicationProperty("gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url"), URL.class);
+			
+//			return (URL) StringConverter.fromString(
+//					// Settings.instance().value(
+//					// BusinessWareMessageDispatcher.class,
+//					// "url"
+//					// ),
+//					// TODO: remove hardcoded.
+//					// "http://vhaispviev1:8080/servlet/FrameworkServletHTTPtoChannel",
+//					"http://localhost:8080/va/HL7InBound", URL.class);
 		} catch (FormatException e) {
 			final String msg = "Error initializing URL.";
-			logger_.error(msg, e);
+			LOG.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
 	}
@@ -85,6 +90,7 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher {
 	@Override
 	public void send(Message message) {
 		try {
+			LOG.info("Opening connection to {}", url_.toString());
 			final HttpURLConnection connection = (HttpURLConnection) url_.openConnection();
 
 			connection.setRequestMethod("POST");
@@ -112,18 +118,18 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher {
 				final String error = inputStreamToString(connection.getErrorStream());
 				final String msg = "Error sending message (" + connection.getResponseCode() + "): message ("
 						+ connection.getResponseMessage() + "), error stream (" + error + ")";
-				logger_.error(msg);
+				LOG.error(msg);
 				throw new RuntimeException(msg);
 			}
 
 			final Terser terser = new Terser(message);
-			logger_.info("Sent Message: "
+			LOG.info("Sent Message: "
 					+ terser.get("MSH-9-3") /* msg structure */
 					+ "[ctrl_id=" + terser.get("MSH-10") /* control id */
 					+ "]: " + encodedMessage.length() + " characters");
 		} catch (Exception e) {
 			final String msg = "Error sending message.";
-			logger_.error(msg, e);
+			LOG.error(msg, e);
 			throw new RuntimeException(msg, e);
 		}
 	}

@@ -27,8 +27,7 @@ import java.util.List;
 /**
  * A typesafe enumeration based upon JSR 201 for HL7 encodings.
  */
-public class Encoding
-implements Serializable
+public class Encoding implements Serializable
 {
 	/**
 	 * The ordinal of this enumeration constant (its position

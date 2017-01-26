@@ -16,22 +16,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre;
+package gov.vha.isaac.ochre.deployment.listener.parser;
 
-import org.junit.Test;
+//import gov.va.med.term.deployment.business.ListenerDelegate;
+import gov.vha.isaac.ochre.deployment.model.Site;
 
-/**
- *
- *
- * {@link HL7DiscoveryRequestTest}
- *
- * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
- */
-public class HL7DiscoveryRequestTest {
-
-	@Test
-	public void testSendMessage() throws Exception
-	{
-
-	}
+public abstract class BaseParser
+{
+	/**
+	 * Retrieve information from the Site table to describe the site by name
+	 * @param siteId
+	 * @return Site object
+	 */    
+	public Site resolveSiteId(String vaStringSiteId)
+    {
+        Site site = null;
+        
+        //TODO: replace this?
+        //site = ListenerDelegate.getSiteByVAStringId(vaStringSiteId);
+        
+        return site;
+    }
 }
