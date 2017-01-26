@@ -35,19 +35,19 @@ public class HL7CheckSum {
 
 	private static final Logger LOG = LogManager.getLogger();
 
-	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList) throws Throwable
+	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList)
 	{
 		LOG.info("Building the task to send an HL7 message...");
 
 		if (StringUtils.isBlank(hl7Message))
 		{
 			LOG.error("No message to send!");
-			throw new Exception("No message to send!");
+			throw new IllegalArgumentException("No message to send!");
 		}
 		if (siteList == null || siteList.size() == 0)
 		{
 			LOG.error("No sites to send to!");
-			throw new Exception("No sites to send to!");
+			throw new IllegalArgumentException("No sites to send to!");
 		}
 
 
