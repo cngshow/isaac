@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/02/?? - 3.34 - PENDING
+    *
+
 * 2017/01/26 - 3.33
     * Make the GitPublish methods used by the source upload / convert / db builder portions of prisme automatically create the remote git repository if it doesn't exist.
     * HL7 messaging callback and testing.
