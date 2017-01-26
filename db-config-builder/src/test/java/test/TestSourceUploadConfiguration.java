@@ -17,7 +17,7 @@ public class TestSourceUploadConfiguration
 
 	public static void main(String[] args) throws Throwable
 	{
-		String gitTestURL = "https://github.com/darmbrust/test.git";
+		String gitTestURL = "https://vadev.mantech.com:4848/git/r/junk.git";
 		String gitUsername = "";
 		char[] gitPassword = "".toCharArray();
 		

@@ -26,12 +26,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.ChangeSetLoadService;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
@@ -115,7 +118,7 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 					LOG.warn("The " + CHANGESETS_ID + " file does not contain a valid UUID!", e);
 				}
 			}
-			
+
 			try
 			{
 				Path mavenMetadataIdentityPath = changesetPath.resolve(MAVEN_ARTIFACT_IDENTITY);
@@ -131,30 +134,34 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 			}
 
 			UUID sememeDbId = readSememeDbId();
-			
-			if ((sememeDbId != null && !chronicleDbId.equals(sememeDbId)) || changesetsDbId != null && !chronicleDbId.equals(changesetsDbId))
+
+			if ((sememeDbId != null && !sememeDbId.equals(chronicleDbId)) || changesetsDbId != null && !changesetsDbId.equals(chronicleDbId))
 			{
-				throw new RuntimeException(
-						"Database identity mismatch!  ChronicleDbId: " + chronicleDbId + " SememeDbId: " + sememeDbId + " Changsets DbId: " + changesetsDbId);
+				StringBuilder msg = new StringBuilder();
+				msg.append("Database identity mismatch!  ChronicleDbId: ").append(chronicleDbId);
+				msg.append(" SememeDbId: ").append(sememeDbId);
+				msg.append(" Changsets DbId: ").append(changesetsDbId);
+				throw new RuntimeException(msg.toString());
+
 			}
-			
+
 			if (changesetsDbId == null)
 			{
 				changesetsDbId = chronicleDbId;
 				Files.write(changesetsIdPath, changesetsDbId.toString().getBytes());
 			}
-			
+
 			//if the sememeDbId is null, lets wait and see if it appears after processing the changesets.
 
 			//We store the list of files that we have already read / processed in the metacontent store, so we don't have to process them again.
-			//files that "appear" in this folder via the git integration, for example, we will need to process - but files that we create 
-			//during normal operation do not need to be reprocessed.  The BinaryDataWriterProvider also automatically updates this list with the 
+			//files that "appear" in this folder via the git integration, for example, we will need to process - but files that we create
+			//during normal operation do not need to be reprocessed.  The BinaryDataWriterProvider also automatically updates this list with the
 			//files as it writes them.
 			MetaContentService mcs = LookupService.get().getService(MetaContentService.class);
 			processedChangesets = mcs == null ? null : mcs.<String, Boolean>openStore("processedChangesets");
 
 			int loaded = readChangesetFiles();
-			
+
 			if (sememeDbId == null)
 			{
 				sememeDbId = readSememeDbId();
@@ -165,7 +172,7 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 						LOG.warn("No database identify was found stored in a sememe, after loading changesets.");
 					}
 					Get.sememeBuilderService().getStringSememeBuilder(chronicleDbId.toString(), TermAux.ISAAC_ROOT.getNid(), TermAux.DATABASE_UUID.getConceptSequence())
-						.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
+					.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE).get();
 					Get.commitService().commit("Storing database ID on root concept");
 				}
 			}
@@ -183,7 +190,8 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 	{
 		LOG.info("Finished ChangeSet Load Provider pre-destory.");
 	}
-	
+
+	@Override
 	public int readChangesetFiles() throws IOException
 	{
 		AtomicInteger loaded = new AtomicInteger();
@@ -222,7 +230,7 @@ public class ChangeSetLoadProvider implements ChangeSetLoadService
 		LOG.info("Finished Change Set Load Provider load.  Loaded {}, Skipped {} because they were previously processed", loaded.get(), skipped.get());
 		return loaded.get();
 	}
-	
+
 	private UUID readSememeDbId()
 	{
 		Optional<SememeChronology<? extends SememeVersion<?>>> sdic = Get.sememeService()

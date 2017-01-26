@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import gov.va.isaac.sync.git.gitblit.models.RepositoryModel;
@@ -44,17 +46,17 @@ public class GitBlitUtils
 {
 	private static Logger log = LoggerFactory.getLogger(GitBlitUtils.class);
 	
+
 	/**
-	 * Create a repository on the Gitblit server.
-	 *
-	 * @param serverUrl
-	 * @param repo name
-	 * @param repo description 
-	 * @param account
+	 * Create a repository on a remote gitblit server
+	 * @param baseRemoteAddress - should be a url like https://vadev.mantech.com:4848/git/ (though {@link #adjustBareUrlForGitBlit(String)} is utilized
+	 * @param repoName a name such a foo or foo.git
+	 * @param repoDesc the description
+	 * @param username
 	 * @param password
-	 * @return true if the action succeeded
+	 * @param allowRead true to allow unauthenticated users to read / clone the repository.  False to lock down the repository
 	 * @throws IOException
-	 */	
+	 */
 	public static void createRepository(String baseRemoteAddress, String repoName, String repoDesc, String username, char[] password, boolean allowRead) throws IOException
 	{
 		try
@@ -65,7 +67,7 @@ public class GitBlitUtils
 				rm.accessRestriction = AccessRestrictionType.PUSH.toString();
 			}
 			
-			boolean status =  RpcUtils.createRepository(rm, adjustUrlForGitBlit(baseRemoteAddress),
+			boolean status =  RpcUtils.createRepository(rm, adjustBareUrlForGitBlit(baseRemoteAddress),
 					username, password);
 			log.info("Repository: "+repoName +", create successfully: " + status);
 			if (!status)
@@ -83,8 +85,26 @@ public class GitBlitUtils
 	public static Set<String> readRepositories(String baseRemoteAddress, String username, char[] password) throws IOException
 	{
 		HashSet<String> results = new HashSet<>();
-		RpcUtils.getRepositories(adjustUrlForGitBlit(baseRemoteAddress), username, password).forEach((name, value) -> results.add((String)value.get("name")));
+		RpcUtils.getRepositories(adjustBareUrlForGitBlit(baseRemoteAddress), username, password).forEach((name, value) -> results.add((String)value.get("name")));
 		return results;
+	}
+	
+	/**
+	 * Take in a URL like https://vadev.mantech.com:4848/git/r/db_test.git
+	 * and turn it into https://vadev.mantech.com:4848/git/
+	 * @param url
+	 * @return
+	 * @throws IOException 
+	 */
+	public static String parseBaseRemoteAddress(String url) throws IOException
+	{
+		Pattern p = Pattern.compile("(?i)(https?:\\/\\/[a-zA-Z0-9\\.\\-_]+:?\\d*\\/[a-zA-Z0-9\\-_]+\\/)r\\/[a-zA-Z0-9\\-_]+.git$");
+		Matcher m = p.matcher(url);
+		if (m.find())
+		{
+			return m.group(1);
+		}
+		throw new IOException("Not a known giblit url pattern!");
 	}
 	
 	/**
@@ -96,14 +116,14 @@ public class GitBlitUtils
 	 * @param url
 	 * @return
 	 */
-	public static String adjustUrlForGitBlit(String url)
+	public static String adjustBareUrlForGitBlit(String url)
 	{
 		String temp = url;
 		if (!temp.endsWith("/"))
 		{
 			temp += "/";
 		}
-		if (temp.matches("https?:\\/\\/[a-zA-Z0-9\\.]+:?\\d*\\/$"))
+		if (temp.matches("(?i)https?:\\/\\/[a-zA-Z0-9\\.\\-_]+:?\\d*\\/$"))
 		{
 			temp += "git/";
 		}

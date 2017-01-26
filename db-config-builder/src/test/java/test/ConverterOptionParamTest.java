@@ -19,8 +19,10 @@
 package test;
 
 import java.io.File;
+import java.io.IOException;
 import org.junit.Assert;
 import org.junit.Test;
+import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.converter.ConverterOptionParam;
 import gov.vha.isaac.ochre.pombuilder.converter.ConverterOptionParamSuggestedValue;
 
@@ -34,19 +36,33 @@ public class ConverterOptionParamTest
 	@Test
 	public void testJson() throws Exception
 	{
-		ConverterOptionParam foo = new ConverterOptionParam("cc", "a", "b", true, true,
-				new ConverterOptionParamSuggestedValue("e", "e1"), new ConverterOptionParamSuggestedValue("f"));
+		ConverterOptionParam foo = new ConverterOptionParam("cc", "a", "b", true, true, new ConverterOptionParamSuggestedValue("e", "e1"),
+				new ConverterOptionParamSuggestedValue("f"));
 		Assert.assertEquals("e", foo.getSuggestedPickListValues()[0].getValue());
 		Assert.assertEquals("e1", foo.getSuggestedPickListValues()[0].getDescription());
 		Assert.assertEquals("f", foo.getSuggestedPickListValues()[1].getValue());
 		Assert.assertEquals("f", foo.getSuggestedPickListValues()[1].getDescription());
-		ConverterOptionParam foo2 = new ConverterOptionParam("33", "1", "2", true, false, 
-				new ConverterOptionParamSuggestedValue("3", "31"), new ConverterOptionParamSuggestedValue("4", "41"));
-		ConverterOptionParam.serialize(new ConverterOptionParam[] {foo, foo2}, new File("foo.json"));
-		
+		ConverterOptionParam foo2 = new ConverterOptionParam("33", "1", "2", true, false, new ConverterOptionParamSuggestedValue("3", "31"),
+				new ConverterOptionParamSuggestedValue("4", "41"));
+		ConverterOptionParam.serialize(new ConverterOptionParam[] { foo, foo2 }, new File("foo.json"));
+
 		ConverterOptionParam[] foo3 = ConverterOptionParam.fromFile(new File("foo.json"));
 		Assert.assertEquals(foo3[0], foo);
 		Assert.assertEquals(foo3[1], foo2);
 		new File("foo.json").delete();
+	}
+
+	@Test
+	public void testChangesetURLRewrite() throws IOException
+	{
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/r/contentConfigurations.git",
+				GitPublish.constructChangesetRepositoryURL("https://vadev.mantech.com:4848/git/"));
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/r/contentConfigurations.git",
+				GitPublish.constructChangesetRepositoryURL("https://vadev.mantech.com:4848/git"));
+		Assert.assertEquals("http://vadev.mantech.com:4848/git/r/contentConfigurations.git",
+				GitPublish.constructChangesetRepositoryURL("http://vadev.mantech.com:4848/git/"));
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/r/contentConfigurations.git",
+				GitPublish.constructChangesetRepositoryURL("https://vadev.mantech.com:4848/git/r/contentConfigurations.git"));
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/r/foo.git", GitPublish.constructChangesetRepositoryURL("https://vadev.mantech.com:4848/git/r/foo.git"));
 	}
 }

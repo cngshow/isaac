@@ -96,7 +96,7 @@ public class DBConfigurationCreator
 		model.setDescription(description);
 
 		Scm scm = new Scm();
-		scm.setUrl(gitRepositoryURL);
+		scm.setUrl(GitPublish.constructChangesetRepositoryURL(gitRepositoryURL));
 		scm.setTag(groupId + "/" + name + "/" + version);
 		model.setScm(scm);
 		

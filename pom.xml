@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>3.32</version>
+    <version>3.33</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -683,6 +683,9 @@
         <module>workflow-provider</module>
         <!-- <module>ibdf-differ</module>-->
         <module>ochre-exporters</module>
+        
+        
+        <module>hl7-messaging</module>
     </modules>
     
     <profiles>

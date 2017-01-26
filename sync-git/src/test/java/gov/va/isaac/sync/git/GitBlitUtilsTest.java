@@ -32,17 +32,26 @@ public class GitBlitUtilsTest
 	@Test
 	public void TestURLAdjust() throws Exception
 	{
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/"));
-		Assert.assertEquals("https://Vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("https://Vaauscttdbs80.aac.va.gov:8080"));
-		Assert.assertEquals("http://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("http://vaauscttdbs80.aac.va.gov:8080/"));
-		Assert.assertEquals("http://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("http://vaauscttdbs80.aac.va.gov:8080"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/git/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov/"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/git/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/fred/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov/fred"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/git"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/git/"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/fred/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/fred"));
-		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/fred/", GitBlitUtils.adjustUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/fred/"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/"));
+		Assert.assertEquals("https://Vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://Vaauscttdbs80.aac.va.gov:8080"));
+		Assert.assertEquals("http://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("http://vaauscttdbs80.aac.va.gov:8080/"));
+		Assert.assertEquals("http://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("http://vaauscttdbs80.aac.va.gov:8080"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov/"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov/fred/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov/fred"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/git"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/git/"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/fred/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/fred"));
+		Assert.assertEquals("https://vaauscttdbs80.aac.va.gov:8080/fred/", GitBlitUtils.adjustBareUrlForGitBlit("https://vaauscttdbs80.aac.va.gov:8080/fred/"));
+		Assert.assertEquals("HTtps://vaa-uscttdbs8_0.aac.va.gov:8080/git/", GitBlitUtils.adjustBareUrlForGitBlit("HTtps://vaa-uscttdbs8_0.aac.va.gov:8080/"));
+	}
+	
+	@Test
+	public void TestBaseURLParse() throws Exception
+	{
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/", GitBlitUtils.parseBaseRemoteAddress("https://vadev.mantech.com:4848/git/r/db_test.git"));
+		Assert.assertEquals("https://vadev.mantech.com:4848/git/", GitBlitUtils.parseBaseRemoteAddress("https://vadev.mantech.com:4848/git/r/db_test.GIT"));
+		Assert.assertEquals("Https://vadev.ma-nt_e0ch.com:4848/git/", GitBlitUtils.parseBaseRemoteAddress("Https://vadev.ma-nt_e0ch.com:4848/git/r/db_-test.git"));
 	}
 	
 	

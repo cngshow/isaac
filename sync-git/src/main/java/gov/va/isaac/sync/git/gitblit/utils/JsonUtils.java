@@ -13,9 +13,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+
 import com.cedarsoftware.util.io.JsonObject;
 import com.cedarsoftware.util.io.JsonReader;
 import com.cedarsoftware.util.io.JsonWriter;
+
 import gov.va.isaac.sync.git.gitblit.GitBlitException.ForbiddenException;
 import gov.va.isaac.sync.git.gitblit.GitBlitException.NotAllowedException;
 import gov.va.isaac.sync.git.gitblit.GitBlitException.UnauthorizedException;
@@ -141,16 +143,20 @@ public class JsonUtils
 		try
 		{
 			URLConnection conn = ConnectionUtils.openReadConnection(url, username, password);
-			InputStream is = conn.getInputStream();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(is, ConnectionUtils.CHARSET));
+
 			StringBuilder json = new StringBuilder();
-			char[] buffer = new char[4096];
-			int len = 0;
-			while ((len = reader.read(buffer)) > -1)
+
+			try (InputStream is = conn.getInputStream();
+					BufferedReader reader = new BufferedReader(new InputStreamReader(is, ConnectionUtils.CHARSET));)
 			{
-				json.append(buffer, 0, len);
+				char[] buffer = new char[4096];
+				int len = 0;
+				while ((len = reader.read(buffer)) > -1)
+				{
+					json.append(buffer, 0, len);
+				}
 			}
-			is.close();
+
 			return json.toString();
 		}
 		catch (IOException e)

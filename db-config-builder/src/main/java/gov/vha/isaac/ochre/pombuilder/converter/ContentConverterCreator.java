@@ -157,7 +157,7 @@ public class ContentConverterCreator
 		pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
 		pomSwaps.put("#LOADER_VERSION#", converterVersion);
 		
-		pomSwaps.put("#SCM_URL#", gitRepositoryURL);
+		pomSwaps.put("#SCM_URL#", GitPublish.constructChangesetRepositoryURL(gitRepositoryURL));
 		
 		String temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
 		temp = temp.replace("#GROUPID#", sourceContent.getGroupId());

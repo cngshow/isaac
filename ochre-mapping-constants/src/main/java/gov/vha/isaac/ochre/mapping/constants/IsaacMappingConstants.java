@@ -55,7 +55,12 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public final MetadataConceptConstant MAPPING_NAMESPACE = new MetadataConceptConstant("mapping namespace", 
 		UUID.fromString("9b93f811-7b66-5024-bebf-6a7019743e88"),
 		"A concept used to hold the UUID used as the namespace ID generation when creating mappings") {};
-		
+
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS = new MetadataConceptConstant("mapping display fields", 
+			UUID.fromString("4e627b9c-cecb-5563-82fc-cb0ee25113b1"),
+			"Stores the mapping field ids in an array corresponding to an ordered displayable row",
+			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
+
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE = new MetadataConceptConstant("mapping purpose", 
 		UUID.fromString("e5de9548-35b9-5e3b-9968-fd9c0a665b51"),
 		"Stores the editor stated purpose of the mapping set",
@@ -142,6 +147,23 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	};
 	
 	/** 
+	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS}
+	 * see {@link #DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS}
+	 */
+	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS = new MetadataDynamicSememeConstant("Mapping Display Fields", 
+		UUID.fromString("8d6463c2-b0ec-5e34-a882-1208d52703ea"),
+		"A Sememe used to annotate Mapping Set concepts. This sememe carries field identifiers for organizing an ordered columnar display row.", 
+			new DynamicSememeColumnInfo[] {
+				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS.getUUID(), DynamicSememeDataType.ARRAY, 
+						null, true, true),},
+			null) 
+	{
+		{
+			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES);
+		}
+	};
+
+	/** 
 	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT}
 	 * see {@link #MAPPING_QUALIFIERS}
 	 */
@@ -193,7 +215,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
-		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
+		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
 				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER,
 				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE, 
 				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS};
