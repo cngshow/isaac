@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,11 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import javax.inject.Singleton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -1566,36 +1570,39 @@ public class Frills implements DynamicSememeColumnUtility {
 	public static Optional<String> getAnnotationStringValue(int componentId, int assemblageConceptId, StampCoordinate stamp) {
 		try 
 		{
-			int assemblageConceptSequence = Get.identifierService().getConceptSequence(assemblageConceptId);
 			UUID assemblageConceptUuid = Get.identifierService().getUuidPrimordialFromConceptId(assemblageConceptId).get();
 			int componentNid = Get.identifierService().getConceptNid(componentId);
 			
 			ArrayList<String> values = new ArrayList<>(1);
-			Get.sememeService().getSnapshot(SememeVersion.class, stamp)
-					.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
-							assemblageConceptSequence).forEach(latestSememe ->
-							{
-								if (latestSememe.value().getChronology().getSememeType() == SememeType.STRING)
-								{
-									values.add(((StringSememeImpl)latestSememe.value()).getString());
-								}
-								else if (latestSememe.value().getChronology().getSememeType() == SememeType.COMPONENT_NID)
-								{
-									values.add(((ComponentNidSememeImpl)latestSememe.value()).getComponentNid() + "");
-								}
-								else if (latestSememe.value().getChronology().getSememeType() == SememeType.LONG)
-								{
-									values.add(((LongSememeImpl)latestSememe.value()).getLongValue() + "");
-								}
-								else if (latestSememe.value().getChronology().getSememeType() == SememeType.DYNAMIC)
-								{
-									DynamicSememeData[] data = ((DynamicSememeImpl)latestSememe.value()).getData();
-									if (data.length > 0) {
-										log.warn("Found multiple (" + data.length + ") dynamic sememe data fields in sememe " + latestSememe.value().getNid() + " of assemblage type " + assemblageConceptUuid + " on component " + Get.identifierService().getUuidPrimordialForNid(componentNid));
-									}
-									values.add(data[0].dataToString());
-								}
-							});
+
+			int assemblageConceptSequence = Get.identifierService().getConceptSequenceForUuids(assemblageConceptUuid);
+			Get.sememeService().getSnapshot(SememeVersion.class,
+					stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp)
+			.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
+					assemblageConceptSequence).forEach(latestSememe ->
+					{
+						if (latestSememe.value().getChronology().getSememeType() == SememeType.STRING)
+						{
+							values.add(((StringSememeImpl)latestSememe.value()).getString());
+						}
+						else if (latestSememe.value().getChronology().getSememeType() == SememeType.COMPONENT_NID)
+						{
+							values.add(((ComponentNidSememeImpl)latestSememe.value()).getComponentNid() + "");
+						}
+						else if (latestSememe.value().getChronology().getSememeType() == SememeType.LONG)
+						{
+							values.add(((LongSememeImpl)latestSememe.value()).getLongValue() + "");
+						}
+						else if (latestSememe.value().getChronology().getSememeType() == SememeType.DYNAMIC)
+						{
+							DynamicSememeData[] data = ((DynamicSememeImpl)latestSememe.value()).getData();
+							if (data.length > 0) {
+								log.warn("Found multiple (" + data.length + ") dynamic sememe data fields in sememe " + latestSememe.value().getNid() + " of assemblage type " + assemblageConceptUuid + " on component " + Get.identifierService().getUuidPrimordialForNid(componentNid));
+							}
+							values.add(data[0].dataToString());
+						}
+					});
+
 			if (values.size() > 1)
 			{
 				log.warn("Found multiple (" + values.size() + ") " + assemblageConceptUuid + " annotation sememes on component " + Get.identifierService().getUuidPrimordialForNid(componentNid) + ". Using first value \"" + values.get(0) + "\".");
