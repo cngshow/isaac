@@ -1570,12 +1570,15 @@ public class Frills implements DynamicSememeColumnUtility {
 	public static Optional<String> getAnnotationStringValue(int componentId, int assemblageConceptId, StampCoordinate stamp) {
 		try 
 		{
-			UUID assemblageConceptUuid = Get.identifierService().getUuidPrimordialFromConceptId(assemblageConceptId).get();
+			Optional<UUID> assemblageConceptUuid = Get.identifierService().getUuidPrimordialFromConceptId(assemblageConceptId);
+			if (! assemblageConceptUuid.isPresent()) {
+				throw new RuntimeException("getUuidPrimordialFromConceptId() return empty UUID for assemblageConceptId " + assemblageConceptId);
+			}
 			int componentNid = Get.identifierService().getConceptNid(componentId);
 			
 			ArrayList<String> values = new ArrayList<>(1);
 
-			int assemblageConceptSequence = Get.identifierService().getConceptSequenceForUuids(assemblageConceptUuid);
+			int assemblageConceptSequence = Get.identifierService().getConceptSequenceForUuids(assemblageConceptUuid.get());
 			Get.sememeService().getSnapshot(SememeVersion.class,
 					stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp)
 			.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
