@@ -150,7 +150,8 @@ import gov.vha.isaac.ochre.access.maint.util.UserErrors;
  *               </dd>
  *               </dl>
  **/
-public class StringConverter {
+public class StringConverter
+{
 	/**
 	 * An exception issued when {@link StringConverter StringConverter} cannot
 	 * find a way to convert a String to an instance of a datatype.
@@ -159,7 +160,8 @@ public class StringConverter {
 	 * support one of a set of known conversion patterns. It throws this
 	 * exception when none of the known conversion patterns is detected.
 	 **/
-	public static class ConversionNotSupportedException extends RuntimeException {
+	public static class ConversionNotSupportedException extends RuntimeException
+	{
 		public ConversionNotSupportedException(String message) {
 			super(message);
 		}
@@ -170,7 +172,8 @@ public class StringConverter {
 	 * {@link StringConverter StringConverter} cannot convert an input value and
 	 * no UserErrors container was provided.
 	 **/
-	public static class FormatException extends Exception {
+	public static class FormatException extends Exception
+	{
 		public FormatException(String message) {
 			super(message);
 		}
@@ -180,7 +183,8 @@ public class StringConverter {
 	 * A method to convert strings into objects of a datatype. Concrete
 	 * subclasses implement specific conversion methods.
 	 **/
-	private abstract static class ConversionMethod {
+	private abstract static class ConversionMethod
+	{
 		private static final Class[] parameterTypes_ = { String.class };
 
 		// target datatype and name
@@ -403,7 +407,8 @@ public class StringConverter {
 	/**
 	 * A conversion method that uses a String constructor.
 	 **/
-	private static class ConversionMethod_Constructor extends ConversionMethod {
+	private static class ConversionMethod_Constructor extends ConversionMethod
+	{
 		private Constructor constructor_;
 
 		public ConversionMethod_Constructor(Class datatype, Constructor constructor) {
@@ -421,7 +426,8 @@ public class StringConverter {
 	/**
 	 * A conversion method that uses a static valueOf method.
 	 **/
-	private static class ConversionMethod_StaticMethod extends ConversionMethod {
+	private static class ConversionMethod_StaticMethod extends ConversionMethod
+	{
 		private Method converter_;
 
 		public ConversionMethod_StaticMethod(Class datatype, Method converter) {
@@ -439,7 +445,8 @@ public class StringConverter {
 	/**
 	 * A conversion method that uses the Dataman factory pattern.
 	 **/
-	private static class ConversionMethod_Factory extends ConversionMethod {
+	private static class ConversionMethod_Factory extends ConversionMethod
+	{
 		private Method converter_;
 		private Object factory_;
 
@@ -589,7 +596,7 @@ public class StringConverter {
 	}
 
 	/**
-
+	
 	 **/
 
 	// ! Old code, unconverted and untested

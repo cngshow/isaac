@@ -21,8 +21,7 @@ package gov.vha.isaac.ochre.services.business;
 public class DataChange
 {
 
-	public enum DataChangeType
-	{
+	public enum DataChangeType {
 		NEW, DEACTIVATED, REACTIVATED, CHANGED
 	}
 

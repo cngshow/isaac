@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.deployment.publish;
 import java.util.ArrayList;
 import java.util.List;
 
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
 public class MessageTypeIdentifier
@@ -31,49 +32,29 @@ public class MessageTypeIdentifier
 	public static final String MFR_TYPE = "MFR";
 	public static final String MFQ_TYPE = "MFQ";
 
-	/**
-	 * This identifies what application flag sent the original MD5 request.
-	 * This same requester will  receive the MD5 incoming response.
-	 */
-	public static String receivingAppMd5;
-	static
-	{
-		receivingAppMd5 = ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.md5");
-	}
-
-	/**
-	 * This identifies what application flag sent the original Site Data request.
-	 * This same requester will receive the Site Data incoming response.
-	 */
-	public static String receivingAppSiteData;
-	static
-	{
-		receivingAppSiteData = ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.siteData");
-	}
+	public static HL7ApplicationProperties applicationProperties = null;
 
 	/**
 	 * Retrieves the message header by searching for "MSH".
-	 * @param content Incoming message as a String
+	 * 
+	 * @param content
+	 *            Incoming message as a String
 	 * @return Returns only the MSH segment
 	 */
-	public static String getMessageHeader(String content) throws STSException
-	{
+	public static String getMessageHeader(String content) throws STSException {
 		String messageHeader = null;
 		String line = null;
 		int index = 0;
 
-		while((line = HL7PublishHelper.getNextLine(content, index)) != null)
-		{
-			if (line.startsWith("MSH"))
-			{
+		while ((line = HL7PublishHelper.getNextLine(content, index)) != null) {
+			if (line.startsWith("MSH")) {
 				messageHeader = line;
 				break;
 			}
 			index++;
 		}
 
-		if(messageHeader == null)
-		{
+		if (messageHeader == null) {
 			throw new STSException("Unable to find MSH segment in the message.");
 		}
 
@@ -83,42 +64,34 @@ public class MessageTypeIdentifier
 	/**
 	 * Examines the message header to determine what type of message it is.
 	 * Returned message types can be one of "MFK", "MFR" or "MFN"
+	 * 
 	 * @param messageHeader
 	 * @return messate type as a string
 	 */
-	public static String getMessageType(String messageHeader) throws STSException
-	{
+	public static String getMessageType(String messageHeader) throws STSException {
 		String messageType = null;
 		String[] params = messageHeader.split("\\^");
 		String fullMessageType = params[8];
 		String[] subParams = fullMessageType.split("~");
 
-		if(subParams[0].equals(MFK_TYPE))
-		{
+		if (subParams[0].equals(MFK_TYPE)) {
 			messageType = MFK_TYPE;
 		}
-		if(subParams[0].equals(MFN_TYPE))
-		{
+		if (subParams[0].equals(MFN_TYPE)) {
 			messageType = MFN_TYPE;
 		}
-		if(subParams[0].equals(MFR_TYPE))
-		{
+		if (subParams[0].equals(MFR_TYPE)) {
 			messageType = MFR_TYPE;
 		}
-		if(subParams[0].equals(MFQ_TYPE))
-		{
+		if (subParams[0].equals(MFQ_TYPE)) {
 			messageType = MFQ_TYPE;
 		}
-		try
-		{
-			if(messageType == null)
-			{
-				throw new Exception("Message type unknown: not of type " + MFN_TYPE+ ", "
-						+ MFK_TYPE + ", "+ MFR_TYPE +  " or " + MFQ_TYPE + ".");
+		try {
+			if (messageType == null) {
+				throw new Exception("Message type unknown: not of type " + MFN_TYPE + ", " + MFK_TYPE + ", " + MFR_TYPE
+						+ " or " + MFQ_TYPE + ".");
 			}
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			throw new STSException(e);
 		}
 
@@ -126,64 +99,63 @@ public class MessageTypeIdentifier
 	}
 
 	/**
-	 * This method answers the question, "what application flag sent this incoming message?"
+	 * This method answers the question, "what application flag sent this
+	 * incoming message?"
+	 * 
 	 * @param messageHeader
 	 * @return
 	 * @throws ETSBusinessException
 	 */
-	public static String getIncomingMessageSendingApp(String messageHeader) throws STSException
-	{
+	public static String getIncomingMessageSendingApp(String messageHeader) throws STSException {
 		String sendingApplication = null;
 
-		//Make a list of all the sending application names.
-		//Because the message is incoming to deployment server, the
-		//sending app name is the flag that was the target for the
-		//original outgoing message to which this incoming message
-		//is a response, therefore sending app name in this incoming
-		//message is equivelant to our receiving app name in the
-		//application.properties file.
+		// Make a list of all the sending application names.
+		// Because the message is incoming to deployment server, the
+		// sending app name is the flag that was the target for the
+		// original outgoing message to which this incoming message
+		// is a response, therefore sending app name in this incoming
+		// message is equivalent to our receiving app name in the
+		// application.properties file.
 		List<String> sendingApps = new ArrayList<>();
-		sendingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.siteData"));
-		sendingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.md5"));
-		sendingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.update"));
+		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdSiteData());
+		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdMD5());
+		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdUpdate());
 
 		String[] params = messageHeader.split("\\^");
 		sendingApplication = params[2];
-		if(!sendingApps.contains(sendingApplication))
-		{
-			throw new STSException("Sending application in incoming message is not recognized: "
-					+ sendingApplication);
+		if (!sendingApps.contains(sendingApplication)) {
+			throw new STSException("Sending application in incoming message is not recognized: " + sendingApplication);
 		}
 
 		return sendingApplication;
 	}
 
 	/**
-	 * This method answers the question, "what application flag is the target for this incoming message?"
+	 * This method answers the question, "what application flag is the target
+	 * for this incoming message?"
+	 * 
 	 * @param messageHeader
 	 * @return
 	 */
-	public static String getIncomingMessageReceivingApp(String messageHeader) throws STSException
-	{
+	public static String getIncomingMessageReceivingApp(String messageHeader) throws STSException {
 		String receivingApplication = null;
 
-		//Make a list of all the receiving application names.
-		//Because the message is incoming to deployment server, the
-		//receiving app name is the flag that originated the outgoing
-		//message to which this incoming message is a response, therefore
-		//receiving app name in this incoming message is equivelant to
-		//our sending app name in the application.properties file.
+		// Make a list of all the receiving application names.
+		// Because the message is incoming to deployment server, the
+		// receiving app name is the flag that originated the outgoing
+		// message to which this incoming message is a response, therefore
+		// receiving app name in this incoming message is equivalent to
+		// our sending app name in the application.properties file.
 		List<String> receivingApps = new ArrayList<>();
-		receivingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.siteData"));
-		receivingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.md5"));
-		receivingApps.add(ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.update"));
+		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdSiteData());
+		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdMD5());
+		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdUpdate());
 
 		String[] params = messageHeader.split("\\^");
 		receivingApplication = params[4];
-		if(!receivingApps.contains(receivingApplication))
-		{
-			throw new STSException("Receiving application in incoming message is not recognized: "
-					+ receivingApplication);
+		if (!receivingApps.contains(receivingApplication)) {
+			throw new STSException(
+					"Receiving application in incoming message is not recognized: " + receivingApplication);
 		}
 
 		return receivingApplication;

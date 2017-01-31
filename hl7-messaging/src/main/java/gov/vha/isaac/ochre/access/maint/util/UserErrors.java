@@ -152,7 +152,8 @@ import java.util.Vector;
  * </ul>
  * //TODO! add doco for ModifierDecorator
  *************************************************************/
-public class UserErrors {
+public class UserErrors
+{
 	// Assumption: the set of errors will be relatively small
 
 	/*
@@ -167,7 +168,8 @@ public class UserErrors {
 	/**
 	 * Information about a general error added to a UserErrors container.
 	 **/
-	public static final class GeneralError {
+	public static final class GeneralError
+	{
 		private String message_;
 
 		// attributes only used by catalog-backed messages
@@ -249,7 +251,8 @@ public class UserErrors {
 	/**
 	 * Information about a single field error added to a UserErrors container.
 	 **/
-	public static final class FieldError {
+	public static final class FieldError
+	{
 		private String name_;
 		private String label_;
 		private Object value_;
@@ -328,7 +331,7 @@ public class UserErrors {
 				String name, // programmatic name for field
 				String label, // user's name for field
 				String message // error message to be displayed
-				) {
+		) {
 			value_ = value;
 			name_ = name;
 			label_ = label;
@@ -346,7 +349,7 @@ public class UserErrors {
 				String messageCatalog, String messageKey, // key in message
 				// catalog
 				Object[] messageValues // substitution values
-				) {
+		) {
 			value_ = value;
 			name_ = name;
 			label_ = label;
@@ -397,7 +400,8 @@ public class UserErrors {
 	// I think the only alternative is to make UserErrors abstract,
 	// and re-implement the entire UserErrors interface in each leaf
 	// class.
-	private static class Core extends UserErrors {
+	private static class Core extends UserErrors
+	{
 		// field-specific error messages
 		// entries are of type FieldError
 		protected final Vector fieldErrors_;
@@ -1016,7 +1020,8 @@ public class UserErrors {
 	 * {@link UserErrors#adaptWith(UserErrors.FieldNameModifier)
 	 * UserErrors.adaptWith()}.
 	 **/
-	public interface FieldNameModifier {
+	public interface FieldNameModifier
+	{
 		/**
 		 * Change the field name provided by a UserErrors client.
 		 **/
@@ -1073,7 +1078,8 @@ public class UserErrors {
 		return new ModifierDecorator(this, value);
 	}
 
-	private static class ModifierDecorator extends UserErrors {
+	private static class ModifierDecorator extends UserErrors
+	{
 		FieldNameModifier modifier_;
 
 		public ModifierDecorator(UserErrors adapted, FieldNameModifier modifier) {
@@ -1189,7 +1195,8 @@ public class UserErrors {
 	 * adaptWith(CatalogNameModifier)} allowing clients to transform message
 	 * catalog names when obtaining messages added to the container.
 	 **/
-	public interface CatalogNameModifier {
+	public interface CatalogNameModifier
+	{
 		String modifyName(String name);
 	}
 
@@ -1221,7 +1228,8 @@ public class UserErrors {
 		return new CatalogDecorator(this, Locale.getDefault(), catalogNameModifier);
 	}
 
-	private static class CatalogDecorator extends UserErrors {
+	private static class CatalogDecorator extends UserErrors
+	{
 		CatalogNameModifier catalogNameModifier_;
 		Locale locale_;
 

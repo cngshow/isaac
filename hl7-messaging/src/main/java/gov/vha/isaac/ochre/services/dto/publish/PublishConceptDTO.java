@@ -40,95 +40,102 @@ public class PublishConceptDTO implements Serializable
 	/**
 	 * @return the active
 	 */
-	public boolean isActive()
-	{
+	public boolean isActive() {
 		return active;
 	}
+
 	/**
-	 * @param active the active to set
+	 * @param active
+	 *            the active to set
 	 */
-	public void setActive(boolean active)
-	{
+	public void setActive(boolean active) {
 		this.active = active;
 	}
+
 	/**
 	 * @return the propertyList
 	 */
-	public List<NameValueDTO> getPropertyList()
-	{
+	public List<NameValueDTO> getPropertyList() {
 		return propertyList;
 	}
+
 	/**
-	 * @param propertyList the propertyList to set
+	 * @param propertyList
+	 *            the propertyList to set
 	 */
-	public void setPropertyList(List<NameValueDTO> propertyList)
-	{
+	public void setPropertyList(List<NameValueDTO> propertyList) {
 		this.propertyList = propertyList;
 	}
+
 	/**
 	 * @return the publishName
 	 */
-	public String getPublishName()
-	{
+	public String getPublishName() {
 		return publishName;
 	}
+
 	/**
-	 * @param publishName the publishName to set
+	 * @param publishName
+	 *            the publishName to set
 	 */
-	public void setPublishName(String publishName)
-	{
+	public void setPublishName(String publishName) {
 		this.publishName = publishName;
 	}
+
 	/**
 	 * @return the relationshipList
 	 */
-	public List<NameValueDTO> getRelationshipList()
-	{
+	public List<NameValueDTO> getRelationshipList() {
 		return relationshipList;
 	}
+
 	/**
-	 * @param relationshipList the relationshipList to set
+	 * @param relationshipList
+	 *            the relationshipList to set
 	 */
-	public void setRelationshipList(List<NameValueDTO> relationshipList)
-	{
+	public void setRelationshipList(List<NameValueDTO> relationshipList) {
 		this.relationshipList = relationshipList;
 	}
+
 	/**
 	 * Get the designation list
+	 * 
 	 * @return the designation list
 	 */
-	public List<NameValueDTO> getDesignationList()
-	{
+	public List<NameValueDTO> getDesignationList() {
 		return designationList;
 	}
+
 	/**
 	 * Set the designation list
-	 * @param designationList to set
+	 * 
+	 * @param designationList
+	 *            to set
 	 */
-	public void setDesignationList(List<NameValueDTO> designationList)
-	{
+	public void setDesignationList(List<NameValueDTO> designationList) {
 		this.designationList = designationList;
 	}
+
 	/**
 	 * @return the vuid
 	 */
-	public Long getVuid()
-	{
+	public Long getVuid() {
 		return vuid;
 	}
+
 	/**
-	 * @param vuid the vuid to set
+	 * @param vuid
+	 *            the vuid to set
 	 */
-	public void setVuid(Long vuid)
-	{
+	public void setVuid(Long vuid) {
 		this.vuid = vuid;
 	}
-	public DataChangeType getChangeType()
-	{
+
+	public DataChangeType getChangeType() {
 		return changeType;
 	}
-	public void setChangeType(DataChangeType changeType)
-	{
+
+	public void setChangeType(DataChangeType changeType) {
 		this.changeType = changeType;
 	}
 }

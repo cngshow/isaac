@@ -114,7 +114,8 @@ import org.apache.logging.log4j.Logger;
  * </tr>
  * </table>
  *************************************************************/
-public class UserText {
+public class UserText
+{
 	private static Logger logger_ = LogManager.getLogger(UserText.class);
 
 	private Locale locale_;

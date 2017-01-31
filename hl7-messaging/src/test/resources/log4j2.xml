@@ -7,7 +7,8 @@
 		</Console>
 		<!-- the appenders for root -->
 		<File name="appender-root-all" fileName="target/logs/hl7-messaging-debug.log" append="false">
-			<PatternLayout pattern="%d{DEFAULT} %-5level [%t] (%location) %logger{36} - %msg%n" />
+			<!-- <PatternLayout pattern="%d{DEFAULT} %-5level [%t] (%location) %logger{36} - %msg%n" /> -->
+			<PatternLayout pattern="%d{DEFAULT} %-5level [%t] %logger{36} - %msg%n" />
 		</File>
 	</Appenders>
 

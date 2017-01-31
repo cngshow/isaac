@@ -21,23 +21,19 @@ package gov.vha.isaac.ochre.services.exception;
 public class STSException extends Exception
 {
 
-	public STSException()
-	{
+	public STSException() {
 		super();
 	}
 
-	public STSException(String message)
-	{
+	public STSException(String message) {
 		super(message);
 	}
 
-	public STSException(Throwable cause)
-	{
+	public STSException(Throwable cause) {
 		super(cause);
 	}
 
-	public STSException(String message, Throwable cause)
-	{
+	public STSException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
