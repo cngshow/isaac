@@ -101,16 +101,14 @@ import gov.vha.isaac.ochre.mojo.LoadTermstore;
 
 /**
  * 
- * {@link EConceptUtility}
+ * {@link IBDFCreationUtility}
  * 
- * Various constants and methods for building up workbench TtkConceptChronicles.
- * 
- * A much easier interfaces to use than trek - takes care of boilerplate stuff for you.
- * Also, forces consistency in how things are converted.
+ * Various constants and methods for building ISAAC terminology content, and writing it directly
+ * to an IBDF file rather than a database.  
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class EConceptUtility
+public class IBDFCreationUtility
 {
 	public static enum DescriptionType 
 	{
@@ -187,7 +185,7 @@ public class EConceptUtility
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @throws Exception
 	 */
-	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
+	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
 		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null, null);
@@ -206,7 +204,7 @@ public class EConceptUtility
 	 * @param ibdfPreLoadFiles (optional) load these ibdf files into the isaac DB after starting (required for some conversions like LOINC)
 	 * @throws Exception
 	 */
-	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
+	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
 			Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
 	{

@@ -126,7 +126,7 @@ public abstract class ConverterBaseMojo extends AbstractMojo
 	@Parameter (required = false)
 	protected List<String> relationshipSkipList;
 	
-	protected EConceptUtility importUtil_;
+	protected IBDFCreationUtility importUtil_;
 	
 	@Override
 	public void execute() throws MojoExecutionException

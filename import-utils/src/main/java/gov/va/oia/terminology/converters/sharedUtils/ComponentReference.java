@@ -74,7 +74,7 @@ public class ComponentReference
 		cr.timeProvider_ = () -> 
 		{
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)concept).getLatestVersion(StampedVersion.class, EConceptUtility.readBackStamp_);
+			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)concept).getLatestVersion(StampedVersion.class, IBDFCreationUtility.readBackStamp_);
 			return latest.get().value().getTime();
 		};
 		return cr;
@@ -123,7 +123,7 @@ public class ComponentReference
 		cr.timeProvider_ = () -> 
 		{
 			@SuppressWarnings({ "unchecked" })
-			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)object).getLatestVersion(StampedVersion.class, EConceptUtility.readBackStamp_);
+			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)object).getLatestVersion(StampedVersion.class, IBDFCreationUtility.readBackStamp_);
 			return latest.get().value().getTime();
 		};
 		return cr;

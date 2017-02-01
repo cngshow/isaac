@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
 import gov.va.oia.terminology.converters.sharedUtils.ComponentReference;
-import gov.va.oia.terminology.converters.sharedUtils.EConceptUtility;
+import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.Property;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.ValuePropertyPair;
 import gov.vha.isaac.ochre.api.State;
@@ -56,7 +56,7 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 		refsetMembership.add(refsetConcept);
 	}
 	
-	public static void processAttributes(EConceptUtility eConceptUtility, List<? extends ValuePropertyPairWithAttributes> descriptionSource, 
+	public static void processAttributes(IBDFCreationUtility ibdfCreationUtility, List<? extends ValuePropertyPairWithAttributes> descriptionSource, 
 		List<SememeChronology<DescriptionSememe<?>>> descriptions)
 	{
 		for (int i = 0; i < descriptionSource.size(); i++)
@@ -65,7 +65,7 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 			{
 				for (String value : attributes.getValue())
 				{
-					eConceptUtility.addStringAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey(), State.ACTIVE);
+					ibdfCreationUtility.addStringAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey(), State.ACTIVE);
 				}
 			}
 			
@@ -73,13 +73,13 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 			{
 				for (UUID value : attributes.getValue())
 				{
-					eConceptUtility.addUUIDAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey());
+					ibdfCreationUtility.addUUIDAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, attributes.getKey());
 				}
 			}
 			
 			for (UUID refsetConcept : descriptionSource.get(i).refsetMembership)
 			{
-				eConceptUtility.addRefsetMembership(ComponentReference.fromChronology(descriptions.get(i)), refsetConcept, State.ACTIVE, null);
+				ibdfCreationUtility.addRefsetMembership(ComponentReference.fromChronology(descriptions.get(i)), refsetConcept, State.ACTIVE, null);
 			}
 		}
 	}
