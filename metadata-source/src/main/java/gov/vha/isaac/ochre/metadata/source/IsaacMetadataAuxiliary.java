@@ -144,6 +144,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                                         DynamicSememeDataType.STRING, null, true, true)}));
                         createConcept("RXCUI").setPrimordialUuid("617761d2-80ef-5585-83a0-60851dd44158");//comes from the algorithm in the rxnorm econ loader
                         createConcept("VUID", "Vets Unique Identifier");
+                        createConcept("OID", "HL7 Object Identifier");
                         createConcept("CODE").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
                         
                     popParent();
