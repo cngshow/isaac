@@ -47,6 +47,15 @@ public class ComponentReference
 		return nidProvider_.getAsInt();
 	}
 	
+	/**
+	 * Danger Danger
+	 * Don't use this unless you KNOW the type of component you have a handle to....
+	 */
+	protected int getSequence()
+	{
+		return sequenceProvider_.getAsInt();
+	}
+	
 	public String getTypeString()
 	{
 		return typeLabelSupplier_.get();

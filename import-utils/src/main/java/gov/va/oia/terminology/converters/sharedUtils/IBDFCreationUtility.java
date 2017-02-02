@@ -159,7 +159,7 @@ public class IBDFCreationUtility
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
 	public final static String metadataSemanticTag_ = " (ISAAC)";
 	
-	private int moduleSeq_ = 0;
+	private ComponentReference module_ = null;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
 	
 	private HashSet<UUID> conceptHasStatedGraph = new HashSet<>();
@@ -177,7 +177,8 @@ public class IBDFCreationUtility
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
-	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
+	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
+	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
 	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
 	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file
@@ -194,7 +195,8 @@ public class IBDFCreationUtility
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
-	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
+	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
+	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
 	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
 	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 
@@ -286,18 +288,19 @@ public class IBDFCreationUtility
 		
 		if (moduleToCreate.isPresent())
 		{
-			ConceptChronology<? extends ConceptVersion<?>> module =  createConcept(moduleUUID, moduleToCreate.get(), true, MetaData.MODULE.getPrimordialUuid());
-			moduleSeq_ = module.getConceptSequence();
+			ConceptChronology<? extends ConceptVersion<?>> module =  createConcept(moduleUUID, moduleToCreate.get(), true, 
+					preExistingModule.isPresent() ? preExistingModule.get().getPrimordialUuid() : MetaData.MODULE.getPrimordialUuid());
+			module_ = ComponentReference.fromConcept(module);
 		}
 		else
 		{
-			moduleSeq_ = preExistingModule.get().getConceptSequence();
+			module_ = ComponentReference.fromConcept(preExistingModule.get().getPrimordialUuid(), preExistingModule.get().getConceptSequence());
 		}
 		
 		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
 		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
-		ConsoleUtil.println("Loading with module '" + moduleSeq_+ "' on DEVELOPMENT path");
+		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		
 	}
 
@@ -705,15 +708,15 @@ public class IBDFCreationUtility
 	 * @param value - the value to attach (may be null if the annotation only serves to mark 'membership') - columns must align with values specified in the definition
 	 * of the sememe represented by refexDynamicTypeUuid
 	 * @param refexDynamicTypeUuid - the uuid of the dynamic sememe type - 
-	 * @param status
+	 * @param state -  state or null (for active)
 	 * @param time - if null, uses the component time
 	 * @return
 	 */
 	public SememeChronology<DynamicSememe<?>> addAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, DynamicSememeData value, 
-			UUID refexDynamicTypeUuid, State status, Long time)
+			UUID refexDynamicTypeUuid, State state, Long time)
 	{
 		return addAnnotation(referencedComponent, uuidForCreatedAnnotation, 
-				(value == null ? new DynamicSememeData[] {} : new DynamicSememeData[] {value}), refexDynamicTypeUuid, status, time, null);
+				(value == null ? new DynamicSememeData[] {} : new DynamicSememeData[] {value}), refexDynamicTypeUuid, state, time, null);
 	}
 	
 	/**
@@ -722,7 +725,7 @@ public class IBDFCreationUtility
 	 * @param values - the values to attach (may be null if the annotation only serves to mark 'membership') - columns must align with values specified in the definition
 	 * of the sememe represented by refexDynamicTypeUuid
 	 * @param refexDynamicTypeUuid - the uuid of the dynamic sememe type - 
-	 * @param state
+	 * @param state -  state or null (for active)
 	 * @param time - if null, uses the component time
 	 * @return
 	 */
@@ -1073,7 +1076,7 @@ public class IBDFCreationUtility
 	/**
 	 * Set up all the boilerplate stuff.
 	 * 
-	 * @param state - state or null (for current)
+	 * @param state - state or null (for active)
 	 * @param time - time or null (for default)
 	 */
 	public int createStamp(State state, Long time, UUID module) 
@@ -1081,7 +1084,7 @@ public class IBDFCreationUtility
 		return Get.stampService().getStampSequence(
 				state == null ? State.ACTIVE : state,
 				time == null ? defaultTime_ : time.longValue(), 
-				authorSeq_, (module == null ? moduleSeq_ : Get.identifierService().getConceptSequenceForUuids(module)), terminologyPathSeq_);
+				authorSeq_, (module == null ? module_.getSequence() : Get.identifierService().getConceptSequenceForUuids(module)), terminologyPathSeq_);
 	}
 
 	private String getOriginStringForUuid(UUID uuid)
@@ -1097,6 +1100,11 @@ public class IBDFCreationUtility
 			return temp;
 		}
 		return "Unknown";
+	}
+	
+	public ComponentReference getModule()
+	{
+		return module_;
 	}
 
 	public LoadStats getLoadStats()
@@ -1324,6 +1332,25 @@ public class IBDFCreationUtility
 		{
 			addAnnotation(concept, null, data, DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getUUID(), State.ACTIVE, null, null);
 		}
+	}
+	
+	/**
+	 * Creates column concepts (for the column labels) for each provided columnName, then creates a property with a multi-column data set
+	 * each column being of type string, and optional.
+	 * @param sememeName
+	 * @param columnNames
+	 * @return
+	 */
+	public Property createMultiColumnDynamicStringSememe(String sememeName, String[] columnNames)
+	{
+		DynamicSememeColumnInfo[] cols = new DynamicSememeColumnInfo[columnNames.length];
+		for (int i = 0; i < cols.length; i++)
+		{
+			UUID descriptionConcept = createConcept(columnNames[i], true, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS.getPrimordialUuid()).getPrimordialUuid();
+			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, DynamicSememeDataType.STRING, null, false, true);
+		}
+		
+		return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
 	}
 
 	public void shutdown() throws IOException	
