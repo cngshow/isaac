@@ -97,7 +97,7 @@ public class VetsExporter {
 	TaxonomyService ts = Get.taxonomyService();
 	
 	//VHAT Metadata -> "Attribute Types"
-	final UUID vhatPropertyTypesUUID = UUID.fromString("eb7696e7-fe40-5985-9b2e-4e3d840a47b7");
+	final UUID vhatPropertyTypesUUID = UUID.fromString("8287530a-b6b0-594d-bf46-252e09434f7e");
 	final int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID);
 
 	//VHAT Metadata -> "Refsets"
