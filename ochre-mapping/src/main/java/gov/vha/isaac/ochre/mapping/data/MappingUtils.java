@@ -68,7 +68,7 @@ public class MappingUtils
 	public static List<SimpleDisplayConcept> getQualifierConcepts() throws IOException
 	{
 		ArrayList<SimpleDisplayConcept> result = new ArrayList<>();
-		for (Integer conSequence : Frills.getAllChildrenOfConcept(IsaacMappingConstants.get().MAPPING_QUALIFIERS.getSequence(), true, false))
+		for (Integer conSequence : Frills.getAllChildrenOfConcept(IsaacMappingConstants.get().MAPPING_EQUIVALENCE_TYPES.getSequence(), true, false))
 		{
 			result.add(new SimpleDisplayConcept(conSequence));
 		}
