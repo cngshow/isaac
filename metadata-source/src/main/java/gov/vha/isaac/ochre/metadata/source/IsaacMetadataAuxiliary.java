@@ -121,6 +121,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
                         createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
+                        createConcept("HL7v3 modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
