@@ -18,8 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import org.junit.Test;
-
 /**
  *
  *
@@ -29,7 +27,7 @@ import org.junit.Test;
  */
 public class TestHL7DiscoveryRequest {
 
-	@Test
+	//@Test
 	public void testSendMessage() throws Exception
 	{
 

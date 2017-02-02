@@ -18,23 +18,22 @@
  */
 package gov.vha.isaac.ochre.deployment.listener.parser;
 
-//import gov.va.med.term.deployment.business.ListenerDelegate;
-import gov.vha.isaac.ochre.deployment.model.Site;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 
 public abstract class BaseParser
 {
 	/**
 	 * Retrieve information from the Site table to describe the site by name
+	 * 
 	 * @param siteId
 	 * @return Site object
-	 */    
-	public Site resolveSiteId(String vaStringSiteId)
-    {
-        Site site = null;
-        
-        //TODO: replace this?
-        //site = ListenerDelegate.getSiteByVAStringId(vaStringSiteId);
-        
-        return site;
-    }
+	 */
+	public SiteDTO resolveSiteId(String vaStringSiteId) {
+		SiteDTO site = null;
+
+		// TODO: replace this?
+		// site = ListenerDelegate.getSiteByVAStringId(vaStringSiteId);
+
+		return site;
+	}
 }

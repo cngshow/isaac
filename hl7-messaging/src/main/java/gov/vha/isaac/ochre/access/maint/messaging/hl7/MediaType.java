@@ -30,32 +30,32 @@ import java.util.List;
 public class MediaType implements Serializable
 {
 	/**
-	 * The ordinal of this enumeration constant (its position
-	 * in the enum declaration, where the initial constant is assigned
-	 * an ordinal of zero).
+	 * The ordinal of this enumeration constant (its position in the enum
+	 * declaration, where the initial constant is assigned an ordinal of zero).
 	 */
 	public final transient int ordinal;
 
 	/**
-	 * The name of this enum constant, as declared in the enum declaration.
-	 * Most programmers should use the {@link #toString} method rather than
-	 * accessing this field.
+	 * The name of this enum constant, as declared in the enum declaration. Most
+	 * programmers should use the {@link #toString} method rather than accessing
+	 * this field.
 	 */
 	public final String name;
 
 	/**
-	 * Sole constructor.  Programmers should never invoke this constructor.
-	 * It is for use by code emitted by the compiler in response to
-	 * enum class declarations.
+	 * Sole constructor. Programmers should never invoke this constructor. It is
+	 * for use by code emitted by the compiler in response to enum class
+	 * declarations.
 	 *
-	 * @param n - The name of this enum constant, which is the identifier
-	 *               used to declare it.
-	 * @param o - The ordinal of this enumeration constant (its position
-	 *         in the enum declaration, where the initial constant is assigned
-	 *         an ordinal of zero).
+	 * @param n
+	 *            - The name of this enum constant, which is the identifier used
+	 *            to declare it.
+	 * @param o
+	 *            - The ordinal of this enumeration constant (its position in
+	 *            the enum declaration, where the initial constant is assigned
+	 *            an ordinal of zero).
 	 */
-	protected MediaType(String n, int o)
-	{
+	protected MediaType(String n, int o) {
 		name = n;
 		ordinal = o;
 	}
@@ -64,39 +64,31 @@ public class MediaType implements Serializable
 	public static MediaType xml = new MediaType("application/xml", 1);
 
 	/**
-	 * An immutable list containing the values comprising this enum class
-	 * in the order they're declared.  This field may be used to iterate
-	 * over.
+	 * An immutable list containing the values comprising this enum class in the
+	 * order they're declared. This field may be used to iterate over.
 	 */
-	public static final List VALUES =
-			Collections.unmodifiableList(Arrays.asList(new MediaType[] {
-					er7,
-					xml,
-			}));
+	public static final List VALUES = Collections.unmodifiableList(Arrays.asList(new MediaType[] { er7, xml, }));
 
 	/**
-	 * Returns an immutable list of all the enum constants in this
-	 * enum constant's enum class.
+	 * Returns an immutable list of all the enum constants in this enum
+	 * constant's enum class.
 	 *
-	 * @return an immutable list of all of the enum constants in this
-	 *         enum constant's enum class.
+	 * @return an immutable list of all of the enum constants in this enum
+	 *         constant's enum class.
 	 */
-	public List family()
-	{
+	public List family() {
 		return VALUES;
 	}
 
 	/**
-	 * Returns true if the specified object is equal to this
-	 * enum constant.
+	 * Returns true if the specified object is equal to this enum constant.
 	 *
-	 * @param o the object to be compared for equality with this object.
-	 * @return  true if the specified object is equal to this
-	 *          enum constant.
+	 * @param o
+	 *            the object to be compared for equality with this object.
+	 * @return true if the specified object is equal to this enum constant.
 	 */
 	@Override
-	public final boolean equals(Object o)
-	{
+	public final boolean equals(Object o) {
 		return (this == o);
 	}
 
@@ -106,47 +98,41 @@ public class MediaType implements Serializable
 	 * @return a hash code for this enum constant.
 	 */
 	@Override
-	public final int hashCode()
-	{
+	public final int hashCode() {
 		return ordinal;
 	}
 
 	/**
-	 * Returns the name of this enum constant, as contained in the
-	 * declaration.
+	 * Returns the name of this enum constant, as contained in the declaration.
 	 *
 	 * @return the name of this enum constant
 	 */
 	@Override
-	public String toString()
-	{
+	public String toString() {
 		return name;
 	}
 
 	/**
-	 * Compares this enum with the specified object for order.  Returns a
+	 * Compares this enum with the specified object for order. Returns a
 	 * negative integer, zero, or a positive integer as this object is less
 	 * than, equal to, or greater than the specified object.
 	 *
-	 * Enum constants are only comparable to other enum constants of the
-	 * same enum class.  The natural order implemented by this
-	 * method is the order in which the constants are declared.
+	 * Enum constants are only comparable to other enum constants of the same
+	 * enum class. The natural order implemented by this method is the order in
+	 * which the constants are declared.
 	 */
-	public final int compareTo(MediaType o)
-	{
+	public final int compareTo(MediaType o) {
 		return (ordinal - o.ordinal);
 	}
 
 	/**
-	 * Throws CloneNotSupportedException.  This guarantees that enums
-	 * are never cloned, which is necessary to preserve their "singleton"
-	 * status.
+	 * Throws CloneNotSupportedException. This guarantees that enums are never
+	 * cloned, which is necessary to preserve their "singleton" status.
 	 *
 	 * @return (never returns)
 	 */
 	@Override
-	protected final Object clone() throws CloneNotSupportedException
-	{
+	protected final Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException("enums cannot be cloned.");
 	}
 
@@ -155,31 +141,25 @@ public class MediaType implements Serializable
 	 *
 	 * @return the canonical instance of this deserialized enum const.
 	 */
-	protected final Object readResolve()
-	{
+	protected final Object readResolve() {
 		return valueOf(name);
 	}
 
 	/**
-	 * Static factory to return the enum constant pertaining to the
-	 * given string name.  The string must match exactly an identifier
-	 * used to declare an enum constant in this type.
+	 * Static factory to return the enum constant pertaining to the given string
+	 * name. The string must match exactly an identifier used to declare an enum
+	 * constant in this type.
 	 *
-	 * @throws IllegalArgumentException if this enum class has no constant
-	 *         with the specified name.
+	 * @throws IllegalArgumentException
+	 *             if this enum class has no constant with the specified name.
 	 */
-	public static MediaType valueOf(String name)
-	{
-		for (int i=0; i<VALUES.size(); i++)
-		{
-			final MediaType value = (MediaType)VALUES.get(i);
-			if (value.name.equals(name))
-			{
+	public static MediaType valueOf(String name) {
+		for (int i = 0; i < VALUES.size(); i++) {
+			final MediaType value = (MediaType) VALUES.get(i);
+			if (value.name.equals(name)) {
 				return value;
 			}
 		}
-		throw new IllegalArgumentException(
-				"No constant with the specified name: "+name
-				);
+		throw new IllegalArgumentException("No constant with the specified name: " + name);
 	}
 }

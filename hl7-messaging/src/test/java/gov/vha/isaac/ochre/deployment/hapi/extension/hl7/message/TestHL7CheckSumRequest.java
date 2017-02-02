@@ -18,6 +18,8 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +28,9 @@ import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
-import gov.vha.isaac.ochre.deployment.model.Site;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -49,13 +52,15 @@ public class TestHL7CheckSumRequest {
 		LOG.info("1. Fail if no message.");
 
 		String hl7Message = "";
-		Site site;
-		site = new Site();
-		site.setId(1L);
-		site.setVaSiteId("");
+		
+		SiteDTO site;
+		site = new SiteDTO();
+		site.setId(1);
+		site.setVaSiteId("582");
 		site.setGroupName("");
-		site.setName("");
+		site.setName("STLVETSDEV");
 		site.setType("");
+		site.setMessageType("T");
 
 		PublishMessageDTO publishMessage;
 		publishMessage = new PublishMessageDTO();
@@ -66,57 +71,26 @@ public class TestHL7CheckSumRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList);
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
 
-	//TODO: fix, this test will hang on task
-	//@Test //(expected=Exception.class)
-	public void testSendMessageGarbage() throws Throwable {
-		//2. Fail if message is garbage.
-		LOG.info("2. Fail if message is garbage.");
-
-		String hl7Message = "alsjfkasjdfkjas;djfasd;kjfsd;ajf";
-
-		Site site;
-		site = new Site();
-		site.setId(1L);
-		site.setVaSiteId("");
-		site.setGroupName("");
-		site.setName("");
-		site.setType("");
-
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
-
-		List<PublishMessageDTO> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList);
-		taskLog(t);
-		LOG.info(": Result " + t.get());
-
-	}
-
-	//@Test(expected=Exception.class)
+	@Test(expected=Exception.class)
 	public void testSendMessageNoSite() throws Throwable {
-		//3. Fail if no site.
-		LOG.info("3. Fail if no site.");
+		//2. Fail if no site.
+		LOG.info("2. Fail if no site.");
 
-		String hl7Message = "MSH^~|\\&^VETS MD5^660VM13^XUMF MD5^950^20170104061200.000-0700^^MFQ~M01^70470^T^2.6^^^AL^AL^USA" + (char)13 
-				+ "QRD^20170104061200.000-0700^R^I^Standard Terminology Query^^^99999^ALL^Radiology Procedures^VA";
-		Site site;
+		String hl7Message = "Radiology Procedures";
+		
+		SiteDTO site;
 		PublishMessageDTO publishMessage;
 		List<PublishMessageDTO> siteList = new ArrayList<>();
 
 		siteList.clear();
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList);
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 	}
@@ -125,15 +99,14 @@ public class TestHL7CheckSumRequest {
 	//@Test
 	public void testSendMessageBadSite() throws Throwable
 	{
-		//4. Fail if site is garbage.
-		LOG.info("4. Fail if site is garbage.");
+		//3. Fail if site is garbage.
+		LOG.info("3. Fail if site is garbage.");
 
-		String hl7Message = "MSH^~|\\&^VETS MD5^660VM13^XUMF MD5^950^20170104061200.000-0700^^MFQ~M01^70470^T^2.6^^^AL^AL^USA" + (char)13 
-				+ "QRD^20170104061200.000-0700^R^I^Standard Terminology Query^^^99999^ALL^Radiology Procedures^VA";
+		String hl7Message = "Radiology Procedures";
 
-		Site site;
-		site = new Site();
-		site.setId(1L);
+		SiteDTO site;
+		site = new SiteDTO();
+		site.setId(1);
 		site.setVaSiteId("AA");
 		site.setGroupName("BB");
 		site.setName("test site");
@@ -148,7 +121,7 @@ public class TestHL7CheckSumRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList);
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
@@ -158,20 +131,19 @@ public class TestHL7CheckSumRequest {
 	//@Test
 	public void testSendMessageGood() throws Throwable
 	{
-		//5. Success if message and site are OK.
-		LOG.info("5. Success if message and site are OK.");
+		//4. Success if message and site are OK.
+		LOG.info("4. Success if message and site are OK.");
 
-		String hl7Message = "MSH^~|\\&^VETS MD5^660VM13^XUMF MD5^950^20170104061200.000-0700^^MFQ~M01^70470^T^2.6^^^AL^AL^USA" + (char)13 
-				+ "QRD^20170104061200.000-0700^R^I^Standard Terminology Query^^^99999^ALL^Radiology Procedures^VA";
-
-		//Need details of test site.
-		Site site;
-		site = new Site();
-		site.setId(1L);
-		site.setVaSiteId("");
+		String hl7Message = "Radiology Procedures";
+		
+		SiteDTO site;
+		site = new SiteDTO();
+		site.setId(1);
+		site.setVaSiteId("582");
 		site.setGroupName("");
-		site.setName("");
+		site.setName("STLVETSDEV");
 		site.setType("");
+		site.setMessageType("T");
 
 		PublishMessageDTO publishMessage;
 		publishMessage = new PublishMessageDTO();
@@ -182,12 +154,80 @@ public class TestHL7CheckSumRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList);
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
+	
+	private static HL7ApplicationProperties getDefaultServerConfig() throws MalformedURLException {
+		
+		HL7ApplicationProperties appProp = new HL7ApplicationProperties();
 
+		// Application Server Message String
+		appProp.setApplicationServerName("Development");
+		appProp.setApplicationVersion("8.4.0.0");
+
+		// Listener Port
+		appProp.setListenerPort(49990);
+
+		// Sending Facility Site ID
+		appProp.setSendingFacilityNamespaceId("660VM2");
+
+		// Target Vitria Interface Engine
+		appProp.setInterfaceEngineURL(new URL("http://vhaisfviev24:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel"));
+
+		// Encoding type
+		appProp.setHl7EncodingType("VB");
+		
+		appProp.setEnvironment("");
+
+		// Settings used by the converter to configure the sending application.
+		appProp.setSendingApplicationNamespaceIdUpdate("VETS UPDATE");
+		appProp.setSendingApplicationNamespaceIdMD5("VETS MD5");
+		appProp.setSendingApplicationNamespaceIdSiteData("VETS DATA");
+
+		// Target Application at VistA sites
+		appProp.setReceivingApplicationNamespaceIdUpdate("XUMF UPDATE");
+		appProp.setReceivingApplicationNamespaceIdMD5("XUMFMD5");
+		appProp.setReceivingApplicationNamespaceIdSiteData("XUMF DATA");
+
+		// Message Version ID
+		appProp.setVersionId("2.4");
+
+		// acceptAcknowledgementType
+		appProp.setAcceptAcknowledgementType("AL");
+		appProp.setApplicationAcknowledgementType("AL");
+
+		appProp.setCountryCode("USA");
+
+		// MFI field values
+		appProp.setMasterFileIdentifier("Standard Terminology");
+		appProp.setNameOfCodingSystem("ERT");
+		appProp.setFileLevelEventCode("MUP");
+		appProp.setResponseLevelCode("NE");
+
+		// MFE field values
+		appProp.setRecordLevelEventCode("NE");
+
+		// QRD field values
+		appProp.setQueryFormatCode("R");
+		appProp.setQueryPriority("I");
+		appProp.setQueryId("Standard Terminology Query");
+		appProp.setQueryLimitedRequestQuantity(99999);
+		//appProp.setQueryLimitedRequestUnits();
+
+		appProp.setQueryWhoSubjectFilterIdNumber("ALL");
+		appProp.setQueryWhatDepartmentDataCodeIdentifier("VA");
+
+		// CE static field values
+		appProp.setSubFieldSeparator("@");
+		appProp.setUseInterfaceEngine(true);
+
+		return appProp;
+
+	}
+	
 	private void taskLog(Task t) {
 
 		t.progressProperty().addListener(new ChangeListener<Number>()

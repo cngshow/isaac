@@ -16,8 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.deployment.publish;
-
+package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -35,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ApplicationPropertyReader
 {
-	private static Logger log = LogManager.getLogger(ApplicationPropertyReader.class);
+	private static Logger LOG = LogManager.getLogger(ApplicationPropertyReader.class);
 
 	/**
 	 * The <code>getApplicationProperties</code> method retrieves from
@@ -45,22 +44,18 @@ public class ApplicationPropertyReader
 	 * @return String value of parameter
 	 * @throws MissingResourceException
 	 */
-	public static String getApplicationProperty(String parameterName)
-	{
+	public static String getApplicationProperty(String parameterName) {
 		String parameterValue = null;
 
 		String baseName = "application";
 
-		try
-		{
+		try {
 			ResourceBundle resourceBundle = ResourceBundle.getBundle(baseName);
 			String key = parameterName;
 
 			parameterValue = resourceBundle.getString(key);
-		}
-		catch (Exception e)
-		{
-			log.debug(e.getMessage());
+		} catch (Exception e) {
+			LOG.debug(e.getMessage());
 		}
 
 		return parameterValue;

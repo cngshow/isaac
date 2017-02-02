@@ -26,46 +26,40 @@ import org.apache.logging.log4j.Logger;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import javafx.concurrent.Task;
 
-public class HL7Discovery {
+public class HL7Discovery
+{
 
 	private static final Logger LOG = LogManager.getLogger();
 
-	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList) throws Throwable
-	{
+	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList) throws Throwable {
 		LOG.info("Building the task to send an HL7 message...");
 
-		if (hl7Message == null)
-		{
+		if (hl7Message == null) {
 			throw new Exception("No message to send!");
 		}
 
-		Task<String> sender = new Task<String>()
-		{
+		Task<String> sender = new Task<String>() {
 			@Override
-			protected String call() throws Exception
-			{
+			protected String call() throws Exception {
 				String tag = "";
 				updateMessage("Preparing");
-				try
-				{
+				try {
 
 					updateTitle("Sending HL7 message");
 
-					//WorkExecutors.get().getExecutor().execute(HL7Sender.send(hl7Message, siteList));
+					// WorkExecutors.get().getExecutor().execute(HL7Sender.send(hl7Message,
+					// siteList));
 
+					// block till upload complete
+					// pm.get();
 
-					//block till upload complete
-					//pm.get();
-
-					//updateTitle("Cleaning Up");
+					// updateTitle("Cleaning Up");
 					Thread.sleep(1000);
 
 					updateTitle("Complete");
 
 					return tag;
-				}
-				catch (Throwable e)
-				{
+				} catch (Throwable e) {
 					LOG.error("Unexpected error", e);
 					throw new RuntimeException(e);
 				}

@@ -18,61 +18,60 @@
  */
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
-import gov.vha.isaac.ochre.deployment.model.Site;
-
 public class PublishMessageDTO
 {
-	private Site site;
+	private SiteDTO site;
 	private long messageId;
 
-	public PublishMessageDTO()
-	{
+	public PublishMessageDTO() {
 	}
 
 	/**
 	 * Instantiate a new HL7MessagePublication with the required parameters
+	 * 
 	 * @param site
 	 * @param messageId
 	 */
-	public PublishMessageDTO(long messageId, Site site)
-	{
+	public PublishMessageDTO(long messageId, SiteDTO site) {
 		this.site = site;
 		this.messageId = messageId;
 	}
 
 	/**
 	 * Returns the HL7 message ID
+	 * 
 	 * @return Returns the messageId.
 	 */
-	public long getMessageId()
-	{
+	public long getMessageId() {
 		return messageId;
 	}
 
 	/**
 	 * Sets the HL7 message ID
-	 * @param messageId The messageId to set.
+	 * 
+	 * @param messageId
+	 *            The messageId to set.
 	 */
-	public void setMessageId(long messageId)
-	{
+	public void setMessageId(long messageId) {
 		this.messageId = messageId;
 	}
 
 	/**
 	 * Returns the site to which the message (with message ID) was sent
+	 * 
 	 * @return Returns the site.
 	 */
-	public Site getSite()
-	{
+	public SiteDTO getSite() {
 		return site;
 	}
 
 	/**
 	 * Sets the site to which the message (with message ID) was sent
-	 * @param site The site to set.
+	 * 
+	 * @param site
+	 *            The site to set.
 	 */
-	public void setSite(Site site)
-	{
+	public void setSite(SiteDTO site) {
 		this.site = site;
 	}
 }

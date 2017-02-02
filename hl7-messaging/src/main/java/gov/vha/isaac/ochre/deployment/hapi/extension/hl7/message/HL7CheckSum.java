@@ -27,75 +27,82 @@ import org.apache.logging.log4j.Logger;
 
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.exception.STSException;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
-public class HL7CheckSum {
+public class HL7CheckSum
+{
 
-	private static final Logger LOG = LogManager.getLogger();
+	private static final Logger LOG = LogManager.getLogger(HL7CheckSum.class);
 
-	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList)
-	{
+	public static Task<String> checkSum(String checkSum, List<PublishMessageDTO> siteList,
+			HL7ApplicationProperties applicationProperties) {
+
 		LOG.info("Building the task to send an HL7 message...");
 
-		if (StringUtils.isBlank(hl7Message))
-		{
-			LOG.error("No message to send!");
-			throw new IllegalArgumentException("No message to send!");
+		if (StringUtils.isBlank(checkSum)) {
+			LOG.error("No checksum message to send!");
+			throw new IllegalArgumentException("No checksum message to send!");
 		}
-		if (siteList == null || siteList.size() == 0)
-		{
+		if (siteList == null || siteList.size() == 0) {
 			LOG.error("No sites to send to!");
 			throw new IllegalArgumentException("No sites to send to!");
 		}
 
+		String hl7CheckSumMessage;
+		try {
+			hl7CheckSumMessage = HL7RequestGenerator.getChecksumRequestMessage(checkSum, applicationProperties);
+		} catch (STSException e) {
+			String msg = String.format(
+					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
+					checkSum);
+			LOG.error(msg);
+			throw new RuntimeException(msg);
+		}
 
-		Task<String> sender = new Task<String>()
-		{
+		// if message is constructed, send
+		Task<String> sender = new Task<String>() {
 			@Override
-			protected String call() throws Exception
-			{
-				String tag = "";
+			protected String call() throws Exception {
+				String tag = "done";
 				updateMessage("Preparing");
 				LOG.info("Preparing");
-				try
-				{
+				try {
 					updateTitle("Sending HL7 message");
-					LOG.info("Sending HL7 message {} ", hl7Message);
+					LOG.info("Sending HL7 message without site: " + hl7CheckSumMessage);
 
-					HL7Sender hl7Sender = new HL7Sender(hl7Message, siteList);
+					HL7Sender hl7Sender = new HL7Sender(hl7CheckSumMessage, siteList, applicationProperties);
+					//hl7Sender.send(hl7CheckSumMessage, siteList, applicationProperties);
 
-//					hl7Sender.progressProperty().addListener(new ChangeListener<Number>()
-//					{
-//						@Override
-//						public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-//						{
-//							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
-//						}
-//					});
-//					hl7Sender.messageProperty().addListener(new ChangeListener<String>()
-//					{
-//						@Override
-//						public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-//						{
-//							updateMessage(newValue);
-//						}
-//					});
-//
-//					WorkExecutors.get().getExecutor().execute(hl7Sender);
-//					
-//					hl7Sender.get();
+					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+						}
+					});
+					hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
+						@Override
+						public void changed(ObservableValue<? extends String> observable, String oldValue,
+								String newValue) {
+							updateMessage(newValue);
+						}
+					});
 
-					//updateTitle("sleep for 10 seconds");
-					//Thread.sleep(10000);
+					WorkExecutors.get().getExecutor().execute(hl7Sender);
+
+					hl7Sender.get();
 
 					updateTitle("Complete");
 					LOG.info("Complete");
 
 					return tag;
-				}
-				catch (Throwable e)
-				{
+				} catch (Throwable e) {
 					LOG.error("Unexpected error", e);
 					throw new RuntimeException(e);
 				}
@@ -107,20 +114,20 @@ public class HL7CheckSum {
 		return sender;
 	}
 
-		/**
-		 * A utility method to execute a task and wait for it to complete.
-		 * @param task
-		 * @return the string returned by the task
-		 * @throws InterruptedException
-		 * @throws ExecutionException
-		 */
-		public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
-		{
-			LOG.info("executeAndBlock with task " + task);
-			WorkExecutors.get().getExecutor().execute(task);
-			String result = task.get();
-			LOG.info("result of task: " + result);
-			return result;
-		}
+	/**
+	 * A utility method to execute a task and wait for it to complete.
+	 * 
+	 * @param task
+	 * @return the string returned by the task
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException {
+		LOG.info("executeAndBlock with task " + task);
+		WorkExecutors.get().getExecutor().execute(task);
+		String result = task.get();
+		LOG.info("result of task: " + result);
+		return result;
+	}
 
 }

@@ -28,6 +28,7 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.DataTypeException;
 import gov.vha.isaac.ochre.deployment.hapi.extension.VetsMfnM01;
 import gov.vha.isaac.ochre.deployment.hapi.extension.VetsMfnM01Mfezxx;
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.NameValueDTO;
 import gov.vha.isaac.ochre.services.dto.publish.PublishConceptDTO;
 import gov.vha.isaac.ochre.services.dto.publish.PublishRegionDTO;
@@ -41,21 +42,20 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 	/**
 	 * The <code>getVetsMessageObject</code> method returns a message String.
+	 * 
 	 * @param publishRegionDTOList
 	 * @return String HL7 message
 	 * @throws STSException
 	 */
-	public static String getMessage(List<PublishRegionDTO> publishRegionDTOList) throws STSException
-	{
+	public static String getMessage(List<PublishRegionDTO> publishRegionDTOList, HL7ApplicationProperties serverConfig)
+			throws STSException {
 		HL7SubsetUpdateGenerator generator = new HL7SubsetUpdateGenerator();
-		return generator.produceMessage(publishRegionDTOList);
+		return generator.produceMessage(publishRegionDTOList, serverConfig);
 	}
 
-	public String produceMessage(List<PublishRegionDTO> publishRegionDTOList)
-			throws STSException
-	{
-		if (publishRegionDTOList.size() == 0)
-		{
+	public String produceMessage(List<PublishRegionDTO> publishRegionDTOList, HL7ApplicationProperties serverConfig)
+			throws STSException {
+		if (publishRegionDTOList.size() == 0) {
 			return null;
 		}
 		VetsMfnM01 message = new VetsMfnM01();
@@ -64,46 +64,40 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 		int mfeCounter = 0;
 		int zrtCounter = 0;
 
-		try
-		{
+		try {
 			// Get the MSH and MFI parts of the header
-			message.addMshSegment(message, hl7DateString);
-			message.addMfiSegment(message, hl7DateString);
+			message.addMshSegment(message, hl7DateString, serverConfig);
+			message.addMfiSegment(message, hl7DateString, serverConfig);
 
 			VetsMfnM01Mfezxx mfeGroup = null;
 
 			Iterator publishRegionListIter = publishRegionDTOList.iterator();
-			while (publishRegionListIter.hasNext())
-			{
+			while (publishRegionListIter.hasNext()) {
 				PublishRegionDTO publishRegionDTO = (PublishRegionDTO) publishRegionListIter.next();
 				subsetName = publishRegionDTO.getRegionName();
 
 				List<PublishConceptDTO> publishConceptDTOList = publishRegionDTO.getPublishConceptDTOList();
 
-				if (publishConceptDTOList == null || publishConceptDTOList.size() == 0)
-				{
+				if (publishConceptDTOList == null || publishConceptDTOList.size() == 0) {
 					continue;
 				}
 
 				Iterator publishConceptDTOListIter = publishConceptDTOList.iterator();
-				while (publishConceptDTOListIter.hasNext())
-				{
+				while (publishConceptDTOListIter.hasNext()) {
 					PublishConceptDTO publishConceptDTO = (PublishConceptDTO) publishConceptDTOListIter.next();
-					mfeGroup = mfeSegment(message, hl7DateString, subsetName,
-							mfeCounter, publishConceptDTO);
+					mfeGroup = mfeSegment(message, hl7DateString, subsetName, mfeCounter, publishConceptDTO,
+							serverConfig);
 
 					// Add the 'Term' ZRT segment then increment the zrtCounter
-					mfeGroup.addZrtSegment(mfeGroup, new NameValueDTO(TERM_FIELD_NAME, publishConceptDTO
-							.getPublishName()), zrtCounter);
+					mfeGroup.addZrtSegment(mfeGroup,
+							new NameValueDTO(TERM_FIELD_NAME, publishConceptDTO.getPublishName()), zrtCounter);
 					zrtCounter++;
 
 					// Set the properties in the ZRT segments
 					List properties = publishConceptDTO.getPropertyList();
-					if (properties != null || properties.size() != 0)
-					{
+					if (properties != null || properties.size() != 0) {
 						Iterator propertyIter = properties.iterator();
-						while (propertyIter.hasNext())
-						{
+						while (propertyIter.hasNext()) {
 							NameValueDTO property = (NameValueDTO) propertyIter.next();
 							mfeGroup.addZrtSegment(mfeGroup, property, zrtCounter);
 							zrtCounter++;
@@ -112,11 +106,9 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 					// Set the designations in the ZRT segments
 					List designations = publishConceptDTO.getDesignationList();
-					if (designations != null && designations.size() != 0)
-					{
+					if (designations != null && designations.size() != 0) {
 						Iterator designationIter = designations.iterator();
-						while (designationIter.hasNext())
-						{
+						while (designationIter.hasNext()) {
 							NameValueDTO designation = (NameValueDTO) designationIter.next();
 							mfeGroup.addZrtSegment(mfeGroup, designation, zrtCounter);
 							zrtCounter++;
@@ -125,18 +117,15 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 					// Set the relationships in the ZRT segments
 					List relationships = publishConceptDTO.getRelationshipList();
-					if (relationships != null && relationships.size() != 0)
-					{
+					if (relationships != null && relationships.size() != 0) {
 						Iterator relationshipIter = relationships.iterator();
-						while (relationshipIter.hasNext())
-						{
+						while (relationshipIter.hasNext()) {
 							NameValueDTO relationship = (NameValueDTO) relationshipIter.next();
 							mfeGroup.addZrtSegment(mfeGroup, relationship, zrtCounter);
 							zrtCounter++;
 						}
 					}
-					zrtCounter = additionalSegments(subsetName, zrtCounter,
-							mfeGroup, publishConceptDTO);
+					zrtCounter = additionalSegments(subsetName, zrtCounter, mfeGroup, publishConceptDTO);
 
 					// Add a ZRT segment for each concept for the status value
 					String conceptStatusValue = getStatusValue(publishConceptDTO.isActive());
@@ -153,46 +142,36 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 			}
 
 			// add the update to the version file
-			VetsMfnM01Mfezxx versionMFEGroup = message.addMfeSegment(message,
-					hl7DateString, TERMINOLOGY_VERSION_SUBSET,
-					TERMINOLOGY_VERSION_NAME, mfeCounter);
+			VetsMfnM01Mfezxx versionMFEGroup = message.addMfeSegment(message, hl7DateString, TERMINOLOGY_VERSION_SUBSET,
+					TERMINOLOGY_VERSION_NAME, mfeCounter, serverConfig);
 
 			// Set the VERSION_FIELD_NAME value to zero (0) because it is no
 			// longer meaningful to send to VistA
-			versionMFEGroup.addZrtSegment(versionMFEGroup, new NameValueDTO(
-					VERSION_FIELD_NAME, "0"), zrtCounter);
+			versionMFEGroup.addZrtSegment(versionMFEGroup, new NameValueDTO(VERSION_FIELD_NAME, "0"), zrtCounter);
 
 			String messageString = HL7SubsetUpdateGenerator.getMessage(message);
 
 			// return message;
 			return messageString;
-		}
-		catch (DataTypeException e)
-		{
+		} catch (DataTypeException e) {
 			log.error("Data Type Exception: Error generating a portion of the message.");
 			throw new STSException("Data Type Exception: Error generating a portion of the message.", e);
-		}
-		catch (HL7Exception e)
-		{
+		} catch (HL7Exception e) {
 			log.error("HL7 Exception: Error adding a segment of the message.");
 			throw new STSException("HL7 Exception: Error adding a segment of the message.", e);
 		}
 	}
 
-	protected int additionalSegments(String subsetName, int zrtCounter,
-			VetsMfnM01Mfezxx mfeGroup, PublishConceptDTO publishConceptDTO)
-					throws HL7Exception
-	{
+	protected int additionalSegments(String subsetName, int zrtCounter, VetsMfnM01Mfezxx mfeGroup,
+			PublishConceptDTO publishConceptDTO) throws HL7Exception {
 		return zrtCounter;
 	}
 
-	protected VetsMfnM01Mfezxx mfeSegment(VetsMfnM01 message,
-			String hl7DateString, String subsetName, int mfeCounter,
-			PublishConceptDTO publishConceptDTO) throws HL7Exception
-	{
+	protected VetsMfnM01Mfezxx mfeSegment(VetsMfnM01 message, String hl7DateString, String subsetName, int mfeCounter,
+			PublishConceptDTO publishConceptDTO, HL7ApplicationProperties serverConfig) throws HL7Exception {
 		VetsMfnM01Mfezxx mfeGroup;
 		mfeGroup = message.addMfeSegment(message, hl7DateString, subsetName, Long.toString(publishConceptDTO.getVuid()),
-				publishConceptDTO.getPublishName(), mfeCounter);
+				publishConceptDTO.getPublishName(), mfeCounter, serverConfig);
 		return mfeGroup;
 	}
 }

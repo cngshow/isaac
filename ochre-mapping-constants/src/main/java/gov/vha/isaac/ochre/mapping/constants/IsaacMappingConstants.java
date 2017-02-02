@@ -66,9 +66,9 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		"Stores the editor stated purpose of the mapping set",
 		DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 	
-	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER = new MetadataConceptConstant("mapping qualifier", 
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE = new MetadataConceptConstant("mapping equivalence type", 
 			UUID.fromString("8e84c657-5f47-51b8-8ebf-89a9d025a9ef"),
-			"Stores the editor selected mapping qualifier",
+			"Stores the editor selected mapping equivalence type",
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 		
 	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE = new MetadataConceptConstant("mapping sequence", 
@@ -92,27 +92,31 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS) {}; 
 
 		
-	public static final MetadataConceptConstant MAPPING_QUALIFIER_BROADER = new MetadataConceptConstant("Broader Than", 
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_BROAD_TO_NARROW = new MetadataConceptConstant("Broad to Narrow", 
 		UUID.fromString("c1068428-a986-5c12-9583-9b2d3a24fdc6")) {};
 	
-	public static final MetadataConceptConstant MAPPING_QUALIFIER_EXACT = new MetadataConceptConstant("Exact", 
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_ONE_TO_ONE = new MetadataConceptConstant("One to One", 
 		UUID.fromString("8aa6421d-4966-5230-ae5f-aca96ee9c2c1")) {};
 	
-	public static final MetadataConceptConstant MAPPING_QUALIFIER_NARROWER = new MetadataConceptConstant("Narrower Than", 
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_NARROW_TO_BROAD = new MetadataConceptConstant("Narrow to Broad", 
 		UUID.fromString("250d3a08-4f28-5127-8758-e8df4947f89c")) {};
 
-	public static final MetadataConceptConstant MAPPING_QUALIFIER_UNMAPPED = new MetadataConceptConstant("Unmapped", 
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_UNMAPPABLE = new MetadataConceptConstant("Unmappable", 
 		UUID.fromString("e5f7f98f-9607-55a7-bbc4-25f2e61df23d")) {};
+
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_PARTIAL = new MetadataConceptConstant("Partial", 
+		UUID.fromString("a7f9574c-8e8b-515d-9c21-9896063cc3b8")) {};
 			
-	public final MetadataConceptConstantGroup MAPPING_QUALIFIERS = new MetadataConceptConstantGroup("mapping qualifiers", 
+	public final MetadataConceptConstantGroup MAPPING_EQUIVALENCE_TYPES = new MetadataConceptConstantGroup("mapping qualifiers", 
 		UUID.fromString("83204ca8-bd51-530c-af04-5edbec04a7c6"), 
 		"A grouping of different types types of allowed mapping qualifiers") 
 		{
 			{
-				addChild(MAPPING_QUALIFIER_BROADER);
-				addChild(MAPPING_QUALIFIER_EXACT);
-				addChild(MAPPING_QUALIFIER_NARROWER);
-				addChild(MAPPING_QUALIFIER_UNMAPPED);
+				addChild(MAPPING_EQUIVALENCE_TYPE_BROAD_TO_NARROW);
+				addChild(MAPPING_EQUIVALENCE_TYPE_ONE_TO_ONE);
+				addChild(MAPPING_EQUIVALENCE_TYPE_NARROW_TO_BROAD);
+				addChild(MAPPING_EQUIVALENCE_TYPE_UNMAPPABLE);
+				addChild(MAPPING_EQUIVALENCE_TYPE_PARTIAL);
 			}
 		};
 		
@@ -137,7 +141,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	{
 		{
 			addChild(MAPPING_NAMESPACE);
-			addChild(MAPPING_QUALIFIERS);
+			addChild(MAPPING_EQUIVALENCE_TYPES);
 			addChild(MAPPING_SOURCE_CODE_SYSTEM);
 			addChild(MAPPING_SOURCE_CODE_SYSTEM_VERSION);
 			addChild(MAPPING_TARGET_CODE_SYSTEM);
@@ -165,7 +169,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 
 	/** 
 	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT}
-	 * see {@link #MAPPING_QUALIFIERS}
+	 * see {@link #MAPPING_EQUIVALENCE_TYPES}
 	 */
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE = new MetadataDynamicSememeConstant("Mapping Sememe Type", 
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
@@ -216,7 +220,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate() {
 		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
-				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER,
+				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE,
 				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE, 
 				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS};
 	} 

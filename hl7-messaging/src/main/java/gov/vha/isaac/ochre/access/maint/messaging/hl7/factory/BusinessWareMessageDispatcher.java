@@ -28,7 +28,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
-import java.net.URL;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,61 +36,35 @@ import org.apache.logging.log4j.Logger;
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.GenericParser;
 import ca.uhn.hl7v2.util.Terser;
-import gov.vha.isaac.ochre.access.maint.conversion.StringConverter;
-import gov.vha.isaac.ochre.access.maint.conversion.StringConverter.FormatException;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.Encoding;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MLLP;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MediaType;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
-import gov.vha.isaac.ochre.deployment.publish.ApplicationPropertyReader;
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 
 /**
  * Sends the given HL7 message to BusinessWare for distribution.
  */
-public class BusinessWareMessageDispatcher implements MessageDispatcher {
+public class BusinessWareMessageDispatcher implements MessageDispatcher
+{
+
 	/** A logger for messages produced by this class. */
 	private static Logger LOG = LogManager.getLogger(BusinessWareMessageDispatcher.class);
 
-	/** The URL for BusinessWare. */
-	private static final URL url_ = initializeURL();
-
-	private static URL initializeURL() {
-		try {
-			
-			return (URL) StringConverter.fromString(
-					ApplicationPropertyReader.getApplicationProperty("gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url"), URL.class);
-			
-//			return (URL) StringConverter.fromString(
-//					// Settings.instance().value(
-//					// BusinessWareMessageDispatcher.class,
-//					// "url"
-//					// ),
-//					// TODO: remove hardcoded.
-//					// "http://vhaispviev1:8080/servlet/FrameworkServletHTTPtoChannel",
-//					"http://localhost:8080/va/HL7InBound", URL.class);
-		} catch (FormatException e) {
-			final String msg = "Error initializing URL.";
-			LOG.error(msg, e);
-			throw new RuntimeException(msg, e);
-		}
-	}
-
-	/** The HL7 encoding to use BusinessWare. */
-	private static final Encoding encoding_ = Encoding.valueOf(
-			// Settings.instance().value(
-			// BusinessWareMessageDispatcher.class,
-			// "encoding"
-			// )
-			"VB"); // TODO: remove hardcoded.
+	// /** The HL7 encoding to use BusinessWare. */
+	// TODO: remove hardcoded.
+	private static final Encoding encoding_ = Encoding.valueOf("VB"); 
 
 	/** The parser to use for encoding messages. */
 	private static final GenericParser parser_ = new GenericParser();
 
 	@Override
-	public void send(Message message) {
+	public void send(Message message, HL7ApplicationProperties applicationProperties) {
 		try {
-			LOG.info("Opening connection to {}", url_.toString());
-			final HttpURLConnection connection = (HttpURLConnection) url_.openConnection();
+			LOG.info("Opening connection to {}", applicationProperties.getInterfaceEngineURL().toString());
+
+			final HttpURLConnection connection = (HttpURLConnection) applicationProperties.getInterfaceEngineURL()
+					.openConnection();
 
 			connection.setRequestMethod("POST");
 			connection.setDoInput(true);
@@ -152,8 +125,7 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher {
 
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 				final StringWriter buffer = new StringWriter();
-				final PrintWriter writer = new PrintWriter(buffer);)
-		{
+				final PrintWriter writer = new PrintWriter(buffer);) {
 			String line;
 			while ((line = reader.readLine()) != null) {
 				writer.println(line);
