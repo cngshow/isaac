@@ -16,16 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.vha.isaac.ochre.deployment.model;
+package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
 import java.io.Serializable;
-
 
 /**
  * @author VHAISLMURDOH
  */
 
-public class Site implements Serializable, Comparable<Site>
+public class SiteDTO implements Serializable, Comparable<SiteDTO>
 {
 	private long id;
 	private String name;
@@ -35,86 +34,94 @@ public class Site implements Serializable, Comparable<Site>
 	private String messageType;
 
 	/**
-	 * @return Returns the id.
-	 * @hibernate.id generator-class="gov.va.med.term.services.util.TableNameSequenceGenerator"
-	 */
-	public long getId()
-	{
-		return id;
-	}
-	public void setId(long id)
-	{
-		this.id = id;
-	}
-	/**
-	 * @hibernate.property column="GROUPNAME" length="100"
 	 * @return
 	 */
-	public String getGroupName()
-	{
+	public long getId() {
+		return id;
+	}
+
+	/**
+	 * @param id
+	 */
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	/**
+	 * @return Returns the site group name.
+	 */
+	public String getGroupName() {
 		return groupName;
 	}
-	public void setGroupName(String groupName)
-	{
+
+	/**
+	 * @param groupName
+	 */
+	public void setGroupName(String groupName) {
 		this.groupName = groupName;
 	}
 
 	/**
-	 * @hibernate.property column="name" not-null="true"
-	 * @return
-
+	 * @return Returns the site name.
 	 */
-	public String getName()
-	{
+	public String getName() {
 		return name;
 	}
-	public void setName(String name)
-	{
+
+	/**
+	 * @param name
+	 */
+	public void setName(String name) {
 		this.name = name;
 	}
 
 	/**
-	 * @hibernate.property column="type" length="15" not-null="true"
-	 * @return
+	 * @return Returns the site type.
 	 */
-	public String getType()
-	{
+	public String getType() {
 		return type;
 	}
-	public void setType(String type)
-	{
+
+	/**
+	 * @param type
+	 */
+	public void setType(String type) {
 		this.type = type;
 	}
 
 	/**
-	 * @hibernate.property column="vaSiteId" length="8" not-null="true"
-	 * @return
+	 * @return Returns the site VA Site Id.
 	 */
-	public String getVaSiteId()
-	{
+	public String getVaSiteId() {
 		return vaSiteId;
 	}
-	public void setVaSiteId(String vaSiteId)
-	{
+
+	/**
+	 * @param vaSiteId
+	 */
+	public void setVaSiteId(String vaSiteId) {
 		this.vaSiteId = vaSiteId;
 	}
 
 	/**
-	 * @hibernate.property column="messageType" length="1" not-null="true"
-	 * @return
+	 * @return Returns the site message type.
 	 */
-	public String getMessageType()
-	{
+	public String getMessageType() {
 		return messageType;
 	}
-	public void setMessageType(String messageType)
-	{
+
+	/**
+	 * @param messageType
+	 */
+	public void setMessageType(String messageType) {
 		this.messageType = messageType;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
 	@Override
-	public int compareTo(Site site)
-	{
+	public int compareTo(SiteDTO site) {
 		return this.getName().compareTo(site.getName());
 	}
 

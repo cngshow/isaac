@@ -47,6 +47,15 @@ public class ComponentReference
 		return nidProvider_.getAsInt();
 	}
 	
+	/**
+	 * Danger Danger
+	 * Don't use this unless you KNOW the type of component you have a handle to....
+	 */
+	protected int getSequence()
+	{
+		return sequenceProvider_.getAsInt();
+	}
+	
 	public String getTypeString()
 	{
 		return typeLabelSupplier_.get();
@@ -74,7 +83,7 @@ public class ComponentReference
 		cr.timeProvider_ = () -> 
 		{
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)concept).getLatestVersion(StampedVersion.class, EConceptUtility.readBackStamp_);
+			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)concept).getLatestVersion(StampedVersion.class, IBDFCreationUtility.readBackStamp_);
 			return latest.get().value().getTime();
 		};
 		return cr;
@@ -123,7 +132,7 @@ public class ComponentReference
 		cr.timeProvider_ = () -> 
 		{
 			@SuppressWarnings({ "unchecked" })
-			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)object).getLatestVersion(StampedVersion.class, EConceptUtility.readBackStamp_);
+			Optional<LatestVersion<StampedVersion>> latest = ((ObjectChronology)object).getLatestVersion(StampedVersion.class, IBDFCreationUtility.readBackStamp_);
 			return latest.get().value().getTime();
 		};
 		return cr;

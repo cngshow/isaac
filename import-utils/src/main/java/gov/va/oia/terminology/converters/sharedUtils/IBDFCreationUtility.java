@@ -101,16 +101,14 @@ import gov.vha.isaac.ochre.mojo.LoadTermstore;
 
 /**
  * 
- * {@link EConceptUtility}
+ * {@link IBDFCreationUtility}
  * 
- * Various constants and methods for building up workbench TtkConceptChronicles.
- * 
- * A much easier interfaces to use than trek - takes care of boilerplate stuff for you.
- * Also, forces consistency in how things are converted.
+ * Various constants and methods for building ISAAC terminology content, and writing it directly
+ * to an IBDF file rather than a database.  
  *
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class EConceptUtility
+public class IBDFCreationUtility
 {
 	public static enum DescriptionType 
 	{
@@ -161,7 +159,7 @@ public class EConceptUtility
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
 	public final static String metadataSemanticTag_ = " (ISAAC)";
 	
-	private int moduleSeq_ = 0;
+	private ComponentReference module_ = null;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
 	
 	private HashSet<UUID> conceptHasStatedGraph = new HashSet<>();
@@ -178,8 +176,11 @@ public class EConceptUtility
 	
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
+	 * If creating a module per version, you should specify both module parameters - for the version specific module to create, and the parent grouping module.
+	 * The namespace will be specified based on the parent grouping module.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
-	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
+	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
+	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
 	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
 	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file
@@ -187,7 +188,7 @@ public class EConceptUtility
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @throws Exception
 	 */
-	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
+	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
 		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null, null);
@@ -195,8 +196,11 @@ public class EConceptUtility
 
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
+	 * If creating a module per version, you should specify both module parameters - for the version specific module to create, and the parent grouping module.
+	 * The namespace will be specified based on the parent grouping module.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
-	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.
+	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
+	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
 	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
 	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 
@@ -206,7 +210,7 @@ public class EConceptUtility
 	 * @param ibdfPreLoadFiles (optional) load these ibdf files into the isaac DB after starting (required for some conversions like LOINC)
 	 * @throws Exception
 	 */
-	public EConceptUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
+	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
 			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
 			Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
 	{
@@ -274,11 +278,15 @@ public class EConceptUtility
 		
 		defaultTime_ = defaultTime;
 		
+		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
+		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
+		
 		UUID moduleUUID = moduleToCreate.isPresent() ? UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate.get()) : 
 			preExistingModule.get().getPrimordialUuid();
 		
-		//Just use the module as the namespace
-		ConverterUUID.configureNamespace(moduleUUID);
+		//If both modules are specified, use the parent grouping module.  If not, use the module as determined above.
+		ConverterUUID.configureNamespace(((moduleToCreate.isPresent() && preExistingModule.isPresent()) ? preExistingModule.get().getPrimordialUuid() : 
+			moduleUUID));
 		
 		String outputName = outputArtifactId + (StringUtils.isBlank(outputArtifactClassifier) ? "" : "-" + outputArtifactClassifier);
 		
@@ -288,18 +296,17 @@ public class EConceptUtility
 		
 		if (moduleToCreate.isPresent())
 		{
-			ConceptChronology<? extends ConceptVersion<?>> module =  createConcept(moduleUUID, moduleToCreate.get(), true, MetaData.MODULE.getPrimordialUuid());
-			moduleSeq_ = module.getConceptSequence();
+			module_ = ComponentReference.fromConcept(moduleUUID);
+			createConcept(moduleUUID, moduleToCreate.get(), true, 
+					preExistingModule.isPresent() ? preExistingModule.get().getPrimordialUuid() : MetaData.MODULE.getPrimordialUuid());
+			
 		}
 		else
 		{
-			moduleSeq_ = preExistingModule.get().getConceptSequence();
+			module_ = ComponentReference.fromConcept(preExistingModule.get().getPrimordialUuid(), preExistingModule.get().getConceptSequence());
 		}
 		
-		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
-		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
-		
-		ConsoleUtil.println("Loading with module '" + moduleSeq_+ "' on DEVELOPMENT path");
+		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		
 	}
 
@@ -707,15 +714,15 @@ public class EConceptUtility
 	 * @param value - the value to attach (may be null if the annotation only serves to mark 'membership') - columns must align with values specified in the definition
 	 * of the sememe represented by refexDynamicTypeUuid
 	 * @param refexDynamicTypeUuid - the uuid of the dynamic sememe type - 
-	 * @param status
+	 * @param state -  state or null (for active)
 	 * @param time - if null, uses the component time
 	 * @return
 	 */
 	public SememeChronology<DynamicSememe<?>> addAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, DynamicSememeData value, 
-			UUID refexDynamicTypeUuid, State status, Long time)
+			UUID refexDynamicTypeUuid, State state, Long time)
 	{
 		return addAnnotation(referencedComponent, uuidForCreatedAnnotation, 
-				(value == null ? new DynamicSememeData[] {} : new DynamicSememeData[] {value}), refexDynamicTypeUuid, status, time, null);
+				(value == null ? new DynamicSememeData[] {} : new DynamicSememeData[] {value}), refexDynamicTypeUuid, state, time, null);
 	}
 	
 	/**
@@ -724,7 +731,7 @@ public class EConceptUtility
 	 * @param values - the values to attach (may be null if the annotation only serves to mark 'membership') - columns must align with values specified in the definition
 	 * of the sememe represented by refexDynamicTypeUuid
 	 * @param refexDynamicTypeUuid - the uuid of the dynamic sememe type - 
-	 * @param state
+	 * @param state -  state or null (for active)
 	 * @param time - if null, uses the component time
 	 * @return
 	 */
@@ -1075,7 +1082,7 @@ public class EConceptUtility
 	/**
 	 * Set up all the boilerplate stuff.
 	 * 
-	 * @param state - state or null (for current)
+	 * @param state - state or null (for active)
 	 * @param time - time or null (for default)
 	 */
 	public int createStamp(State state, Long time, UUID module) 
@@ -1083,7 +1090,7 @@ public class EConceptUtility
 		return Get.stampService().getStampSequence(
 				state == null ? State.ACTIVE : state,
 				time == null ? defaultTime_ : time.longValue(), 
-				authorSeq_, (module == null ? moduleSeq_ : Get.identifierService().getConceptSequenceForUuids(module)), terminologyPathSeq_);
+				authorSeq_, (module == null ? module_.getSequence() : Get.identifierService().getConceptSequenceForUuids(module)), terminologyPathSeq_);
 	}
 
 	private String getOriginStringForUuid(UUID uuid)
@@ -1099,6 +1106,11 @@ public class EConceptUtility
 			return temp;
 		}
 		return "Unknown";
+	}
+	
+	public ComponentReference getModule()
+	{
+		return module_;
 	}
 
 	public LoadStats getLoadStats()
@@ -1326,6 +1338,39 @@ public class EConceptUtility
 		{
 			addAnnotation(concept, null, data, DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION.getUUID(), State.ACTIVE, null, null);
 		}
+	}
+	
+	/**
+	 * Creates column concepts (for the column labels) for each provided columnName, then creates a property with a multi-column data set
+	 * each column being of type string, and optional.
+	 * @param sememeName 
+	 * @param columnNames - Create concepts to represent column names for each item here.  Supports a stupid hack, where if the 
+	 * first two characters of a string in this array are '[]' - it will create a dynamic sememe array type for strings, rather than a single string.
+	 * @param columnTypes - optional - if not provided, makes all columns strings.  If provided, must match size of columnNames
+	 * @return
+	 */
+	public Property createMultiColumnDynamicStringSememe(String sememeName, String[] columnNames, DynamicSememeDataType[] columnTypes)
+	{
+		DynamicSememeColumnInfo[] cols = new DynamicSememeColumnInfo[columnNames.length];
+		for (int i = 0; i < cols.length; i++)
+		{
+			String colName;
+			DynamicSememeDataType type;
+			if (columnNames[i].startsWith("[]"))
+			{
+				colName = columnNames[i].substring(2, columnNames[i].length());
+				type = DynamicSememeDataType.ARRAY;
+			}
+			else
+			{
+				colName = columnNames[i];
+				type = columnTypes == null ? DynamicSememeDataType.STRING : columnTypes[i];
+			}
+			UUID descriptionConcept = createConcept(colName, true, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS.getPrimordialUuid()).getPrimordialUuid();
+			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, type, null, false, true);
+		}
+		
+		return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
 	}
 
 	public void shutdown() throws IOException	

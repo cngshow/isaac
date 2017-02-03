@@ -25,78 +25,62 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.AbstractSegment;
 import ca.uhn.hl7v2.model.Group;
 import ca.uhn.hl7v2.model.Type;
-import ca.uhn.hl7v2.model.v26.datatype.ST;
+import ca.uhn.hl7v2.model.v24.datatype.ST;
 import ca.uhn.hl7v2.parser.ModelClassFactory;
-//import ca.uhn.log.HapiLogFactory;
 
 /**
  * @author vhaislempeyd
  */
-
 public class ZRT extends AbstractSegment
 {
-	private static Logger log = LogManager.getLogger(ZRT.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(ZRT.class.getPackage().getName());
+
 	/**
-	 * Creates a Zrt segment object that belongs to the given
-	 * message.
+	 * Creates a Zrt segment object that belongs to the given message.
 	 */
-	public ZRT(Group parent, ModelClassFactory factory)
-	{
+	@SuppressWarnings("deprecation")
+	public ZRT(Group parent, ModelClassFactory factory) {
 		super(parent, factory);
-		try
-		{
+		try {
 			this.add(ST.class, true, 1, 50, null);
 			this.add(ST.class, true, 1, 80, null);
-		}
-		catch (HL7Exception he)
-		{
-			log.error("Can't instantiate " + this.getClass().getName(), he);
+		} catch (HL7Exception he) {
+			LOG.error("Can't instantiate " + this.getClass().getName(), he);
 		}
 	}
 
 	/**
 	 * Returns field name
-	 *
+	 * 
 	 * @return HAPI String type (ST) name of the field
 	 */
-	public ST getFieldName()
-	{
+	public ST getFieldName() {
 		ST ret = null;
-		try
-		{
+		try {
 			Type t = this.getField(1, 0);
-			ret = (ST)t;
-		}
-		catch (ClassCastException e)
-		{
-			log.error("Unexpected problem obtaining field value.  This is a bug.", e);
-		}
-		catch (HL7Exception e)
-		{
-			log.error("Unexpected problem obtaining field value.  This is a bug.", e);
+			ret = (ST) t;
+		} catch (ClassCastException e) {
+			LOG.error("Unexpected problem obtaining field value.  This is a bug.", e);
+		} catch (HL7Exception e) {
+			LOG.error("Unexpected problem obtaining field value.  This is a bug.", e);
 		}
 		return ret;
 	}
 
 	/**
 	 * Returns field value
-	 *
+	 * 
 	 * @return HAPI String type (ST) value of the field
 	 */
-	public ST getFieldValue()  {
+	public ST getFieldValue() {
 		ST ret = null;
-		try
-		{
+		try {
 			Type t = this.getField(2, 0);
-			ret = (ST)t;
-		}
-		catch (ClassCastException e)
-		{
-			log.error("Unexpected problem obtaining field value.  This is a bug.", e);
-		}
-		catch (HL7Exception e)
-		{
-			log.error("Unexpected problem obtaining field value.  This is a bug.", e);
+			ret = (ST) t;
+		} catch (ClassCastException e) {
+			LOG.error("Unexpected problem obtaining field value.  This is a bug.", e);
+		} catch (HL7Exception e) {
+			LOG.error("Unexpected problem obtaining field value.  This is a bug.", e);
 		}
 		return ret;
 	}

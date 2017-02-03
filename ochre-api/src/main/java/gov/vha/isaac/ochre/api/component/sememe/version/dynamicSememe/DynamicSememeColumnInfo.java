@@ -18,6 +18,7 @@
  */
 package gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.LookupService;
@@ -339,5 +340,17 @@ public class DynamicSememeColumnInfo implements Comparable<DynamicSememeColumnIn
 	public int compareTo(DynamicSememeColumnInfo o)
 	{
 		return Integer.compare(this.getColumnOrder(), o.getColumnOrder());
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "DynamicSememeColumnInfo [columnName_=" + columnName_ + ", columnDescription_=" + columnDescription_
+				+ ", columnOrder_=" + columnOrder_ + ", assemblageConcept_=" + assemblageConcept_ + ", columnDataType_="
+				+ columnDataType_ + ", defaultData_=" + defaultData_ + ", columnRequired_=" + columnRequired_
+				+ ", validatorType_=" + Arrays.toString(validatorType_) + ", validatorData_="
+				+ Arrays.toString(validatorData_) + "]";
 	}
 }

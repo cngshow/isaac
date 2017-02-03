@@ -20,17 +20,19 @@
 package gov.vha.isaac.ochre.access.maint.messaging.hl7;
 
 import ca.uhn.hl7v2.model.Message;
+import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 
 /**
- * Sends HL7 messages to the appropriate destination. Typically,
- * all HL7 messages are routed through BusinessWare.
+ * Sends HL7 messages to the appropriate destination. Typically, all HL7
+ * messages are routed through BusinessWare.
  */
 public interface MessageDispatcher
 {
 	/**
 	 * Sends the given message.
 	 *
-	 * @param message the HL7 message to send
+	 * @param message
+	 *            the HL7 message to send
 	 */
-	void send(Message message);
+	void send(Message message, HL7ApplicationProperties applicationProperties);
 }

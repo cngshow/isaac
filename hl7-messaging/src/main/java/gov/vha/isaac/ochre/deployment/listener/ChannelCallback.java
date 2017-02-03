@@ -27,38 +27,33 @@ import org.apache.logging.log4j.Logger;
 
 public class ChannelCallback
 {
-    private static Logger log = LogManager.getLogger(ResponseListener.class.getPackage().getName());
-    
-    private SocketChannel channel;
-    private StringBuffer buffer;
+	private static Logger log = LogManager.getLogger(ResponseListener.class.getPackage().getName());
 
-    public ChannelCallback( SocketChannel channel )
-    {
-        this.channel = channel;
-        this.buffer = new StringBuffer();
-    }
+	private SocketChannel channel;
+	private StringBuffer buffer;
 
-    public void execute() throws IOException
-    {
-        log.debug( this.buffer.toString() );
-        writeMessage( this.channel, this.buffer.toString() );
-        buffer = new StringBuffer();
-    }
+	public ChannelCallback(SocketChannel channel) {
+		this.channel = channel;
+		this.buffer = new StringBuffer();
+	}
 
-    public SocketChannel getChannel()
-    {
-        return this.channel;
-    }
+	public void execute() throws IOException {
+		log.debug(this.buffer.toString());
+		writeMessage(this.channel, this.buffer.toString());
+		buffer = new StringBuffer();
+	}
 
-    public void append( String values )
-    {
-        buffer.append( values );
-    }
-    
-    public void writeMessage( SocketChannel theChannel, String message ) throws IOException
-    {
-        ByteBuffer buf = ByteBuffer.wrap( message.getBytes()  );
-        int nbytes = theChannel.write( buf );
-        log.debug( "Wrote " + nbytes + " to channel." );
-    }
+	public SocketChannel getChannel() {
+		return this.channel;
+	}
+
+	public void append(String values) {
+		buffer.append(values);
+	}
+
+	public void writeMessage(SocketChannel theChannel, String message) throws IOException {
+		ByteBuffer buf = ByteBuffer.wrap(message.getBytes());
+		int nbytes = theChannel.write(buf);
+		log.debug("Wrote " + nbytes + " to channel.");
+	}
 }
