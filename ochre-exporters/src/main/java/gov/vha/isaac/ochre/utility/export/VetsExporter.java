@@ -601,7 +601,7 @@ public class VetsExporter {
 									// DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
 									me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[col].getDataObject().toString())).orElse(""));
 									break;
-								case "mapping qualifier":
+								case "mapping qualifier":  //TODO this is broken, this constant was renamed to *...EQUIVALENCE_TYPE
 									// DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
 									// Ignored?
 									break;
