@@ -176,6 +176,8 @@ public class IBDFCreationUtility
 	
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
+	 * If creating a module per version, you should specify both module parameters - for the version specific module to create, and the parent grouping module.
+	 * The namespace will be specified based on the parent grouping module.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
 	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
@@ -194,6 +196,8 @@ public class IBDFCreationUtility
 
 	/**
 	 * Creates and stores the path concept - sets up the various namespace details.
+	 * If creating a module per version, you should specify both module parameters - for the version specific module to create, and the parent grouping module.
+	 * The namespace will be specified based on the parent grouping module.
 	 * @param moduleToCreate - if present, a new concept will be created, using this value as the FSN / preferred term for use as the module
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
 	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
@@ -274,11 +278,15 @@ public class IBDFCreationUtility
 		
 		defaultTime_ = defaultTime;
 		
+		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
+		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
+		
 		UUID moduleUUID = moduleToCreate.isPresent() ? UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate.get()) : 
 			preExistingModule.get().getPrimordialUuid();
 		
-		//Just use the module as the namespace
-		ConverterUUID.configureNamespace(moduleUUID);
+		//If both modules are specified, use the parent grouping module.  If not, use the module as determined above.
+		ConverterUUID.configureNamespace(((moduleToCreate.isPresent() && preExistingModule.isPresent()) ? preExistingModule.get().getPrimordialUuid() : 
+			moduleUUID));
 		
 		String outputName = outputArtifactId + (StringUtils.isBlank(outputArtifactClassifier) ? "" : "-" + outputArtifactClassifier);
 		
@@ -288,17 +296,15 @@ public class IBDFCreationUtility
 		
 		if (moduleToCreate.isPresent())
 		{
-			ConceptChronology<? extends ConceptVersion<?>> module =  createConcept(moduleUUID, moduleToCreate.get(), true, 
+			module_ = ComponentReference.fromConcept(moduleUUID);
+			createConcept(moduleUUID, moduleToCreate.get(), true, 
 					preExistingModule.isPresent() ? preExistingModule.get().getPrimordialUuid() : MetaData.MODULE.getPrimordialUuid());
-			module_ = ComponentReference.fromConcept(module);
+			
 		}
 		else
 		{
 			module_ = ComponentReference.fromConcept(preExistingModule.get().getPrimordialUuid(), preExistingModule.get().getConceptSequence());
 		}
-		
-		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
-		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
 		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		
@@ -1337,17 +1343,31 @@ public class IBDFCreationUtility
 	/**
 	 * Creates column concepts (for the column labels) for each provided columnName, then creates a property with a multi-column data set
 	 * each column being of type string, and optional.
-	 * @param sememeName
-	 * @param columnNames
+	 * @param sememeName 
+	 * @param columnNames - Create concepts to represent column names for each item here.  Supports a stupid hack, where if the 
+	 * first two characters of a string in this array are '[]' - it will create a dynamic sememe array type for strings, rather than a single string.
+	 * @param columnTypes - optional - if not provided, makes all columns strings.  If provided, must match size of columnNames
 	 * @return
 	 */
-	public Property createMultiColumnDynamicStringSememe(String sememeName, String[] columnNames)
+	public Property createMultiColumnDynamicStringSememe(String sememeName, String[] columnNames, DynamicSememeDataType[] columnTypes)
 	{
 		DynamicSememeColumnInfo[] cols = new DynamicSememeColumnInfo[columnNames.length];
 		for (int i = 0; i < cols.length; i++)
 		{
-			UUID descriptionConcept = createConcept(columnNames[i], true, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS.getPrimordialUuid()).getPrimordialUuid();
-			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, DynamicSememeDataType.STRING, null, false, true);
+			String colName;
+			DynamicSememeDataType type;
+			if (columnNames[i].startsWith("[]"))
+			{
+				colName = columnNames[i].substring(2, columnNames[i].length());
+				type = DynamicSememeDataType.ARRAY;
+			}
+			else
+			{
+				colName = columnNames[i];
+				type = columnTypes == null ? DynamicSememeDataType.STRING : columnTypes[i];
+			}
+			UUID descriptionConcept = createConcept(colName, true, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS.getPrimordialUuid()).getPrimordialUuid();
+			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, type, null, false, true);
 		}
 		
 		return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
