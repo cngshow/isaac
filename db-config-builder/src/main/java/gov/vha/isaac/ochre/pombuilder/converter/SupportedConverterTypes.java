@@ -71,7 +71,7 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("VHAT content is typically exported from a VETs system.  ", "",
 					"VHAT.xml",
 					"Any XML file that is valid per the VETs TerminologyData.xsd schema.  The file name is ignored", 
-					".xml$", true)
+					".*\\.xml$", true)
 	}),
 	RXNORM("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
@@ -82,6 +82,12 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
 					"RxNorm_full_06062016.zip",
 					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
+	}),
+	HL7v3("hl7v3-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+		new UploadFileInfo("", "http://gforge.hl7.org/gf/project/design-repos/frs/?action=FrsReleaseBrowse&frs_package_id=30", 
+				"hl7-rimRepos-2.47.7.zip",
+				"The file must be a zip file, which should have 'rimRepos' in the file name and end with '.zip'.  This uploaded zip file" +
+				 " MUST contain a file that has 'DEFN=UV=VO' in the file name, and ends with .coremif", ".*rim.*\\.zip$", true)
 	});
 	
 	private String artifactId_;
