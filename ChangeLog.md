@@ -5,6 +5,7 @@ where provided, and the git commit history.
 
 * 2017/02/?? - 3.34 - PENDING
     * Fix for Property exports, defect 452239
+    * 444799 - HL7 upload configuration details added for PRISME to pick up
 
 * 2017/01/26 - 3.33
     * Make the GitPublish methods used by the source upload / convert / db builder portions of prisme automatically create the remote git repository if it doesn't exist.
