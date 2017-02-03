@@ -146,7 +146,11 @@ public abstract class PropertyType
 			}
 		}
 		property.setOwner(this);
-		properties_.put(property.getSourcePropertyNameFSN(), property);
+		Property old = properties_.put(property.getSourcePropertyNameFSN(), property);
+		if (old != null)
+		{
+			throw new RuntimeException("Duplicate property name: " + property.getSourcePropertyNameFSN());
+		}
 		if (altNamePropertyMap_ != null && StringUtils.isNotEmpty(property.getSourcePropertyAltName()))
 		{
 			String s = altNamePropertyMap_.put(property.getSourcePropertyAltName(), property.getSourcePropertyNameFSN());
