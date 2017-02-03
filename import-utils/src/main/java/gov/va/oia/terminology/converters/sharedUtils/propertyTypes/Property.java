@@ -77,7 +77,7 @@ public class Property
 			dataColumnsForDynamicRefex_ = columnInforForDynamicRefex;
 		}
 		
-		if (dataColumnsForDynamicRefex_ != null && !owner_.createAsDynamicRefex()) 
+		if (dataColumnsForDynamicRefex_ != null && owner_ != null && !owner_.createAsDynamicRefex()) 
 		{
 			throw new RuntimeException("Tried to attach dynamic sememe data where it isn't allowed.");
 		}
