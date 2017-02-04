@@ -842,7 +842,8 @@ public class IBDFCreationUtility
 						{
 							throw new RuntimeException("Missing column data for column " + column.getColumnName());
 						}
-						else if (values[i] != null && column.getColumnDataType() != values[i].getDynamicSememeDataType())
+						else if (values[i] != null && column.getColumnDataType() != values[i].getDynamicSememeDataType() 
+								&& column.getColumnDataType() != DynamicSememeDataType.POLYMORPHIC)
 						{
 							throw new RuntimeException("Datatype mismatch - " + column.getColumnDataType() + " - " + values[i].getDynamicSememeDataType());
 						}
