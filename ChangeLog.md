@@ -3,8 +3,8 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/02/?? - 3.35 - PENDING
-    *
+* 2017/02/04 - 3.35
+    * Bug fix for terminology converter shared code
 
 * 2017/02/03 - 3.34
     * Fix for Property exports, defect 452239
