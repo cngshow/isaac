@@ -842,9 +842,49 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * //TODO [REFEX] figure out language details (how we know what language to put on the name/description
 	 * @throws RuntimeException 
 	 */
-	
 	@SuppressWarnings("deprecation")
 	public static ConceptChronology<? extends ConceptVersion<?>> createNewDynamicSememeColumnInfoConcept(String columnName, String columnDescription) 
+			throws RuntimeException
+	{
+		ConceptChronology<? extends ConceptVersion<?>> newCon = buildNewDynamicSememeColumnInfoConcept(columnName, columnDescription);
+		try {
+			Get.commitService().commit("creating new dynamic sememe column: " + columnName).get();
+			return newCon;
+		} catch (InterruptedException | ExecutionException e) {
+			String msg = "Failed committing new DynamicSememeColumnInfo concept columnName=\"" + columnName + "\", columnDescription=\"" + columnDescription + "\"";
+			log.error(msg, e);
+			throw new RuntimeException(msg, e);
+		}
+	}
+
+	/**
+	 * Build, without committing, a new concept using the provided columnName and columnDescription values which is suitable 
+	 * for use as a column descriptor within {@link DynamicSememeUsageDescription}.
+	 * 
+	 * The new concept will be created under the concept {@link DynamicSememeConstants#DYNAMIC_SEMEME_COLUMNS}
+	 * 
+	 * A complete usage pattern (where both the refex assemblage concept and the column name concept needs
+	 * to be created) would look roughly like this:
+	 * 
+	 * DynamicSememeUtility.createNewDynamicSememeUsageDescriptionConcept(
+	 *	 "The name of the Sememe", 
+	 *	 "The description of the Sememe",
+	 *	 new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
+	 *		 0,
+	 *		 DynamicSememeColumnInfo.createNewDynamicSememeColumnInfoConcept(
+	 *			 "column name",
+	 *			 "column description"
+	 *			 )
+	 *		 DynamicSememeDataType.STRING,
+	 *		 new DynamicSememeStringImpl("default value")
+	 *		 )}
+	 *	 )
+	 * 
+	 * //TODO [REFEX] figure out language details (how we know what language to put on the name/description
+	 * @throws RuntimeException 
+	 */
+	@SuppressWarnings("deprecation")
+	public static ConceptChronology<? extends ConceptVersion<?>> buildNewDynamicSememeColumnInfoConcept(String columnName, String columnDescription) 
 			throws RuntimeException
 	{
 		if (columnName == null || columnName.length() == 0 || columnDescription == null || columnDescription.length() == 0)
@@ -879,19 +919,20 @@ public class Frills implements DynamicSememeColumnUtility {
 		builder.addDescription(definitionBuilder);
 
 		ConceptChronology<? extends ConceptVersion<?>> newCon;
+
 		try
 		{
 			newCon = builder.build(EditCoordinates.getDefaultUserMetadata(), ChangeCheckerMode.ACTIVE, new ArrayList<>()).get();
-
-			Get.commitService().commit("creating new dynamic sememe column: " + columnName).get();
 		}
 		catch (InterruptedException | ExecutionException e)
 		{
-			throw new RuntimeException(e);
+			String msg = "Failed building new DynamicSememeColumnInfo concept columnName=\"" + columnName + "\", columnDescription=\"" + columnDescription + "\"";
+			log.error(msg, e);
+			throw new RuntimeException(msg, e);
 		}
 		return newCon;
 	}
-	
+
 	/**
 	 * See {@link DynamicSememeUsageDescription} for the full details on what this builds.
 	 * 
