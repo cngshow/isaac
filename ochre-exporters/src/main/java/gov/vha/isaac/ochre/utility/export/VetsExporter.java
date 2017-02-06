@@ -588,7 +588,7 @@ public class VetsExporter {
 						
 						for (DynamicSememeColumnInfo d : dsci)
 						{
-							String column = d.getColumnName();
+							String column = d.getColumnName().toLowerCase();
 							int col = d.getColumnOrder();
 							
 							// If there isn't any data, bypass this iteration
