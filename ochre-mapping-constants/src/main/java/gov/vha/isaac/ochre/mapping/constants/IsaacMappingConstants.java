@@ -21,7 +21,7 @@ import gov.vha.isaac.ochre.api.constants.ModuleProvidedConstants;
  * The 100' view of the mapset / map item setup in the system is:
  * 
  * A Dynamic Sememe is created to represent the Mapset.  This dynamic sememe will (probably) be a child of DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.
- * The data columns on this sememe will at a minimum, carry a 'target concept' column in position 0, (making it a valid association) and carry a 'mapping qualifiers'
+ * The data columns on this sememe will at a minimum, carry a 'target concept' column in position 0, (making it a valid association) and carry a 'mapping equivalence types'
  * column in position 1.  (Note, this sememe is describing the mapping items, not the map set) There will optionally be additional fields, which carry any other 
  * types / values that the user specified at the creation of the map set.
  * 
@@ -107,9 +107,9 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_PARTIAL = new MetadataConceptConstant("Partial", 
 		UUID.fromString("a7f9574c-8e8b-515d-9c21-9896063cc3b8")) {};
 			
-	public final MetadataConceptConstantGroup MAPPING_EQUIVALENCE_TYPES = new MetadataConceptConstantGroup("mapping qualifiers", 
+	public final MetadataConceptConstantGroup MAPPING_EQUIVALENCE_TYPES = new MetadataConceptConstantGroup("mapping equivalence types", 
 		UUID.fromString("83204ca8-bd51-530c-af04-5edbec04a7c6"), 
-		"A grouping of different types types of allowed mapping qualifiers") 
+		"A grouping of different types types of allowed mapping equivalence types") 
 		{
 			{
 				addChild(MAPPING_EQUIVALENCE_TYPE_BROAD_TO_NARROW);
@@ -174,7 +174,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE = new MetadataDynamicSememeConstant("Mapping Sememe Type", 
 		UUID.fromString("aa4c75a1-fc69-51c9-88dc-a1a1c7f84e01"),
 		"A Sememe used annotate sememe definition concepts that represent a mapping definition.  Mapping sememes will contain a data column named 'target concept', "
-		+ "another named 'mapping qualifiers', and may contain additional extended columns.  This sememe carries additional information about the sememe definition.", 
+		+ "another named 'mapping equivalence type', and may contain additional extended columns.  This sememe carries additional information about the sememe definition.", 
 			new DynamicSememeColumnInfo[] {
 				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE.getUUID(), DynamicSememeDataType.STRING, 
 						null, false, true),},
