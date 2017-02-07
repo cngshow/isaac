@@ -28,6 +28,8 @@ import java.util.List;
  */
 public enum SupportedConverterTypes
 {
+	//When adding to this enum, do NOT forget to update the places where it is used in switch cases - like
+	//SrcUploadCreator, ContentConverterCreator (2 locations), 
 	LOINC("loinc-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			
 		//(?i) and (?-i) constructs are not supported in JavaScript (they are in Ruby)

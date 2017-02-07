@@ -77,10 +77,12 @@ public class ContentConverterCreator
 				return new Converter("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
 			case VHAT:
 				return new Converter("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
+			case HL7v3:
+				return new Converter("gov.vha.isaac.terminology.converters", "hl7v3-mojo", "");
 			case RXNORM: case RXNORM_SOLOR:
 				return new Converter("gov.vha.isaac.terminology.converters", "rxnorm-mojo", "");
 			default :
-				throw new RuntimeException("Oops");
+				throw new RuntimeException("Oops - forgot to support converter type");
 		}
 	}
 	
@@ -263,9 +265,17 @@ public class ContentConverterCreator
 				converter = "rxnorm-mojo";
 				goal = "convert-rxnorm-to-ibdf";
 				break;
+			case HL7v3:
+				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/hl7v3-NOTICE-addition.txt"));
+				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/hl7v3.xml"));
+				pomSwaps.put("#ARTIFACTID#", "hl7v3-ibdf");
+				pomSwaps.put("#LOADER_ARTIFACT#", "hl7v3-mojo");
+				converter = "hl7v3-mojo";
+				goal = "convert-hl7v3-to-ibdf";
+				break;
 			//TODO RXNORM_SOLOR support
 			default :
-				throw new RuntimeException("oops");
+				throw new RuntimeException("forgot to support converter type");  //TODO fix
 		}
 		
 		StringBuilder userOptions = new StringBuilder();

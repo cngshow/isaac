@@ -166,9 +166,15 @@ public class SrcUploadCreator
 							pomSwaps.put("#ARTIFACTID#", "rxnorm-src-data");
 							pomSwaps.put("#NAME#", "RxNorm Source Upload");
 							break;
+						case HL7v3:
+							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/hl7v3-NOTICE-addition.txt"));
+							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/hl7v3.xml"));
+							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.hl7v3");
+							pomSwaps.put("#ARTIFACTID#", "hl7v3-src-data");
+							pomSwaps.put("#NAME#", "HL7v3 Source Upload");
 						//TODO RXNORM_SOLOR support
 						default :
-							throw new RuntimeException("oops");
+							throw new RuntimeException("oops - forgot to support a case");
 					}
 					
 					String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
