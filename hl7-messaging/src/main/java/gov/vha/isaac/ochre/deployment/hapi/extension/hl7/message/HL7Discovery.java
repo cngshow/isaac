@@ -19,44 +19,99 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
+import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
+import gov.vha.isaac.ochre.services.exception.STSException;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
 public class HL7Discovery
 {
 
-	private static final Logger LOG = LogManager.getLogger();
+	private static final Logger LOG = LogManager.getLogger(HL7Discovery.class);
 
-	public static Task<String> checkSum(String hl7Message, List<PublishMessageDTO> siteList) throws Throwable {
+	public static Task<String> discovery(String regionName, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+
 		LOG.info("Building the task to send an HL7 message...");
 
-		if (hl7Message == null) {
-			throw new Exception("No message to send!");
+		if (applicationProperties == null) {
+			LOG.error("HL7ApplicationProperties is null!");
+			throw new IllegalArgumentException("HL7ApplicationProperties is null");
+		}
+		if (messageProperties == null) {
+			LOG.error("HL7MessageProperties is null!");
+			throw new IllegalArgumentException("HL7MessageProperties is null");
+		}			
+		if (StringUtils.isBlank(regionName)) {
+			LOG.error("No discovery message to send!");
+			throw new IllegalArgumentException("No discovery message to send.");
+		}
+		if (siteList == null || siteList.size() == 0) {
+			LOG.error("No sites to send to!");
+			throw new IllegalArgumentException("No sites to send to.");
 		}
 
+		String hl7DiscoveryMessage;
+		try {
+			hl7DiscoveryMessage = HL7RequestGenerator.getSiteDataRequestMessage(regionName, applicationProperties,
+					messageProperties);
+		} catch (STSException e) {
+			String msg = String.format(
+					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
+					regionName);
+			LOG.error(msg);
+			throw new RuntimeException(msg);
+		}
+
+		// if message is constructed, send
 		Task<String> sender = new Task<String>() {
 			@Override
 			protected String call() throws Exception {
-				String tag = "";
+				String tag = "done";
 				updateMessage("Preparing");
+				LOG.info("Preparing");
 				try {
-
 					updateTitle("Sending HL7 message");
+					LOG.info("Sending HL7 message without site: " + hl7DiscoveryMessage);
 
-					// WorkExecutors.get().getExecutor().execute(HL7Sender.send(hl7Message,
-					// siteList));
+					HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, siteList, applicationProperties,
+							messageProperties);
+					// hl7Sender.send(hl7CheckSumMessage, siteList,
+					// applicationProperties);
 
-					// block till upload complete
-					// pm.get();
+					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
+						@Override
+						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+								Number newValue) {
+							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+						}
+					});
+					hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
+						@Override
+						public void changed(ObservableValue<? extends String> observable, String oldValue,
+								String newValue) {
+							updateMessage(newValue);
+						}
+					});
 
-					// updateTitle("Cleaning Up");
-					Thread.sleep(1000);
+					WorkExecutors.get().getExecutor().execute(hl7Sender);
+
+					hl7Sender.get();
 
 					updateTitle("Complete");
+					LOG.info("Complete");
 
 					return tag;
 				} catch (Throwable e) {
@@ -67,7 +122,24 @@ public class HL7Discovery
 			}
 		};
 
+		LOG.info("returning");
 		return sender;
+	}
+
+	/**
+	 * A utility method to execute a task and wait for it to complete.
+	 * 
+	 * @param task
+	 * @return the string returned by the task
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
+	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException {
+		LOG.info("executeAndBlock with task " + task);
+		WorkExecutors.get().getExecutor().execute(task);
+		String result = task.get();
+		LOG.info("result of task: " + result);
+		return result;
 	}
 
 }

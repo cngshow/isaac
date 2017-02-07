@@ -18,8 +18,19 @@
  */
 package gov.vha.isaac.ochre.deployment.listener.parser;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteData;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDataDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.SubsetConfig;
+import gov.vha.isaac.ochre.deployment.publish.HL7SubsetUpdateGenerator;
+import gov.vha.isaac.ochre.services.exception.STSException;
 
 /**
  * Super Simple HL7 Message parser - used to reduce memory footprint instead of
@@ -30,7 +41,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class SiteDataParser extends BaseParser
 {
-	private static Logger log = LogManager.getLogger(SiteDataParser.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(SiteDataParser.class);
 
 	private static final String MAP_DEFINITION = "MapDefinition";
 	private static final String EFFECTIVE_DATE = "EffectiveDate";
@@ -44,9 +55,7 @@ public class SiteDataParser extends BaseParser
 	private static final String RELATIONSHIP_TYPE = "R";
 	private static final String MAPPING_TYPE = "M";
 	private static final String TERM_TYPE = "T";
-
 	private static String[] substitutions = { "\\F\\", "\\S\\", "\\R\\", "\\T\\", "\\E\\" };
-
 	private static String[] replacements = { "^", "~", "|", "&", "\\" };
 
 	// index into the content string
@@ -59,230 +68,186 @@ public class SiteDataParser extends BaseParser
 	 *            Incoming message as a String
 	 */
 	public void processMessage(String content) throws Exception {
+		String line;
+		String vuid = null;
+		String regionName = null;
+		boolean isMapping = false;
+		String siteValue = null;
+		String messageId = null;
+		Site site = null;
+		SubsetConfig subsetConfig = null;
+		HashSet<String> propertySet = new HashSet<String>();
+		HashSet<String> relationshipSet = new HashSet<String>();
+		boolean hasStatus = false;
+		boolean status = false;
+		List<SiteDataDTO> saveList = new ArrayList<SiteDataDTO>();
+		boolean first = true;
 
-		// String line;
-		// String vuid = null;
-		// String regionName = null;
-		// boolean isMapping = false;
-		// String siteValue = null;
-		// String messageId = null;
-		// Site site = null;
-		// SubsetConfig subsetConfig = null;
-		// HashSet<String> propertySet = new HashSet<String>();
-		// HashSet<String> relationshipSet = new HashSet<String>();
-		// boolean hasStatus = false;
-		// boolean status = false;
-		// List<SiteDataDTO> saveList = new ArrayList<SiteDataDTO>();
-		// boolean first = true;
-		//
-		// List<SiteDataDTO> siteDataDTOs = new ArrayList<SiteDataDTO>();
-		//
-		// log.debug("SiteDataParser starting");
-		// try
-		// {
-		// while ((line = getNextLine(content)) != null)
-		// {
-		// String[] params = line.split("\\^");
-		// makeSubstitutions(params);
-		// if (line.startsWith(MSH_SEGEMENT))
-		// {
-		// if (params.length < 10)
-		// {
-		// throw new Exception("MSH_SEGMENT paramter count ="+params.length+"
-		// need to have greater than 9");
-		// }
-		// siteValue = params[3];
-		// messageId = params[9];
-		// log.debug("MSH for site: " + siteValue);
-		//
-		// site = this.getSite(siteValue);
-		// }
-		// if (line.startsWith(MFE_SEGMENT))
-		// {
-		// // check to see if we didn't get the status line and are dumping
-		// values
-		// if (saveList.size() > 0)
-		// {
-		// for(SiteDataDTO siteData : saveList)
-		// {
-		// log.error("Site: "+site.getName()+"| "+siteData.getName()+"| "
-		// + siteData.getSubsetName()
-		// +"| was not written to the db because status line not received!");
-		// }
-		// saveList.clear();
-		// }
-		// if (params.length >= 5) // make sure we have the right number of
-		// parameters
-		// {
-		// hasStatus = false; // do we know if this is an inactive or
-		// // not
-		// String[] parts = params[4].split("\\@");
-		// makeSubstitutions(parts);
-		//
-		// regionName = parts[0];
-		//
-		// log.debug("MFE for subset:" + regionName);
-		// // this is an MFE with VUID
-		// if (parts.length > 1)
-		// {
-		// vuid = parts[1];
-		// if (!regionName.equalsIgnoreCase(MAPPINGS))
-		// {
-		// subsetConfig = getSubsetConfig(regionName);
-		// propertySet.addAll(subsetConfig.getPropertyNameList());
-		// relationshipSet.addAll(subsetConfig.getRelationshipNameList());
-		// if (first)
-		// {
-		// log.debug("Creating entry in siteDataRequest for " + site.getId() + "
-		// subset: " + regionName);
-		// ListenerDelegate.createSiteDataRequest(site.getId(), regionName);
-		// first = false;
-		// }
-		// }
-		// else
-		// {
-		// isMapping = true;
-		// }
-		// }
-		// // if this is a VERSION MFE segment, there's no VUID
-		// else
-		// {
-		// // set vuid back to its initialized value
-		// vuid = null;
-		// }
-		// }
-		// }
-		// else if (line.startsWith(ZRT_SEGMENT))
-		// {
-		// if (params.length >= 3) // make sure we have the right number of
-		// parameters
-		// {
-		// log.debug("ZRT site:" + site.getName() + "| " + regionName + "| " +
-		// vuid + "| " + params[1] + "| "
-		// + params[2]);
-		// String typeName = params[1];
-		// String value = params[2];
-		// for (int i = 3; i < params.length; i++)
-		// {
-		// value = value+"^"+params[i];
-		// }
-		// String type = null;
-		//
-		// if (!isMapping)
-		// {
-		// if (propertySet.contains(typeName))
-		// {
-		// type = PROPERTY_TYPE; // property
-		// }
-		// else if (relationshipSet.contains(typeName))
-		// {
-		// type = RELATIONSHIP_TYPE; // relationship
-		// }
-		// else if (typeName.equals(HL7SubsetUpdateGenerator.TERM_FIELD_NAME))
-		// {
-		// type = TERM_TYPE; // term
-		// }
-		// }
-		// else
-		// {
-		// // if this is a mapDefinition then we know what mapping it is
-		// if (MAP_DEFINITION.equals(typeName))
-		// {
-		// MapSet mapSet = MapSetDelegate.getByVuid(Long.valueOf(value),
-		// HibernateSessionFactory.AUTHORING_VERSION_ID);
-		// regionName = mapSet.getName();
-		// if (first)
-		// {
-		// log.debug("Creating entry in siteDataRequest for " + site.getId() + "
-		// mapping: " + regionName);
-		// ListenerDelegate.createSiteDataRequest(site.getId(), regionName);
-		// first = false;
-		// }
-		// }
-		// else if (!typeName.equals(ACTIVE) &&
-		// !typeName.equals(EFFECTIVE_DATE))
-		// {
-		// type = MAPPING_TYPE;
-		// }
-		// }
-		//
-		// if (typeName.equals(STATUS) || typeName.equals(ACTIVE))
-		// {
-		// status = value.equals("1") ? true : false;
-		// hasStatus = true;
-		//
-		// for(SiteDataDTO siteDataDTO : saveList)
-		// {
-		// siteDataDTO.setActive(status);
-		// siteDataDTOs.add(siteDataDTO);
-		// }
-		// saveList.clear();
-		// }
-		// else if (type != null && vuid != null)
-		// {
-		// if(value.length() > 2000)
-		// {
-		// log.warn("Incoming site data value over 2000 characters. Data value
-		// truncated in database. " +
-		// "Full data value: " + value);
-		// value = "TRUNCATED: " + value.substring(0, 1989);
-		// }
-		//
-		// SiteDataDTO siteDataDTO = new SiteDataDTO(typeName, value,
-		// Long.parseLong(vuid.trim()), site, regionName, type);
-		// if (hasStatus)
-		// {
-		// siteDataDTO.setActive(status);
-		// siteDataDTOs.add(siteDataDTO);
-		// }
-		// else
-		// {
-		// saveList.add(siteDataDTO);
-		// }
-		// }
-		// else
-		// {
-		// // only log an error if the parameter is something
-		// // other
-		// // than status
-		// if (!typeName.equals(STATUS) && !isMapping)
-		// {
-		// log.error("Ignoring entry " + params[1] + " for subset " + regionName
-		// + " because it was not in the subsetConfig.xml file");
-		// }
-		// }
-		// }
-		// }
-		// }
-		// //Now that we have all the data in a list, persist to the DB
-		// //TODO: check if required
-		// //ListenerDelegate.createSiteData(site.getId(), regionName,
-		// siteDataDTOs);
-		//
-		// log.info("SITE DATA MESSAGE RECEIVED" + "; SITE NAME: " +
-		// site.getName() + "; SITE ID: " + site.getVaSiteId() //getTopic()
-		// + "; MSG. ID: " + messageId);
-		// }
-		// catch (Exception e)
-		// {
-		// log.error(e);
-		// throw new STSException("Error writing site data to the database", e);
-		// }
-		log.info("SiteData message {}", content);
+		List<SiteDataDTO> siteDataDTOs = new ArrayList<SiteDataDTO>();
+
+		LOG.debug("SiteDataParser starting");
+		try {
+			while ((line = getNextLine(content)) != null) {
+				String[] params = line.split("\\^");
+				makeSubstitutions(params);
+				if (line.startsWith(MSH_SEGEMENT)) {
+					if (params.length < 10) {
+						throw new Exception(
+								"MSH_SEGMENT paramter count =" + params.length + " need to have greater than 9");
+					}
+					siteValue = params[3];
+					messageId = params[9];
+					LOG.debug("MSH for site: " + siteValue);
+
+					site = this.getSite(siteValue);
+				}
+				if (line.startsWith(MFE_SEGMENT)) {
+					// check to see if we didn't get the status line and are
+					// dumping values
+					if (saveList.size() > 0) {
+						for (SiteData siteData : saveList) {
+							LOG.error("Site: " + site.getName() + "| " + siteData.getName() + "| "
+									+ siteData.getSubsetName()
+									+ "|  was not written to the db because status line not received!");
+						}
+						saveList.clear();
+					}
+					// make sure we have the right number of parameters
+					if (params.length >= 5) {
+						// do we know if this is an inactive or not
+						hasStatus = false;
+						String[] parts = params[4].split("\\@");
+						makeSubstitutions(parts);
+
+						regionName = parts[0];
+
+						LOG.debug("MFE for subset:" + regionName);
+						// this is an MFE with VUID
+						if (parts.length > 1) {
+							vuid = parts[1];
+							if (!regionName.equalsIgnoreCase(MAPPINGS)) {
+								subsetConfig = getSubsetConfig(regionName);
+								propertySet.addAll(subsetConfig.getPropertyNameList());
+								relationshipSet.addAll(subsetConfig.getRelationshipNameList());
+								if (first) {
+									LOG.debug("Creating entry in siteDataRequest for " + site.getId() + "  subset: "
+											+ regionName);
+									// ListenerDelegate.createSiteDataRequest(site.getId(),
+									// regionName);
+									first = false;
+								}
+							} else {
+								isMapping = true;
+							}
+						}
+						// if this is a VERSION MFE segment, there's no VUID
+						else {
+							// set vuid back to its initialized value
+							vuid = null;
+						}
+					}
+				} else if (line.startsWith(ZRT_SEGMENT)) {
+					if (params.length >= 3) // make sure we have the right
+											// number of parameters
+					{
+						LOG.debug("ZRT site:" + site.getName() + "| " + regionName + "| " + vuid + "| " + params[1]
+								+ "| " + params[2]);
+						String typeName = params[1];
+						String value = params[2];
+						for (int i = 3; i < params.length; i++) {
+							value = value + "^" + params[i];
+						}
+						String type = null;
+
+						if (!isMapping) {
+							if (propertySet.contains(typeName)) {
+								type = PROPERTY_TYPE; // property
+							} else if (relationshipSet.contains(typeName)) {
+								type = RELATIONSHIP_TYPE; // relationship
+							} else if (typeName.equals(HL7SubsetUpdateGenerator.TERM_FIELD_NAME)) {
+								type = TERM_TYPE; // term
+							}
+						} else {
+							// if this is a mapDefinition then we know what
+							// mapping it is
+							if (MAP_DEFINITION.equals(typeName)) {
+								// MapSet mapSet =
+								// MapSetDelegate.getByVuid(Long.valueOf(value),
+								// HibernateSessionFactory.AUTHORING_VERSION_ID);
+								// regionName = mapSet.getName();
+								if (first) {
+									LOG.debug("Creating entry in siteDataRequest for " + site.getId() + "  mapping: "
+											+ regionName);
+									// ListenerDelegate.createSiteDataRequest(site.getId(),
+									// regionName);
+									first = false;
+								}
+							} else if (!typeName.equals(ACTIVE) && !typeName.equals(EFFECTIVE_DATE)) {
+								type = MAPPING_TYPE;
+							}
+						}
+
+						if (typeName.equals(STATUS) || typeName.equals(ACTIVE)) {
+							status = "1".equals(value) ? true : false;
+							hasStatus = true;
+
+							for (SiteDataDTO siteDataDTO : saveList) {
+								siteDataDTO.setActive(status);
+								siteDataDTOs.add(siteDataDTO);
+							}
+							saveList.clear();
+						} else if (type != null && vuid != null) {
+							if (value.length() > 2000) {
+								LOG.warn(
+										"Incoming site data value over 2000 characters. Data value truncated in database. Full data value: {}",
+										value);
+								value = "TRUNCATED: " + value.substring(0, 1989);
+							}
+
+							SiteDataDTO siteDataDTO = new SiteDataDTO(typeName, value, Long.parseLong(vuid.trim()),
+									site, regionName, type);
+							if (hasStatus) {
+								siteDataDTO.setActive(status);
+								siteDataDTOs.add(siteDataDTO);
+							} else {
+								saveList.add(siteDataDTO);
+							}
+						} else {
+							// only log an error if the parameter is something
+							// other than status
+							if (!typeName.equals(STATUS) && !isMapping) {
+								LOG.error("Ignoring entry " + params[1] + " for subset " + regionName
+										+ " because it was not in the subsetConfig.xml file");
+							}
+						}
+					}
+				}
+			}
+			// Now that we have all the data in a list, persist to the DB
+			// ListenerDelegate.createSiteData(site.getId(), regionName,
+			// siteDataDTOs);
+
+			LOG.info(
+					"SITE DATA MESSAGE RECEIVED" + "; SITE NAME: " + site.getName() + "; SITE ID: " + site.getVaSiteId() // getTopic()
+							+ "; MSG. ID: " + messageId);
+		} catch (Exception e) {
+			LOG.error(e);
+			throw new STSException("Error writing site data to the database", e);
+		}
 	}
 
 	/**
 	 * Read the subsets that are configured and Return a subset by the given
 	 * name
-	 * 
+	 *
 	 * @param subsetName
 	 * @return
 	 * @throws Exception
 	 */
-	// private SubsetConfig getSubsetConfig(String subsetName) throws Exception
-	// {
-	// return ListenerDelegate.getSubsetConfigByName(subsetName);
-	// }
+	private SubsetConfig getSubsetConfig(String subsetName) throws Exception {
+		//return ListenerDelegate.getSubsetConfigByName(subsetName);
+		return null;
+	}
 
 	/**
 	 * Return the next line in the string if it is the end then return null
@@ -312,14 +277,13 @@ public class SiteDataParser extends BaseParser
 	 * Get all the fields from the Site table by topic (a.k.a. Site ID in the
 	 * Interface Engine world)
 	 */
-	// private Site getSite(String vaSiteId) throws Exception
-	// {
-	// Site site = null;
-	//
-	// site = ListenerDelegate.getSiteByVAStringId(vaSiteId);
-	//
-	// return site;
-	// }
+	private Site getSite(String vaSiteId) throws Exception {
+		Site site = null;
+
+		// site = ListenerDelegate.getSiteByVAStringId(vaSiteId);
+
+		return site;
+	}
 
 	// BISACODYL 10MG SUPP/CITRATE \T\ SO4 MAGNESIA 30GM/SENNA EXT 74ML
 	protected void makeSubstitutions(String[] params) {
@@ -330,7 +294,6 @@ public class SiteDataParser extends BaseParser
 		}
 	}
 
-	// TODO: move to test if the above is added back
 	public static final void main(String[] args) throws Exception {
 		String content = "MSH^~|&^VETS UPDATE^660DEV2^XUMF UPDATE^^20080512053800.000-0600^^MFN~M01^^^2.4^^^AL^AL^USA\r"
 				+ "MFI^Standard Terminology~~ERT^^MUP^20080512053800.000-0600^20080512053800.000-0600^NE\r"

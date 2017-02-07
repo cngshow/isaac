@@ -28,7 +28,8 @@ import ca.uhn.hl7v2.HL7Exception;
 import ca.uhn.hl7v2.model.DataTypeException;
 import gov.vha.isaac.ochre.deployment.hapi.extension.VetsMfnM01;
 import gov.vha.isaac.ochre.deployment.hapi.extension.VetsMfnM01Mfezxx;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.NameValueDTO;
 import gov.vha.isaac.ochre.services.dto.publish.PublishConceptDTO;
 import gov.vha.isaac.ochre.services.dto.publish.PublishRegionDTO;
@@ -47,13 +48,15 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 	 * @return String HL7 message
 	 * @throws STSException
 	 */
-	public static String getMessage(List<PublishRegionDTO> publishRegionDTOList, HL7ApplicationProperties serverConfig)
+	public static String getMessage(List<PublishRegionDTO> publishRegionDTOList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties)
 			throws STSException {
 		HL7SubsetUpdateGenerator generator = new HL7SubsetUpdateGenerator();
-		return generator.produceMessage(publishRegionDTOList, serverConfig);
+		return generator.produceMessage(publishRegionDTOList, applicationProperties, messageProperties);
 	}
 
-	public String produceMessage(List<PublishRegionDTO> publishRegionDTOList, HL7ApplicationProperties serverConfig)
+	public String produceMessage(List<PublishRegionDTO> publishRegionDTOList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties)
 			throws STSException {
 		if (publishRegionDTOList.size() == 0) {
 			return null;
@@ -66,8 +69,8 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 		try {
 			// Get the MSH and MFI parts of the header
-			message.addMshSegment(message, hl7DateString, serverConfig);
-			message.addMfiSegment(message, hl7DateString, serverConfig);
+			message.addMshSegment(message, hl7DateString, applicationProperties, messageProperties);
+			message.addMfiSegment(message, hl7DateString, messageProperties);
 
 			VetsMfnM01Mfezxx mfeGroup = null;
 
@@ -86,7 +89,7 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 				while (publishConceptDTOListIter.hasNext()) {
 					PublishConceptDTO publishConceptDTO = (PublishConceptDTO) publishConceptDTOListIter.next();
 					mfeGroup = mfeSegment(message, hl7DateString, subsetName, mfeCounter, publishConceptDTO,
-							serverConfig);
+							messageProperties);
 
 					// Add the 'Term' ZRT segment then increment the zrtCounter
 					mfeGroup.addZrtSegment(mfeGroup,
@@ -143,7 +146,7 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 			// add the update to the version file
 			VetsMfnM01Mfezxx versionMFEGroup = message.addMfeSegment(message, hl7DateString, TERMINOLOGY_VERSION_SUBSET,
-					TERMINOLOGY_VERSION_NAME, mfeCounter, serverConfig);
+					TERMINOLOGY_VERSION_NAME, mfeCounter, messageProperties);
 
 			// Set the VERSION_FIELD_NAME value to zero (0) because it is no
 			// longer meaningful to send to VistA
@@ -168,10 +171,10 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 	}
 
 	protected VetsMfnM01Mfezxx mfeSegment(VetsMfnM01 message, String hl7DateString, String subsetName, int mfeCounter,
-			PublishConceptDTO publishConceptDTO, HL7ApplicationProperties serverConfig) throws HL7Exception {
+			PublishConceptDTO publishConceptDTO, MessageProperties messageProperties) throws HL7Exception {
 		VetsMfnM01Mfezxx mfeGroup;
 		mfeGroup = message.addMfeSegment(message, hl7DateString, subsetName, Long.toString(publishConceptDTO.getVuid()),
-				publishConceptDTO.getPublishName(), mfeCounter, serverConfig);
+				publishConceptDTO.getPublishName(), mfeCounter, messageProperties);
 		return mfeGroup;
 	}
 }

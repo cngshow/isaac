@@ -40,7 +40,7 @@ import gov.vha.isaac.ochre.access.maint.messaging.hl7.Encoding;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MLLP;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MediaType;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 
 /**
  * Sends the given HL7 message to BusinessWare for distribution.
@@ -59,7 +59,7 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 	private static final GenericParser parser_ = new GenericParser();
 
 	@Override
-	public void send(Message message, HL7ApplicationProperties applicationProperties) {
+	public void send(Message message, ApplicationProperties applicationProperties) {
 		try {
 			LOG.info("Opening connection to {}", applicationProperties.getInterfaceEngineURL().toString());
 

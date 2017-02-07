@@ -27,10 +27,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
@@ -44,7 +49,7 @@ import javafx.concurrent.Task;
  */
 public class TestHL7CheckSumRequest {
 
-	private static Logger LOG = LogManager.getLogger(HL7Sender.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
 
 	@Test(expected=Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
@@ -53,10 +58,10 @@ public class TestHL7CheckSumRequest {
 
 		String hl7Message = "";
 		
-		SiteDTO site;
+		Site site;
 		site = new SiteDTO();
 		site.setId(1);
-		site.setVaSiteId("582");
+		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
@@ -67,11 +72,11 @@ public class TestHL7CheckSumRequest {
 		publishMessage.setMessageId(1);
 		publishMessage.setSite(site);
 
-		List<PublishMessageDTO> siteList = new ArrayList<>();
+		List<PublishMessage> siteList = new ArrayList<>();
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
@@ -84,13 +89,13 @@ public class TestHL7CheckSumRequest {
 
 		String hl7Message = "Radiology Procedures";
 		
-		SiteDTO site;
-		PublishMessageDTO publishMessage;
-		List<PublishMessageDTO> siteList = new ArrayList<>();
+		Site site;
+		PublishMessage publishMessage;
+		List<PublishMessage> siteList = new ArrayList<>();
 
 		siteList.clear();
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 	}
@@ -104,7 +109,7 @@ public class TestHL7CheckSumRequest {
 
 		String hl7Message = "Radiology Procedures";
 
-		SiteDTO site;
+		Site site;
 		site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("AA");
@@ -117,11 +122,11 @@ public class TestHL7CheckSumRequest {
 		publishMessage.setMessageId(1);
 		publishMessage.setSite(site);
 
-		List<PublishMessageDTO> siteList = new ArrayList<>();
+		List<PublishMessage> siteList = new ArrayList<>();
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
@@ -136,10 +141,10 @@ public class TestHL7CheckSumRequest {
 
 		String hl7Message = "Radiology Procedures";
 		
-		SiteDTO site;
+		Site site;
 		site = new SiteDTO();
 		site.setId(1);
-		site.setVaSiteId("582");
+		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
@@ -150,19 +155,19 @@ public class TestHL7CheckSumRequest {
 		publishMessage.setMessageId(1);
 		publishMessage.setSite(site);
 
-		List<PublishMessageDTO> siteList = new ArrayList<>();
+		List<PublishMessage> siteList = new ArrayList<>();
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerConfig());
+		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
 	
-	private static HL7ApplicationProperties getDefaultServerConfig() throws MalformedURLException {
+	private static ApplicationProperties getDefaultServerProperties() throws MalformedURLException {
 		
-		HL7ApplicationProperties appProp = new HL7ApplicationProperties();
+		ApplicationProperties appProp = new HL7ApplicationProperties();
 
 		// Application Server Message String
 		appProp.setApplicationServerName("Development");
@@ -172,59 +177,66 @@ public class TestHL7CheckSumRequest {
 		appProp.setListenerPort(49990);
 
 		// Sending Facility Site ID
-		appProp.setSendingFacilityNamespaceId("660VM2");
+		appProp.setSendingFacilityNamespaceId("200ET1");
 
 		// Target Vitria Interface Engine
-		appProp.setInterfaceEngineURL(new URL("http://vhaisfviev24:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel"));
+		appProp.setInterfaceEngineURL(new URL("http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel"));
 
 		// Encoding type
 		appProp.setHl7EncodingType("VB");
 		
-		appProp.setEnvironment("");
-
-		// Settings used by the converter to configure the sending application.
-		appProp.setSendingApplicationNamespaceIdUpdate("VETS UPDATE");
-		appProp.setSendingApplicationNamespaceIdMD5("VETS MD5");
-		appProp.setSendingApplicationNamespaceIdSiteData("VETS DATA");
-
-		// Target Application at VistA sites
-		appProp.setReceivingApplicationNamespaceIdUpdate("XUMF UPDATE");
-		appProp.setReceivingApplicationNamespaceIdMD5("XUMFMD5");
-		appProp.setReceivingApplicationNamespaceIdSiteData("XUMF DATA");
-
-		// Message Version ID
-		appProp.setVersionId("2.4");
-
-		// acceptAcknowledgementType
-		appProp.setAcceptAcknowledgementType("AL");
-		appProp.setApplicationAcknowledgementType("AL");
-
-		appProp.setCountryCode("USA");
-
-		// MFI field values
-		appProp.setMasterFileIdentifier("Standard Terminology");
-		appProp.setNameOfCodingSystem("ERT");
-		appProp.setFileLevelEventCode("MUP");
-		appProp.setResponseLevelCode("NE");
-
-		// MFE field values
-		appProp.setRecordLevelEventCode("NE");
-
-		// QRD field values
-		appProp.setQueryFormatCode("R");
-		appProp.setQueryPriority("I");
-		appProp.setQueryId("Standard Terminology Query");
-		appProp.setQueryLimitedRequestQuantity(99999);
-		//appProp.setQueryLimitedRequestUnits();
-
-		appProp.setQueryWhoSubjectFilterIdNumber("ALL");
-		appProp.setQueryWhatDepartmentDataCodeIdentifier("VA");
-
-		// CE static field values
-		appProp.setSubFieldSeparator("@");
 		appProp.setUseInterfaceEngine(true);
 
 		return appProp;
+
+	}
+	
+	private static MessageProperties getDefaultMessageProperties() throws MalformedURLException {
+		
+		MessageProperties messageProperties = new HL7MessageProperties();
+
+		// Settings used by the converter to configure the sending application.
+		messageProperties.setSendingApplicationNamespaceIdUpdate("VETS UPDATE");
+		messageProperties.setSendingApplicationNamespaceIdMD5("VETS MD5");
+		messageProperties.setSendingApplicationNamespaceIdSiteData("VETS DATA");
+
+		// Target Application at VistA sites
+		messageProperties.setReceivingApplicationNamespaceIdUpdate("XUMF UPDATE");
+		messageProperties.setReceivingApplicationNamespaceIdMD5("XUMFMD5");
+		messageProperties.setReceivingApplicationNamespaceIdSiteData("XUMF DATA");
+
+		// Message Version ID
+		messageProperties.setVersionId("2.4");
+
+		// acceptAcknowledgementType
+		messageProperties.setAcceptAcknowledgementType("AL");
+		messageProperties.setApplicationAcknowledgementType("AL");
+
+		messageProperties.setCountryCode("USA");
+
+		// MFI field values
+		messageProperties.setMasterFileIdentifier("Standard Terminology");
+		messageProperties.setNameOfCodingSystem("ERT");
+		messageProperties.setFileLevelEventCode("MUP");
+		messageProperties.setResponseLevelCode("NE");
+
+		// MFE field values
+		messageProperties.setRecordLevelEventCode("NE");
+
+		// QRD field values
+		messageProperties.setQueryFormatCode("R");
+		messageProperties.setQueryPriority("I");
+		messageProperties.setQueryId("Standard Terminology Query");
+		messageProperties.setQueryLimitedRequestQuantity(99999);
+		//appProp.setQueryLimitedRequestUnits();
+
+		messageProperties.setQueryWhoSubjectFilterIdNumber("ALL");
+		messageProperties.setQueryWhatDepartmentDataCodeIdentifier("VA");
+
+		// CE static field values
+		messageProperties.setSubFieldSeparator("@");
+
+		return messageProperties;
 
 	}
 	

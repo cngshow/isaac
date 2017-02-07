@@ -18,9 +18,9 @@
  */
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
-public class PublishMessageDTO
+public class PublishMessageDTO implements PublishMessage
 {
-	private SiteDTO site;
+	private Site site;
 	private long messageId;
 
 	public PublishMessageDTO() {
@@ -32,46 +32,40 @@ public class PublishMessageDTO
 	 * @param site
 	 * @param messageId
 	 */
-	public PublishMessageDTO(long messageId, SiteDTO site) {
+	public PublishMessageDTO(long messageId, Site site) {
 		this.site = site;
 		this.messageId = messageId;
 	}
 
-	/**
-	 * Returns the HL7 message ID
-	 * 
-	 * @return Returns the messageId.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getMessageId()
 	 */
+	@Override
 	public long getMessageId() {
 		return messageId;
 	}
 
-	/**
-	 * Sets the HL7 message ID
-	 * 
-	 * @param messageId
-	 *            The messageId to set.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#setMessageId(long)
 	 */
+	@Override
 	public void setMessageId(long messageId) {
 		this.messageId = messageId;
 	}
 
-	/**
-	 * Returns the site to which the message (with message ID) was sent
-	 * 
-	 * @return Returns the site.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getSite()
 	 */
-	public SiteDTO getSite() {
+	@Override
+	public Site getSite() {
 		return site;
 	}
 
-	/**
-	 * Sets the site to which the message (with message ID) was sent
-	 * 
-	 * @param site
-	 *            The site to set.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#setSite(gov.vha.isaac.ochre.access.maint.deployment.dto.Site)
 	 */
-	public void setSite(SiteDTO site) {
+	@Override
+	public void setSite(Site site) {
 		this.site = site;
 	}
 }

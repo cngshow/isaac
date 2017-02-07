@@ -29,7 +29,7 @@ import ca.uhn.hl7v2.model.v24.datatype.CE;
 import ca.uhn.hl7v2.model.v24.group.MFN_M01_MF;
 import ca.uhn.hl7v2.model.v24.segment.Zxx;
 import ca.uhn.hl7v2.parser.ModelClassFactory;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.NameValueDTO;
 
 /**
@@ -132,16 +132,14 @@ public class VetsMfnM01Mfezxx extends MFN_M01_MF
 	 * @throws DataTypeException
 	 */
 	public CE getCeObject(String subset, String conceptVuidString, Message message,
-			HL7ApplicationProperties serverConfig) throws DataTypeException {
+			MessageProperties messageProperties) throws DataTypeException {
 		String subFieldSeparator;
 		String identifier = null;
 
 		CE ce = new CE(message);
 
 		// g1R.MFE.4.1 - This is two pieces: File Flag '@' VUID
-		// subFieldSeparator =
-		// ApplicationPropertyReader.getApplicationProperty("ce.subFieldSeparator");
-		subFieldSeparator = serverConfig.getSubFieldSeparator();
+		subFieldSeparator = messageProperties.getSubFieldSeparator();
 		identifier = subset.concat(subFieldSeparator).concat(conceptVuidString);
 		ce.getIdentifier().setValue(identifier);
 

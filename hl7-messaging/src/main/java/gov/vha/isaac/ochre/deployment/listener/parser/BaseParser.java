@@ -18,7 +18,7 @@
  */
 package gov.vha.isaac.ochre.deployment.listener.parser;
 
-import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 
 public abstract class BaseParser
 {
@@ -28,8 +28,8 @@ public abstract class BaseParser
 	 * @param siteId
 	 * @return Site object
 	 */
-	public SiteDTO resolveSiteId(String vaStringSiteId) {
-		SiteDTO site = null;
+	public Site resolveSiteId(String vaStringSiteId) {
+		Site site = null;
 
 		// TODO: replace this?
 		// site = ListenerDelegate.getSiteByVAStringId(vaStringSiteId);

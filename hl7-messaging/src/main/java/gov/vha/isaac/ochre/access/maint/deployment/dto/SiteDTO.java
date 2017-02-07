@@ -24,7 +24,7 @@ import java.io.Serializable;
  * @author VHAISLMURDOH
  */
 
-public class SiteDTO implements Serializable, Comparable<SiteDTO>
+public class SiteDTO implements Serializable, Comparable<Site>, Site
 {
 	private long id;
 	private String name;
@@ -33,86 +33,98 @@ public class SiteDTO implements Serializable, Comparable<SiteDTO>
 	private String groupName;
 	private String messageType;
 
-	/**
-	 * @return
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getId()
 	 */
+	@Override
 	public long getId() {
 		return id;
 	}
 
-	/**
-	 * @param id
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setId(long)
 	 */
+	@Override
 	public void setId(long id) {
 		this.id = id;
 	}
 
-	/**
-	 * @return Returns the site group name.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getGroupName()
 	 */
+	@Override
 	public String getGroupName() {
 		return groupName;
 	}
 
-	/**
-	 * @param groupName
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setGroupName(java.lang.String)
 	 */
+	@Override
 	public void setGroupName(String groupName) {
 		this.groupName = groupName;
 	}
 
-	/**
-	 * @return Returns the site name.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getName()
 	 */
+	@Override
 	public String getName() {
 		return name;
 	}
 
-	/**
-	 * @param name
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setName(java.lang.String)
 	 */
+	@Override
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	/**
-	 * @return Returns the site type.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getType()
 	 */
+	@Override
 	public String getType() {
 		return type;
 	}
 
-	/**
-	 * @param type
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setType(java.lang.String)
 	 */
+	@Override
 	public void setType(String type) {
 		this.type = type;
 	}
 
-	/**
-	 * @return Returns the site VA Site Id.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getVaSiteId()
 	 */
+	@Override
 	public String getVaSiteId() {
 		return vaSiteId;
 	}
 
-	/**
-	 * @param vaSiteId
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setVaSiteId(java.lang.String)
 	 */
+	@Override
 	public void setVaSiteId(String vaSiteId) {
 		this.vaSiteId = vaSiteId;
 	}
 
-	/**
-	 * @return Returns the site message type.
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#getMessageType()
 	 */
+	@Override
 	public String getMessageType() {
 		return messageType;
 	}
 
-	/**
-	 * @param messageType
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#setMessageType(java.lang.String)
 	 */
+	@Override
 	public void setMessageType(String messageType) {
 		this.messageType = messageType;
 	}
@@ -120,9 +132,13 @@ public class SiteDTO implements Serializable, Comparable<SiteDTO>
 	/* (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.Site#compareTo(gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO)
+	 */
 	@Override
-	public int compareTo(SiteDTO site) {
+	public int compareTo(Site site) {
 		return this.getName().compareTo(site.getName());
 	}
-
+	
+	//Comparable<SiteDTO>.compareTo(SiteDTO)
 }
