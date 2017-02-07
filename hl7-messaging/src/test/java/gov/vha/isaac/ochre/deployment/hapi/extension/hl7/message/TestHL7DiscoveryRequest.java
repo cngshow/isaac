@@ -18,8 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,17 +44,18 @@ import javafx.concurrent.Task;
  *
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
-public class TestHL7DiscoveryRequest {
+public class TestHL7DiscoveryRequest
+{
 
 	private static Logger LOG = LogManager.getLogger(TestHL7DiscoveryRequest.class);
 
-	@Test(expected=Exception.class)
+	@Test(expected = Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
-		//1. Fail if no message.
+		// 1. Fail if no message.
 		LOG.info("1. Fail if no message.");
 
 		String hl7Message = "";
-		
+
 		Site site;
 		site = new SiteDTO();
 		site.setId(1);
@@ -75,35 +74,36 @@ public class TestHL7DiscoveryRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
+		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+				getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
 
-	@Test(expected=Exception.class)
+	@Test(expected = Exception.class)
 	public void testSendMessageNoSite() throws Throwable {
-		//2. Fail if no site.
+		// 2. Fail if no site.
 		LOG.info("2. Fail if no site.");
 
 		String hl7Message = "Vital Qualifiers";
-		
+
 		Site site;
 		PublishMessage publishMessage;
 		List<PublishMessage> siteList = new ArrayList<>();
 
 		siteList.clear();
 
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
+		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+				getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 	}
 
-	//TODO: fix, this test will hang on task
-	//@Test
-	public void testSendMessageBadSite() throws Throwable
-	{
-		//3. Fail if site is garbage.
+	// TODO: fix, this test will hang on task
+	// @Test
+	public void testSendMessageBadSite() throws Throwable {
+		// 3. Fail if site is garbage.
 		LOG.info("3. Fail if site is garbage.");
 
 		String hl7Message = "Vital Qualifiers";
@@ -125,21 +125,21 @@ public class TestHL7DiscoveryRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
+		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+				getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
 
-	//TODO: fix, this test will hang on task
-	//@Test
-	public void testSendMessageGood() throws Throwable
-	{
-		//4. Success if message and site are OK.
+	// TODO: fix, this test will hang on task
+	// @Test
+	public void testSendMessageGood() throws Throwable {
+		// 4. Success if message and site are OK.
 		LOG.info("4. Success if message and site are OK.");
 
 		String hl7Message = "Vital Qualifiers";
-		
+
 		Site site;
 		site = new SiteDTO();
 		site.setId(1);
@@ -158,14 +158,15 @@ public class TestHL7DiscoveryRequest {
 		siteList.clear();
 		siteList.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(), getDefaultMessageProperties());
+		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+				getDefaultMessageProperties());
 		taskLog(t);
 		LOG.info(": Result " + t.get());
 
 	}
-	
-	private static ApplicationProperties getDefaultServerProperties() throws MalformedURLException {
-		
+
+	private static ApplicationProperties getDefaultServerProperties() {
+
 		ApplicationProperties appProp = new HL7ApplicationProperties();
 
 		// Application Server Message String
@@ -179,19 +180,20 @@ public class TestHL7DiscoveryRequest {
 		appProp.setSendingFacilityNamespaceId("200ET1");
 
 		// Target Vitria Interface Engine
-		appProp.setInterfaceEngineURL(new URL("http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel"));
+		appProp.setInterfaceEngineURL(
+				"http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel");
 
 		// Encoding type
 		appProp.setHl7EncodingType("VB");
-		
+
 		appProp.setUseInterfaceEngine(true);
 
 		return appProp;
 
 	}
-	
-	private static MessageProperties getDefaultMessageProperties() throws MalformedURLException {
-		
+
+	private static MessageProperties getDefaultMessageProperties() {
+
 		MessageProperties messageProperties = new HL7MessageProperties();
 
 		// Settings used by the converter to configure the sending application.
@@ -227,7 +229,7 @@ public class TestHL7DiscoveryRequest {
 		messageProperties.setQueryPriority("I");
 		messageProperties.setQueryId("Standard Terminology Query");
 		messageProperties.setQueryLimitedRequestQuantity(99999);
-		//appProp.setQueryLimitedRequestUnits();
+		// appProp.setQueryLimitedRequestUnits();
 
 		messageProperties.setQueryWhoSubjectFilterIdNumber("ALL");
 		messageProperties.setQueryWhatDepartmentDataCodeIdentifier("VA");
@@ -238,30 +240,24 @@ public class TestHL7DiscoveryRequest {
 		return messageProperties;
 
 	}
-	
+
 	private void taskLog(Task t) {
 
-		t.progressProperty().addListener(new ChangeListener<Number>()
-		{
+		t.progressProperty().addListener(new ChangeListener<Number>() {
 			@Override
-			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue)
-			{
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
 				LOG.info("[Change] Progress " + newValue);
 			}
 		});
-		t.messageProperty().addListener(new ChangeListener<String>()
-		{
+		t.messageProperty().addListener(new ChangeListener<String>() {
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-			{
+			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 				LOG.info("[Change] Message " + newValue);
 			}
 		});
-		t.titleProperty().addListener(new ChangeListener<String>()
-		{
+		t.titleProperty().addListener(new ChangeListener<String>() {
 			@Override
-			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
-			{
+			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
 				LOG.info("[Change] Title " + newValue);
 			}
 		});
