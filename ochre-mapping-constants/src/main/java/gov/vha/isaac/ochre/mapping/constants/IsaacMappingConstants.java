@@ -149,7 +149,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
-	
+
 	/** 
 	 * see {@link DynamicSememeConstants#DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS}
 	 * see {@link #DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS}
@@ -164,6 +164,15 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	{
 		{
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSEMBLAGES);
+		}
+	};
+	
+	public final MetadataConceptConstant MAPPING_CODE_DESCRIPTION = new MetadataConceptConstant("description", 
+			UUID.fromString("87118daf-d28c-55fb-8657-cd6bc8425600"),
+			"A concept used as a placeholder in the computable columns configuration of maps") 
+	{
+		{
+			setParent(DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS);
 		}
 	};
 
@@ -222,6 +231,6 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		return new MetadataConceptConstant[] {DYNAMIC_SEMEME_COLUMN_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_MAPPING_DISPLAY_FIELDS, DYNAMIC_SEMEME_COLUMN_MAPPING_PURPOSE, DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION, 
 				DYNAMIC_SEMEME_MAPPING_NID_EXTENSION, MAPPING_METADATA, DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE, DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE,
 				DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE, DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING, DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE, 
-				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS};
+				DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS, MAPPING_CODE_DESCRIPTION};
 	} 
 }

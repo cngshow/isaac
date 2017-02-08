@@ -90,12 +90,13 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 @Singleton
 public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 
+    public static final String METADATA_SEMANTIC_TAG = "ISAAC";
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
     */
     public IsaacMetadataAuxiliary() throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, "ISAAC");
+        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG);
 
         try {
             createConcept(TermAux.ISAAC_ROOT);
