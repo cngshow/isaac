@@ -1,7 +1,5 @@
 package gov.vha.isaac.ochre.services.dto.publish;
 
-import java.net.URL;
-
 public interface ApplicationProperties
 {
 
@@ -21,9 +19,9 @@ public interface ApplicationProperties
 
 	void setSendingFacilityNamespaceId(String sendingFacilityNamespaceId);
 
-	URL getInterfaceEngineURL();
+	String getInterfaceEngineURL();
 
-	void setInterfaceEngineURL(URL interfaceEngineURL);
+	void setInterfaceEngineURL(String interfaceEngineURL);
 
 	boolean getUseInterfaceEngine();
 

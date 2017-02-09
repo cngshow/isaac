@@ -1,7 +1,5 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -92,7 +90,7 @@ public class TestHL7Discovery
 		}
 	}
 
-	private static ApplicationProperties getDefaultServerPropertiesFromFile() throws MalformedURLException {
+	private static ApplicationProperties getDefaultServerPropertiesFromFile() {
 		ApplicationProperties appProp = new HL7ApplicationProperties();
 		// Application Server Message String
 		appProp.setApplicationServerName(getPropValue("application.server.name"));
@@ -109,11 +107,9 @@ public class TestHL7Discovery
 		appProp.setSendingFacilityNamespaceId(getPropValue("msh.sendingFacility.namespaceId"));
 
 		// Target Vitria Interface Engine
-		String interfaceEngineURL = getPropValue(
-				"gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url");
-		if (interfaceEngineURL != null && StringUtils.isNotBlank(interfaceEngineURL)) {
-			appProp.setInterfaceEngineURL(new URL(interfaceEngineURL));
-		}
+		// Target Vitria Interface Engine
+		appProp.setInterfaceEngineURL(
+				"http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel");
 
 		// Encoding type
 		appProp.setHl7EncodingType(getPropValue(
@@ -132,7 +128,7 @@ public class TestHL7Discovery
 
 	}
 
-	private static MessageProperties getDefaultMessagePropertiesFromFile() throws MalformedURLException {
+	private static MessageProperties getDefaultMessagePropertiesFromFile() {
 		MessageProperties messageProperties = new HL7MessageProperties();
 
 		// Settings used by the converter to configure the sending application.

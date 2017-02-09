@@ -19,6 +19,8 @@
 
 package gov.vha.isaac.ochre.access.maint.messaging.hl7;
 
+import java.net.MalformedURLException;
+
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 
@@ -34,5 +36,5 @@ public interface MessageDispatcher
 	 * @param message
 	 *            the HL7 message to send
 	 */
-	void send(Message message, ApplicationProperties applicationProperties);
+	void send(Message message, ApplicationProperties applicationProperties) throws MalformedURLException;
 }

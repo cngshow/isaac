@@ -19,8 +19,6 @@
 
 package gov.vha.isaac.ochre.services.dto.publish;
 
-import java.net.URL;
-
 public class HL7ApplicationProperties implements ApplicationProperties
 {
 	// Application Server Message String
@@ -34,7 +32,7 @@ public class HL7ApplicationProperties implements ApplicationProperties
 	private String sendingFacilityNamespaceId;
 
 	// Target Vitria Interface Engine
-	private URL interfaceEngineURL;
+	private String interfaceEngineURL;
 	private boolean useInterfaceEngine;
 	private String environment;
 
@@ -109,7 +107,7 @@ public class HL7ApplicationProperties implements ApplicationProperties
 	 * @see gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties#getInterfaceEngineURL()
 	 */
 	@Override
-	public URL getInterfaceEngineURL() {
+	public String getInterfaceEngineURL() {
 		return this.interfaceEngineURL;
 	}
 
@@ -117,7 +115,7 @@ public class HL7ApplicationProperties implements ApplicationProperties
 	 * @see gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties#setInterfaceEngineURL(java.net.URL)
 	 */
 	@Override
-	public void setInterfaceEngineURL(URL interfaceEngineURL) {
+	public void setInterfaceEngineURL(String interfaceEngineURL) {
 		this.interfaceEngineURL = interfaceEngineURL;
 	}
 

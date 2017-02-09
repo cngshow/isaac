@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.net.URL;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +54,7 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 
 	// /** The HL7 encoding to use BusinessWare. */
 	// TODO: remove hardcoded.
-	private static final Encoding encoding_ = Encoding.valueOf("VB"); 
+	private static final Encoding encoding_ = Encoding.valueOf("VB");
 
 	/** The parser to use for encoding messages. */
 	private static final GenericParser parser_ = new GenericParser();
@@ -63,8 +64,9 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 		try {
 			LOG.info("Opening connection to {}", applicationProperties.getInterfaceEngineURL().toString());
 
-			final HttpURLConnection connection = (HttpURLConnection) applicationProperties.getInterfaceEngineURL()
-					.openConnection();
+			URL interfaceURL = new URL(applicationProperties.getInterfaceEngineURL());
+
+			final HttpURLConnection connection = (HttpURLConnection) interfaceURL.openConnection();
 
 			connection.setRequestMethod("POST");
 			connection.setDoInput(true);
