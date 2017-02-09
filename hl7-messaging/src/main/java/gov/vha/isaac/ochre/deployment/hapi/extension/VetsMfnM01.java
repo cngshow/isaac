@@ -28,7 +28,8 @@ import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.segment.MFE;
 import ca.uhn.hl7v2.model.v24.segment.MFI;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
 /**
  * @author vhaislempeyd
@@ -95,8 +96,9 @@ public class VetsMfnM01 extends MFN_M01
 	 *            Date this message was created
 	 * @throws DataTypeException
 	 */
-	public void addMshSegment(VetsMfnM01 message, String hl7DateString, HL7ApplicationProperties serverConfig)
-			throws DataTypeException {
+	public void addMshSegment(VetsMfnM01 message, String hl7DateString, ApplicationProperties applicationProperties,
+			MessageProperties messageProperties) throws DataTypeException {
+		
 		String namespaceId = null;
 		String sendingFacilityId = null;
 		String receivingApplicationNamespaceId = null;
@@ -114,9 +116,7 @@ public class VetsMfnM01 extends MFN_M01
 		msh.getEncodingCharacters().setValue("~|\\&");
 
 		// MSH.3.1
-		// namespaceId =
-		// ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.update");
-		namespaceId = serverConfig.getSendingApplicationNamespaceIdUpdate();
+		namespaceId = messageProperties.getSendingApplicationNamespaceIdUpdate();
 		msh.getSendingApplication().getNamespaceID().setValue(namespaceId);
 
 		// MSH.3.3
@@ -125,15 +125,11 @@ public class VetsMfnM01 extends MFN_M01
 		// msh.getSendingApplication().getUniversalIDType().setValue(universalIdType);
 
 		// MSH.4.1
-		// sendingFacilityId =
-		// ApplicationPropertyReader.getApplicationProperty("msh.sendingFacility.namespaceId");
-		sendingFacilityId = serverConfig.getSendingFacilityNamespaceId();
+		sendingFacilityId = applicationProperties.getSendingFacilityNamespaceId();
 		msh.getSendingFacility().getNamespaceID().setValue(sendingFacilityId);
 
 		// MSH.5.1
-		// receivingApplicationNamespaceId =
-		// ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.update");
-		receivingApplicationNamespaceId = serverConfig.getReceivingApplicationNamespaceIdUpdate();
+		receivingApplicationNamespaceId = messageProperties.getReceivingApplicationNamespaceIdUpdate();
 		msh.getReceivingApplication().getNamespaceID().setValue(receivingApplicationNamespaceId);
 
 		// MSH.6.1 - left blank until time of deployment to VistA site(s)
@@ -160,26 +156,19 @@ public class VetsMfnM01 extends MFN_M01
 
 		// MSH.12.1
 		// versionId =
-		// ApplicationPropertyReader.getApplicationProperty("msh.versionId");
-		versionId = serverConfig.getVersionId();
+		versionId = messageProperties.getVersionId();
 		msh.getVersionID().getVersionID().setValue(versionId);
 
 		// MSH.15 - 'AL' or 'NE'
-		// acceptAcknowledgementType =
-		// ApplicationPropertyReader.getApplicationProperty("msh.acceptAcknowledgementType");
-		acceptAcknowledgementType = serverConfig.getAcceptAcknowledgementType();
+		acceptAcknowledgementType = messageProperties.getAcceptAcknowledgementType();
 		msh.getAcceptAcknowledgmentType().setValue(acceptAcknowledgementType);
 
 		// MSH.16 - 'AL' or 'NE'
-		// applicationAcknowledgementType =
-		// ApplicationPropertyReader.getApplicationProperty("msh.applicationAcknowledgementType");
-		applicationAcknowledgementType = serverConfig.getApplicationAcknowledgementType();
+		applicationAcknowledgementType = messageProperties.getApplicationAcknowledgementType();
 		msh.getApplicationAcknowledgmentType().setValue(applicationAcknowledgementType);
 
 		// MSH.17 - Set this from a constant
-		// countryCode =
-		// ApplicationPropertyReader.getApplicationProperty("msh.countryCode");
-		countryCode = serverConfig.getCountryCode();
+		countryCode = messageProperties.getCountryCode();
 		msh.getCountryCode().setValue(countryCode);
 	}
 
@@ -192,7 +181,7 @@ public class VetsMfnM01 extends MFN_M01
 	 *            Date this message was created
 	 * @throws DataTypeException
 	 */
-	public void addMfiSegment(VetsMfnM01 message, String hl7DateString, HL7ApplicationProperties serverConfig)
+	public void addMfiSegment(VetsMfnM01 message, String hl7DateString, MessageProperties messageProperties)
 			throws DataTypeException {
 		String masterFileIdentifier = null;
 		String nameOfCodingSystem = null;
@@ -202,21 +191,15 @@ public class VetsMfnM01 extends MFN_M01
 		MFI mfi = message.getMFI();
 
 		// MFI.1.1
-		// masterFileIdentifier =
-		// ApplicationPropertyReader.getApplicationProperty("mfi.masterFileIdentifier");
-		masterFileIdentifier = serverConfig.getMasterFileIdentifier();
+		masterFileIdentifier = messageProperties.getMasterFileIdentifier();
 		mfi.getMasterFileIdentifier().getIdentifier().setValue(masterFileIdentifier);
 
 		// MFI.1.3
-		// nameOfCodingSystem =
-		// ApplicationPropertyReader.getApplicationProperty("mfi.nameOfCodingSystem");
-		nameOfCodingSystem = serverConfig.getNameOfCodingSystem();
+		nameOfCodingSystem = messageProperties.getNameOfCodingSystem();
 		mfi.getMasterFileIdentifier().getNameOfCodingSystem().setValue(nameOfCodingSystem);
 
 		// MFI.3
-		// fileLevelEventCode =
-		// ApplicationPropertyReader.getApplicationProperty("mfi.fileLevelEventCode");
-		fileLevelEventCode = serverConfig.getFileLevelEventCode();
+		fileLevelEventCode = messageProperties.getFileLevelEventCode();
 		mfi.getFileLevelEventCode().setValue(fileLevelEventCode);
 
 		// MFI.4.1
@@ -226,9 +209,7 @@ public class VetsMfnM01 extends MFN_M01
 		mfi.getEffectiveDateTime().getTimeOfAnEvent().setValue(hl7DateString);
 
 		// MFI.6
-		// responseLevelCode =
-		// ApplicationPropertyReader.getApplicationProperty("mfi.responseLevelCode");
-		responseLevelCode = serverConfig.getResponseLevelCode();
+		responseLevelCode = messageProperties.getResponseLevelCode();
 		mfi.getResponseLevelCode().setValue(responseLevelCode);
 	}
 
@@ -252,7 +233,7 @@ public class VetsMfnM01 extends MFN_M01
 	 * @throws HL7Exception
 	 */
 	public VetsMfnM01Mfezxx addMfeSegment(VetsMfnM01 message, String hl7DateString, String subset, String conceptName,
-			int iteration, HL7ApplicationProperties serverConfig) throws HL7Exception {
+			int iteration, MessageProperties messageProperties) throws HL7Exception {
 		String recordLevelEventCode = null;
 
 		VetsMfnM01Mfezxx mfeGroup = message.getVetsMfnM01Mfezxx(iteration);
@@ -260,9 +241,7 @@ public class VetsMfnM01 extends MFN_M01
 		MFE mfe = mfeGroup.getMFE();
 
 		// g1R.MFE.1
-		// recordLevelEventCode =
-		// ApplicationPropertyReader.getApplicationProperty("mfe.recordLevelEventCode");
-		recordLevelEventCode = serverConfig.getRecordLevelEventCode();
+		recordLevelEventCode = messageProperties.getRecordLevelEventCode();
 		mfe.getRecordLevelEventCode().setValue(recordLevelEventCode);
 
 		// g1R.MFE.3.1
@@ -293,7 +272,7 @@ public class VetsMfnM01 extends MFN_M01
 	 * @throws HL7Exception
 	 */
 	public VetsMfnM01Mfezxx addMfeSegment(VetsMfnM01 message, String hl7DateString, String subset,
-			String conceptVuidString, String conceptName, int iteration, HL7ApplicationProperties serverConfig)
+			String conceptVuidString, String conceptName, int iteration, MessageProperties messageProperties)
 			throws HL7Exception {
 		String recordLevelEventCode = null;
 
@@ -302,16 +281,14 @@ public class VetsMfnM01 extends MFN_M01
 		MFE mfe = mfeGroup.getMFE();
 
 		// g1R.MFE.1
-		// recordLevelEventCode =
-		// ApplicationPropertyReader.getApplicationProperty("mfe.recordLevelEventCode");
-		recordLevelEventCode = serverConfig.getRecordLevelEventCode();
+		recordLevelEventCode = messageProperties.getRecordLevelEventCode();
 		mfe.getRecordLevelEventCode().setValue(recordLevelEventCode);
 
 		// g1R.MFE.3.1
 		// mfe.getEffectiveDateTime().getTimeOfAnEvent().setValue(hl7DateString);
 
 		// g1R.MFE.4
-		mfe.getPrimaryKeyValueMFE(0).setData(mfeGroup.getCeObject(subset, conceptVuidString, message, serverConfig));
+		mfe.getPrimaryKeyValueMFE(0).setData(mfeGroup.getCeObject(subset, conceptVuidString, message, messageProperties));
 
 		return mfeGroup;
 	}

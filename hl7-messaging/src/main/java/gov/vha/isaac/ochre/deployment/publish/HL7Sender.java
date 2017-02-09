@@ -27,11 +27,12 @@ import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFQ_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.concurrent.Task;
 
@@ -59,8 +60,9 @@ public class HL7Sender extends Task<Integer>
 	private static boolean useInterfaceEngine;
 
 	private String hl7UpdateMessage_;
-	private List<PublishMessageDTO> siteList_;
-	private HL7ApplicationProperties applicationProperties_;
+	private List<PublishMessage> siteList_;
+	private ApplicationProperties applicationProperties_;
+	private MessageProperties messageProperties_;
 
 	/**
 	 * Send the HL7 Message to the sites in the site list. This method detects
@@ -73,19 +75,21 @@ public class HL7Sender extends Task<Integer>
 	 * @throws STSException
 	 */
 
-	public HL7Sender(String hl7UpdateMessage, List<PublishMessageDTO> siteList,
-			HL7ApplicationProperties applicationProperties) {
+	public HL7Sender(String hl7UpdateMessage, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
 		hl7UpdateMessage_ = hl7UpdateMessage;
 		siteList_ = siteList;
 		applicationProperties_ = applicationProperties;
+		messageProperties_ = messageProperties;
 	}
 
-	public void send(String hl7UpdateMessage, List<PublishMessageDTO> siteList,
-			HL7ApplicationProperties applicationProperties) throws STSException {
+	public void send(String hl7UpdateMessage, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException {
 
 		this.hl7UpdateMessage_ = hl7UpdateMessage;
 		this.siteList_ = siteList;
 		this.applicationProperties_ = applicationProperties;
+		this.messageProperties_ = messageProperties;
 
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 
@@ -99,7 +103,7 @@ public class HL7Sender extends Task<Integer>
 		} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
 			// MFQ M01: Query for master file record
 			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7UpdateMessage_);
-			sendHL7RequestMessage(message, siteList_, applicationProperties_);
+			sendHL7RequestMessage(message, siteList_, applicationProperties_, messageProperties_);
 		} else {
 			LOG.error("Unknown message type.  Message header: {} ",
 					MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage_));
@@ -120,10 +124,10 @@ public class HL7Sender extends Task<Integer>
 	 *
 	 * @throws STSException
 	 */
-	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, List<PublishMessageDTO> siteList,
-			HL7ApplicationProperties applicationProperties) throws STSException {
+	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties) throws STSException {
 		try {
-			for (PublishMessageDTO publishMessageDTO : siteList) {
+			for (PublishMessage publishMessageDTO : siteList) {
 				// insert the topic and message id
 				MSH msh = message.getMSH();
 				String sendingFacility = applicationProperties.getSendingFacilityNamespaceId();
@@ -182,10 +186,10 @@ public class HL7Sender extends Task<Integer>
 	 * 
 	 * @throws HL7Exception
 	 */
-	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, List<PublishMessageDTO> siteList,
-			HL7ApplicationProperties applicationProperties) throws STSException, STSException {
+	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException, STSException {
 		try {
-			for (PublishMessageDTO publishMessageDTO : siteList) {
+			for (PublishMessage publishMessageDTO : siteList) {
 				// insert the topic and message id
 				MSH msh = message.getMSH();
 				String sendingFacility = applicationProperties.getSendingFacilityNamespaceId();
@@ -243,7 +247,7 @@ public class HL7Sender extends Task<Integer>
 		}
 	}
 
-	private static void getDeploymentStatusMessage(String message, boolean useInterfaceEngine, SiteDTO site,
+	private static void getDeploymentStatusMessage(String message, boolean useInterfaceEngine, Site site,
 			String messageId, String messageProcessingType, String messageType) {
 
 		StringBuilder deploymentStatus = new StringBuilder();
@@ -300,7 +304,7 @@ public class HL7Sender extends Task<Integer>
 		updateProgress(-1, 0);
 
 		updateMessage("Send Begin");
-		send(hl7UpdateMessage_, siteList_, applicationProperties_);
+		send(hl7UpdateMessage_, siteList_, applicationProperties_, messageProperties_);
 		updateMessage("Send Complete");
 
 		updateProgress(10, 10);

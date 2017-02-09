@@ -28,7 +28,8 @@ import ca.uhn.hl7v2.model.v24.message.MFQ_M01;
 import ca.uhn.hl7v2.parser.EncodingNotSupportedException;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.vha.isaac.ochre.deployment.hapi.extension.VetsMfqM01;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
 public class HL7RequestGenerator extends HL7BaseGenerator
@@ -43,21 +44,16 @@ public class HL7RequestGenerator extends HL7BaseGenerator
 	 * @return String representation of site data request message
 	 * @throws STSException
 	 */
-	public static String getSiteDataRequestMessage(String regionName, HL7ApplicationProperties applicationProperties)
+	public static String getSiteDataRequestMessage(String regionName, ApplicationProperties applicationProperties, MessageProperties messageProperties)
 			throws STSException {
 
-		// String sendingApplicationName =
-		// ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.siteData");
-		String sendingApplicationName = applicationProperties.getSendingApplicationNamespaceIdSiteData();
-
-		// String receivingApplicationName =
-		// ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.siteData");
-		String receivingApplicationName = applicationProperties.getReceivingApplicationNamespaceIdSiteData();
+		String sendingApplicationName = messageProperties.getSendingApplicationNamespaceIdSiteData();
+		String receivingApplicationName = messageProperties.getReceivingApplicationNamespaceIdSiteData();
 
 		MFQ_M01 message = null;
 		if (regionName != null) {
 			message = getHL7RequestMessage(sendingApplicationName, receivingApplicationName, null, regionName,
-					applicationProperties);
+					applicationProperties, messageProperties);
 		} else {
 			throw new STSException("Region name is null");
 		}
@@ -75,18 +71,13 @@ public class HL7RequestGenerator extends HL7BaseGenerator
 	 * @throws STSException
 	 */
 	public static String getMappingSiteDataRequestMessage(Long mapSetVuid,
-			HL7ApplicationProperties applicationProperties) throws STSException {
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException {
 
-		// String sendingApplicationName =
-		// ApplicationPropertyReader.getApplicationProperty("msh.sendingApplication.namespaceId.siteData");
-		String sendingApplicationName = applicationProperties.getSendingApplicationNamespaceIdSiteData();
-
-		// String receivingApplicationName =
-		// ApplicationPropertyReader.getApplicationProperty("msh.receivingApplication.namespaceId.siteData");
-		String receivingApplicationName = applicationProperties.getReceivingApplicationNamespaceIdSiteData();
+		String sendingApplicationName = messageProperties.getSendingApplicationNamespaceIdSiteData();
+		String receivingApplicationName = messageProperties.getReceivingApplicationNamespaceIdSiteData();
 
 		MFQ_M01 message = getHL7RequestMessage(sendingApplicationName, receivingApplicationName, mapSetVuid, null,
-				applicationProperties);
+				applicationProperties, messageProperties);
 
 		return getRequestMessage(message);
 	}
@@ -99,16 +90,16 @@ public class HL7RequestGenerator extends HL7BaseGenerator
 	 * @return String representation of checksum request message
 	 * @throws STSException
 	 */
-	public static String getChecksumRequestMessage(String regionName, HL7ApplicationProperties applicationProperties)
+	public static String getChecksumRequestMessage(String regionName, ApplicationProperties applicationProperties, MessageProperties messageProperties)
 			throws STSException {
 
-		String sendingApplicationName = applicationProperties.getSendingApplicationNamespaceIdMD5();
-		String receivingApplicationName = applicationProperties.getReceivingApplicationNamespaceIdMD5();
+		String sendingApplicationName = messageProperties.getSendingApplicationNamespaceIdMD5();
+		String receivingApplicationName = messageProperties.getReceivingApplicationNamespaceIdMD5();
 
 		MFQ_M01 message = null;
 		if (regionName != null) {
 			message = getHL7RequestMessage(sendingApplicationName, receivingApplicationName, null, regionName,
-					applicationProperties);
+					applicationProperties, messageProperties);
 		} else {
 			throw new STSException("Region name is null");
 		}
@@ -126,13 +117,13 @@ public class HL7RequestGenerator extends HL7BaseGenerator
 	 * @throws STSException
 	 */
 	public static String getMappingChecksumRequestMessage(Long mapSetVuid,
-			HL7ApplicationProperties applicationProperties) throws STSException {
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException {
 
-		String sendingApplicationName = applicationProperties.getSendingApplicationNamespaceIdMD5();
-		String receivingApplicationName = applicationProperties.getReceivingApplicationNamespaceIdMD5();
+		String sendingApplicationName = messageProperties.getSendingApplicationNamespaceIdMD5();
+		String receivingApplicationName = messageProperties.getReceivingApplicationNamespaceIdMD5();
 
 		MFQ_M01 message = getHL7RequestMessage(sendingApplicationName, receivingApplicationName, mapSetVuid, null,
-				applicationProperties);
+				applicationProperties, messageProperties);
 
 		return getRequestMessage(message);
 	}
@@ -148,20 +139,21 @@ public class HL7RequestGenerator extends HL7BaseGenerator
 	 * @throws VETSPublisherException
 	 */
 	private static MFQ_M01 getHL7RequestMessage(String sendingApplicationName, String receivingApplicationName,
-			Long mapSetVuid, String regionName, HL7ApplicationProperties applicationProperties) throws STSException {
+			Long mapSetVuid, String regionName, ApplicationProperties applicationProperties,
+			MessageProperties messageProperties) throws STSException {
 		VetsMfqM01 dataRequestMessage = new VetsMfqM01();
 
 		String hl7DateString = HL7DateHelper.getHL7DateFormat(HL7DateHelper.getCurrentDateTime());
 
 		try {
 			dataRequestMessage.addMshSegment(dataRequestMessage, sendingApplicationName, receivingApplicationName,
-					applicationProperties);
+					applicationProperties, messageProperties);
 
 			if (regionName != null) {
-				dataRequestMessage.addQrdSegment(dataRequestMessage, hl7DateString, regionName, applicationProperties);
+				dataRequestMessage.addQrdSegment(dataRequestMessage, hl7DateString, regionName, messageProperties);
 			} else {
 				dataRequestMessage.addFilteredQrdSegment(dataRequestMessage, hl7DateString, MAPPINGS_IDENTIFIER,
-						mapSetVuid.toString(), applicationProperties);
+						mapSetVuid.toString(), messageProperties);
 			}
 		} catch (DataTypeException e) {
 			String errorMessage = "Exception generating the MFQ_M01 message object.";

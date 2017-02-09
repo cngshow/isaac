@@ -24,7 +24,8 @@ import ca.uhn.hl7v2.model.v24.message.MFQ_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
 import ca.uhn.hl7v2.model.v24.segment.QRD;
 import gov.vha.isaac.ochre.deployment.publish.HL7DateHelper;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
 public class VetsMfqM01 extends MFQ_M01
 {
@@ -40,14 +41,13 @@ public class VetsMfqM01 extends MFQ_M01
 	 * @throws DataTypeException
 	 */
 	public void addMshSegment(VetsMfqM01 queryMessage, String sendingApplication, String receivingApplication,
-			HL7ApplicationProperties serverConfig) throws DataTypeException {
+			ApplicationProperties serverProperties, MessageProperties messageProperties) throws DataTypeException {
 
 		String sendingFacilityId = null;
 		String versionId = null;
 		String acceptAcknowledgementType = null;
 		String applicationAcknowledgementType = null;
 		String countryCode = null;
-		String environment = null;
 
 		String hl7DateString = HL7DateHelper.getHL7DateFormat(HL7DateHelper.getCurrentDateTime());
 
@@ -63,7 +63,7 @@ public class VetsMfqM01 extends MFQ_M01
 		msh.getSendingApplication().getNamespaceID().setValue(sendingApplication);
 
 		// MSH.4.1
-		sendingFacilityId = serverConfig.getSendingFacilityNamespaceId();
+		sendingFacilityId = serverProperties.getSendingFacilityNamespaceId();
 		msh.getSendingFacility().getNamespaceID().setValue(sendingFacilityId);
 
 		// MSH.5.1
@@ -92,19 +92,19 @@ public class VetsMfqM01 extends MFQ_M01
 		msh.getProcessingID().getProcessingID().setValue("");
 
 		// MSH.12.1
-		versionId = serverConfig.getVersionId();
+		versionId = messageProperties.getVersionId();
 		msh.getVersionID().getVersionID().setValue(versionId);
 
 		// MSH.15 - 'AL' or 'NE'
-		acceptAcknowledgementType = serverConfig.getAcceptAcknowledgementType();
+		acceptAcknowledgementType = messageProperties.getAcceptAcknowledgementType();
 		msh.getAcceptAcknowledgmentType().setValue(acceptAcknowledgementType);
 
 		// MSH.16 - 'AL' or 'NE'
-		applicationAcknowledgementType = serverConfig.getApplicationAcknowledgementType();
+		applicationAcknowledgementType = messageProperties.getApplicationAcknowledgementType();
 		msh.getApplicationAcknowledgmentType().setValue(applicationAcknowledgementType);
 
 		// MSH.17 - Set this from a constant
-		countryCode = serverConfig.getCountryCode();
+		countryCode = messageProperties.getCountryCode();
 		msh.getCountryCode().setValue(countryCode);
 	}
 
@@ -120,8 +120,8 @@ public class VetsMfqM01 extends MFQ_M01
 	 * @throws DataTypeException
 	 */
 	public void addQrdSegment(VetsMfqM01 queryMessage, String hl7DateString, String regionName,
-			HL7ApplicationProperties serverConfig) throws HL7Exception, DataTypeException {
-		addFilteredQrdSegment(queryMessage, hl7DateString, regionName, null, serverConfig);
+			MessageProperties messageProperties) throws HL7Exception, DataTypeException {
+		addFilteredQrdSegment(queryMessage, hl7DateString, regionName, null, messageProperties);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public class VetsMfqM01 extends MFQ_M01
 	 * @throws DataTypeException
 	 */
 	public void addFilteredQrdSegment(VetsMfqM01 queryMessage, String hl7DateString, String regionName,
-			String filterValue, HL7ApplicationProperties serverConfig) throws HL7Exception, DataTypeException {
+			String filterValue, MessageProperties messageProperties) throws HL7Exception, DataTypeException {
 
 		String queryFormatCode = null;
 		String queryPriority = null;
@@ -154,35 +154,35 @@ public class VetsMfqM01 extends MFQ_M01
 		qrd.getQueryDateTime().getTimeOfAnEvent().setValue(hl7DateString);
 
 		// QRD.2
-		queryFormatCode = serverConfig.getQueryFormatCode();
+		queryFormatCode = messageProperties.getQueryFormatCode();
 		qrd.getQueryFormatCode().setValue(queryFormatCode); // "R"
 
 		// QRD.3
-		queryPriority = serverConfig.getQueryPriority();
+		queryPriority = messageProperties.getQueryPriority();
 		qrd.getQueryPriority().setValue(queryPriority); // "I"
 
 		// QRD.4
-		queryId = serverConfig.getQueryId();
+		queryId = messageProperties.getQueryId();
 		qrd.getQueryID().setValue(queryId); // "Standard Terminology Query"
 
 		// QRD.6.1
 		qrd.getDeferredResponseDateTime().getTimeOfAnEvent().setValue("");
 
 		// QRD.7.1
-		quantityLimitedRequest = serverConfig.getQueryLimitedRequestQuantity();
+		quantityLimitedRequest = messageProperties.getQueryLimitedRequestQuantity();
 		if (quantityLimitedRequest != null) {
 			qrd.getQuantityLimitedRequest().getQuantity().setValue(Integer.toString(quantityLimitedRequest)); // "24"
 		}
 
 		// QRD.7.2.1
-		quantityLimitedRequestUnits = serverConfig.getQueryLimitedRequestUnits();
+		quantityLimitedRequestUnits = messageProperties.getQueryLimitedRequestUnits();
 		if (quantityLimitedRequestUnits != null) {
 			qrd.getQuantityLimitedRequest().getUnits().getIdentifier()
 					.setValue(Integer.toString(quantityLimitedRequestUnits)); // "99999"
 		}
 
 		// QRD.8.1
-		whoSubjectFilterIdNumber = serverConfig.getQueryWhoSubjectFilterIdNumber();
+		whoSubjectFilterIdNumber = messageProperties.getQueryWhoSubjectFilterIdNumber();
 		qrd.getWhoSubjectFilter(0).getIDNumber().setValue(whoSubjectFilterIdNumber); // "ALL"
 
 		// QRD.9.1
@@ -192,7 +192,7 @@ public class VetsMfqM01 extends MFQ_M01
 		qrd.getWhatSubjectFilter(0).getText().setValue(filterValue);
 
 		// QRD.10.1
-		whatDeptDataCodeIdentifier = serverConfig.getQueryWhatDepartmentDataCodeIdentifier();
+		whatDeptDataCodeIdentifier = messageProperties.getQueryWhatDepartmentDataCodeIdentifier();
 		qrd.getWhatDepartmentDataCode(0).getIdentifier().setValue(whatDeptDataCodeIdentifier); // "VETS"
 	}
 }

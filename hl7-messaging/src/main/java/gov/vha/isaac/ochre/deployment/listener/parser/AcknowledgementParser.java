@@ -28,7 +28,7 @@ import ca.uhn.hl7v2.model.v24.segment.MSA;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
 import ca.uhn.hl7v2.parser.EncodingNotSupportedException;
 import ca.uhn.hl7v2.parser.PipeParser;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 
 public class AcknowledgementParser extends BaseParser
 {
@@ -68,7 +68,7 @@ public class AcknowledgementParser extends BaseParser
 				// Get the MSA message segment
 				msaMessage = msa.getTextMessage().toString();
 
-				SiteDTO site = this.resolveSiteId(mshSendingFacility);
+				Site site = this.resolveSiteId(mshSendingFacility);
 				log.info("STATUS: " + msaAcknowledgementCode + "; SITE NAME: " + site.getName() + "; SITE ID: "
 						+ site.getVaSiteId() + "; ACK MSG. ID: " + mshMessageControlId + "; ORIGINAL MSG. ID: "
 						+ msaMessageControlId);

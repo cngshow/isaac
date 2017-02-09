@@ -25,11 +25,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -40,11 +41,19 @@ public class HL7CheckSum
 
 	private static final Logger LOG = LogManager.getLogger(HL7CheckSum.class);
 
-	public static Task<String> checkSum(String checkSum, List<PublishMessageDTO> siteList,
-			HL7ApplicationProperties applicationProperties) {
+	public static Task<String> checkSum(String checkSum, List<PublishMessage> siteList,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
 
+		if (applicationProperties == null) {
+			LOG.error("HL7ApplicationProperties is null!");
+			throw new IllegalArgumentException("HL7ApplicationProperties is null");
+		}
+		if (messageProperties == null) {
+			LOG.error("HL7MessageProperties is null!");
+			throw new IllegalArgumentException("HL7MessageProperties is null");
+		}
 		if (StringUtils.isBlank(checkSum)) {
 			LOG.error("No checksum message to send!");
 			throw new IllegalArgumentException("No checksum message to send!");
@@ -56,7 +65,8 @@ public class HL7CheckSum
 
 		String hl7CheckSumMessage;
 		try {
-			hl7CheckSumMessage = HL7RequestGenerator.getChecksumRequestMessage(checkSum, applicationProperties);
+			hl7CheckSumMessage = HL7RequestGenerator.getChecksumRequestMessage(checkSum, applicationProperties,
+					messageProperties);
 		} catch (STSException e) {
 			String msg = String.format(
 					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
@@ -76,8 +86,10 @@ public class HL7CheckSum
 					updateTitle("Sending HL7 message");
 					LOG.info("Sending HL7 message without site: " + hl7CheckSumMessage);
 
-					HL7Sender hl7Sender = new HL7Sender(hl7CheckSumMessage, siteList, applicationProperties);
-					//hl7Sender.send(hl7CheckSumMessage, siteList, applicationProperties);
+					HL7Sender hl7Sender = new HL7Sender(hl7CheckSumMessage, siteList, applicationProperties,
+							messageProperties);
+					// hl7Sender.send(hl7CheckSumMessage, siteList,
+					// applicationProperties);
 
 					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
 						@Override

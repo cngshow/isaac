@@ -21,7 +21,7 @@ package gov.vha.isaac.ochre.deployment.publish;
 import java.util.ArrayList;
 import java.util.List;
 
-import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
+import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
 public class MessageTypeIdentifier
@@ -32,7 +32,7 @@ public class MessageTypeIdentifier
 	public static final String MFR_TYPE = "MFR";
 	public static final String MFQ_TYPE = "MFQ";
 
-	public static HL7ApplicationProperties applicationProperties = null;
+	public static MessageProperties messageProperties = null;
 
 	/**
 	 * Retrieves the message header by searching for "MSH".
@@ -109,17 +109,16 @@ public class MessageTypeIdentifier
 	public static String getIncomingMessageSendingApp(String messageHeader) throws STSException {
 		String sendingApplication = null;
 
-		// Make a list of all the sending application names.
-		// Because the message is incoming to deployment server, the
-		// sending app name is the flag that was the target for the
-		// original outgoing message to which this incoming message
-		// is a response, therefore sending app name in this incoming
-		// message is equivalent to our receiving app name in the
+		// Make a list of all the sending application names. Because the message
+		// is incoming to deployment server, the sending app name is the flag
+		// that was the target for the original outgoing message to which this
+		// incoming message is a response, therefore sending app name in this
+		// incoming message is equivalent to our receiving app name in the
 		// application.properties file.
 		List<String> sendingApps = new ArrayList<>();
-		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdSiteData());
-		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdMD5());
-		sendingApps.add(applicationProperties.getReceivingApplicationNamespaceIdUpdate());
+		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdSiteData());
+		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdMD5());
+		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdUpdate());
 
 		String[] params = messageHeader.split("\\^");
 		sendingApplication = params[2];
@@ -140,16 +139,16 @@ public class MessageTypeIdentifier
 	public static String getIncomingMessageReceivingApp(String messageHeader) throws STSException {
 		String receivingApplication = null;
 
-		// Make a list of all the receiving application names.
-		// Because the message is incoming to deployment server, the
-		// receiving app name is the flag that originated the outgoing
-		// message to which this incoming message is a response, therefore
-		// receiving app name in this incoming message is equivalent to
-		// our sending app name in the application.properties file.
+		// Make a list of all the receiving application names. Because the
+		// message is incoming to deployment server, the receiving app name is
+		// the flag that originated the outgoing message to which this incoming
+		// message is a response, therefore receiving app name in this incoming
+		// message is equivalent to our sending app name in the
+		// application.properties file.
 		List<String> receivingApps = new ArrayList<>();
-		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdSiteData());
-		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdMD5());
-		receivingApps.add(applicationProperties.getSendingApplicationNamespaceIdUpdate());
+		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdSiteData());
+		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdMD5());
+		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdUpdate());
 
 		String[] params = messageHeader.split("\\^");
 		receivingApplication = params[4];

@@ -588,7 +588,7 @@ public class VetsExporter {
 						
 						for (DynamicSememeColumnInfo d : dsci)
 						{
-							String column = d.getColumnName();
+							String column = d.getColumnName().toLowerCase();
 							int col = d.getColumnOrder();
 							
 							// If there isn't any data, bypass this iteration
@@ -601,10 +601,12 @@ public class VetsExporter {
 									// DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
 									me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[col].getDataObject().toString())).orElse(""));
 									break;
-								case "mapping qualifier":  //TODO this is broken, this constant was renamed to *...EQUIVALENCE_TYPE
+								/*case "mapping qualifier":  
+								  	// TODO:DA this is broken, this constant was renamed to *...EQUIVALENCE_TYPE
+								  	// TODO:NR Disabling as this is currently ignored by the exporter, see note below
 									// DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
 									// Ignored?
-									break;
+									break;*/
 								case "mapping sequence":
 									// DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
 									me.setSequence(Integer.parseInt(dsd[col].getDataObject().toString()));
