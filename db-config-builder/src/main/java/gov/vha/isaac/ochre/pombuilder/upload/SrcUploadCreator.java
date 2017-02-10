@@ -172,6 +172,7 @@ public class SrcUploadCreator
 							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.hl7v3");
 							pomSwaps.put("#ARTIFACTID#", "hl7v3-src-data");
 							pomSwaps.put("#NAME#", "HL7v3 Source Upload");
+							break;
 						//TODO RXNORM_SOLOR support
 						default :
 							throw new RuntimeException("oops - forgot to support a case");
