@@ -71,7 +71,7 @@ public class HL7Checksum
 		Task<String> sender = new Task<String>() {
 			@Override
 			protected String call() throws Exception {
-				String tag = "";
+				String tag = "done";
 				updateMessage("Preparing");
 				LOG.info("Preparing");
 				try {
