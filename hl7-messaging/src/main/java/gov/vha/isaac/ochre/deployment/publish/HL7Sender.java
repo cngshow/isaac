@@ -76,6 +76,7 @@ public class HL7Sender extends Task<Integer>
 	public HL7Sender(String hl7Message, PublishMessage publishMessage, ApplicationProperties applicationProperties,
 			MessageProperties messageProperties) {
 
+		hl7Message_ = hl7Message;
 		publishMessage_ = publishMessage;
 		applicationProperties_ = applicationProperties;
 		messageProperties_ = messageProperties;
@@ -85,21 +86,21 @@ public class HL7Sender extends Task<Integer>
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 
 		String messageType = MessageTypeIdentifier
-				.getMessageType(MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+				.getMessageType(MessageTypeIdentifier.getMessageHeader(hl7Message_));
 
 		if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
 			// MFN M01: Master file not otherwise specified
-			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(publishMessage_.getSubset());
+			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7Message_);
 			sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
 		} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
 			// MFQ M01: Query for master file record
-			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(publishMessage_.getSubset());
+			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7Message_);
 			sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
 		} else {
 			LOG.error("Unknown message type.  Message header: {} ",
-					MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+					MessageTypeIdentifier.getMessageHeader(hl7Message_));
 			throw new STSException(
-					"Unkown message type. " + MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+					"Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
 		}
 	}
 
@@ -331,8 +332,6 @@ public class HL7Sender extends Task<Integer>
 		updateProgress(-1, 0);
 
 		updateMessage("Send Begin");
-		// send(hl7Message_, publishMessage_, applicationProperties_,
-		// messageProperties_);
 		send();
 		updateMessage("Send Complete");
 

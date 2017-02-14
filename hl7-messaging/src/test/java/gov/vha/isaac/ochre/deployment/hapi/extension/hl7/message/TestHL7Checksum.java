@@ -67,6 +67,7 @@ public class TestHL7Checksum
 
 			PublishMessage publishMessage = new PublishMessageDTO();
 			publishMessage.setMessageId(System.currentTimeMillis());
+			publishMessage.setSubset(subset);
 			publishMessage.setSite(site);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);

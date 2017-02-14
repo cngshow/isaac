@@ -133,7 +133,7 @@ public class TestHL7ChecksumRequest
 	}
 
 	// TODO: fix, this test will hang on task
-	// @Test
+	//@Test
 	public void testSendMessageGood() throws Throwable {
 		// 4. Success if message and site are OK.
 		LOG.info("4. Success if message and site are OK.");
@@ -184,7 +184,7 @@ public class TestHL7ChecksumRequest
 		// Encoding type
 		appProp.setHl7EncodingType("VB");
 
-		appProp.setUseInterfaceEngine(true);
+		appProp.setUseInterfaceEngine(false);
 
 		return appProp;
 
