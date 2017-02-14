@@ -6,6 +6,7 @@ where provided, and the git commit history.
 * 2017/02/?? - 3.37 PENDING
     * refix 460134 defect with HL7v3 source upload (again)
     * VetsExporter code modified to no rely on string identifiers for mapping types
+    * Update metadata constant descriptions, definitions for mapping related column headers (jazz ids 440248 and 440195)
 
 * 2017/02/09 - 3.36
     * Adding code for mapping dynamic columns.
