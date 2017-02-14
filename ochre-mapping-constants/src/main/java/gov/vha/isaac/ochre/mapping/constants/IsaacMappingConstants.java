@@ -135,6 +135,22 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public final MetadataConceptConstant MAPPING_TARGET_CODE_SYSTEM_VERSION = new MetadataConceptConstant("Target code version", 
 			UUID.fromString("b5165f68-b934-5c79-ac71-bd5375f7c809"),
 			"A concept used to annotate the target code system version of a map set") {};
+			
+	public final MetadataConceptConstant MAPPING_IPO_MAP_PATHWAY_ID = new MetadataConceptConstant("Map pathway id", 
+			UUID.fromString("e90d3645-8d4a-5ca7-b6ea-78fbc2d85084"),
+			"A concept used to annotate the MapPathway ID field of an IPO map set") {};
+			
+	public final MetadataConceptConstant MAPPING_IPO_VA_STATION_NUMBER = new MetadataConceptConstant("VA station number", 
+			UUID.fromString("172ee183-a183-5f6c-8527-afbc658dd49f"),
+			"A concept used to annotate the VA_Station_Number field of an IPO map set") {};
+			
+	public final MetadataConceptConstant MAPPING_IPO_VA_STATION_IEN = new MetadataConceptConstant("VA station IEN", 
+			UUID.fromString("416f763f-12b1-55a1-bf32-8f6001fc0eff"),
+			"A concept used to annotate the VA_Station_IEN field of an IPO map set") {};
+
+	public final MetadataConceptConstant MAPPING_IPO_TARGET_TERMINOLOGY_DATE = new MetadataConceptConstant("Target terminology date", 
+			UUID.fromString("d8f2ba8a-c81d-5acf-8c2b-79af9fd645e8"),
+			"A concept used to annotate the Target_Terminology_Date field of an IPO map set") {};
 		
 	public final MetadataConceptConstantGroup MAPPING_METADATA = new MetadataConceptConstantGroup("mapping metadata", 
 		UUID.fromString("9b5de306-e582-58e3-a23a-0dbf49cbdfe7")) 
@@ -146,6 +162,10 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 			addChild(MAPPING_SOURCE_CODE_SYSTEM_VERSION);
 			addChild(MAPPING_TARGET_CODE_SYSTEM);
 			addChild(MAPPING_TARGET_CODE_SYSTEM_VERSION);
+			addChild(MAPPING_IPO_MAP_PATHWAY_ID);
+			addChild(MAPPING_IPO_VA_STATION_NUMBER);
+			addChild(MAPPING_IPO_VA_STATION_IEN);
+			addChild(MAPPING_IPO_TARGET_TERMINOLOGY_DATE);
 			setParent(DynamicSememeConstants.get().DYNAMIC_SEMEME_METADATA);
 		}
 	};
