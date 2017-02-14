@@ -67,6 +67,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -588,41 +589,35 @@ public class VetsExporter {
 						
 						for (DynamicSememeColumnInfo d : dsci)
 						{
-							String column = d.getColumnName().toLowerCase();
+							UUID columnUUID = d.getColumnDescriptionConcept();
 							int col = d.getColumnOrder();
 							
-							// If there isn't any data, bypass this iteration
-							if (null != dsd[col] && null != dsd[col].getDataObject())
+							if (null != dsd[col] && null != columnUUID)
 							{
-								// TODO:DA review
-								// I don't link switching on Strings here, but I wasn't able to get the right result working with column UUIDs 
-								switch (column) {
-								case "target":
-									// DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
+								if (columnUUID.equals(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getPrimordialUuid()))
+								{
 									me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[col].getDataObject().toString())).orElse(""));
-									break;
-								/*case "mapping qualifier":  
-								  	// TODO:DA this is broken, this constant was renamed to *...EQUIVALENCE_TYPE
-								  	// TODO:NR Disabling as this is currently ignored by the exporter, see note below
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
-									// Ignored?
-									break;*/
-								case "mapping sequence":
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE.getPrimordialUuid()))
+								{
+									// Currently ignored, no XML representation
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE.getPrimordialUuid()))
+								{
 									me.setSequence(Integer.parseInt(dsd[col].getDataObject().toString()));
-									break;
-								case "mapping grouping":
-									//DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING.getPrimordialUuid()))
+								{
 									me.setGrouping(dsd[col].getDataObject());
-									break;
-								case "mapping effective date":
-									//DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE.getPrimordialUuid()))
+								{
 									SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 									String formattedDate = sdf.format(dsd[col].getDataObject());
 									me.setEffectiveDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate));
-									break;
-								case "mapping GEM Flags":
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS.getPrimordialUuid()))
+								{
 									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property gem_prop 
 										= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property();
 									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties props
@@ -633,9 +628,10 @@ public class VetsExporter {
 									gem_prop.setValueNew(dsd[col].getDataObject().toString());
 									props.getProperty().add(gem_prop);
 									me.setProperties(props);
-									break;
-								default:
-									break;
+								}
+								else
+								{
+									log.warn("No mapping match found for UUID: ", columnUUID);
 								}
 							}
 						}
