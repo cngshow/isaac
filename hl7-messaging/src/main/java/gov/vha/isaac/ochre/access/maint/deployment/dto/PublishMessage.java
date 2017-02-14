@@ -1,13 +1,13 @@
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
-import java.util.List;
-
 public interface PublishMessage
 {
 
 	String getSubset();
 	
 	void setSubset(String subset);
+	
+	void setVersion(String version);
 	
 	void setChecksum(String checksum);
 	
@@ -33,7 +33,7 @@ public interface PublishMessage
 	 * 
 	 * @return Returns the site.
 	 */
-	List<Site> getSites();
+	Site getSite();
 
 	/**
 	 * Sets the site to which the message (with message ID) was sent
@@ -41,6 +41,6 @@ public interface PublishMessage
 	 * @param site
 	 *            The site to set.
 	 */
-	void setSites(List<Site> sites);
+	void setSite(Site site);
 
 }

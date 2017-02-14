@@ -1,8 +1,5 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,9 +67,7 @@ public class TestHL7Checksum
 
 			PublishMessage publishMessage = new PublishMessageDTO();
 			publishMessage.setMessageId(System.currentTimeMillis());
-			List<Site> sites = new ArrayList<>();
-			sites.add(site);
-			publishMessage.setSites(sites);
+			publishMessage.setSite(site);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
 			sender.send();

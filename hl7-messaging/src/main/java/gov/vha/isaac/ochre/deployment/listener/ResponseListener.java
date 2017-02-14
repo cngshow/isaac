@@ -217,28 +217,29 @@ public class ResponseListener extends Thread
 
 					// find out what type of message this is
 					String messageType = MessageTypeIdentifier.getMessageType(messageHeader);
+					LOG.debug("messageType: {}", messageType);
 
 					// parse the acknowledgement message type
-					if (messageType.equals(MessageTypeIdentifier.MFK_TYPE)) {
+					if (MessageTypeIdentifier.MFK_TYPE.equals(messageType)) {
 						AcknowledgementParser ackParser = new AcknowledgementParser();
 						ackParser.processMessage(messageToParse);
 					}
 					// parse the site data message type
-					else if (messageType.equals(MessageTypeIdentifier.MFR_TYPE)) {
+					else if (MessageTypeIdentifier.MFR_TYPE.equals(messageType)) {
 						// Find out what the target app flag is
 						String receivingApp = MessageTypeIdentifier.getIncomingMessageReceivingApp(messageHeader);
 
 						// if
 						// (receivingApp.equals(MessageTypeIdentifier.receivingAppSiteData))
 						// TODO: remove hard coded value
-						if (receivingApp.equals("VETS DATA")) {
+						if ("VETS DATA".equalsIgnoreCase(receivingApp)) {
 							SiteDataParser discoveryParser = new SiteDataParser();
 							discoveryParser.processMessage(messageToParse);
 						}
 						// else if
 						// (receivingApp.equals(MessageTypeIdentifier.receivingAppMd5))
 						// TODO: remove hard coded value
-						else if (receivingApp.equals("VETS MD5")) {
+						else if ("VETS MD5".equalsIgnoreCase(receivingApp)) {
 							ChecksumParser checksumParser = new ChecksumParser();
 							checksumParser.processMessage(messageToParse);
 						} else {
