@@ -1,8 +1,18 @@
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
+import java.util.List;
+
 public interface PublishMessage
 {
 
+	String getSubset();
+	
+	void setSubset(String subset);
+	
+	void setChecksum(String checksum);
+	
+	void setSiteDiscovery(String siteData);
+	
 	/**
 	 * Returns the HL7 message ID
 	 * 
@@ -23,7 +33,7 @@ public interface PublishMessage
 	 * 
 	 * @return Returns the site.
 	 */
-	Site getSite();
+	List<Site> getSites();
 
 	/**
 	 * Sets the site to which the message (with message ID) was sent
@@ -31,6 +41,6 @@ public interface PublishMessage
 	 * @param site
 	 *            The site to set.
 	 */
-	void setSite(Site site);
+	void setSites(List<Site> sites);
 
 }

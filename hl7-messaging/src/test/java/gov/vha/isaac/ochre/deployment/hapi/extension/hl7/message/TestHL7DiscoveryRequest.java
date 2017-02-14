@@ -51,33 +51,31 @@ public class TestHL7DiscoveryRequest
 
 	@Test(expected = Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
+
 		// 1. Fail if no message.
 		LOG.info("1. Fail if no message.");
 
 		String hl7Message = "";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
 		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Discovery.discovery(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 
@@ -88,16 +86,19 @@ public class TestHL7DiscoveryRequest
 
 		String hl7Message = "Vital Qualifiers";
 
-		Site site;
-		PublishMessage publishMessage;
-		List<PublishMessage> siteList = new ArrayList<>();
+		Site site = new SiteDTO();
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		siteList.clear();
+		PublishMessage publishMessage = new PublishMessageDTO();
+		publishMessage.setMessageId(1);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Discovery.discovery(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 	}
 
 	// TODO: fix, this test will hang on task
@@ -108,27 +109,25 @@ public class TestHL7DiscoveryRequest
 
 		String hl7Message = "Vital Qualifiers";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("AA");
-		site.setGroupName("BB");
-		site.setName("test site");
-		site.setType("test");
+		site.setGroupName("");
+		site.setName("BB");
+		site.setType("");
+		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Discovery.discovery(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 
@@ -140,28 +139,25 @@ public class TestHL7DiscoveryRequest
 
 		String hl7Message = "Vital Qualifiers";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
 		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7Discovery.discovery(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Discovery.discovery(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 

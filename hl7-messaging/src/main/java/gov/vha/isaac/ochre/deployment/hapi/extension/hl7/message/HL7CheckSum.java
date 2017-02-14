@@ -18,7 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
@@ -36,13 +35,13 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
-public class HL7CheckSum
+public class HL7Checksum
 {
 
-	private static final Logger LOG = LogManager.getLogger(HL7CheckSum.class);
+	private static final Logger LOG = LogManager.getLogger(HL7Checksum.class);
 
-	public static Task<String> checkSum(String checkSum, List<PublishMessage> siteList,
-			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+	public static Task<String> checksum(PublishMessage publishMessage, ApplicationProperties applicationProperties,
+			MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
 
@@ -54,23 +53,30 @@ public class HL7CheckSum
 			LOG.error("HL7MessageProperties is null!");
 			throw new IllegalArgumentException("HL7MessageProperties is null");
 		}
-		if (StringUtils.isBlank(checkSum)) {
+		if (publishMessage == null) {
+			LOG.error("PublishMessage is null!");
+			throw new IllegalArgumentException("PublishMessage is null!");
+		}
+		if (StringUtils.isBlank(publishMessage.getSubset())) {
 			LOG.error("No checksum message to send!");
 			throw new IllegalArgumentException("No checksum message to send!");
 		}
-		if (siteList == null || siteList.size() == 0) {
+		if (publishMessage.getSites() == null || publishMessage.getSites().isEmpty()) {
 			LOG.error("No sites to send to!");
 			throw new IllegalArgumentException("No sites to send to!");
 		}
 
-		String hl7CheckSumMessage;
+		// if message is constructed, send
+		String hl7ChecksumMessage;
 		try {
-			hl7CheckSumMessage = HL7RequestGenerator.getChecksumRequestMessage(checkSum, applicationProperties,
-					messageProperties);
+			hl7ChecksumMessage = HL7RequestGenerator.getChecksumRequestMessage(publishMessage.getSubset(),
+					applicationProperties, messageProperties);
 		} catch (STSException e) {
+
 			String msg = String.format(
 					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
-					checkSum);
+					publishMessage.getSubset());
+
 			LOG.error(msg);
 			throw new RuntimeException(msg);
 		}
@@ -84,12 +90,11 @@ public class HL7CheckSum
 				LOG.info("Preparing");
 				try {
 					updateTitle("Sending HL7 message");
-					LOG.info("Sending HL7 message without site: " + hl7CheckSumMessage);
+					LOG.info("Sending HL7 message without site: " + hl7ChecksumMessage);
 
-					HL7Sender hl7Sender = new HL7Sender(hl7CheckSumMessage, siteList, applicationProperties,
+					HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, publishMessage, applicationProperties,
 							messageProperties);
-					// hl7Sender.send(hl7CheckSumMessage, siteList,
-					// applicationProperties);
+					hl7Sender.send();
 
 					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
 						@Override

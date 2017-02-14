@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.deployment.publish;
 import java.util.ArrayList;
 import java.util.List;
 
-import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
 public class MessageTypeIdentifier
@@ -32,7 +31,7 @@ public class MessageTypeIdentifier
 	public static final String MFR_TYPE = "MFR";
 	public static final String MFQ_TYPE = "MFQ";
 
-	public static MessageProperties messageProperties = null;
+	// public static MessageProperties messageProperties = null;
 
 	/**
 	 * Retrieves the message header by searching for "MSH".
@@ -116,9 +115,12 @@ public class MessageTypeIdentifier
 		// incoming message is equivalent to our receiving app name in the
 		// application.properties file.
 		List<String> sendingApps = new ArrayList<>();
-		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdSiteData());
-		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdMD5());
-		sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdUpdate());
+		// sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdSiteData());
+		sendingApps.add("XUMF DATA");
+		// sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdMD5());
+		sendingApps.add("XUMF MD5");
+		// sendingApps.add(messageProperties.getReceivingApplicationNamespaceIdUpdate());
+		sendingApps.add("XUMF UPDATE");
 
 		String[] params = messageHeader.split("\\^");
 		sendingApplication = params[2];
@@ -146,9 +148,12 @@ public class MessageTypeIdentifier
 		// message is equivalent to our sending app name in the
 		// application.properties file.
 		List<String> receivingApps = new ArrayList<>();
-		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdSiteData());
-		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdMD5());
-		receivingApps.add(messageProperties.getSendingApplicationNamespaceIdUpdate());
+		// receivingApps.add(messageProperties.getSendingApplicationNamespaceIdSiteData());
+		receivingApps.add("VETS DATA");
+		// receivingApps.add(messageProperties.getSendingApplicationNamespaceIdMD5());
+		receivingApps.add("VETS MD5");
+		// receivingApps.add(messageProperties.getSendingApplicationNamespaceIdUpdate());
+		receivingApps.add("VETS UPDATE");
 
 		String[] params = messageHeader.split("\\^");
 		receivingApplication = params[4];

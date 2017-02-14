@@ -18,8 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.publish;
 
-import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,8 +57,8 @@ public class HL7Sender extends Task<Integer>
 
 	private static boolean useInterfaceEngine;
 
-	private String hl7UpdateMessage_;
-	private List<PublishMessage> siteList_;
+	private String hl7Message_;
+	private PublishMessage publishMessage_;
 	private ApplicationProperties applicationProperties_;
 	private MessageProperties messageProperties_;
 
@@ -75,41 +73,63 @@ public class HL7Sender extends Task<Integer>
 	 * @throws STSException
 	 */
 
-	public HL7Sender(String hl7UpdateMessage, List<PublishMessage> siteList,
+	public HL7Sender(String hl7Message, PublishMessage publishMessage,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
-		hl7UpdateMessage_ = hl7UpdateMessage;
-		siteList_ = siteList;
+		
+		publishMessage_ = publishMessage;
 		applicationProperties_ = applicationProperties;
 		messageProperties_ = messageProperties;
 	}
 
-	public void send(String hl7UpdateMessage, List<PublishMessage> siteList,
-			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException {
-
-		this.hl7UpdateMessage_ = hl7UpdateMessage;
-		this.siteList_ = siteList;
-		this.applicationProperties_ = applicationProperties;
-		this.messageProperties_ = messageProperties;
-
+	public void send()  throws STSException
+	{
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 
 		String messageType = MessageTypeIdentifier
-				.getMessageType(MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage_));
+				.getMessageType(MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
 
 		if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
 			// MFN M01: Master file not otherwise specified
-			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7UpdateMessage_);
-			sendHL7UpdateMessage(message, siteList_, applicationProperties_);
+			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(publishMessage_.getSubset());
+			sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
 		} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
 			// MFQ M01: Query for master file record
-			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7UpdateMessage_);
-			sendHL7RequestMessage(message, siteList_, applicationProperties_, messageProperties_);
+			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(publishMessage_.getSubset());
+			sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
 		} else {
 			LOG.error("Unknown message type.  Message header: {} ",
-					MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage_));
-			throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7UpdateMessage_));
+					MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+			throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
 		}
 	}
+	
+//	public void send(String hl7Message, PublishMessage publishMessage,
+//			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException {
+//
+//		this.hl7Message_ = hl7Message;
+//		this.publishMessage_ = publishMessage;
+//		this.applicationProperties_ = applicationProperties;
+//		this.messageProperties_ = messageProperties;
+//
+//		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
+//
+//		String messageType = MessageTypeIdentifier
+//				.getMessageType(MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+//
+//		if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
+//			// MFN M01: Master file not otherwise specified
+//			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(publishMessage_.getSubset());
+//			sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
+//		} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
+//			// MFQ M01: Query for master file record
+//			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(publishMessage_.getSubset());
+//			sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
+//		} else {
+//			LOG.error("Unknown message type.  Message header: {} ",
+//					MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+//			throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
+//		}
+//	}
 
 	/*
 	 * Send the HL7 Update Message to the specified topics. A new message id is
@@ -124,19 +144,19 @@ public class HL7Sender extends Task<Integer>
 	 *
 	 * @throws STSException
 	 */
-	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, List<PublishMessage> siteList,
+	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, PublishMessage publishMessage,
 			ApplicationProperties applicationProperties) throws STSException {
 		try {
-			for (PublishMessage publishMessageDTO : siteList) {
+			for (Site site : publishMessage.getSites()) {
 				// insert the topic and message id
 				MSH msh = message.getMSH();
 				String sendingFacility = applicationProperties.getSendingFacilityNamespaceId();
 				msh.getSendingFacility().getNamespaceID().setValue(sendingFacility);
-				msh.getReceivingFacility().getNamespaceID().setValue(publishMessageDTO.getSite().getVaSiteId());
-				msh.getMessageControlID().setValue(((Long) publishMessageDTO.getMessageId()).toString());
+				msh.getReceivingFacility().getNamespaceID().setValue(site.getVaSiteId());
+				msh.getMessageControlID().setValue(((Long) publishMessage.getMessageId()).toString());
 
 				// insert the message type for the topic
-				msh.getProcessingID().getProcessingID().setValue(publishMessageDTO.getSite().getMessageType());
+				msh.getProcessingID().getProcessingID().setValue(site.getMessageType());
 
 				// Send the HL7 message
 				if (useInterfaceEngine) {
@@ -155,7 +175,7 @@ public class HL7Sender extends Task<Integer>
 				}
 
 				getDeploymentStatusMessage(HL7SubsetUpdateGenerator.getMessage(message), useInterfaceEngine,
-						publishMessageDTO.getSite(), msh.getMessageControlID().toString(),
+						site, msh.getMessageControlID().toString(),
 						msh.getProcessingID().getProcessingID().getValue(), UPDATE_MESSAGE_TYPE);
 			}
 		} catch (DataTypeException e) {
@@ -186,10 +206,10 @@ public class HL7Sender extends Task<Integer>
 	 * 
 	 * @throws HL7Exception
 	 */
-	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, List<PublishMessage> siteList,
+	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, PublishMessage publishMessage,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) throws STSException, STSException {
 		try {
-			for (PublishMessage publishMessageDTO : siteList) {
+			for (Site site : publishMessage.getSites()) {
 				// insert the topic and message id
 				MSH msh = message.getMSH();
 				String sendingFacility = applicationProperties.getSendingFacilityNamespaceId();
@@ -198,17 +218,17 @@ public class HL7Sender extends Task<Integer>
 				msh.getSendingFacility().getNamespaceID().setValue(sendingFacility);
 				LOG.info("getSendingFacility().getNamespaceID().setValue: {}", sendingFacility);
 
-				msh.getReceivingFacility().getNamespaceID().setValue(publishMessageDTO.getSite().getVaSiteId());
+				msh.getReceivingFacility().getNamespaceID().setValue(site.getVaSiteId());
 				LOG.info("getReceivingFacility().getNamespaceID().setValue: {}",
-						publishMessageDTO.getSite().getVaSiteId());
+						site.getVaSiteId());
 
-				msh.getMessageControlID().setValue(((Long) publishMessageDTO.getMessageId()).toString());
-				LOG.info("getMessageControlID().setValue: {}", publishMessageDTO.getMessageId());
+				msh.getMessageControlID().setValue(((Long) publishMessage.getMessageId()).toString());
+				LOG.info("getMessageControlID().setValue: {}", publishMessage.getMessageId());
 
 				// insert the message type for the topic
-				msh.getProcessingID().getProcessingID().setValue(publishMessageDTO.getSite().getMessageType());
+				msh.getProcessingID().getProcessingID().setValue(site.getMessageType());
 				LOG.info("getProcessingID().getProcessingID().setValue: {}",
-						publishMessageDTO.getSite().getMessageType());
+						site.getMessageType());
 
 				LOG.info("Message before calling dispatcher");
 				LOG.info(message.toString());
@@ -231,7 +251,7 @@ public class HL7Sender extends Task<Integer>
 				}
 
 				getDeploymentStatusMessage(HL7RequestGenerator.getRequestMessage(message), useInterfaceEngine,
-						publishMessageDTO.getSite(), msh.getMessageControlID().toString(),
+						site, msh.getMessageControlID().toString(),
 						msh.getProcessingID().getProcessingID().getValue(), QUERY_MESSAGE_TYPE);
 			}
 		} catch (DataTypeException e) {
@@ -304,7 +324,8 @@ public class HL7Sender extends Task<Integer>
 		updateProgress(-1, 0);
 
 		updateMessage("Send Begin");
-		send(hl7UpdateMessage_, siteList_, applicationProperties_, messageProperties_);
+		//send(hl7Message_, publishMessage_, applicationProperties_, messageProperties_);
+		send();
 		updateMessage("Send Complete");
 
 		updateProgress(10, 10);

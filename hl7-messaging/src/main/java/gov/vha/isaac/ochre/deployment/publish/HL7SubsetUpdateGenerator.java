@@ -37,7 +37,7 @@ import gov.vha.isaac.ochre.services.exception.STSException;
 
 public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 {
-	private static Logger log = LogManager.getLogger(HL7SubsetUpdateGenerator.class.getPackage().getName());
+	private static Logger log = LogManager.getLogger(HL7SubsetUpdateGenerator.class);
 
 	public static final String TERM_FIELD_NAME = "Term";
 

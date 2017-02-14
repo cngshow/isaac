@@ -7,7 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
@@ -34,7 +33,7 @@ public class TestHL7Discovery
 						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
 					}
 				} catch (Exception e) {
-					System.out.println("Parameter must be an number.");
+					System.out.println("Parameter must be a number.");
 				}
 			}
 
@@ -67,14 +66,12 @@ public class TestHL7Discovery
 			publishMessage = new PublishMessageDTO();
 
 			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSite(site);
+			List<Site> sites = new ArrayList<>();
+			sites.add(site);
+			publishMessage.setSites(sites);
 
-			List<PublishMessage> siteList = new ArrayList<>();
-			siteList.clear();
-			siteList.add(publishMessage);
-
-			HL7Sender sender = new HL7Sender(hl7Message, siteList, applicationProperties, messageProperties);
-			sender.send(hl7Message, siteList, applicationProperties, messageProperties);
+			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
+			sender.send();
 
 			// Wait for before shutdown
 			Thread.sleep(timeToWaitForShutdown);

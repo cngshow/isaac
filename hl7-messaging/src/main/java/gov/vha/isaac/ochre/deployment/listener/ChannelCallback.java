@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ChannelCallback
 {
-	private static Logger log = LogManager.getLogger(ResponseListener.class.getPackage().getName());
+	private static Logger log = LogManager.getLogger(ResponseListener.class);
 
 	private SocketChannel channel;
 	private StringBuffer buffer;

@@ -18,7 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
@@ -41,8 +40,8 @@ public class HL7Discovery
 
 	private static final Logger LOG = LogManager.getLogger(HL7Discovery.class);
 
-	public static Task<String> discovery(String regionName, List<PublishMessage> siteList,
-			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+	public static Task<String> discovery(PublishMessage publishMessage, ApplicationProperties applicationProperties,
+			MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
 
@@ -53,24 +52,28 @@ public class HL7Discovery
 		if (messageProperties == null) {
 			LOG.error("HL7MessageProperties is null!");
 			throw new IllegalArgumentException("HL7MessageProperties is null");
-		}			
-		if (StringUtils.isBlank(regionName)) {
-			LOG.error("No discovery message to send!");
-			throw new IllegalArgumentException("No discovery message to send.");
 		}
-		if (siteList == null || siteList.size() == 0) {
+		if (publishMessage == null) {
+			LOG.error("PublishMessage is null!");
+			throw new IllegalArgumentException("PublishMessage is null!");
+		}
+		if (StringUtils.isBlank(publishMessage.getSubset())) {
+			LOG.error("No site data message to send!");
+			throw new IllegalArgumentException("No site data message to send!");
+		}
+		if (publishMessage.getSites() == null || publishMessage.getSites().isEmpty()) {
 			LOG.error("No sites to send to!");
-			throw new IllegalArgumentException("No sites to send to.");
+			throw new IllegalArgumentException("No sites to send to!");
 		}
 
 		String hl7DiscoveryMessage;
 		try {
-			hl7DiscoveryMessage = HL7RequestGenerator.getSiteDataRequestMessage(regionName, applicationProperties,
-					messageProperties);
+			hl7DiscoveryMessage = HL7RequestGenerator.getSiteDataRequestMessage(publishMessage.getSubset(),
+					applicationProperties, messageProperties);
 		} catch (STSException e) {
 			String msg = String.format(
 					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
-					regionName);
+					publishMessage.getSubset());
 			LOG.error(msg);
 			throw new RuntimeException(msg);
 		}
@@ -86,10 +89,9 @@ public class HL7Discovery
 					updateTitle("Sending HL7 message");
 					LOG.info("Sending HL7 message without site: " + hl7DiscoveryMessage);
 
-					HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, siteList, applicationProperties,
+					HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, publishMessage, applicationProperties,
 							messageProperties);
-					// hl7Sender.send(hl7CheckSumMessage, siteList,
-					// applicationProperties);
+					hl7Sender.send();
 
 					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
 						@Override

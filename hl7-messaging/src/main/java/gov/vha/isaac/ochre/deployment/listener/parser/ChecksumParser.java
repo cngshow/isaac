@@ -34,7 +34,7 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 
 public class ChecksumParser extends BaseParser
 {
-	private static Logger log = LogManager.getLogger(ChecksumParser.class.getPackage().getName());
+	private static Logger log = LogManager.getLogger(ChecksumParser.class);
 
 	private static String MSA_MESSAGE_CONTROL_ID = "";
 

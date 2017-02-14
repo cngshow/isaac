@@ -41,11 +41,11 @@ import javafx.concurrent.Task;
 /**
  *
  *
- * {@link TestHL7CheckSumRequest}
+ * {@link TestHL7ChecksumRequest}
  *
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
-public class TestHL7CheckSumRequest
+public class TestHL7ChecksumRequest
 {
 
 	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
@@ -57,28 +57,25 @@ public class TestHL7CheckSumRequest
 
 		String hl7Message = "";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
 		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Checksum.checksum(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 
@@ -89,16 +86,19 @@ public class TestHL7CheckSumRequest
 
 		String hl7Message = "Radiology Procedures";
 
-		Site site;
-		PublishMessage publishMessage;
-		List<PublishMessage> siteList = new ArrayList<>();
+		Site site = new SiteDTO();
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		siteList.clear();
+		PublishMessage publishMessage = new PublishMessageDTO();
+		publishMessage.setMessageId(1);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Checksum.checksum(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 	}
 
 	// TODO: fix, this test will hang on task
@@ -109,27 +109,25 @@ public class TestHL7CheckSumRequest
 
 		String hl7Message = "Radiology Procedures";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("AA");
-		site.setGroupName("BB");
-		site.setName("test site");
-		site.setType("test");
+		site.setGroupName("");
+		site.setName("BB");
+		site.setType("");
+		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Checksum.checksum(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 
@@ -141,28 +139,25 @@ public class TestHL7CheckSumRequest
 
 		String hl7Message = "Radiology Procedures";
 
-		Site site;
-		site = new SiteDTO();
+		Site site = new SiteDTO();
 		site.setId(1);
 		site.setVaSiteId("950");
 		site.setGroupName("");
 		site.setName("STLVETSDEV");
 		site.setType("");
 		site.setMessageType("T");
+		List<Site> sites = new ArrayList<>();
+		sites.add(site);
 
-		PublishMessageDTO publishMessage;
-		publishMessage = new PublishMessageDTO();
+		PublishMessage publishMessage = new PublishMessageDTO();
 		publishMessage.setMessageId(1);
-		publishMessage.setSite(site);
+		publishMessage.setSubset(hl7Message);
+		publishMessage.setSites(sites);
 
-		List<PublishMessage> siteList = new ArrayList<>();
-		siteList.clear();
-		siteList.add(publishMessage);
-
-		Task<String> t = HL7CheckSum.checkSum(hl7Message, siteList, getDefaultServerProperties(),
+		Task<String> t = HL7Checksum.checksum(publishMessage, getDefaultServerProperties(),
 				getDefaultMessageProperties());
 		taskLog(t);
-		LOG.info(": Result " + t.get());
+		LOG.info("Result {}", t.get());
 
 	}
 

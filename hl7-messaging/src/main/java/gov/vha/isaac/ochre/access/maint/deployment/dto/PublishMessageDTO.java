@@ -18,10 +18,16 @@
  */
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
+import java.util.List;
+
 public class PublishMessageDTO implements PublishMessage
 {
-	private Site site;
+	private List<Site> sites;
 	private long messageId;
+	private String subset;
+	private String checksum;
+	private String siteDiscovery;
+	
 
 	public PublishMessageDTO() {
 	}
@@ -32,11 +38,30 @@ public class PublishMessageDTO implements PublishMessage
 	 * @param site
 	 * @param messageId
 	 */
-	public PublishMessageDTO(long messageId, Site site) {
-		this.site = site;
+	public PublishMessageDTO(long messageId, List<Site> sites) {
+		this.sites = sites;
 		this.messageId = messageId;
 	}
 
+	public String getSubset() {
+		return this.subset;
+	}
+	
+	public void setSubset(String subset)
+	{
+		this.subset = subset;
+	}
+	
+	public void setChecksum(String checksum)
+	{
+		this.checksum = checksum;
+	}
+	
+	public void setSiteDiscovery(String siteDiscovery)
+	{
+		this.siteDiscovery = siteDiscovery;
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getMessageId()
 	 */
@@ -57,15 +82,15 @@ public class PublishMessageDTO implements PublishMessage
 	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getSite()
 	 */
 	@Override
-	public Site getSite() {
-		return site;
+	public List<Site> getSites() {
+		return sites;
 	}
 
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#setSite(gov.vha.isaac.ochre.access.maint.deployment.dto.Site)
 	 */
 	@Override
-	public void setSite(Site site) {
-		this.site = site;
+	public void setSites(List<Site> site) {
+		this.sites = sites;
 	}
 }

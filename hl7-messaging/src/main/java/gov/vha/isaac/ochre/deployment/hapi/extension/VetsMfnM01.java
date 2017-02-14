@@ -37,7 +37,7 @@ import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
 public class VetsMfnM01 extends MFN_M01
 {
-	private static Logger LOG = LogManager.getLogger(VetsMfnM01.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(VetsMfnM01.class);
 
 	/**
 	 * Creates a new MFN_M01 Group.
