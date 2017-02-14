@@ -97,34 +97,44 @@ public class VetsExporter {
 
 	TaxonomyService ts = Get.taxonomyService();
 	
-	// TODO: Source these from MetaData
+	// TODO: Source all the following hardcoded UUID values from MetaData, once available
 	// ConceptChronology: VHAT Attribute Types <261> uuid:8287530a-b6b0-594d-bf46-252e09434f7e
 	// VHAT Metadata -> "Attribute Types"
 	final UUID vhatPropertyTypesUUID = UUID.fromString("8287530a-b6b0-594d-bf46-252e09434f7e");
 	final int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID);
 
-	// TODO: Source these from MetaData
 	// ConceptChronology: Refsets (ISAAC) <325> uuid:fab80263-6dae-523c-b604-c69e450d8c7f
 	// VHAT Metadata -> "Refsets"
 	final UUID vhatRefsetTypesUUID = UUID.fromString("fab80263-6dae-523c-b604-c69e450d8c7f");
 	final int vhatRefsetTypesNid = Get.identifierService().getNidForUuids(vhatRefsetTypesUUID);
 	
-	// TODO: Source these from MetaData
 	// conceptChronology: CODE (ISAAC) <77> uuid:803af596-aea8-5184-b8e1-45f801585d17
-	final UUID codeAssemblageUUID = UUID.fromString("803af596-aea8-5184-b8e1-45f801585d17");
+	final UUID codeAssemblageUUID = MetaData.CODE.getPrimordialUuid();
 	final int codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(codeAssemblageUUID);
 	
-	// TODO: Source these from MetaData
 	// ConceptChronology: VHAT <1129> uuid:6e60d7fd-3729-5dd3-9ce7-6d97c8f75447
 	// VHAT CodeSystem
 	final UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447");
 	final int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID);
 
-	// TODO: Source these from MetaData
 	// ConceptChronology: Preferred Name (ISAAC) <257> uuid:a20e5175-6257-516a-a97d-d7f9655916b8
 	// VHAT Description Types -> Preferred Name
 	final UUID preferredNameExtendedType = UUID.fromString("a20e5175-6257-516a-a97d-d7f9655916b8");
-
+	
+	// ConceptChronology: Association Types (ISAAC) <309> uuid:55f56c52-757a-5db8-bf1e-3ed613711386
+	// ISAAC Associations => RelationshipType UUID
+	final UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
+	
+	// ConceptChronology: Description Types (ISAAC) <254> uuid:09c43aa9-eaed-5217-bc5f-23cacca4df38
+	// ISAAC Descriptions => DesignationType UUID
+	final UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38");
+	
+	// ConceptChronology: All VHAT Concepts (ISAAC) <365> uuid:f2df3cf5-a426-50f9-a660-081a5ca22c70
+	final UUID vhatAllConceptsUUID = UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70");
+	
+	// ConceptChronology: Missing SDO Code System Concepts <42268> uuid:52460eeb-1388-512d-a5e4-fddd64fe0aee
+	final UUID missingSDOCodeSystemsUUID = UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee");
+				
 	boolean fullExportMode = false;
 
 	public VetsExporter()
@@ -166,11 +176,6 @@ public class VetsExporter {
 		Terminology.CodeSystem.Version xmlVersion = new Terminology.CodeSystem.Version();
 		Terminology.CodeSystem.Version.CodedConcepts xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
 
-		// TODO: Source these from MetaData
-		// ConceptChronology: Association Types (ISAAC) <309> uuid:55f56c52-757a-5db8-bf1e-3ed613711386
-		// ISAAC Associations => RelationshipType UUID
-		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
-
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatAssociationTypesUUID)).forEach((conceptId) -> {
@@ -207,10 +212,6 @@ public class VetsExporter {
 			}
 		}
 
-		// TODO: Source these from MetaData
-		// ConceptChronology: Description Types (ISAAC) <254> uuid:09c43aa9-eaed-5217-bc5f-23cacca4df38
-		// ISAAC Descriptions => DesignationType UUID
-		UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38");
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatDesignationTypesUUID)).forEach((conceptId) -> {
@@ -234,11 +235,8 @@ public class VetsExporter {
 		{
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(tcs);
 			// Excluding these:
-			// TODO: Source these from MetaData
-			// ConceptChronology: All VHAT Concepts (ISAAC) <365> uuid:f2df3cf5-a426-50f9-a660-081a5ca22c70
-			// ConceptChronology: Missing SDO Code System Concepts <42268> uuid:52460eeb-1388-512d-a5e4-fddd64fe0aee
-			if (concept.getPrimordialUuid().equals(UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70")) //All vhat concepts
-					|| concept.getPrimordialUuid().equals(UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee")) //Missing SDO Code Systems Concepts
+			if (concept.getPrimordialUuid().equals(vhatAllConceptsUUID)
+					|| concept.getPrimordialUuid().equals(missingSDOCodeSystemsUUID)
 					|| Frills.definesMapping(concept.getConceptSequence()) ) 
 			{ 
 				// Skip
