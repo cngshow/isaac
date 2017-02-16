@@ -10,6 +10,7 @@ where provided, and the git commit history.
     * Adding constants for IPO mapset columns (related to jazz id 462456) 
     * Adding a constant for Name
     * VetsExporter fix for defect 461049
+    * read any state description (active or inactive) when reading dynamic sememe column names
 
 * 2017/02/09 - 3.36
     * Adding code for mapping dynamic columns.
