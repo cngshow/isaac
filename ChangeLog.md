@@ -9,6 +9,7 @@ where provided, and the git commit history.
     * Update metadata constant descriptions, definitions for mapping related column headers (jazz ids 440248 and 440195)
     * Adding constants for IPO mapset columns (related to jazz id 462456) 
     * Adding a constant for Name
+    * VetsExporter fix for defect 461049
 
 * 2017/02/09 - 3.36
     * Adding code for mapping dynamic columns.

@@ -686,7 +686,8 @@ public class VetsExporter {
 				Collections.reverse(coll);
 				for(DynamicSememe<?> s : coll)
 				{
-					if (s.getTime() < startDate) {
+					if (s.getTime() < startDate)
+					{
 						oldValue = (s.getData()[0] != null) ? s.getData()[0].dataToString() : null;
 						break;
 					}
@@ -706,7 +707,8 @@ public class VetsExporter {
 				Collections.reverse(coll);
 				for(StringSememe<?> s : coll)
 				{
-					if (s.getTime() < startDate) {
+					if (s.getTime() < startDate)
+					{
 						oldValue = s.getString();
 						break;
 					}
@@ -740,12 +742,19 @@ public class VetsExporter {
 		property.setActive(isActive);
 		
 		if ((property.getAction() == ActionType.UPDATE || property.getAction() == ActionType.ADD)
-				&& !newValue.equals(oldValue)) {
+				&& !newValue.equals(oldValue))
+		{
 			property.setValueNew(newValue);			
 		}
 		
-		if (oldValue != null && property.getAction() != ActionType.ADD) {
+		if (oldValue != null && property.getAction() != ActionType.ADD)
+		{
 			property.setValueOld(oldValue);
+		}
+		
+		if (property.getAction() == ActionType.NONE)
+		{
+			return null;
 		}
 		
 		property.setTypeName(getPreferredNameDescriptionType(Get.identifierService().getConceptNid(sememe.getAssemblageSequence())));
@@ -1063,77 +1072,90 @@ public class VetsExporter {
 	 */
 	private ActionType determineAction(ObjectChronology<? extends StampedVersion> object, long startDate, long endDate)
 	{
-		if (fullExportMode)
+		ActionType action = ActionType.ADD;
+		
+		if (!fullExportMode)
 		{
-			return ActionType.ADD;
-		}
-		List<? extends StampedVersion> versions = object.getVersionList();
-		versions.sort(new Comparator<StampedVersion>()
-		{
-			@Override
-			public int compare(StampedVersion o1, StampedVersion o2)
+			List<? extends StampedVersion> versions = object.getVersionList();
+			versions.sort(new Comparator<StampedVersion>()
 			{
-				return -1 * Long.compare(o1.getTime(), o2.getTime());
-			}
-		});
-
-		boolean latest = true;
-		int versionCountInDateRange = 0;
-		int actionCountPriorToStartDate = 0;
-		State beginState = null;
-		State endState = null;
+				@Override
+				public int compare(StampedVersion o1, StampedVersion o2)
+				{
+					return -1 * Long.compare(o1.getTime(), o2.getTime());
+				}
+			});
 	
-		for (StampedVersion sv : versions)
-		{
+			boolean latest = true;
+			int versionCountInDateRange = 0;
+			int actionCountPriorToStartDate = 0;
+			State beginState = null;
+			State endState = null;
+		
+			for (StampedVersion sv : versions)
+			{
+				
+				if (sv.getTime() < startDate)
+				{
+					//last value prior to start date
+					if (beginState == null )
+					{
+						beginState = sv.getState();
+					}
+					actionCountPriorToStartDate++;
+				}
+				if (sv.getTime() <= endDate && sv.getTime() >= startDate)
+				{
+					//last value prior to end date
+					if (endState == null)
+					{
+						endState = sv.getState();
+					}
+					versionCountInDateRange++;
+				}
+				latest = false;
+	
+			}
 			
-			if (sv.getTime() < startDate)
+			if (beginState == null && endState != null)
 			{
-				//last value prior to start date
-				if (beginState == null )
-				{
-					beginState = sv.getState();
-				}
-				actionCountPriorToStartDate++;
+				action = ActionType.ADD;
 			}
-			if (sv.getTime() <= endDate && sv.getTime() >= startDate)
+			else if (beginState != null && endState == null)
 			{
-				//last value prior to end date
-				if (endState == null)
-				{
-					endState = sv.getState();
-				}
-				versionCountInDateRange++;
+				action = ActionType.NONE;
 			}
-			latest = false;
-
+			else
+			{
+				if (beginState != endState)
+				{
+					action = ActionType.UPDATE;
+				}
+				else
+				{
+					if (versionCountInDateRange == 0)
+					{
+						action = ActionType.NONE;
+					}
+					else if (versionCountInDateRange > 0)
+					{
+						action = ActionType.UPDATE;
+					}
+					else if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
+					{
+						return ActionType.UPDATE;
+					}
+					/* The UI does not allow Remove. Only Active and Inactive. May be revisited in R3 
+					else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
+					{
+						return ActionType.REMOVE;
+					}
+					*/
+				}
+			}
 		}
-
-		if (beginState == endState || versionCountInDateRange == 0)
-		{
-			return ActionType.NONE;
-		}
-		/* The UI does not allow Remove. Only Active and Inactive. May be revisited in R3 
-		else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
-		{
-			return ActionType.REMOVE;
-		}
-		*/
-
-		/*
-		if (versionCountInDateRange == 0)
-		{
-			return ActionType.NONE;
-		}
-		*/
-
-		if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
-		{
-			return ActionType.UPDATE;
-		}
-		else
-		{
-			return ActionType.ADD;
-		}
+		
+		return action;
 	}
 
 
