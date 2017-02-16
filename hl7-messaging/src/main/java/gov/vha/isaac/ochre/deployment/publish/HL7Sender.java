@@ -165,9 +165,9 @@ public class HL7Sender extends Task<Integer>
 
 			// insert the message type for the topic
 			msh.getProcessingID().getProcessingID().setValue(site.getMessageType());
-
+			LOG.info("Use interface engine is set to " + useInterfaceEngine + " and applicationProperties.getUseInterfaceEngine() is " + applicationProperties.getUseInterfaceEngine());
 			// Send the HL7 message
-			if (useInterfaceEngine) {
+			if (applicationProperties.getUseInterfaceEngine()) {
 				dispatcher.send(message, applicationProperties);
 			} else {
 				// TODO: find code to re-implement if necessary. Leaving
