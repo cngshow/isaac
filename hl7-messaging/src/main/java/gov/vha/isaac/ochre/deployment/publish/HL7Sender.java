@@ -84,23 +84,25 @@ public class HL7Sender extends Task<Integer>
 
 	public void send() throws STSException {
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
-
-		String messageType = MessageTypeIdentifier
-				.getMessageType(MessageTypeIdentifier.getMessageHeader(hl7Message_));
-
-		if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
-			// MFN M01: Master file not otherwise specified
-			MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7Message_);
-			sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
-		} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
-			// MFQ M01: Query for master file record
-			MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7Message_);
-			sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
+		
+		if (useInterfaceEngine) {
+			String messageType = MessageTypeIdentifier
+					.getMessageType(MessageTypeIdentifier.getMessageHeader(hl7Message_));
+			if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
+				// MFN M01: Master file not otherwise specified
+				MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7Message_);
+				sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
+			} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
+				// MFQ M01: Query for master file record
+				MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7Message_);
+				sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
+			} else {
+				LOG.error("Unknown message type.  Message header: {} ",
+						MessageTypeIdentifier.getMessageHeader(hl7Message_));
+				throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
+			} 
 		} else {
-			LOG.error("Unknown message type.  Message header: {} ",
-					MessageTypeIdentifier.getMessageHeader(hl7Message_));
-			throw new STSException(
-					"Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
+			LOG.error("No Emulator, please set useInterfaceEngine to true.");
 		}
 	}
 
