@@ -42,13 +42,14 @@ public class HL7Checksum
 
 	public static Task<String> checksum(List<PublishMessage> publishMessages, ApplicationProperties applicationProperties,
 			MessageProperties messageProperties) {
-
+		LOG.info("I love you Cris...");
 		LOG.info("Building the task to send an HL7 message...");
 
 		if (applicationProperties == null) {
 			LOG.error("HL7ApplicationProperties is null!");
 			throw new IllegalArgumentException("HL7ApplicationProperties is null");
 		}
+		LOG.info("ApplicationProperties.getUseInterfaceEngine() is " + applicationProperties.getUseInterfaceEngine());
 		if (messageProperties == null) {
 			LOG.error("HL7MessageProperties is null!");
 			throw new IllegalArgumentException("HL7MessageProperties is null");
