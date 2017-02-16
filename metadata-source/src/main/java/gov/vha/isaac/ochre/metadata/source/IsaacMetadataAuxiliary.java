@@ -123,6 +123,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
                         createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
                         createConcept("HL7v3 modules");
+                        createConcept("NUCC modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
@@ -147,7 +148,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("RXCUI").setPrimordialUuid("617761d2-80ef-5585-83a0-60851dd44158");//comes from the algorithm in the rxnorm econ loader
                         createConcept("VUID", "Vets Unique Identifier");
                         createConcept("OID", "HL7 Object Identifier");
-                        createConcept("CODE").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
+                        createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
                         
                     popParent();
                     createConcept("language");

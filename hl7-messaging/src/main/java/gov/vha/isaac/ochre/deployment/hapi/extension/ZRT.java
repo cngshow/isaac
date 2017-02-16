@@ -33,7 +33,7 @@ import ca.uhn.hl7v2.parser.ModelClassFactory;
  */
 public class ZRT extends AbstractSegment
 {
-	private static Logger LOG = LogManager.getLogger(ZRT.class.getPackage().getName());
+	private static Logger LOG = LogManager.getLogger(ZRT.class);
 
 	/**
 	 * Creates a Zrt segment object that belongs to the given message.

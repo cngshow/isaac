@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -41,7 +40,7 @@ public class HL7Discovery
 
 	private static final Logger LOG = LogManager.getLogger(HL7Discovery.class);
 
-	public static Task<String> discovery(String regionName, List<PublishMessage> siteList,
+	public static Task<String> discovery(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
@@ -53,27 +52,20 @@ public class HL7Discovery
 		if (messageProperties == null) {
 			LOG.error("HL7MessageProperties is null!");
 			throw new IllegalArgumentException("HL7MessageProperties is null");
-		}			
-		if (StringUtils.isBlank(regionName)) {
-			LOG.error("No discovery message to send!");
-			throw new IllegalArgumentException("No discovery message to send.");
 		}
-		if (siteList == null || siteList.size() == 0) {
-			LOG.error("No sites to send to!");
-			throw new IllegalArgumentException("No sites to send to.");
+		if (publishMessages == null) {
+			LOG.error("PublishMessage is null!");
+			throw new IllegalArgumentException("PublishMessage is null!");
 		}
-
-		String hl7DiscoveryMessage;
-		try {
-			hl7DiscoveryMessage = HL7RequestGenerator.getSiteDataRequestMessage(regionName, applicationProperties,
-					messageProperties);
-		} catch (STSException e) {
-			String msg = String.format(
-					"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
-					regionName);
-			LOG.error(msg);
-			throw new RuntimeException(msg);
-		}
+		// if (StringUtils.isBlank(publishMessage.getSubset())) {
+		// LOG.error("No site data message to send!");
+		// throw new IllegalArgumentException("No site data message to send!");
+		// }
+		// if (publishMessage.getSites() == null ||
+		// publishMessage.getSites().isEmpty()) {
+		// LOG.error("No sites to send to!");
+		// throw new IllegalArgumentException("No sites to send to!");
+		// }
 
 		// if message is constructed, send
 		Task<String> sender = new Task<String>() {
@@ -82,33 +74,47 @@ public class HL7Discovery
 				String tag = "done";
 				updateMessage("Preparing");
 				LOG.info("Preparing");
+
 				try {
-					updateTitle("Sending HL7 message");
-					LOG.info("Sending HL7 message without site: " + hl7DiscoveryMessage);
 
-					HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, siteList, applicationProperties,
-							messageProperties);
-					// hl7Sender.send(hl7CheckSumMessage, siteList,
-					// applicationProperties);
-
-					hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
-						@Override
-						public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-								Number newValue) {
-							updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+					String hl7DiscoveryMessage;
+					for (PublishMessage message : publishMessages) {
+						try {
+							hl7DiscoveryMessage = HL7RequestGenerator.getSiteDataRequestMessage(message.getSubset(),
+									applicationProperties, messageProperties);
+						} catch (STSException e) {
+							String msg = String.format(
+									"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
+									message.getSubset());
+							LOG.error(msg);
+							throw new RuntimeException(msg);
 						}
-					});
-					hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
-						@Override
-						public void changed(ObservableValue<? extends String> observable, String oldValue,
-								String newValue) {
-							updateMessage(newValue);
-						}
-					});
 
-					WorkExecutors.get().getExecutor().execute(hl7Sender);
+						updateTitle("Sending HL7 message");
+						LOG.info("Sending HL7 message without site: " + hl7DiscoveryMessage);
 
-					hl7Sender.get();
+						HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, message, applicationProperties,
+								messageProperties);
+						hl7Sender.send();
+
+						hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
+							@Override
+							public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+									Number newValue) {
+								updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+							}
+						});
+						hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
+							@Override
+							public void changed(ObservableValue<? extends String> observable, String oldValue,
+									String newValue) {
+								updateMessage(newValue);
+							}
+						});
+
+						WorkExecutors.get().getExecutor().execute(hl7Sender);
+						hl7Sender.get();
+					}
 
 					updateTitle("Complete");
 					LOG.info("Complete");

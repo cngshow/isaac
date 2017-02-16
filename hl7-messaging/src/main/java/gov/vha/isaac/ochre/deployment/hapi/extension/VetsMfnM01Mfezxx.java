@@ -38,7 +38,7 @@ import gov.vha.isaac.ochre.services.dto.publish.NameValueDTO;
 
 public class VetsMfnM01Mfezxx extends MFN_M01_MF
 {
-	private static Logger log = LogManager.getLogger(VetsMfnM01Mfezxx.class.getPackage().getName());
+	private static Logger log = LogManager.getLogger(VetsMfnM01Mfezxx.class);
 
 	/**
 	 * Creates a new VetsMfnM01Mfezxx Group.

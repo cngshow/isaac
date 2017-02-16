@@ -175,7 +175,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 	};
 
 	//A column to store the target of an association within a sememe
-	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT = new MetadataConceptConstant("target",
+	public final MetadataConceptConstant DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT = new MetadataConceptConstant("Target",
 			UUID.fromString("e598e12f-3d39-56ac-be68-4e9fca98fb7a"),
 			"Stores the (optional) target concept or component of an association or mapping") {
 	};

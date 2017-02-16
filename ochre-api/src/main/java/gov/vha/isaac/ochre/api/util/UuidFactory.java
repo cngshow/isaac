@@ -32,7 +32,7 @@ public class UuidFactory {
      * @return the uuid of the specified component
      */
     public static UUID getUuidFromAlternateId(UUID authorityUuid, String altId) {
-        if (authorityUuid.equals(TermAux.SNOMED_IDENTIFIER.getUuids()[0])) {
+        if (authorityUuid.equals(TermAux.SNOMED_IDENTIFIER.getUuids()[0]) || authorityUuid.equals(TermAux.SNOMED_IDENTIFIER.getUuids()[1])) {
             return UuidT3Generator.fromSNOMED(altId);
         }
         return UuidT5Generator.get(authorityUuid, altId);

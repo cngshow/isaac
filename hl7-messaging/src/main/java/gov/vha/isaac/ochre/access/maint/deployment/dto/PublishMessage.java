@@ -3,6 +3,16 @@ package gov.vha.isaac.ochre.access.maint.deployment.dto;
 public interface PublishMessage
 {
 
+	String getSubset();
+	
+	void setSubset(String subset);
+	
+	void setVersion(String version);
+	
+	void setChecksum(String checksum);
+	
+	void setSiteDiscovery(String siteData);
+	
 	/**
 	 * Returns the HL7 message ID
 	 * 

@@ -30,11 +30,10 @@ import ca.uhn.hl7v2.model.v24.segment.MSA;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
 import ca.uhn.hl7v2.parser.EncodingNotSupportedException;
 import ca.uhn.hl7v2.parser.PipeParser;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 
 public class ChecksumParser extends BaseParser
 {
-	private static Logger log = LogManager.getLogger(ChecksumParser.class.getPackage().getName());
+	private static Logger log = LogManager.getLogger(ChecksumParser.class);
 
 	private static String MSA_MESSAGE_CONTROL_ID = "";
 
@@ -76,10 +75,13 @@ public class ChecksumParser extends BaseParser
 						processChecksumResponse(MSA_MESSAGE_CONTROL_ID, msaMessage);
 					}
 				}
-				Site site = this.resolveSiteId(mshSendingFacility);
-				log.info("STATUS: " + msaAcknowledgementCode + "; SITE NAME: " + site.getName() + "; SITE ID: "
-						+ site.getVaSiteId() + "; ACK MSG. ID: " + mshMessageControlId + "; ORIGINAL MSG. ID: "
-						+ msaMessageControlId);
+				
+				log.info("STATUS: {}; SITE NAME: {}; SENDING FACILITY ID: {}; ACK MSG. ID: {}; ORIGINAL MSG. ID: {}"
+						, msaAcknowledgementCode
+						, mshSendingFacility
+						, mshMessageControlId
+						, msaMessageControlId);
+				
 			} else {
 				log.error("Unknown message type.  Message header: " + msaMessage);
 			}

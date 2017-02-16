@@ -43,7 +43,8 @@ public class TermAux {
                     UUID.fromString("fd9d47b7-c0a4-3eea-b3ab-2b5a3f9e888f"));
     public static ConceptSpecification SNOMED_IDENTIFIER
             = new ConceptProxy("SNOMED integer id",
-                    UUID.fromString("0418a591-f75b-39ad-be2c-3ab849326da9"));
+                    UUID.fromString("0418a591-f75b-39ad-be2c-3ab849326da9"),   // 'SNOMED integer id'
+                    UUID.fromString("87360947-e603-3397-804b-efd0fcc509b9"));  //'SNOMED CT integer identifier (core metadata concept)' - 900000000000294009
     public static ConceptSpecification ASSEMBLAGE  //formerly known as REFSET_IDENTITY
             = new ConceptProxy("assemblage",
                     UUID.fromString("3e0cd740-2cc6-3d68-ace7-bad2eb2621da"));

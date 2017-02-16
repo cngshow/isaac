@@ -3,8 +3,20 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/02/?? - 3.36 PENDING
-    *
+* 2017/02/16 - 3.37
+    * refix 460134 defect with HL7v3 source upload (again)
+    * VetsExporter code modified to no rely on string identifiers for mapping types
+    * Update metadata constant descriptions, definitions for mapping related column headers (jazz ids 440248 and 440195)
+    * Adding constants for IPO mapset columns (related to jazz id 462456) 
+    * Adding a constant for Name
+    * VetsExporter fix for defect 461049
+    * read any state description (active or inactive) when reading dynamic sememe column names
+
+* 2017/02/09 - 3.36
+    * Adding code for mapping dynamic columns.
+    * HL7 messageing integration work.
+    * Changing remaining instances of qualifier to equivalence type.
+    * Disabled unused VHAT Export code path.
 
 * 2017/02/04 - 3.35
     * Bug fix for terminology converter shared code

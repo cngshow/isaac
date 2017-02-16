@@ -67,6 +67,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUtility;
+import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -96,34 +97,44 @@ public class VetsExporter {
 
 	TaxonomyService ts = Get.taxonomyService();
 	
-	// TODO: Source these from MetaData
+	// TODO: Source all the following hardcoded UUID values from MetaData, once available
 	// ConceptChronology: VHAT Attribute Types <261> uuid:8287530a-b6b0-594d-bf46-252e09434f7e
 	// VHAT Metadata -> "Attribute Types"
 	final UUID vhatPropertyTypesUUID = UUID.fromString("8287530a-b6b0-594d-bf46-252e09434f7e");
 	final int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID);
 
-	// TODO: Source these from MetaData
 	// ConceptChronology: Refsets (ISAAC) <325> uuid:fab80263-6dae-523c-b604-c69e450d8c7f
 	// VHAT Metadata -> "Refsets"
 	final UUID vhatRefsetTypesUUID = UUID.fromString("fab80263-6dae-523c-b604-c69e450d8c7f");
 	final int vhatRefsetTypesNid = Get.identifierService().getNidForUuids(vhatRefsetTypesUUID);
 	
-	// TODO: Source these from MetaData
 	// conceptChronology: CODE (ISAAC) <77> uuid:803af596-aea8-5184-b8e1-45f801585d17
-	final UUID codeAssemblageUUID = UUID.fromString("803af596-aea8-5184-b8e1-45f801585d17");
+	final UUID codeAssemblageUUID = MetaData.CODE.getPrimordialUuid();
 	final int codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(codeAssemblageUUID);
 	
-	// TODO: Source these from MetaData
 	// ConceptChronology: VHAT <1129> uuid:6e60d7fd-3729-5dd3-9ce7-6d97c8f75447
 	// VHAT CodeSystem
 	final UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447");
 	final int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID);
 
-	// TODO: Source these from MetaData
 	// ConceptChronology: Preferred Name (ISAAC) <257> uuid:a20e5175-6257-516a-a97d-d7f9655916b8
 	// VHAT Description Types -> Preferred Name
 	final UUID preferredNameExtendedType = UUID.fromString("a20e5175-6257-516a-a97d-d7f9655916b8");
-
+	
+	// ConceptChronology: Association Types (ISAAC) <309> uuid:55f56c52-757a-5db8-bf1e-3ed613711386
+	// ISAAC Associations => RelationshipType UUID
+	final UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
+	
+	// ConceptChronology: Description Types (ISAAC) <254> uuid:09c43aa9-eaed-5217-bc5f-23cacca4df38
+	// ISAAC Descriptions => DesignationType UUID
+	final UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38");
+	
+	// ConceptChronology: All VHAT Concepts (ISAAC) <365> uuid:f2df3cf5-a426-50f9-a660-081a5ca22c70
+	final UUID vhatAllConceptsUUID = UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70");
+	
+	// ConceptChronology: Missing SDO Code System Concepts <42268> uuid:52460eeb-1388-512d-a5e4-fddd64fe0aee
+	final UUID missingSDOCodeSystemsUUID = UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee");
+				
 	boolean fullExportMode = false;
 
 	public VetsExporter()
@@ -165,11 +176,6 @@ public class VetsExporter {
 		Terminology.CodeSystem.Version xmlVersion = new Terminology.CodeSystem.Version();
 		Terminology.CodeSystem.Version.CodedConcepts xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
 
-		// TODO: Source these from MetaData
-		// ConceptChronology: Association Types (ISAAC) <309> uuid:55f56c52-757a-5db8-bf1e-3ed613711386
-		// ISAAC Associations => RelationshipType UUID
-		UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
-
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatAssociationTypesUUID)).forEach((conceptId) -> {
@@ -206,10 +212,6 @@ public class VetsExporter {
 			}
 		}
 
-		// TODO: Source these from MetaData
-		// ConceptChronology: Description Types (ISAAC) <254> uuid:09c43aa9-eaed-5217-bc5f-23cacca4df38
-		// ISAAC Descriptions => DesignationType UUID
-		UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38");
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(vhatDesignationTypesUUID)).forEach((conceptId) -> {
@@ -233,11 +235,8 @@ public class VetsExporter {
 		{
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(tcs);
 			// Excluding these:
-			// TODO: Source these from MetaData
-			// ConceptChronology: All VHAT Concepts (ISAAC) <365> uuid:f2df3cf5-a426-50f9-a660-081a5ca22c70
-			// ConceptChronology: Missing SDO Code System Concepts <42268> uuid:52460eeb-1388-512d-a5e4-fddd64fe0aee
-			if (concept.getPrimordialUuid().equals(UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70")) //All vhat concepts
-					|| concept.getPrimordialUuid().equals(UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee")) //Missing SDO Code Systems Concepts
+			if (concept.getPrimordialUuid().equals(vhatAllConceptsUUID)
+					|| concept.getPrimordialUuid().equals(missingSDOCodeSystemsUUID)
 					|| Frills.definesMapping(concept.getConceptSequence()) ) 
 			{ 
 				// Skip
@@ -588,41 +587,35 @@ public class VetsExporter {
 						
 						for (DynamicSememeColumnInfo d : dsci)
 						{
-							String column = d.getColumnName().toLowerCase();
+							UUID columnUUID = d.getColumnDescriptionConcept();
 							int col = d.getColumnOrder();
 							
-							// If there isn't any data, bypass this iteration
-							if (null != dsd[col] && null != dsd[col].getDataObject())
+							if (null != dsd[col] && null != columnUUID)
 							{
-								// TODO:DA review
-								// I don't link switching on Strings here, but I wasn't able to get the right result working with column UUIDs 
-								switch (column) {
-								case "target":
-									// DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT
+								if (columnUUID.equals(DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getPrimordialUuid()))
+								{
 									me.setTargetCode(Frills.getDescription(UUID.fromString(dsd[col].getDataObject().toString())).orElse(""));
-									break;
-								/*case "mapping qualifier":  
-								  	// TODO:DA this is broken, this constant was renamed to *...EQUIVALENCE_TYPE
-								  	// TODO:NR Disabling as this is currently ignored by the exporter, see note below
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_QUALIFIER - not in import XML/XSD
-									// Ignored?
-									break;*/
-								case "mapping sequence":
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE.getPrimordialUuid()))
+								{
+									// Currently ignored, no XML representation
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE.getPrimordialUuid()))
+								{
 									me.setSequence(Integer.parseInt(dsd[col].getDataObject().toString()));
-									break;
-								case "mapping grouping":
-									//DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING.getPrimordialUuid()))
+								{
 									me.setGrouping(dsd[col].getDataObject());
-									break;
-								case "mapping effective date":
-									//DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE.getPrimordialUuid()))
+								{
 									SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 									String formattedDate = sdf.format(dsd[col].getDataObject());
 									me.setEffectiveDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(formattedDate));
-									break;
-								case "mapping GEM Flags":
-									// DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS
+								}
+								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS.getPrimordialUuid()))
+								{
 									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property gem_prop 
 										= new Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties.Property();
 									Terminology.CodeSystem.Version.MapSets.MapSet.MapEntries.MapEntry.Properties props
@@ -633,9 +626,10 @@ public class VetsExporter {
 									gem_prop.setValueNew(dsd[col].getDataObject().toString());
 									props.getProperty().add(gem_prop);
 									me.setProperties(props);
-									break;
-								default:
-									break;
+								}
+								else
+								{
+									log.warn("No mapping match found for UUID: ", columnUUID);
 								}
 							}
 						}
@@ -692,7 +686,8 @@ public class VetsExporter {
 				Collections.reverse(coll);
 				for(DynamicSememe<?> s : coll)
 				{
-					if (s.getTime() < startDate) {
+					if (s.getTime() < startDate)
+					{
 						oldValue = (s.getData()[0] != null) ? s.getData()[0].dataToString() : null;
 						break;
 					}
@@ -712,7 +707,8 @@ public class VetsExporter {
 				Collections.reverse(coll);
 				for(StringSememe<?> s : coll)
 				{
-					if (s.getTime() < startDate) {
+					if (s.getTime() < startDate)
+					{
 						oldValue = s.getString();
 						break;
 					}
@@ -746,12 +742,19 @@ public class VetsExporter {
 		property.setActive(isActive);
 		
 		if ((property.getAction() == ActionType.UPDATE || property.getAction() == ActionType.ADD)
-				&& !newValue.equals(oldValue)) {
+				&& !newValue.equals(oldValue))
+		{
 			property.setValueNew(newValue);			
 		}
 		
-		if (oldValue != null && property.getAction() != ActionType.ADD) {
+		if (oldValue != null && property.getAction() != ActionType.ADD)
+		{
 			property.setValueOld(oldValue);
+		}
+		
+		if (property.getAction() == ActionType.NONE)
+		{
+			return null;
 		}
 		
 		property.setTypeName(getPreferredNameDescriptionType(Get.identifierService().getConceptNid(sememe.getAssemblageSequence())));
@@ -1069,77 +1072,90 @@ public class VetsExporter {
 	 */
 	private ActionType determineAction(ObjectChronology<? extends StampedVersion> object, long startDate, long endDate)
 	{
-		if (fullExportMode)
+		ActionType action = ActionType.ADD;
+		
+		if (!fullExportMode)
 		{
-			return ActionType.ADD;
-		}
-		List<? extends StampedVersion> versions = object.getVersionList();
-		versions.sort(new Comparator<StampedVersion>()
-		{
-			@Override
-			public int compare(StampedVersion o1, StampedVersion o2)
+			List<? extends StampedVersion> versions = object.getVersionList();
+			versions.sort(new Comparator<StampedVersion>()
 			{
-				return -1 * Long.compare(o1.getTime(), o2.getTime());
-			}
-		});
-
-		boolean latest = true;
-		int versionCountInDateRange = 0;
-		int actionCountPriorToStartDate = 0;
-		State beginState = null;
-		State endState = null;
+				@Override
+				public int compare(StampedVersion o1, StampedVersion o2)
+				{
+					return -1 * Long.compare(o1.getTime(), o2.getTime());
+				}
+			});
 	
-		for (StampedVersion sv : versions)
-		{
+			boolean latest = true;
+			int versionCountInDateRange = 0;
+			int actionCountPriorToStartDate = 0;
+			State beginState = null;
+			State endState = null;
+		
+			for (StampedVersion sv : versions)
+			{
+				
+				if (sv.getTime() < startDate)
+				{
+					//last value prior to start date
+					if (beginState == null )
+					{
+						beginState = sv.getState();
+					}
+					actionCountPriorToStartDate++;
+				}
+				if (sv.getTime() <= endDate && sv.getTime() >= startDate)
+				{
+					//last value prior to end date
+					if (endState == null)
+					{
+						endState = sv.getState();
+					}
+					versionCountInDateRange++;
+				}
+				latest = false;
+	
+			}
 			
-			if (sv.getTime() < startDate)
+			if (beginState == null && endState != null)
 			{
-				//last value prior to start date
-				if (beginState == null )
-				{
-					beginState = sv.getState();
-				}
-				actionCountPriorToStartDate++;
+				action = ActionType.ADD;
 			}
-			if (sv.getTime() <= endDate && sv.getTime() >= startDate)
+			else if (beginState != null && endState == null)
 			{
-				//last value prior to end date
-				if (endState == null)
-				{
-					endState = sv.getState();
-				}
-				versionCountInDateRange++;
+				action = ActionType.NONE;
 			}
-			latest = false;
-
+			else
+			{
+				if (beginState != endState)
+				{
+					action = ActionType.UPDATE;
+				}
+				else
+				{
+					if (versionCountInDateRange == 0)
+					{
+						action = ActionType.NONE;
+					}
+					else if (versionCountInDateRange > 0)
+					{
+						action = ActionType.UPDATE;
+					}
+					else if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
+					{
+						return ActionType.UPDATE;
+					}
+					/* The UI does not allow Remove. Only Active and Inactive. May be revisited in R3 
+					else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
+					{
+						return ActionType.REMOVE;
+					}
+					*/
+				}
+			}
 		}
-
-		if (beginState == endState || versionCountInDateRange == 0)
-		{
-			return ActionType.NONE;
-		}
-		/* The UI does not allow Remove. Only Active and Inactive. May be revisited in R3 
-		else if (finalStateIsInactive && actionCountPriorToStartDate > 0)
-		{
-			return ActionType.REMOVE;
-		}
-		*/
-
-		/*
-		if (versionCountInDateRange == 0)
-		{
-			return ActionType.NONE;
-		}
-		*/
-
-		if (actionCountPriorToStartDate > 0 && versionCountInDateRange > 0)
-		{
-			return ActionType.UPDATE;
-		}
-		else
-		{
-			return ActionType.ADD;
-		}
+		
+		return action;
 	}
 
 

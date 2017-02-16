@@ -1091,7 +1091,7 @@ public class Frills implements DynamicSememeColumnUtility {
 				
 				@SuppressWarnings("rawtypes")
 				Optional<LatestVersion<DescriptionSememe<?>>> descriptionVersion = ((SememeChronology)dc)
-						.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate());
+						.getLatestVersion(DescriptionSememe.class, Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ACTIVE, State.INACTIVE, State.CANCELED, State.PRIMORDIAL));
 				
 				if (descriptionVersion.isPresent())
 				{

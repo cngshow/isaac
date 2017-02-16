@@ -1,8 +1,5 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,21 +16,28 @@ import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
-public class TestHL7CheckSum
+public class TestHL7Checksum
 {
-	private static final Logger LOG = LogManager.getLogger(TestHL7CheckSum.class);
+	private static final Logger LOG = LogManager.getLogger(TestHL7Checksum.class);
 
 	public static void main(String[] args) throws Throwable {
 		int timeToWaitForShutdown = 60 * 1000;
+		String subset = "";
+		
 		try {
+			
 			// time to wait in seconds before shutdown
 			if (args.length > 0) {
 				try {
 					if (Integer.parseInt(args[0]) > 0) {
 						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
 					}
+					if (StringUtils.isNotEmpty(args[1])) {
+						subset = args[1];						
+					}
+					
 				} catch (Exception e) {
-					System.out.println("Parameter must be an number.");
+					System.out.println("Parameter must be a number.");
 				}
 			}
 
@@ -45,16 +49,15 @@ public class TestHL7CheckSum
 			listener = new ResponseListener(applicationProperties.getListenerPort());
 			listener.start();
 
-			LOG.info("Begin");
+			LOG.info("Begin - get checksum for: {}", subset);
 
-			String hl7Message = HL7RequestGenerator.getChecksumRequestMessage("Radiology Procedures",
+			String hl7Message = HL7RequestGenerator.getChecksumRequestMessage(subset,
 					applicationProperties, messageProperties);
 
 			LOG.info("MESSAGE: {}", hl7Message);
 
 			// Add site from properties file.
-			Site site;
-			site = new SiteDTO();
+			Site site = new SiteDTO();
 			site.setId(Long.parseLong(getPropValue("test.site.id")));
 			site.setVaSiteId(getPropValue("test.site.vaSiteId"));
 			site.setGroupName(getPropValue("test.site.groupName"));
@@ -62,18 +65,13 @@ public class TestHL7CheckSum
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessageDTO publishMessage;
-			publishMessage = new PublishMessageDTO();
-
+			PublishMessage publishMessage = new PublishMessageDTO();
 			publishMessage.setMessageId(System.currentTimeMillis());
+			publishMessage.setSubset(subset);
 			publishMessage.setSite(site);
 
-			List<PublishMessage> siteList = new ArrayList<>();
-			siteList.clear();
-			siteList.add(publishMessage);
-
-			HL7Sender sender = new HL7Sender(hl7Message, siteList, applicationProperties, messageProperties);
-			sender.send(hl7Message, siteList, applicationProperties, messageProperties);
+			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
+			sender.send();
 
 			// Wait for before shutdown
 			Thread.sleep(timeToWaitForShutdown);
@@ -90,10 +88,11 @@ public class TestHL7CheckSum
 	}
 
 	private static ApplicationProperties getDefaultServerPropertiesFromFile() {
+
 		ApplicationProperties appProp = new HL7ApplicationProperties();
+		
 		// Application Server Message String
 		appProp.setApplicationServerName(getPropValue("application.server.name"));
-
 		appProp.setApplicationVersion(getPropValue("application.version"));
 
 		// Listener Port

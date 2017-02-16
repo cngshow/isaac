@@ -275,7 +275,7 @@ public class ContentConverterCreator
 				break;
 			//TODO RXNORM_SOLOR support
 			default :
-				throw new RuntimeException("forgot to support converter type");  //TODO fix
+				throw new RuntimeException("forgot to support converter type");
 		}
 		
 		StringBuilder userOptions = new StringBuilder();

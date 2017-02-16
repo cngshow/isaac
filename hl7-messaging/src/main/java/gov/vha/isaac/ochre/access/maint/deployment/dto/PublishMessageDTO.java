@@ -22,6 +22,11 @@ public class PublishMessageDTO implements PublishMessage
 {
 	private Site site;
 	private long messageId;
+	private String subset;
+	private String checksum;
+	private String version;
+	private String siteDiscovery;
+	
 
 	public PublishMessageDTO() {
 	}
@@ -37,6 +42,31 @@ public class PublishMessageDTO implements PublishMessage
 		this.messageId = messageId;
 	}
 
+	public String getSubset() {
+		return this.subset;
+	}
+	
+	public void setSubset(String subset)
+	{
+		this.subset = subset;
+	}
+	
+	public void setChecksum(String checksum)
+	{
+		this.checksum = checksum;
+	}
+	
+	public void setVersion(String version)
+	{
+		this.version = version;
+	}
+	
+	
+	public void setSiteDiscovery(String siteDiscovery)
+	{
+		this.siteDiscovery = siteDiscovery;
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getMessageId()
 	 */
