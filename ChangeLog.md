@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/02/?? - 3.38 - PENDING
+    *
+
 * 2017/02/16 - 3.37
     * refix 460134 defect with HL7v3 source upload (again)
     * VetsExporter code modified to no rely on string identifiers for mapping types
