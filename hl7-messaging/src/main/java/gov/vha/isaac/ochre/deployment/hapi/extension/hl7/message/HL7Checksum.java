@@ -48,6 +48,15 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 
 	public static Task<String> checksum(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+		
+		Exception one = new Exception("CRIS one");
+		Exception two = new Exception("CRIS two", one);
+		Exception three = new Exception("CRIS three", two);
+		LOG.debug("CRIS test 1 ", three);
+		LOG.info("CRIS test 1 ", three);
+		LOG.warn("CRIS test 1 ", three);
+		LOG.error("CRIS test 1 ", three);
+		LOG.fatal("CRIS test 1 ", three);
 
 		LOG.info("Building the task to send an HL7 message...");
 		if (applicationProperties == null) {
