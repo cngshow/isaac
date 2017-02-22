@@ -19,13 +19,16 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseReceiveListener;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -35,16 +38,18 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
-public class HL7Checksum
+
+public class HL7Checksum implements HL7ResponseReceiveListener
 {
 
 	private static final Logger LOG = LogManager.getLogger(HL7Checksum.class);
 
-	public static Task<String> checksum(List<PublishMessage> publishMessages, ApplicationProperties applicationProperties,
-			MessageProperties messageProperties) {
-		LOG.info("I love you Cris...");
-		LOG.info("Building the task to send an HL7 message...");
+	private final UUID hl7CheckumUuid = UUID.randomUUID();
 
+	public static Task<String> checksum(List<PublishMessage> publishMessages,
+			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+
+		LOG.info("Building the task to send an HL7 message...");
 		if (applicationProperties == null) {
 			LOG.error("HL7ApplicationProperties is null!");
 			throw new IllegalArgumentException("HL7ApplicationProperties is null");
@@ -58,50 +63,50 @@ public class HL7Checksum
 			LOG.error("PublishMessage is null!");
 			throw new IllegalArgumentException("PublishMessage is null!");
 		}
-//		if (StringUtils.isBlank(publishMessage.getSubset())) {
-//			LOG.error("No checksum message to send!");
-//			throw new IllegalArgumentException("No checksum message to send!");
-//		}
-//		if (publishMessages.getSites() == null || publishMessages.getSites().isEmpty()) {
-//			LOG.error("No sites to send to!");
-//			throw new IllegalArgumentException("No sites to send to!");
-//		}
+		// if (StringUtils.isBlank(publishMessage.getSubset())) {
+		// LOG.error("No checksum message to send!");
+		// throw new IllegalArgumentException("No checksum message to send!");
+		// }
+		// if (publishMessages.getSites() == null ||
+		// publishMessages.getSites().isEmpty()) {
+		// LOG.error("No sites to send to!");
+		// throw new IllegalArgumentException("No sites to send to!");
+		// }
 
-
-		// if message is constructed, send
-		Task<String> sender = new Task<String>() {
+		// if messages are constructed, send
+		Task<String> sender = new Task() {
 			@Override
 			protected String call() throws Exception {
 				String tag = "done";
 				updateMessage("Preparing");
 				LOG.info("Preparing");
 				try {
-					
+
 					String hl7ChecksumMessage;
-					for(PublishMessage message : publishMessages)
-					{
-						
+					for (PublishMessage message : publishMessages) {
+
 						try {
 							hl7ChecksumMessage = HL7RequestGenerator.getChecksumRequestMessage(message.getSubset(),
 									applicationProperties, messageProperties);
+
 						} catch (STSException e) {
-	
+
 							String msg = String.format(
 									"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
 									message.getSubset());
-	
+
 							LOG.error(msg);
 							throw new RuntimeException(msg);
 						}
-						
+
 						updateTitle("Sending HL7 message");
 						LOG.info("Sending HL7 message without site: " + hl7ChecksumMessage);
-	
+
 						HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, message, applicationProperties,
 								messageProperties);
+
 						hl7Sender.send();
-						
-	
+
 						hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
 							@Override
 							public void changed(ObservableValue<? extends Number> observable, Number oldValue,
@@ -116,9 +121,8 @@ public class HL7Checksum
 								updateMessage(newValue);
 							}
 						});
-						
+
 						WorkExecutors.get().getExecutor().execute(hl7Sender);
-						hl7Sender.get();
 					}
 
 					updateTitle("Complete");
@@ -135,6 +139,16 @@ public class HL7Checksum
 
 		LOG.info("returning");
 		return sender;
+	}
+
+	@Override
+	public UUID getListenerUuid() {
+		return hl7CheckumUuid;
+	}
+
+	@Override
+	public void handleResponse(Message message) {
+		LOG.info("HANDLE RESPONSE");
 	}
 
 	/**

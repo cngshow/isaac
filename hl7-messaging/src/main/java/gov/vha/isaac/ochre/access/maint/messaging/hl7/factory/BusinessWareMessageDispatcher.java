@@ -51,8 +51,10 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 
 	/** A logger for messages produced by this class. */
 	private static Logger LOG = LogManager.getLogger(BusinessWareMessageDispatcher.class);
+	
+	/** A logger for messages outbound hl7 messages. */
+	private static Logger HL7LOG = LogManager.getLogger("hl7messages");
 
-	// /** The HL7 encoding to use BusinessWare. */
 	// TODO: remove hardcoded.
 	private static final Encoding encoding_ = Encoding.valueOf("VB");
 
@@ -102,6 +104,9 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 					+ terser.get("MSH-9-3") /* msg structure */
 					+ "[ctrl_id=" + terser.get("MSH-10") /* control id */
 					+ "]: " + encodedMessage.length() + " characters");
+			
+			HL7LOG.info(encodedMessage);
+			
 		} catch (Exception e) {
 			final String msg = "Error sending message.";
 			LOG.error(msg, e);

@@ -38,13 +38,12 @@ public class ChecksumParser extends BaseParser
 	private static String MSA_MESSAGE_CONTROL_ID = "";
 
 	/**
-	 * Iterate over the message and write to the log. If a checksum is found, it
-	 * is written to the database.
+	 * Convert an HL7 checksum message in string format to HL7 ca.uhn.hl7v2.model.Message. 
 	 * 
 	 * @param content
 	 *            Incoming message as a String
 	 */
-	public void processMessage(String content) throws Exception {
+	public Message convertMessage(String content) throws Exception {
 		Message message = null;
 		PipeParser parser = new PipeParser();
 		String msaMessage = null;
@@ -90,6 +89,8 @@ public class ChecksumParser extends BaseParser
 		} catch (HL7Exception e) {
 			throw new Exception(e);
 		}
+		
+		return message;
 	}
 
 	/**

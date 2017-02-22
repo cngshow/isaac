@@ -19,6 +19,7 @@
 package gov.vha.isaac.ochre.deployment.listener;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -36,38 +37,88 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.glassfish.hk2.runlevel.RunLevel;
+import org.jvnet.hk2.annotations.Service;
 
+import ca.uhn.hl7v2.model.Message;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.deployment.listener.parser.AcknowledgementParser;
 import gov.vha.isaac.ochre.deployment.listener.parser.ChecksumParser;
 import gov.vha.isaac.ochre.deployment.listener.parser.SiteDataParser;
 import gov.vha.isaac.ochre.deployment.publish.MessageTypeIdentifier;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
-public class ResponseListener extends Thread
+@Service
+@RunLevel(value = 5)
+public class HL7ResponseListener
 {
-	private static Logger LOG = LogManager.getLogger(ResponseListener.class);
+	/** A logger for messages produced by this class. */
+	private static Logger LOG = LogManager.getLogger(HL7ResponseListener.class);
+	
+	/** A logger for messages inbound hl7 messages. */
+	private static Logger HL7LOG = LogManager.getLogger("hl7messages");
 
 	private static Map<SelectionKey, StringBuffer> messageMap = Collections
 			.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
 
-	int port;
-	Selector selector = null;
-	ServerSocketChannel selectableChannel = null;
+	private static int port;
+	private static Selector selector = null;
+	private static ServerSocketChannel selectableChannel = null;
 
-	int keysAdded = 0;
+	private static final int BUFSIZE = 1024;
+	
+	ConcurrentSkipListSet<WeakReference<HL7ResponseReceiveListener>> hl7ResponseListeners = new ConcurrentSkipListSet<>();
+
+	private int keysAdded = 0;
 
 	/*
 	 * Make this constructor private because this class must be instantiated
 	 * with the port.
 	 */
-	private ResponseListener() {
+	//TODO: move port to config.
+	private HL7ResponseListener() {
+		this.port = 49990;
 	}
 
-	public ResponseListener(int port) {
+	public HL7ResponseListener(int port) {
 		this.port = port;
+	}
+
+	@PostConstruct
+	private void startMe() {
+
+		LOG.info("Starting ResponseListener pre-construct on port {}.", this.port);
+
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					initialize();
+					LOG.info("Starting ResponseListener initialize");
+					acceptConnections();
+					LOG.info("Starting ResponseListener accept connections");
+				} catch (IOException e) {
+					LOG.error("Error : {}", e.getMessage());
+				}
+			}
+		};
+
+		LookupService.get().getService(WorkExecutors.class).getExecutor().execute(r);
+
+		LOG.info("Started ResponseListener pre-construct on port {}.", this.port);
+	}
+
+	@PreDestroy
+	private void stopMe() {
+		LOG.info("Finished ResponseListener pre-destroy.");
 	}
 
 	public void initialize() throws IOException {
@@ -92,7 +143,7 @@ public class ResponseListener extends Thread
 			return;
 		}
 
-		LOG.debug("Non-blocking server: acceptor loop...");
+		LOG.info("Non-blocking server: acceptor loop...");
 		while (selectableChannel.isOpen() == true & selector.isOpen() == true & acceptKey != null
 				& (this.keysAdded = acceptKey.selector().select()) > 0) {
 			if (selector.isOpen() == false | this.selectableChannel.isOpen() == false) {
@@ -125,10 +176,8 @@ public class ResponseListener extends Thread
 			}
 		}
 
-		LOG.debug("Non-blocking server: end acceptor loop...");
+		LOG.info("Non-blocking server: end acceptor loop...");
 	}
-
-	static final int BUFSIZE = 1024;
 
 	public String decode(ByteBuffer byteBuffer) throws CharacterCodingException {
 		Charset charset = Charset.forName("us-ascii");
@@ -140,7 +189,8 @@ public class ResponseListener extends Thread
 
 	public void readMessage(ChannelCallback callback, SelectionKey key)
 			throws STSException, IOException, InterruptedException {
-		LOG.debug("read message");
+
+		LOG.info("read message");
 		ByteBuffer byteBuffer = ByteBuffer.allocate(BUFSIZE);
 		byteBuffer.clear();
 		callback.getChannel().read(byteBuffer);
@@ -166,7 +216,8 @@ public class ResponseListener extends Thread
 	}
 
 	public void writeMessage(ChannelCallback callback, SelectionKey key) throws STSException {
-		LOG.debug("write message");
+
+		LOG.info("write message");
 		int timeoutSeconds = 120;
 		long start = System.currentTimeMillis();
 		while (!key.isWritable()) {
@@ -184,6 +235,7 @@ public class ResponseListener extends Thread
 
 				if (inboundMessageBuffer != null) {
 					LOG.debug("Incoming message: {}", inboundMessageBuffer.toString());
+					HL7LOG.info(inboundMessageBuffer.toString());
 
 					// Remove the vertical tab character if it exists and
 					// anything before it
@@ -234,17 +286,21 @@ public class ResponseListener extends Thread
 						// TODO: remove hard coded value
 						if ("VETS DATA".equalsIgnoreCase(receivingApp)) {
 							SiteDataParser discoveryParser = new SiteDataParser();
-							discoveryParser.processMessage(messageToParse);
+							//Message message = discoveryParser.processMessage(messageToParse);
+							//HL7ResponseListener.this.handleResponseNotification(message);
 						}
 						// else if
 						// (receivingApp.equals(MessageTypeIdentifier.receivingAppMd5))
 						// TODO: remove hard coded value
 						else if ("VETS MD5".equalsIgnoreCase(receivingApp)) {
 							ChecksumParser checksumParser = new ChecksumParser();
-							checksumParser.processMessage(messageToParse);
+							Message message = checksumParser.convertMessage(messageToParse);
+							HL7ResponseListener.this.handleResponseNotification(message);
 						} else {
 							LOG.error("Unknown receiving application name: " + receivingApp);
 						}
+						
+						
 					} else {
 						LOG.error("Unknown message type.  Message header: " + messageHeader);
 					}
@@ -268,24 +324,20 @@ public class ResponseListener extends Thread
 		}
 	}
 
-	public void run() {
-		try {
-			initialize();
-			acceptConnections();
-		} catch (IOException e) {
-			LOG.error("IOException thrown to run()", e);
-		}
+	
+	protected void handleResponseNotification(Message message) {
+		
+		LOG.info("handle notification");
+		
+		hl7ResponseListeners.forEach((listenerRef) -> {
+			HL7ResponseReceiveListener listener = listenerRef.get();
+			if (listener == null) {
+				hl7ResponseListeners.remove(listenerRef);
+			} else {
+				LOG.info("send notification");
+				listener.handleResponse(message);
+			}
+		});
 	}
 
-	// Clean up work
-	public void stopThread() {
-		try {
-			this.selectableChannel.socket().close();
-			this.selectableChannel.close();
-			this.selector.wakeup();
-			this.selector.close();
-		} catch (IOException e) {
-			LOG.error(e);
-		}
-	}
 }

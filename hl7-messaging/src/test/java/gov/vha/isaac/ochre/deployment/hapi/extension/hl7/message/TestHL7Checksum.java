@@ -8,7 +8,6 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
-import gov.vha.isaac.ochre.deployment.listener.ResponseListener;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -45,9 +44,9 @@ public class TestHL7Checksum
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
 
 			// Launch listener before sending message.
-			ResponseListener listener;
-			listener = new ResponseListener(applicationProperties.getListenerPort());
-			listener.start();
+			//ResponseListener listener;
+			//listener = new ResponseListener(applicationProperties.getListenerPort());
+			//listener.start();
 
 			LOG.info("Begin - get checksum for: {}", subset);
 

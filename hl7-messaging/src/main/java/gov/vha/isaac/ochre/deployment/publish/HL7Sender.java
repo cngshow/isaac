@@ -102,43 +102,9 @@ public class HL7Sender extends Task<Integer>
 				throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
 			} 
 		} else {
-			LOG.error("No Emulator, please set useInterfaceEngine to true.");
+			LOG.info("No Emulator, please set useInterfaceEngine to true.");
 		}
 	}
-
-	// public void send(String hl7Message, PublishMessage publishMessage,
-	// ApplicationProperties applicationProperties, MessageProperties
-	// messageProperties) throws STSException {
-	//
-	// this.hl7Message_ = hl7Message;
-	// this.publishMessage_ = publishMessage;
-	// this.applicationProperties_ = applicationProperties;
-	// this.messageProperties_ = messageProperties;
-	//
-	// useInterfaceEngine =
-	// getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
-	//
-	// String messageType = MessageTypeIdentifier
-	// .getMessageType(MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	//
-	// if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
-	// // MFN M01: Master file not otherwise specified
-	// MFN_M01 message =
-	// HL7SubsetUpdateGenerator.getMessage(publishMessage_.getSubset());
-	// sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
-	// } else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
-	// // MFQ M01: Query for master file record
-	// MFQ_M01 message =
-	// HL7RequestGenerator.getRequestMessage(publishMessage_.getSubset());
-	// sendHL7RequestMessage(message, publishMessage_, applicationProperties_,
-	// messageProperties_);
-	// } else {
-	// LOG.error("Unknown message type. Message header: {} ",
-	// MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	// throw new STSException("Unkown message type. " +
-	// MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	// }
-	// }
 
 	/*
 	 * Send the HL7 Update Message to the specified topics. A new message id is
@@ -181,7 +147,7 @@ public class HL7Sender extends Task<Integer>
 				 * EmulatorDelegate.sendMessage(HL7SubsetUpdateGenerator.
 				 * getMessage(message), url); }
 				 */
-				LOG.error("No Emulator, please set useInterfaceEngine to true.");
+				LOG.info("No Emulator, please set useInterfaceEngine to true.");
 			}
 
 			getDeploymentStatusMessage(HL7SubsetUpdateGenerator.getMessage(message), useInterfaceEngine, site,
