@@ -51,6 +51,7 @@ import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
 import ca.uhn.hl7v2.parser.PipeParser;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.deployment.listener.parser.AcknowledgementParser;
 import gov.vha.isaac.ochre.deployment.publish.MessageTypeIdentifier;
@@ -58,7 +59,7 @@ import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.concurrent.Task;
 
 @Service
-@RunLevel(value = 5)
+@RunLevel(value = LookupService.WORKERS_STARTED_RUNLEVEL)
 public class HL7ResponseListener
 {
 	/** A logger for messages produced by this class. */
