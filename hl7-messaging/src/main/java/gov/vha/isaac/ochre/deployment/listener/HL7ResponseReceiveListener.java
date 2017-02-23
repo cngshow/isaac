@@ -15,8 +15,6 @@
  */
 package gov.vha.isaac.ochre.deployment.listener;
 
-import java.util.UUID;
-
 import org.jvnet.hk2.annotations.Contract;
 
 import ca.uhn.hl7v2.model.Message;
@@ -28,12 +26,14 @@ public interface HL7ResponseReceiveListener
      * 
      * @return a unique UUID for this listener. 
      */
-    UUID getListenerUuid();
+    String getListenerId();
     
     /**
      * Don't do work on or block the calling thread. 
      * @param message a HL7 Message response that was received.  
      */
     void handleResponse(Message message);
+    
+    void wakeUp(Message responseMessage);
     
 }

@@ -19,9 +19,9 @@
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,25 +38,21 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
-
 public class HL7Checksum implements HL7ResponseReceiveListener
 {
-
 	private static final Logger LOG = LogManager.getLogger(HL7Checksum.class);
 
-	private final UUID hl7CheckumUuid = UUID.randomUUID();
+	// object to lock on
+	private final Object lock = new Object();
+	private volatile boolean running = true;
+	
+	private String messageId_;
+	private Message responseMessage_;
+
+	// hey the entire system was shutdown
 
 	public static Task<String> checksum(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
-		
-		Exception one = new Exception("CRIS one");
-		Exception two = new Exception("CRIS two", one);
-		Exception three = new Exception("CRIS three", two);
-		LOG.debug("CRIS test 1 ", three);
-		LOG.info("CRIS test 1 ", three);
-		LOG.warn("CRIS test 1 ", three);
-		LOG.error("CRIS test 1 ", three);
-		LOG.fatal("CRIS test 1 ", three);
 
 		LOG.info("Building the task to send an HL7 message...");
 		if (applicationProperties == null) {
@@ -72,92 +68,114 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 			LOG.error("PublishMessage is null!");
 			throw new IllegalArgumentException("PublishMessage is null!");
 		}
-		// if (StringUtils.isBlank(publishMessage.getSubset())) {
-		// LOG.error("No checksum message to send!");
-		// throw new IllegalArgumentException("No checksum message to send!");
-		// }
-		// if (publishMessages.getSites() == null ||
-		// publishMessages.getSites().isEmpty()) {
-		// LOG.error("No sites to send to!");
-		// throw new IllegalArgumentException("No sites to send to!");
-		// }
 
 		// if messages are constructed, send
-		Task<String> sender = new Task() {
-			@Override
-			protected String call() throws Exception {
-				String tag = "done";
-				updateMessage("Preparing");
-				LOG.info("Preparing");
-				try {
+		for (PublishMessage message : publishMessages) {
 
-					String hl7ChecksumMessage;
-					for (PublishMessage message : publishMessages) {
+			if (StringUtils.isBlank(message.getSubset())) {
+				LOG.error("No checksum message to send for id {}", message.getMessageId());
+			} else if (message.getSite() == null) {
+				LOG.error("No sites to send for id {}", message.getMessageId());
+			} else {
+				Task<String> sender = new Task() {
+
+					@Override
+					protected String call() throws Exception {
+
+						String hl7ChecksumMessage;
+						String tag = "done";
+						updateMessage("Preparing");
+						LOG.info("Preparing");
 
 						try {
-							hl7ChecksumMessage = HL7RequestGenerator.getChecksumRequestMessage(message.getSubset(),
-									applicationProperties, messageProperties);
 
-						} catch (STSException e) {
+							try {
+								hl7ChecksumMessage = HL7RequestGenerator.getChecksumRequestMessage(message.getSubset(),
+										applicationProperties, messageProperties);
 
-							String msg = String.format(
-									"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
-									message.getSubset());
+							} catch (STSException e) {
 
-							LOG.error(msg);
-							throw new RuntimeException(msg);
+								String msg = String.format(
+										"Could not create HL7 message.  Please check logs from incoming string {}.  Also verify HL7ApplicationProperties.",
+										message.getSubset());
+
+								LOG.error(msg);
+								throw new RuntimeException(msg);
+							}
+
+							updateTitle("Sending HL7 message");
+							LOG.info("Sending HL7 message without site: " + hl7ChecksumMessage);
+
+							HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, message, applicationProperties,
+									messageProperties);
+
+							hl7Sender.send();
+
+							hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
+								@Override
+								public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+										Number newValue) {
+									updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+								}
+							});
+							hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
+								@Override
+								public void changed(ObservableValue<? extends String> observable, String oldValue,
+										String newValue) {
+									updateMessage(newValue);
+								}
+							});
+
+							WorkExecutors.get().getExecutor().execute(hl7Sender);
+							hl7Sender.get();
+
+							updateTitle("Complete");
+							LOG.info("Complete");
+						} catch (Throwable e) {
+
+							LOG.error("Unexpected error", e);
+							throw new RuntimeException(e);
+						} finally {
+							// unregister
 						}
-
-						updateTitle("Sending HL7 message");
-						LOG.info("Sending HL7 message without site: " + hl7ChecksumMessage);
-
-						HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, message, applicationProperties,
-								messageProperties);
-
-						hl7Sender.send();
-
-						hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
-							@Override
-							public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-									Number newValue) {
-								updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
-							}
-						});
-						hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
-							@Override
-							public void changed(ObservableValue<? extends String> observable, String oldValue,
-									String newValue) {
-								updateMessage(newValue);
-							}
-						});
-
-						WorkExecutors.get().getExecutor().execute(hl7Sender);
+						return tag;
 					}
 
-					updateTitle("Complete");
-					LOG.info("Complete");
-
-					return tag;
-				} catch (Throwable e) {
-					LOG.error("Unexpected error", e);
-					throw new RuntimeException(e);
-				}
+				};
 
 			}
-		};
+		}
+		return null; // this should be Task<String> or sender.
 
-		LOG.info("returning");
-		return sender;
 	}
 
 	@Override
-	public UUID getListenerUuid() {
-		return hl7CheckumUuid;
+	public String getListenerId() {
+		return messageId_;
 	}
 
 	@Override
 	public void handleResponse(Message message) {
-		LOG.info("HANDLE RESPONSE");
+		LOG.debug("HANDLE RESPONSE");
+
+		synchronized (lock) {
+			while (running) {
+				try {
+					lock.wait(1000 * 60 * 30);
+				} catch (InterruptedException e) {
+					// oh no...
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public void wakeUp(Message responseMessage) {
+		synchronized (lock) {
+			responseMessage_ = responseMessage;
+			lock.notify();
+		}
 	}
 
 	/**

@@ -48,11 +48,13 @@ import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v24.message.MFN_M01;
+import ca.uhn.hl7v2.model.v24.message.MFR_M01;
+import ca.uhn.hl7v2.model.v24.segment.MSH;
+import ca.uhn.hl7v2.parser.PipeParser;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.deployment.listener.parser.AcknowledgementParser;
-import gov.vha.isaac.ochre.deployment.listener.parser.ChecksumParser;
-import gov.vha.isaac.ochre.deployment.listener.parser.SiteDataParser;
 import gov.vha.isaac.ochre.deployment.publish.MessageTypeIdentifier;
 import gov.vha.isaac.ochre.services.exception.STSException;
 
@@ -62,7 +64,7 @@ public class HL7ResponseListener
 {
 	/** A logger for messages produced by this class. */
 	private static Logger LOG = LogManager.getLogger(HL7ResponseListener.class);
-	
+
 	/** A logger for messages inbound hl7 messages. */
 	private static Logger HL7LOG = LogManager.getLogger("hl7messages");
 
@@ -74,22 +76,20 @@ public class HL7ResponseListener
 	private static ServerSocketChannel selectableChannel = null;
 
 	private static final int BUFSIZE = 1024;
-	
+
+	private static final String VETSDATA = "VETS DATA";
+	private static final String VETSMD5 = "VETS MD5";
+	private static final String VETSUPDATE = "VETS UPDATE";
+	private static final int PORT = 49990;
+
 	ConcurrentSkipListSet<WeakReference<HL7ResponseReceiveListener>> hl7ResponseListeners = new ConcurrentSkipListSet<>();
 
 	private int keysAdded = 0;
 
 	/*
-	 * Make this constructor private because this class must be instantiated
-	 * with the port.
+	 * for HK2
 	 */
-	//TODO: move port to config.
 	private HL7ResponseListener() {
-		this.port = 49990;
-	}
-
-	public HL7ResponseListener(int port) {
-		this.port = port;
 	}
 
 	@PostConstruct
@@ -190,7 +190,7 @@ public class HL7ResponseListener
 	public void readMessage(ChannelCallback callback, SelectionKey key)
 			throws STSException, IOException, InterruptedException {
 
-		LOG.info("read message");
+		LOG.debug("read message");
 		ByteBuffer byteBuffer = ByteBuffer.allocate(BUFSIZE);
 		byteBuffer.clear();
 		callback.getChannel().read(byteBuffer);
@@ -217,7 +217,7 @@ public class HL7ResponseListener
 
 	public void writeMessage(ChannelCallback callback, SelectionKey key) throws STSException {
 
-		LOG.info("write message");
+		LOG.debug("write message");
 		int timeoutSeconds = 120;
 		long start = System.currentTimeMillis();
 		while (!key.isWritable()) {
@@ -235,7 +235,6 @@ public class HL7ResponseListener
 
 				if (inboundMessageBuffer != null) {
 					LOG.debug("Incoming message: {}", inboundMessageBuffer.toString());
-					HL7LOG.info(inboundMessageBuffer.toString());
 
 					// Remove the vertical tab character if it exists and
 					// anything before it
@@ -247,6 +246,7 @@ public class HL7ResponseListener
 					}
 
 					String messageToParse = inboundMessageBuffer.toString();
+					HL7LOG.info(messageToParse);
 
 					// get the MSH line and save to a string
 					String messageHeader = MessageTypeIdentifier.getMessageHeader(messageToParse);
@@ -264,9 +264,6 @@ public class HL7ResponseListener
 						callback.getChannel().write(buf);
 					}
 
-					// Write every incoming message to the log
-					LOG.info("Incoming message: {}", messageToParse);
-
 					// find out what type of message this is
 					String messageType = MessageTypeIdentifier.getMessageType(messageHeader);
 					LOG.debug("messageType: {}", messageType);
@@ -281,26 +278,23 @@ public class HL7ResponseListener
 						// Find out what the target app flag is
 						String receivingApp = MessageTypeIdentifier.getIncomingMessageReceivingApp(messageHeader);
 
-						// if
-						// (receivingApp.equals(MessageTypeIdentifier.receivingAppSiteData))
-						// TODO: remove hard coded value
-						if ("VETS DATA".equalsIgnoreCase(receivingApp)) {
-							SiteDataParser discoveryParser = new SiteDataParser();
-							//Message message = discoveryParser.processMessage(messageToParse);
-							//HL7ResponseListener.this.handleResponseNotification(message);
+						if (VETSDATA.equalsIgnoreCase(receivingApp)) {
+							PipeParser parser = new PipeParser();
+							Message message = parser.parse(messageToParse);
+
+							handleResponseNotification(getMessageControlId(message), message);
 						}
-						// else if
-						// (receivingApp.equals(MessageTypeIdentifier.receivingAppMd5))
-						// TODO: remove hard coded value
-						else if ("VETS MD5".equalsIgnoreCase(receivingApp)) {
-							ChecksumParser checksumParser = new ChecksumParser();
-							Message message = checksumParser.convertMessage(messageToParse);
-							HL7ResponseListener.this.handleResponseNotification(message);
+
+						else if (VETSMD5.equalsIgnoreCase(receivingApp)) {
+							PipeParser parser = new PipeParser();
+							Message message = parser.parse(messageToParse);
+
+							handleResponseNotification(getMessageControlId(message), message);
+
 						} else {
 							LOG.error("Unknown receiving application name: " + receivingApp);
 						}
-						
-						
+
 					} else {
 						LOG.error("Unknown message type.  Message header: " + messageHeader);
 					}
@@ -324,20 +318,45 @@ public class HL7ResponseListener
 		}
 	}
 
-	
-	protected void handleResponseNotification(Message message) {
+	protected void handleResponseNotification(String messageId, Message message) {
+
+		LOG.debug("in handleResponseNotification hl7ResponseListeners count: {}", hl7ResponseListeners.size());
 		
-		LOG.info("handle notification");
-		
+		// only send notification to the listener waiting with the same id
 		hl7ResponseListeners.forEach((listenerRef) -> {
-			HL7ResponseReceiveListener listener = listenerRef.get();
-			if (listener == null) {
-				hl7ResponseListeners.remove(listenerRef);
-			} else {
-				LOG.info("send notification");
-				listener.handleResponse(message);
+			if (listenerRef.get().getListenerId() == messageId) {
+				HL7ResponseReceiveListener listener = listenerRef.get();
+				if (listener == null) {
+					hl7ResponseListeners.remove(listenerRef);
+				} else {
+					LOG.info("send notification");
+					listener.handleResponse(message);
+					// should the listener be removed when done since there
+					// should only be one response?
+				}
 			}
 		});
+
+	}
+
+	//get the id from the message.
+	//referred as message control id in hapi
+	private String getMessageControlId(Message message) {
+
+		String mshMessageControlId = "";
+
+		if (message instanceof MFR_M01) {
+			MFR_M01 mfk = (MFR_M01) message;
+			MSH msh = mfk.getMSH();
+			mshMessageControlId = msh.getMessageControlID().toString();
+			
+		} else if (message instanceof MFN_M01) {
+			MFN_M01 mfn = (MFN_M01) message;
+			MSH msh = mfn.getMSH();
+			mshMessageControlId = msh.getMessageControlID().toString();
+		}
+
+		return mshMessageControlId;
 	}
 
 }
