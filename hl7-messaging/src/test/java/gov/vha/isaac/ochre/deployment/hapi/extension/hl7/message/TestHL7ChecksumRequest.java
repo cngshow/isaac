@@ -47,6 +47,8 @@ import javafx.concurrent.Task;
 public class TestHL7ChecksumRequest
 {
 	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
+	
+	//TODO these tests needs to have a runOnce type of thing that does HL7Messaging.enableListener(applicationProperties);
 
 	//@Test(expected = Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
@@ -68,7 +70,7 @@ public class TestHL7ChecksumRequest
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<Void> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(), getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -88,7 +90,7 @@ public class TestHL7ChecksumRequest
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<Void> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(), getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 	}
@@ -114,8 +116,7 @@ public class TestHL7ChecksumRequest
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<Void> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -142,8 +143,7 @@ public class TestHL7ChecksumRequest
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<Void> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 

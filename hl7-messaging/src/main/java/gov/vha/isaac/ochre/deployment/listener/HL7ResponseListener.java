@@ -55,6 +55,7 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.deployment.listener.parser.AcknowledgementParser;
 import gov.vha.isaac.ochre.deployment.publish.MessageTypeIdentifier;
+import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.concurrent.Task;
 
@@ -70,11 +71,10 @@ public class HL7ResponseListener
 
 	private Map<SelectionKey, StringBuffer> messageMap = Collections.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
 
-	//TODO properties, somehow....
-	private final int port = 49990;
 	private Selector selector = null;
 	private ServerSocketChannel selectableChannel = null;
 	
+	//TODO get this from props_
 	public static final long MAX_WAIT_TIME = 15 * 60 * 1000;  //15 minutes max wait for vitria response
 
 	private static final int BUFSIZE = 1024;
@@ -89,42 +89,62 @@ public class HL7ResponseListener
 	
 	private boolean listening = false;
 	
-	ThreadPoolExecutor responseListenerThreads_;
+	private ThreadPoolExecutor responseListenerThreads_;
+	
+	private ApplicationProperties props_ = null;
 
 	/*
 	 * for HK2
 	 */
 	private HL7ResponseListener() {
 	}
+	
+	public void finishInit(ApplicationProperties properties) throws IOException
+	{
+		if (props_ != null)
+		{
+			throw new IllegalArgumentException("Properties may only be changed after a service-level shutdown");
+		}
+		props_ = properties;
+		
+		LOG.info("Starting HL7ResponseListener on port {}.", props_.getListenerPort());
 
-	@PostConstruct
-	private void startMe() {
-
-		LOG.info("Starting ResponseListener pre-construct on port {}.", this.port);
-
+		responseListenerThreads_ = new ThreadPoolExecutor(200, 200, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
+				new NamedThreadFactory("HL7ResponseListenerPool", true));
+		responseListenerThreads_.allowCoreThreadTimeOut(true);
+		
+		initialize();
+		LOG.info("Started ResponseListener initialize");
+		
 		Runnable r = new Runnable() {
 			@Override
 			public void run() {
 				try {
-					initialize();
-					LOG.info("Starting ResponseListener initialize");
+					LOG.info("Starting thread that reads socket data");
 					acceptConnections();
-					LOG.info("Starting ResponseListener accept connections");
+					
 				} catch (IOException e) {
 					LOG.error("Error : {}", e.getMessage());
+				}
+				finally
+				{
+					LOG.info("Socket data reading thread dies!");
 				}
 			}
 		};
 		
-		responseListenerThreads_ = new ThreadPoolExecutor(200, 200, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
-				new NamedThreadFactory("HL7ResponseListenerPool", true));
-		responseListenerThreads_.allowCoreThreadTimeOut(true);
+
 		
 		Thread listenThread = new Thread(r, "HL7-MIF-ReadThread");
 		listenThread.setDaemon(true);
 		listenThread.start();
 
-		LOG.info("Started ResponseListener pre-construct on port {}.", this.port);
+		LOG.info("Started HL7ResponseListener on port {}.", props_.getListenerPort());
+	}
+
+	@PostConstruct
+	private void startMe() {
+		LOG.info("HL7ResponseListener start called (but this is a noop - will not activate until finishInit is called)");
 	}
 
 	@PreDestroy
@@ -134,6 +154,7 @@ public class HL7ResponseListener
 			this.selector.close();
 			this.listening = false;
 			this.responseListenerThreads_.shutdownNow();
+			props_ = null;
 		}
 		catch (IOException e)
 		{
@@ -142,22 +163,22 @@ public class HL7ResponseListener
 		LOG.info("Finished ResponseListener pre-destroy.");
 	}
 
-	public void initialize() throws IOException {
+	private void initialize() throws IOException {
 		this.selector = SelectorProvider.provider().openSelector();
 		this.selectableChannel = ServerSocketChannel.open();
 		this.selectableChannel.configureBlocking(false);
 		InetAddress localHost = InetAddress.getLocalHost();
-		InetSocketAddress isa = new InetSocketAddress(localHost, this.port);
+		InetSocketAddress isa = new InetSocketAddress(localHost, props_.getListenerPort());
 
 		if (this.selectableChannel.isOpen() == true) {
 			this.selectableChannel.socket().setReuseAddress(true);
 			this.selectableChannel.socket().bind(isa);
 		}
 		listening = true;
-		LOG.info("initialized on port {}", this.port);
+		LOG.info("initialized on port {}", props_.getListenerPort());
 	}
 
-	public void acceptConnections() throws IOException {
+	private void acceptConnections() throws IOException {
 		try
 		{
 			SelectionKey acceptKey = null;
@@ -213,7 +234,7 @@ public class HL7ResponseListener
 		}
 	}
 
-	public String decode(ByteBuffer byteBuffer) throws CharacterCodingException {
+	private String decode(ByteBuffer byteBuffer) throws CharacterCodingException {
 		Charset charset = Charset.forName("us-ascii");
 		CharsetDecoder decoder = charset.newDecoder();
 		CharBuffer charBuffer = decoder.decode(byteBuffer);
@@ -221,7 +242,7 @@ public class HL7ResponseListener
 		return result;
 	}
 
-	public void readMessage(ChannelCallback callback, SelectionKey key)
+	private void readMessage(ChannelCallback callback, SelectionKey key)
 			throws STSException, IOException, InterruptedException {
 
 		LOG.debug("read message");
@@ -249,7 +270,7 @@ public class HL7ResponseListener
 		}
 	}
 
-	public void writeMessage(ChannelCallback callback, SelectionKey key) throws STSException {
+	private void writeMessage(ChannelCallback callback, SelectionKey key) throws STSException {
 
 		LOG.debug("write message");
 		int timeoutSeconds = 120;
@@ -345,14 +366,14 @@ public class HL7ResponseListener
 			messageMap.remove(key);
 			try {
 				callback.getChannel().close();
-				LOG.info("SocketChannel connection closed.  Continuing to listen on port " + port + ".");
+				LOG.info("SocketChannel connection closed.  Continuing to listen on port {}.", props_.getListenerPort());
 			} catch (IOException e) {
 				LOG.error("Unable to close listener SocketChannel", e);
 			}
 		}
 	}
 
-	protected void handleResponseNotification(String messageId, Message message) {
+	private void handleResponseNotification(String messageId, Message message) {
 
 		LOG.debug("in handleResponseNotification hl7ResponseListeners count: {}", hl7ResponseListeners.size());
 		
