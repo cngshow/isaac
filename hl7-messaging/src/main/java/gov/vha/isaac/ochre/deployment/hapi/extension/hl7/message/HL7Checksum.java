@@ -20,10 +20,15 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v24.message.MFR_M01;
+import ca.uhn.hl7v2.model.v24.segment.MSA;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
@@ -134,9 +139,19 @@ public class HL7Checksum
 							else
 							{
 								updateMessage("Processing response");
-								//TODO Nuno, where it the checksum???
-								message.setChecksum("");  //m.get what?
-								message.setRawHL7Message(m.toString());  //TODO maybe??
+								if (message instanceof MFR_M01)
+								{
+									MFR_M01 mfr = (MFR_M01) message;
+									MSA msa = mfr.getMSA();
+									
+									/*
+									The msaMessage will be vista embedded string
+									;CHECKSUM:f8788e471664f6b285b4472660e2e3c9;VERSION:13;
+									*/
+									message.setChecksum(getValueFromTokenizedString("CHECKSUM", msa.getTextMessage().toString()));
+									message.setVersion(getValueFromTokenizedString("VERSION", msa.getTextMessage().toString()));
+									message.setRawHL7Message(mfr.toString());
+								}
 							}
 							
 							LOG.info("Complete");
@@ -160,5 +175,24 @@ public class HL7Checksum
 		}
 		
 		return tasks; 
+	}
+	
+	private static String getValueFromTokenizedString(String token, String input) {
+		StringTokenizer tokenizer = new StringTokenizer(input, ";");
+		String currentToken = null;
+		int colonIndex = -1;
+		String result = "";
+		
+		while (tokenizer.hasMoreTokens()) {
+			currentToken = tokenizer.nextToken();
+			if (currentToken.startsWith(token)) {
+				colonIndex = token.indexOf(':');
+				if (colonIndex != -1 && (token.length() > (colonIndex + 1))) {
+					result = token.substring(colonIndex + 1);
+				}
+			}
+		}
+		
+		return result; 
 	}
 }
