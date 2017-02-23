@@ -72,7 +72,7 @@ public class TestHL7ChecksumRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -96,7 +96,7 @@ public class TestHL7ChecksumRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 	}
@@ -126,7 +126,7 @@ public class TestHL7ChecksumRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -157,7 +157,7 @@ public class TestHL7ChecksumRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
