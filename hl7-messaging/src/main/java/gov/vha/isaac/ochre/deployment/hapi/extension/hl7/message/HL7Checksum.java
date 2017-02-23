@@ -37,6 +37,7 @@ import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
+import java.util.ArrayList;
 
 public class HL7Checksum implements HL7ResponseReceiveListener
 {
@@ -51,7 +52,7 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 
 	// hey the entire system was shutdown
 
-	public static Task<String> checksum(List<PublishMessage> publishMessages,
+	public static List<Task<String>> checksum(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
@@ -68,7 +69,7 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 			LOG.error("PublishMessage is null!");
 			throw new IllegalArgumentException("PublishMessage is null!");
 		}
-
+		List<Task<String>> tasks = new ArrayList<Task<String>>();
 		// if messages are constructed, send
 		for (PublishMessage message : publishMessages) {
 
@@ -142,11 +143,11 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 					}
 
 				};
+				tasks.add(sender);
 
 			}
 		}
-		return null; // this should be Task<String> or sender.
-
+		return tasks; 
 	}
 
 	@Override
