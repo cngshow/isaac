@@ -19,7 +19,6 @@
 package gov.vha.isaac.ochre.deployment.listener;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -37,26 +36,26 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentSkipListSet;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSH;
 import ca.uhn.hl7v2.parser.PipeParser;
-import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.deployment.listener.parser.AcknowledgementParser;
 import gov.vha.isaac.ochre.deployment.publish.MessageTypeIdentifier;
 import gov.vha.isaac.ochre.services.exception.STSException;
+import javafx.concurrent.Task;
 
 @Service
 @RunLevel(value = 5)
@@ -68,23 +67,28 @@ public class HL7ResponseListener
 	/** A logger for messages inbound hl7 messages. */
 	private static Logger HL7LOG = LogManager.getLogger("hl7messages");
 
-	private static Map<SelectionKey, StringBuffer> messageMap = Collections
-			.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
+	private Map<SelectionKey, StringBuffer> messageMap = Collections.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
 
-	private static int port;
-	private static Selector selector = null;
-	private static ServerSocketChannel selectableChannel = null;
+	private int port;
+	private Selector selector = null;
+	private ServerSocketChannel selectableChannel = null;
+	
+	public static final long MAX_WAIT_TIME = 15 * 60 * 1000;  //15 minutes max wait for vitria response
 
 	private static final int BUFSIZE = 1024;
 
 	private static final String VETSDATA = "VETS DATA";
 	private static final String VETSMD5 = "VETS MD5";
-	private static final String VETSUPDATE = "VETS UPDATE";
-	private static final int PORT = 49990;
+//	private static final String VETSUPDATE = "VETS UPDATE";
+//	private static final int PORT = 49990;
 
-	ConcurrentSkipListSet<WeakReference<HL7ResponseReceiveListener>> hl7ResponseListeners = new ConcurrentSkipListSet<>();
+	ConcurrentHashMap<Long, HL7ResponseReceiveListener> hl7ResponseListeners = new ConcurrentHashMap<>();
 
-	private int keysAdded = 0;
+	private int keysAdded = 0;  //TODO need to figure out what is up with this logic - why stored but unused?
+	
+	private boolean listening = false;
+	
+	ThreadPoolExecutor responseListenerThreads_;
 
 	/*
 	 * for HK2
@@ -110,14 +114,30 @@ public class HL7ResponseListener
 				}
 			}
 		};
-
-		LookupService.get().getService(WorkExecutors.class).getExecutor().execute(r);
+		
+		responseListenerThreads_ = new ThreadPoolExecutor(200, 200, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
+				new NamedThreadFactory("HL7ResponseListenerPool", true));
+		responseListenerThreads_.allowCoreThreadTimeOut(true);
+		
+		Thread listenThread = new Thread(r, "HL7-MIF-ReadThread");
+		listenThread.setDaemon(true);
+		listenThread.start();
 
 		LOG.info("Started ResponseListener pre-construct on port {}.", this.port);
 	}
 
 	@PreDestroy
 	private void stopMe() {
+		try
+		{
+			this.selector.close();
+			this.listening = false;
+			this.responseListenerThreads_.shutdownNow();
+		}
+		catch (IOException e)
+		{
+			LOG.error("Error closing HL7Response Listener socket", e);
+		}
 		LOG.info("Finished ResponseListener pre-destroy.");
 	}
 
@@ -132,51 +152,64 @@ public class HL7ResponseListener
 			this.selectableChannel.socket().setReuseAddress(true);
 			this.selectableChannel.socket().bind(isa);
 		}
+		listening = true;
 		LOG.info("initialized on port {}", this.port);
 	}
 
 	public void acceptConnections() throws IOException {
-		SelectionKey acceptKey = null;
-		if (selector.isOpen() == true & selectableChannel != null & selectableChannel.isOpen() == true) {
-			acceptKey = this.selectableChannel.register(this.selector, SelectionKey.OP_ACCEPT);
-		} else {
-			return;
-		}
-
-		LOG.info("Non-blocking server: acceptor loop...");
-		while (selectableChannel.isOpen() == true & selector.isOpen() == true & acceptKey != null
-				& (this.keysAdded = acceptKey.selector().select()) > 0) {
-			if (selector.isOpen() == false | this.selectableChannel.isOpen() == false) {
-				break;
+		try
+		{
+			SelectionKey acceptKey = null;
+			if (selector.isOpen() == true & selectableChannel != null & selectableChannel.isOpen() == true) {
+				acceptKey = this.selectableChannel.register(this.selector, SelectionKey.OP_ACCEPT);
+			} else {
+				return;
 			}
-			Set readyKeys = this.selector.selectedKeys();
-			Iterator i = readyKeys.iterator();
-			while (i.hasNext()) {
-				SelectionKey key = (SelectionKey) i.next();
-				i.remove();
-				if (key.isValid() && key.isAcceptable()) {
-					try {
-						ServerSocketChannel nextReady = (ServerSocketChannel) key.channel();
-						SocketChannel channel = nextReady.accept();
-						channel.configureBlocking(false);
-						SelectionKey readKey = channel.register(this.selector,
-								SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-						readKey.attach(new ChannelCallback(channel));
-					} catch (Exception e) {
-						LOG.error("Problem accepting key.", e);
+
+			LOG.info("Non-blocking server: acceptor loop...");
+			while (selectableChannel.isOpen() == true & selector.isOpen() == true & acceptKey != null
+					& (this.keysAdded = acceptKey.selector().select()) > 0) {
+				if (selector.isOpen() == false | this.selectableChannel.isOpen() == false) {
+					break;
+				}
+				Set<SelectionKey> readyKeys = this.selector.selectedKeys();
+				Iterator<SelectionKey> i = readyKeys.iterator();
+				while (i.hasNext()) {
+					SelectionKey key = i.next();
+					i.remove();
+					if (key.isValid() && key.isAcceptable()) {
+						try {
+							ServerSocketChannel nextReady = (ServerSocketChannel) key.channel();
+							SocketChannel channel = nextReady.accept();
+							channel.configureBlocking(false);
+							SelectionKey readKey = channel.register(this.selector,
+									SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+							readKey.attach(new ChannelCallback(channel));
+						} catch (Exception e) {
+							LOG.error("Problem accepting key.", e);
+						}
+					}
+					if (key.isValid() && key.isReadable()) {
+						try {
+							this.readMessage((ChannelCallback) key.attachment(), key);
+						} catch (Exception e) {
+							LOG.error("Exception in call to readMessage()", e);
+						}
 					}
 				}
-				if (key.isValid() && key.isReadable()) {
-					try {
-						this.readMessage((ChannelCallback) key.attachment(), key);
-					} catch (Exception e) {
-						LOG.error("Exception in call to readMessage()", e);
-					}
-				}
 			}
 		}
-
-		LOG.info("Non-blocking server: end acceptor loop...");
+		catch (Exception e)
+		{
+			LOG.error("Unexpected error in HL7Response Listener thread - exiting!", e);
+			throw e;
+		}
+		finally
+		{
+			listening = false;
+			hl7ResponseListeners.clear();
+			LOG.info("Non-blocking server: end acceptor loop...");
+		}
 	}
 
 	public String decode(ByteBuffer byteBuffer) throws CharacterCodingException {
@@ -322,21 +355,23 @@ public class HL7ResponseListener
 
 		LOG.debug("in handleResponseNotification hl7ResponseListeners count: {}", hl7ResponseListeners.size());
 		
-		// only send notification to the listener waiting with the same id
-		hl7ResponseListeners.forEach((listenerRef) -> {
-			if (listenerRef.get().getListenerId() == messageId) {
-				HL7ResponseReceiveListener listener = listenerRef.get();
-				if (listener == null) {
-					hl7ResponseListeners.remove(listenerRef);
-				} else {
-					LOG.info("send notification");
-					listener.handleResponse(message);
-					// should the listener be removed when done since there
-					// should only be one response?
-				}
+		try
+		{
+			long id = Long.parseLong(messageId.trim());
+			HL7ResponseReceiveListener waitingTask = hl7ResponseListeners.remove(id);
+			if (waitingTask == null)
+			{
+				LOG.error("No listener was registered for the message with an id of {} - {}", id, message);
 			}
-		});
-
+			else
+			{
+				waitingTask.handleResponse(message);
+			}
+		}
+		catch (Exception e)
+		{
+			LOG.error("Unable to parse back the message ID from {}", messageId);
+		}
 	}
 
 	//get the id from the message.
@@ -358,5 +393,34 @@ public class HL7ResponseListener
 
 		return mshMessageControlId;
 	}
+	
+	public boolean isRunning()
+	{
+		return listening;
+	}
 
+	/**
+	 * @param messageId
+	 * @param notifyOnResponseReceived
+	 */
+	public void registerListener(long messageId, HL7ResponseReceiveListener notifyOnResponseReceived)
+	{
+		if (!listening)
+		{
+			LOG.error("attempting to register a listener while the service was not running - ignoring!");
+		}
+		else
+		{
+			HL7ResponseReceiveListener foo = hl7ResponseListeners.put(messageId, notifyOnResponseReceived);
+			if (foo != null)
+			{
+				LOG.error("Upon registering a listner, we already had a registration for id {} - duplicate ID - design failure!", messageId);
+			}
+		}
+	}
+	
+	public void launchListener(Task<?> t)
+	{
+		responseListenerThreads_.execute(t);
+	}
 }

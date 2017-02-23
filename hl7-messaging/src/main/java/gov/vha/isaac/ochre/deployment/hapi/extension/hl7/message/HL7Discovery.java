@@ -25,7 +25,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -41,8 +43,13 @@ public class HL7Discovery
 
 	private static final Logger LOG = LogManager.getLogger(HL7Discovery.class);
 
-	public static List<Task<String>> discovery(List<PublishMessage> publishMessages,
+	public static List<Task<Void>> discovery(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+		
+		if (!LookupService.get().getService(HL7ResponseListener.class).isRunning())
+		{
+			throw new RuntimeException("The HL7 Listener service is not running.  Cannot receive responses");
+		}
 
 		LOG.info("Building the task to send an HL7 message...");
 
@@ -69,9 +76,9 @@ public class HL7Discovery
 		// }
 
 		// if message is constructed, send
-		Task<String> sender = new Task<String>() {
+		Task<Void> sender = new Task<Void>() {
 			@Override
-			protected String call() throws Exception {
+			protected Void call() throws Exception {
 				String tag = "done";
 				updateMessage("Preparing");
 				LOG.info("Preparing");
@@ -94,33 +101,33 @@ public class HL7Discovery
 						updateTitle("Sending HL7 message");
 						LOG.info("Sending HL7 message without site: " + hl7DiscoveryMessage);
 
-						HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, message, applicationProperties,
-								messageProperties);
-						hl7Sender.send();
-
-						hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
-							@Override
-							public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-									Number newValue) {
-								updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
-							}
-						});
-						hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
-							@Override
-							public void changed(ObservableValue<? extends String> observable, String oldValue,
-									String newValue) {
-								updateMessage(newValue);
-							}
-						});
-
-						WorkExecutors.get().getExecutor().execute(hl7Sender);
-						hl7Sender.get();
+//						HL7Sender hl7Sender = new HL7Sender(hl7DiscoveryMessage, message, applicationProperties,
+//								messageProperties);
+//						hl7Sender.send();
+//
+//						hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
+//							@Override
+//							public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+//									Number newValue) {
+//								updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
+//							}
+//						});
+//						hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
+//							@Override
+//							public void changed(ObservableValue<? extends String> observable, String oldValue,
+//									String newValue) {
+//								updateMessage(newValue);
+//							}
+//						});
+//
+//						WorkExecutors.get().getExecutor().execute(hl7Sender);
+//						hl7Sender.get();
 					}
 
 					updateTitle("Complete");
 					LOG.info("Complete");
 
-					return tag;
+					return null;
 				} catch (Throwable e) {
 					LOG.error("Unexpected error", e);
 					throw new RuntimeException(e);
@@ -130,25 +137,8 @@ public class HL7Discovery
 		};
 
 		LOG.info("returning");
-		List<Task<String>> tasks = new ArrayList<Task<String>>();
+		List<Task<Void>> tasks = new ArrayList<Task<Void>>();
 		tasks.add(sender);
 		return tasks;
 	}
-
-	/**
-	 * A utility method to execute a task and wait for it to complete.
-	 * 
-	 * @param task
-	 * @return the string returned by the task
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException {
-		LOG.info("executeAndBlock with task " + task);
-		WorkExecutors.get().getExecutor().execute(task);
-		String result = task.get();
-		LOG.info("result of task: " + result);
-		return result;
-	}
-
 }

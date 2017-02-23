@@ -20,7 +20,6 @@ package gov.vha.isaac.ochre.deployment.publish;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFQ_M01;
@@ -29,10 +28,12 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseReceiveListener;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
-import javafx.concurrent.Task;
 
 /**
  * The <code>HL7Sender</code> class manages the conversion from the deployment
@@ -46,7 +47,7 @@ import javafx.concurrent.Task;
  * @author vhaislempeyd
  */
 
-public class HL7Sender extends Task<Integer>
+public class HL7Sender
 {
 	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
 
@@ -82,7 +83,7 @@ public class HL7Sender extends Task<Integer>
 		messageProperties_ = messageProperties;
 	}
 
-	public void send() throws STSException {
+	public void send(HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 		
 		if (useInterfaceEngine) {
@@ -91,11 +92,11 @@ public class HL7Sender extends Task<Integer>
 			if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
 				// MFN M01: Master file not otherwise specified
 				MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7Message_);
-				sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
+				sendHL7UpdateMessage(message, publishMessage_, applicationProperties_, notifyOnResponseReceived);
 			} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
 				// MFQ M01: Query for master file record
 				MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7Message_);
-				sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
+				sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_, notifyOnResponseReceived);
 			} else {
 				LOG.error("Unknown message type.  Message header: {} ",
 						MessageTypeIdentifier.getMessageHeader(hl7Message_));
@@ -120,7 +121,7 @@ public class HL7Sender extends Task<Integer>
 	 * @throws STSException
 	 */
 	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, PublishMessage publishMessage,
-			ApplicationProperties applicationProperties) throws STSException {
+			ApplicationProperties applicationProperties, HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
 		try {
 			// insert the topic and message id
 			MSH msh = message.getMSH();
@@ -136,6 +137,7 @@ public class HL7Sender extends Task<Integer>
 			LOG.info("Use interface engine is set to " + useInterfaceEngine + " and applicationProperties.getUseInterfaceEngine() is " + applicationProperties.getUseInterfaceEngine());
 			// Send the HL7 message
 			if (applicationProperties.getUseInterfaceEngine()) {
+				LookupService.get().getService(HL7ResponseListener.class).registerListener(publishMessage.getMessageId(), notifyOnResponseReceived);
 				dispatcher.send(message, applicationProperties);
 			} else {
 				// TODO: find code to re-implement if necessary. Leaving
@@ -183,7 +185,7 @@ public class HL7Sender extends Task<Integer>
 	 * @throws HL7Exception
 	 */
 	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, PublishMessage publishMessage,
-			ApplicationProperties applicationProperties, MessageProperties messageProperties)
+			ApplicationProperties applicationProperties, MessageProperties messageProperties, HL7ResponseReceiveListener notifyOnResponseReceived)
 			throws STSException, STSException {
 		try {
 
@@ -212,6 +214,7 @@ public class HL7Sender extends Task<Integer>
 			// Send the HL7 message
 			if (useInterfaceEngine) {
 				LOG.info("calling dispatcher to send message");
+				LookupService.get().getService(HL7ResponseListener.class).registerListener(publishMessage.getMessageId(), notifyOnResponseReceived);
 				dispatcher.send(message, applicationProperties);
 			} else {
 				// TODO: find code to re-implement if necessary. Leaving
@@ -290,20 +293,5 @@ public class HL7Sender extends Task<Integer>
 			throw new STSException("useInterfaceEngine parameter must be 'true' or 'false'.");
 		}
 		return ieUsage;
-	}
-
-	/**
-	 * @see javafx.concurrent.Task#call()
-	 */
-	@Override
-	protected Integer call() throws Exception {
-		updateProgress(-1, 0);
-
-		updateMessage("Send Begin");
-		send();
-		updateMessage("Send Complete");
-
-		updateProgress(10, 10);
-		return 0;
 	}
 }

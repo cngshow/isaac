@@ -3,7 +3,7 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
+import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
@@ -19,20 +19,8 @@ public class TestHL7Discovery
 	private static final Logger LOG = LogManager.getLogger(TestHL7Discovery.class);
 
 	public static void main(String[] args) throws Throwable {
-		int timeToWaitForShutdown = 60 * 1000;
-
+	
 		try {
-			// time to wait in seconds before shutdown
-			if (args.length > 0) {
-				try {
-					if (Integer.parseInt(args[0]) > 0) {
-						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
-					}
-				} catch (Exception e) {
-					System.out.println("Parameter must be a number.");
-				}
-			}
-
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
 
@@ -43,8 +31,7 @@ public class TestHL7Discovery
 
 			LOG.info("Begin");
 
-			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage("Vital Qualifiers", applicationProperties,
-					messageProperties);
+			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage("Vital Qualifiers", applicationProperties, messageProperties);
 
 			LOG.info("MESSAGE: {}", hl7Message);
 
@@ -59,16 +46,15 @@ public class TestHL7Discovery
 			site.setMessageType(getPropValue("test.site.message.type"));
 
 			PublishMessageDTO publishMessage;
-			publishMessage = new PublishMessageDTO();
-
-			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSite(site);
+			publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, "");  //TODO where is subset
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
-			sender.send();
+			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+			sender.send(vrrh);
+			
+			Message result = vrrh.waitForResponse();
 
-			// Wait for before shutdown
-			Thread.sleep(timeToWaitForShutdown);
+			System.out.println(result == null ? "null" : result.printStructure());
 
 			LOG.info("End");
 			System.exit(0);

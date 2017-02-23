@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,25 +15,14 @@
  */
 package gov.vha.isaac.ochre.deployment.listener;
 
-import org.jvnet.hk2.annotations.Contract;
-
 import ca.uhn.hl7v2.model.Message;
 
-@Contract
 public interface HL7ResponseReceiveListener
 {
-    /**
-     * 
-     * @return a unique UUID for this listener. 
-     */
-    String getListenerId();
-    
-    /**
-     * Don't do work on or block the calling thread. 
-     * @param message a HL7 Message response that was received.  
-     */
-    void handleResponse(Message message);
-    
-    void wakeUp(Message responseMessage);
-    
+	/**
+	 * Don't do work on or block the calling thread.
+	 * 
+	 * @param message a HL7 Message response that was received.
+	 */
+	void handleResponse(Message message);
 }

@@ -18,42 +18,52 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
-import gov.vha.isaac.ochre.api.util.WorkExecutors;
-import gov.vha.isaac.ochre.deployment.listener.HL7ResponseReceiveListener;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
-import java.util.ArrayList;
 
-public class HL7Checksum implements HL7ResponseReceiveListener
+public class HL7Checksum
 {
 	private static final Logger LOG = LogManager.getLogger(HL7Checksum.class);
 
-	// object to lock on
-	private final Object lock = new Object();
-	private volatile boolean running = true;
-	
-	private String messageId_;
-	private Message responseMessage_;
-
-	// hey the entire system was shutdown
-
-	public static List<Task<String>> checksum(List<PublishMessage> publishMessages,
+	/**
+	 * This method will create a task for each {@link PublishMessage} object provided.  The tasks will be returned in the same order as the {@link PublishMessage}
+	 * list.  If any {@link PublishMessage} is invalid, the entire batch will fail (via a RuntimeException thrown by this method) and no tasks will be created / started.
+	 * 
+	 * The returned task list will already be executing in a thread pool upon return.  Tasks will go to a completed state in parallel, as the responses come in.
+	 * When a response comes in, the methods {@link PublishMessage#setChecksum(String)} and {@link PublishMessage#setRawHL7Message(String)} will be called prior to the 
+	 * task completing.  The task returns no response - upon completion, the caller should inspect the updated PublishMessage for the results.
+	 * 
+	 * Note, if there was a timeout, and no response was received, neither of the setters above will be called, to indicate no data was available.
+	 * 
+	 * By calling {@link Task#getMessage()}, one can see / observe the current state of the request - this message will progress from user friendly strings like 
+	 * 'Sending Message' to 'Waiting for response'.  If there was a timeout, the ending message will indicate so as well (in addition to the setters not being called)
+	 * 
+	 * @param publishMessages
+	 * @param applicationProperties
+	 * @param messageProperties
+	 * @return
+	 */
+	public static List<Task<Void>> checksum(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
+		
+		HL7ResponseListener hl7rl = LookupService.get().getService(HL7ResponseListener.class); 
+		if (!hl7rl.isRunning())
+		{
+			throw new RuntimeException("The HL7 Listener service is not running.  Cannot receive responses");
+		}
 
 		LOG.info("Building the task to send an HL7 message...");
 		if (applicationProperties == null) {
@@ -69,23 +79,25 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 			LOG.error("PublishMessage is null!");
 			throw new IllegalArgumentException("PublishMessage is null!");
 		}
-		List<Task<String>> tasks = new ArrayList<Task<String>>();
+		List<Task<Void>> tasks = new ArrayList<>();
 		// if messages are constructed, send
 		for (PublishMessage message : publishMessages) {
 
 			if (StringUtils.isBlank(message.getSubset())) {
 				LOG.error("No checksum message to send for id {}", message.getMessageId());
+				throw new IllegalArgumentException("No checksum message to send for id " + message.getMessageId());
 			} else if (message.getSite() == null) {
 				LOG.error("No sites to send for id {}", message.getMessageId());
+				throw new IllegalArgumentException("No sites to send for id " + message.getMessageId());
 			} else {
-				Task<String> sender = new Task() {
+				Task<Void> sender = new Task<Void>() {
 
 					@Override
-					protected String call() throws Exception {
+					protected Void call() throws Exception {
 
 						String hl7ChecksumMessage;
-						String tag = "done";
-						updateMessage("Preparing");
+						updateTitle("Checksum Request");
+						updateMessage("Preparing to Send");
 						LOG.info("Preparing");
 
 						try {
@@ -101,98 +113,52 @@ public class HL7Checksum implements HL7ResponseReceiveListener
 										message.getSubset());
 
 								LOG.error(msg);
-								throw new RuntimeException(msg);
+								updateMessage(msg);
+								throw new Exception(msg);
 							}
 
-							updateTitle("Sending HL7 message");
 							LOG.info("Sending HL7 message without site: " + hl7ChecksumMessage);
 
-							HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, message, applicationProperties,
-									messageProperties);
+							HL7Sender hl7Sender = new HL7Sender(hl7ChecksumMessage, message, applicationProperties, messageProperties);
 
-							hl7Sender.send();
-
-							hl7Sender.progressProperty().addListener(new ChangeListener<Number>() {
-								@Override
-								public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-										Number newValue) {
-									updateProgress(hl7Sender.getWorkDone(), hl7Sender.getTotalWork());
-								}
-							});
-							hl7Sender.messageProperty().addListener(new ChangeListener<String>() {
-								@Override
-								public void changed(ObservableValue<? extends String> observable, String oldValue,
-										String newValue) {
-									updateMessage(newValue);
-								}
-							});
-
-							WorkExecutors.get().getExecutor().execute(hl7Sender);
-							hl7Sender.get();
-
-							updateTitle("Complete");
+							updateMessage("Sending");
+							VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+							hl7Sender.send(vrrh);
+							updateMessage("Message Sent, waiting for response");
+							Message m = vrrh.waitForResponse();
+							
+							if (m == null)
+							{
+								updateMessage("No response received");
+							}
+							else
+							{
+								updateMessage("Processing response");
+								//TODO Nuno, where it the checksum???
+								message.setChecksum("");  //m.get what?
+								message.setRawHL7Message(m.toString());  //TODO maybe??
+							}
+							
 							LOG.info("Complete");
 						} catch (Throwable e) {
-
 							LOG.error("Unexpected error", e);
-							throw new RuntimeException(e);
+							throw new Exception(e);
 						} finally {
 							// unregister
 						}
-						return tag;
+						return null;
 					}
-
 				};
 				tasks.add(sender);
-
 			}
 		}
+		
+		//Start all the tasks
+		for (Task<Void> t : tasks)
+		{
+			hl7rl.launchListener(t);
+		}
+		
 		return tasks; 
 	}
-
-	@Override
-	public String getListenerId() {
-		return messageId_;
-	}
-
-	@Override
-	public void handleResponse(Message message) {
-		LOG.debug("HANDLE RESPONSE");
-
-		synchronized (lock) {
-			while (running) {
-				try {
-					lock.wait(1000 * 60 * 30);
-				} catch (InterruptedException e) {
-					// oh no...
-				}
-			}
-		}
-
-	}
-
-	@Override
-	public void wakeUp(Message responseMessage) {
-		synchronized (lock) {
-			responseMessage_ = responseMessage;
-			lock.notify();
-		}
-	}
-
-	/**
-	 * A utility method to execute a task and wait for it to complete.
-	 * 
-	 * @param task
-	 * @return the string returned by the task
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException {
-		LOG.info("executeAndBlock with task " + task);
-		WorkExecutors.get().getExecutor().execute(task);
-		String result = task.get();
-		LOG.info("result of task: " + result);
-		return result;
-	}
-
 }
