@@ -72,7 +72,7 @@ public class TestHL7DiscoveryRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -96,7 +96,7 @@ public class TestHL7DiscoveryRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 	}
@@ -127,7 +127,7 @@ public class TestHL7DiscoveryRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -158,7 +158,7 @@ public class TestHL7DiscoveryRequest
 		publishMessages.add(publishMessage);
 
 		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties());
+				getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
