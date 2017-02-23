@@ -70,7 +70,8 @@ public class HL7ResponseListener
 
 	private Map<SelectionKey, StringBuffer> messageMap = Collections.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
 
-	private int port;
+	//TODO properties, somehow....
+	private final int port = 49990;
 	private Selector selector = null;
 	private ServerSocketChannel selectableChannel = null;
 	
@@ -81,7 +82,6 @@ public class HL7ResponseListener
 	private static final String VETSDATA = "VETS DATA";
 	private static final String VETSMD5 = "VETS MD5";
 //	private static final String VETSUPDATE = "VETS UPDATE";
-//	private static final int PORT = 49990;
 
 	ConcurrentHashMap<Long, HL7ResponseReceiveListener> hl7ResponseListeners = new ConcurrentHashMap<>();
 
