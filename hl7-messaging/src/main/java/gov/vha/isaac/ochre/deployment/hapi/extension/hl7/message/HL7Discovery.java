@@ -34,13 +34,14 @@ import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
+import java.util.ArrayList;
 
 public class HL7Discovery
 {
 
 	private static final Logger LOG = LogManager.getLogger(HL7Discovery.class);
 
-	public static Task<String> discovery(List<PublishMessage> publishMessages,
+	public static List<Task<String>> discovery(List<PublishMessage> publishMessages,
 			ApplicationProperties applicationProperties, MessageProperties messageProperties) {
 
 		LOG.info("Building the task to send an HL7 message...");
@@ -129,7 +130,9 @@ public class HL7Discovery
 		};
 
 		LOG.info("returning");
-		return sender;
+		List<Task<String>> tasks = new ArrayList<Task<String>>();
+		tasks.add(sender);
+		return tasks;
 	}
 
 	/**
