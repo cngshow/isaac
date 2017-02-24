@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
@@ -21,7 +22,7 @@ public class TestHL7Checksum
 	private static final Logger LOG = LogManager.getLogger(TestHL7Checksum.class);
 
 	public static void main(String[] args) throws Throwable {
-		String subset = "";
+		String subset = getPropValue("test.checksum.name");
 		
 		try {
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();

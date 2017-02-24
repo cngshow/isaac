@@ -18,7 +18,9 @@
  */
 package gov.vha.isaac.ochre.deployment.listener;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -40,16 +42,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
+
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
-import ca.uhn.hl7v2.model.v24.segment.MSH;
+import ca.uhn.hl7v2.model.v24.segment.MSA;
 import ca.uhn.hl7v2.parser.PipeParser;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
@@ -377,6 +382,10 @@ public class HL7ResponseListener
 
 		LOG.debug("in handleResponseNotification hl7ResponseListeners count: {}", hl7ResponseListeners.size());
 		
+		hl7ResponseListeners.forEach((id, listener) -> {
+			LOG.debug("hl7ResponseListeners: {}", id);
+		} );
+		
 		try
 		{
 			long id = Long.parseLong(messageId.trim());
@@ -400,20 +409,37 @@ public class HL7ResponseListener
 	//referred as message control id in hapi
 	private String getMessageControlId(Message message) {
 
-		String mshMessageControlId = "";
+		String msaMessageControlId = "";
 
 		if (message instanceof MFR_M01) {
 			MFR_M01 mfk = (MFR_M01) message;
-			MSH msh = mfk.getMSH();
-			mshMessageControlId = msh.getMessageControlID().toString();
+			MSA msa = mfk.getMSA();
+			msaMessageControlId = msa.getMessageControlID().toString();
 			
 		} else if (message instanceof MFN_M01) {
-			MFN_M01 mfn = (MFN_M01) message;
-			MSH msh = mfn.getMSH();
-			mshMessageControlId = msh.getMessageControlID().toString();
+			//MFN_M01 mfn = (MFN_M01) message;
+			//MSH msh = mfn.getMSH();
+			//msaMessageControlId = msh.getMessageControlID().toString();
+			
+			BufferedReader br = new BufferedReader(new StringReader(message.toString()));
+			String line;
+			
+			try {
+				while((line = br.readLine()) != null) {
+					if (line.startsWith("MSA"))
+					{
+						String[] params = line.split("\\^");
+						msaMessageControlId = params[2];
+					}
+				}
+			}
+			catch(IOException e)
+			{
+				LOG.error("Error getting message control id for {}", message.toString());
+			}
 		}
 
-		return mshMessageControlId;
+		return msaMessageControlId;
 	}
 	
 	public boolean isRunning()

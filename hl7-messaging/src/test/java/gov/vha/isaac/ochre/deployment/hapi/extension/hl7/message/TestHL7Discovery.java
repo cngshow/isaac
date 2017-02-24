@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
@@ -20,15 +21,18 @@ public class TestHL7Discovery
 	private static final Logger LOG = LogManager.getLogger(TestHL7Discovery.class);
 
 	public static void main(String[] args) throws Throwable {
+		String subset = getPropValue("test.discovery.name");
 	
 		try {
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
+			
 			HL7Messaging.enableListener(applicationProperties);
 
-			LOG.info("Begin");
+			LOG.info("Begin - get site data for: {}", subset);
 
-			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage("Vital Qualifiers", applicationProperties, messageProperties);
+			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage(subset, 
+					applicationProperties, messageProperties);
 
 			LOG.info("MESSAGE: {}", hl7Message);
 
@@ -42,13 +46,13 @@ public class TestHL7Discovery
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessageDTO publishMessage;
-			publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, "");  //TODO where is subset
+			PublishMessageDTO publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
 			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
 			sender.send(vrrh);
 			
+			System.out.println("Waiting for response");
 			Message result = vrrh.waitForResponse();
 
 			System.out.println(result == null ? "null" : result.printStructure());
@@ -82,9 +86,8 @@ public class TestHL7Discovery
 		appProp.setSendingFacilityNamespaceId(getPropValue("msh.sendingFacility.namespaceId"));
 
 		// Target Vitria Interface Engine
-		// Target Vitria Interface Engine
-		appProp.setInterfaceEngineURL(
-				"http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel");
+				appProp.setInterfaceEngineURL(getPropValue(
+						"gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url"));
 
 		// Encoding type
 		appProp.setHl7EncodingType(getPropValue(
