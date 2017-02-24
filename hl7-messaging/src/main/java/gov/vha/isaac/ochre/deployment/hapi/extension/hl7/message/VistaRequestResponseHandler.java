@@ -51,6 +51,7 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 					// noop, loop
 				}
 			}
+			sleepTime = calculateNextSleep();
 		}
 		return responseMessage_;
 	}
