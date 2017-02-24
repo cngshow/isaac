@@ -46,6 +46,8 @@ import javafx.concurrent.Task;
 public class TestHL7DiscoveryRequest
 {
 	private static Logger LOG = LogManager.getLogger(TestHL7DiscoveryRequest.class);
+	
+	//TODO these tests needs to have a runOnce type of thing that does HL7Messaging.enableListener(applicationProperties);
 
 	//@Test(expected = Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
@@ -63,16 +65,12 @@ public class TestHL7DiscoveryRequest
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -87,16 +85,12 @@ public class TestHL7DiscoveryRequest
 
 		Site site = new SiteDTO();
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 	}
@@ -118,16 +112,12 @@ public class TestHL7DiscoveryRequest
 		site.setMessageType("T");
 
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -149,16 +139,12 @@ public class TestHL7DiscoveryRequest
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Discovery.discovery(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 

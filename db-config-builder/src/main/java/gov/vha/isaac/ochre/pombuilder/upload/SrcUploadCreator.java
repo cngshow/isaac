@@ -325,20 +325,4 @@ public class SrcUploadCreator
 		} 
 		return result;
 	}
-	
-	/**
-	 * A utility method to execute a task and wait for it to complete.
-	 * @param task
-	 * @return the string returned by the task
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
-	{
-		LOG.trace("executeAndBlock with task " + task);
-		WorkExecutors.get().getExecutor().execute(task);
-		String result = task.get();
-		LOG.trace("result of task: " + result);
-		return result;
-	}
 }

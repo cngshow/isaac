@@ -26,76 +26,79 @@ public class PublishMessageDTO implements PublishMessage
 	private String checksum;
 	private String version;
 	private String siteDiscovery;
+	private String rawHL7Message;
 	
-
-	public PublishMessageDTO() {
-	}
-
 	/**
 	 * Instantiate a new HL7MessagePublication with the required parameters
 	 * 
 	 * @param site
 	 * @param messageId
 	 */
-	public PublishMessageDTO(long messageId, Site site) {
+	public PublishMessageDTO(long messageId, Site site, String subset) {
 		this.site = site;
 		this.messageId = messageId;
-	}
-
-	public String getSubset() {
-		return this.subset;
-	}
-	
-	public void setSubset(String subset)
-	{
 		this.subset = subset;
 	}
-	
-	public void setChecksum(String checksum)
+
+	@Override
+	public String getSubset()
 	{
-		this.checksum = checksum;
+		return subset;
 	}
-	
+
+	@Override
+	public Site getSite()
+	{
+		return site;
+	}
+
+	@Override
+	public long getMessageId()
+	{
+		return messageId;
+	}
+
+	@Override
 	public void setVersion(String version)
 	{
 		this.version = version;
 	}
-	
-	
-	public void setSiteDiscovery(String siteDiscovery)
+
+	@Override
+	public void setChecksum(String checksum)
 	{
-		this.siteDiscovery = siteDiscovery;
-	}
-	
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getMessageId()
-	 */
-	@Override
-	public long getMessageId() {
-		return messageId;
+		this.checksum = checksum;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#setMessageId(long)
-	 */
 	@Override
-	public void setMessageId(long messageId) {
-		this.messageId = messageId;
+	public void setSiteDiscovery(String siteData)
+	{
+		this.siteDiscovery = siteData;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#getSite()
-	 */
 	@Override
-	public Site getSite() {
-		return site;
+	public void setRawHL7Message(String rawMessage)
+	{
+		this.rawHL7Message = rawMessage;
 	}
 
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage#setSite(gov.vha.isaac.ochre.access.maint.deployment.dto.Site)
-	 */
-	@Override
-	public void setSite(Site site) {
-		this.site = site;
+	public String getChecksum()
+	{
+		return checksum;
+	}
+
+	public String getVersion()
+	{
+		return version;
+	}
+
+	public String getSiteDiscovery()
+	{
+		return siteDiscovery;
+	}
+
+	public String getRawHL7Message()
+	{
+		return rawHL7Message;
 	}
 }

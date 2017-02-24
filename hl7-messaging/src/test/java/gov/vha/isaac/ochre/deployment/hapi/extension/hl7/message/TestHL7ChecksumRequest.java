@@ -47,6 +47,8 @@ import javafx.concurrent.Task;
 public class TestHL7ChecksumRequest
 {
 	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
+	
+	//TODO these tests needs to have a runOnce type of thing that does HL7Messaging.enableListener(applicationProperties);
 
 	//@Test(expected = Exception.class)
 	public void testSendMessageEmpty() throws Throwable {
@@ -63,16 +65,12 @@ public class TestHL7ChecksumRequest
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -87,16 +85,12 @@ public class TestHL7ChecksumRequest
 
 		Site site = new SiteDTO();
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 	}
@@ -117,16 +111,12 @@ public class TestHL7ChecksumRequest
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -148,16 +138,12 @@ public class TestHL7ChecksumRequest
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO();
-		publishMessage.setMessageId(1);
-		publishMessage.setSubset(hl7Message);
-		publishMessage.setSite(site);
+		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
 		
 		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
 		publishMessages.add(publishMessage);
 
-		Task<String> t = HL7Checksum.checksum(publishMessages, getDefaultServerProperties(),
-				getDefaultMessageProperties()).get(0);
+		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
 		taskLog(t);
 		LOG.info("Result {}", t.get());
 
@@ -239,7 +225,7 @@ public class TestHL7ChecksumRequest
 
 	}
 
-	private void taskLog(Task t) {
+	private void taskLog(Task<?> t) {
 
 		t.progressProperty().addListener(new ChangeListener<Number>() {
 			@Override

@@ -4,9 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -19,32 +21,18 @@ public class TestHL7Discovery
 	private static final Logger LOG = LogManager.getLogger(TestHL7Discovery.class);
 
 	public static void main(String[] args) throws Throwable {
-		int timeToWaitForShutdown = 60 * 1000;
-
+		String subset = getPropValue("test.discovery.name");
+	
 		try {
-			// time to wait in seconds before shutdown
-			if (args.length > 0) {
-				try {
-					if (Integer.parseInt(args[0]) > 0) {
-						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
-					}
-				} catch (Exception e) {
-					System.out.println("Parameter must be a number.");
-				}
-			}
-
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
+			
+			HL7Messaging.enableListener(applicationProperties);
 
-			// Launch listener before sending message.
-			//ResponseListener listener;
-			//listener = new ResponseListener(applicationProperties.getListenerPort());
-			//listener.start();
+			LOG.info("Begin - get site data for: {}", subset);
 
-			LOG.info("Begin");
-
-			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage("Vital Qualifiers", applicationProperties,
-					messageProperties);
+			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage(subset, 
+					applicationProperties, messageProperties);
 
 			LOG.info("MESSAGE: {}", hl7Message);
 
@@ -58,19 +46,19 @@ public class TestHL7Discovery
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessageDTO publishMessage;
-			publishMessage = new PublishMessageDTO();
-
-			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSite(site);
+			PublishMessageDTO publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
-			sender.send();
+			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+			sender.send(vrrh);
+			
+			System.out.println("Waiting for response");
+			Message result = vrrh.waitForResponse();
 
-			// Wait for before shutdown
-			Thread.sleep(timeToWaitForShutdown);
+			System.out.println(result == null ? "null" : result.printStructure());
 
 			LOG.info("End");
+			LookupService.shutdownSystem();
 			System.exit(0);
 
 		} catch (Exception e) {
@@ -98,9 +86,8 @@ public class TestHL7Discovery
 		appProp.setSendingFacilityNamespaceId(getPropValue("msh.sendingFacility.namespaceId"));
 
 		// Target Vitria Interface Engine
-		// Target Vitria Interface Engine
-		appProp.setInterfaceEngineURL(
-				"http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel");
+				appProp.setInterfaceEngineURL(getPropValue(
+						"gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url"));
 
 		// Encoding type
 		appProp.setHl7EncodingType(getPropValue(

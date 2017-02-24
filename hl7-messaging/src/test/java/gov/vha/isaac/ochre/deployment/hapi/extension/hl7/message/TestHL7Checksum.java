@@ -4,10 +4,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -20,33 +22,13 @@ public class TestHL7Checksum
 	private static final Logger LOG = LogManager.getLogger(TestHL7Checksum.class);
 
 	public static void main(String[] args) throws Throwable {
-		int timeToWaitForShutdown = 60 * 1000;
-		String subset = "";
+		String subset = getPropValue("test.checksum.name");
 		
 		try {
-			
-			// time to wait in seconds before shutdown
-			if (args.length > 0) {
-				try {
-					if (Integer.parseInt(args[0]) > 0) {
-						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
-					}
-					if (StringUtils.isNotEmpty(args[1])) {
-						subset = args[1];						
-					}
-					
-				} catch (Exception e) {
-					System.out.println("Parameter must be a number.");
-				}
-			}
-
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
 
-			// Launch listener before sending message.
-			//ResponseListener listener;
-			//listener = new ResponseListener(applicationProperties.getListenerPort());
-			//listener.start();
+			HL7Messaging.enableListener(applicationProperties);
 
 			LOG.info("Begin - get checksum for: {}", subset);
 
@@ -64,18 +46,19 @@ public class TestHL7Checksum
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessage publishMessage = new PublishMessageDTO();
-			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSubset(subset);
-			publishMessage.setSite(site);
+			PublishMessage publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
-			sender.send();
+			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+			sender.send(vrrh);
 
-			// Wait for before shutdown
-			Thread.sleep(timeToWaitForShutdown);
+			System.out.println("Waiting for response");
+			Message response = vrrh.waitForResponse();
+			
+			System.out.println(response == null ? "null" : response.printStructure());
 
 			LOG.info("End");
+			LookupService.shutdownSystem();
 			System.exit(0);
 
 		} catch (Exception e) {
