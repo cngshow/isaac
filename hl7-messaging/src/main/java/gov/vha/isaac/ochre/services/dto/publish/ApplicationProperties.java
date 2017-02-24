@@ -30,5 +30,9 @@ public interface ApplicationProperties
 	String getHl7EncodingType();
 
 	void setHl7EncodingType(String hl7EncodingType);
+	
+	int getResponseListenerTimeout();
+	
+	void setResponseListenerTimeout(int timeout);
 
 }

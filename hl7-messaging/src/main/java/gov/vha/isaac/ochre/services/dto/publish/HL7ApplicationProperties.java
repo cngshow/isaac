@@ -35,7 +35,9 @@ public class HL7ApplicationProperties implements ApplicationProperties
 	private String interfaceEngineURL;
 	private boolean useInterfaceEngine;
 	private String environment;
+	private int responseListenerTimeout;
 
+	
 	// Encoding type
 	private String hl7EncodingType;
 
@@ -149,6 +151,22 @@ public class HL7ApplicationProperties implements ApplicationProperties
 	@Override
 	public void setHl7EncodingType(String hl7EncodingType) {
 		this.hl7EncodingType = hl7EncodingType;
+	}
+	
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties#getResponseListenerTimeout()
+	 */
+	@Override
+	public int getResponseListenerTimeout() {
+		return responseListenerTimeout;
+	}
+
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties#setResponseListenerTimeout(int)
+	 */
+	@Override
+	public void setResponseListenerTimeout(int responseListenerTimeout) {
+		this.responseListenerTimeout = responseListenerTimeout;
 	}
 
 }
