@@ -72,7 +72,7 @@ public class HL7ResponseListener
 	private static Logger LOG = LogManager.getLogger(HL7ResponseListener.class);
 
 	/** A logger for messages inbound hl7 messages. */
-	private static Logger HL7LOG = LogManager.getLogger("hl7messages");
+	private static Logger HL7LOG = LogManager.getLogger("hl7messages");  //don't change this without adjusting rails_prisme/lib/logging/log4j2.xml
 
 	private Map<SelectionKey, StringBuffer> messageMap = Collections.synchronizedMap(new HashMap<SelectionKey, StringBuffer>());
 
@@ -119,13 +119,13 @@ public class HL7ResponseListener
 		responseListenerThreads_.allowCoreThreadTimeOut(true);
 		
 		initialize();
-		LOG.info("Started ResponseListener initialize");
+		LOG.debug("Started ResponseListener initialized");
 		
 		Runnable r = new Runnable() {
 			@Override
 			public void run() {
 				try {
-					LOG.info("Starting thread that reads socket data");
+					LOG.debug("Starting thread that reads socket data");
 					acceptConnections();
 					
 				} catch (IOException e) {
@@ -149,7 +149,7 @@ public class HL7ResponseListener
 
 	@PostConstruct
 	private void startMe() {
-		LOG.info("HL7ResponseListener start called (but this is a noop - will not activate until finishInit is called)");
+		LOG.debug("HL7ResponseListener start called (but this is a noop - will not activate until finishInit is called)");
 	}
 
 	@PreDestroy
@@ -165,7 +165,7 @@ public class HL7ResponseListener
 		{
 			LOG.error("Error closing HL7Response Listener socket", e);
 		}
-		LOG.info("Finished ResponseListener pre-destroy.");
+		LOG.info("Finished HL7ResponseListener stop");
 	}
 
 	private void initialize() throws IOException {
@@ -180,7 +180,7 @@ public class HL7ResponseListener
 			this.selectableChannel.socket().bind(isa);
 		}
 		listening = true;
-		LOG.info("initialized on port {}", props_.getListenerPort());
+		LOG.debug("initialized on port {}", props_.getListenerPort());
 	}
 
 	private void acceptConnections() throws IOException {
@@ -193,7 +193,7 @@ public class HL7ResponseListener
 				return;
 			}
 
-			LOG.info("Non-blocking server: acceptor loop...");
+			LOG.debug("Non-blocking server: acceptor loop begins");
 			while (selectableChannel.isOpen() == true & selector.isOpen() == true & acceptKey != null
 					& (this.keysAdded = acceptKey.selector().select()) > 0) {
 				if (selector.isOpen() == false | this.selectableChannel.isOpen() == false) {
@@ -235,7 +235,7 @@ public class HL7ResponseListener
 		{
 			listening = false;
 			hl7ResponseListeners.clear();
-			LOG.info("Non-blocking server: end acceptor loop...");
+			LOG.info("HL7ResponseListner stops listening for responses");
 		}
 	}
 
@@ -371,7 +371,7 @@ public class HL7ResponseListener
 			messageMap.remove(key);
 			try {
 				callback.getChannel().close();
-				LOG.info("SocketChannel connection closed.  Continuing to listen on port {}.", props_.getListenerPort());
+				LOG.debug("SocketChannel connection closed.  Continuing to listen on port {}.", props_.getListenerPort());
 			} catch (IOException e) {
 				LOG.error("Unable to close listener SocketChannel", e);
 			}
@@ -382,9 +382,12 @@ public class HL7ResponseListener
 
 		LOG.debug("in handleResponseNotification hl7ResponseListeners count: {}", hl7ResponseListeners.size());
 		
-		hl7ResponseListeners.forEach((id, listener) -> {
-			LOG.debug("hl7ResponseListeners: {}", id);
-		} );
+		if (LOG.isTraceEnabled())
+		{
+			hl7ResponseListeners.forEach((id, listener) -> {
+				LOG.trace("hl7ResponseListeners: {}", id);
+			} );
+		}
 		
 		try
 		{
