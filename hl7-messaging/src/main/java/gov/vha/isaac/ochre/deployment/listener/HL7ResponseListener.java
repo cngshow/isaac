@@ -80,7 +80,7 @@ public class HL7ResponseListener
 	private ServerSocketChannel selectableChannel = null;
 	
 	//TODO get this from props_
-	public static final long MAX_WAIT_TIME = 15 * 60 * 1000;  //15 minutes max wait for vitria response
+	public static long MAX_WAIT_TIME = 15 * 60 * 1000;  //default, but overridden below, by props value from prisme
 
 	private static final int BUFSIZE = 1024;
 
@@ -111,6 +111,8 @@ public class HL7ResponseListener
 			throw new IllegalArgumentException("Properties may only be changed after a service-level shutdown");
 		}
 		props_ = properties;
+		
+		MAX_WAIT_TIME = props_.getResponseListenerTimeout();
 		
 		LOG.info("Starting HL7ResponseListener on port {}.", props_.getListenerPort());
 
