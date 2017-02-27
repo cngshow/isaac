@@ -420,10 +420,6 @@ public class HL7ResponseListener
 			msaMessageControlId = msa.getMessageControlID().toString();
 			
 		} else if (message instanceof MFN_M01) {
-			//MFN_M01 mfn = (MFN_M01) message;
-			//MSH msh = mfn.getMSH();
-			//msaMessageControlId = msh.getMessageControlID().toString();
-			
 			BufferedReader br = new BufferedReader(new StringReader(message.toString()));
 			String line;
 			

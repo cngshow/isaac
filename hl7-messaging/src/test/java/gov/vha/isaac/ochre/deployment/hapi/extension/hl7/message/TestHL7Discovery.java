@@ -53,9 +53,9 @@ public class TestHL7Discovery
 			sender.send(vrrh);
 			
 			System.out.println("Waiting for response");
-			Message result = vrrh.waitForResponse();
+			Message response = vrrh.waitForResponse();
 
-			System.out.println(result == null ? "null" : result.printStructure());
+			System.out.println(response == null ? "null" : response.toString());
 
 			LOG.info("End");
 			LookupService.shutdownSystem();

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v24.message.MFR_M01;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
@@ -55,8 +56,16 @@ public class TestHL7Checksum
 			System.out.println("Waiting for response");
 			Message response = vrrh.waitForResponse();
 			
-			System.out.println(response == null ? "null" : response.printStructure());
-
+			
+			if (response instanceof MFR_M01) {
+				MFR_M01 mfr = (MFR_M01) response;
+				LOG.info(mfr.toString());
+			}
+			else {
+				LOG.info("Response does not contain a checksum");
+				LOG.info(response == null ? "null" : response.toString());	
+			}
+			
 			LOG.info("End");
 			LookupService.shutdownSystem();
 			System.exit(0);

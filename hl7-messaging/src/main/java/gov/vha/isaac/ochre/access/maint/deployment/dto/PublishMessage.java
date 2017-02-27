@@ -1,5 +1,7 @@
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
+import java.util.List;
+
 /**
  * An interface for passing over the necessary site / subset information for sending a request, with the messageID prepopulated
  * and setters for putting in the result(s).
@@ -31,7 +33,15 @@ public interface PublishMessage
 	
 	public void setChecksum(String checksum);
 	
-	public void setSiteDiscovery(String siteData);
+	/**
+	 * 
+	 * @param siteDiscovery
+	 */
+	public void setSiteDiscovery(List<SiteDiscovery> siteDiscovery);
 	
+	/**
+	 * HL7 message as a string.
+	 * @param rawMessage
+	 */
 	public void setRawHL7Message(String rawMessage);
 }
