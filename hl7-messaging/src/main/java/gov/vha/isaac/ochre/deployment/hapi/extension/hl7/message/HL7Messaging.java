@@ -155,9 +155,17 @@ public class HL7Messaging
 
 						updateMessage("Sending");
 						VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
-						hl7Sender.send(vrrh);
-						updateMessage("Message Sent, waiting for response");
-						Message m = vrrh.waitForResponse();
+						boolean waitForResponse = hl7Sender.send(vrrh);
+						Message m = null;
+						if (waitForResponse)
+						{
+							updateMessage("Message Sent, waiting for response");
+							m = vrrh.waitForResponse();
+						}
+						else 
+						{
+							updateMessage("Message Sent, but no response expected.  Not waiting.");
+						}
 						
 						if (m == null)
 						{
@@ -265,9 +273,17 @@ public class HL7Messaging
 						
 						updateTitle("Sending");
 						VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
-						hl7Sender.send(vrrh);
-						updateMessage("Message Sent, waiting for response");
-						Message m = vrrh.waitForResponse();
+						boolean waitForResponse = hl7Sender.send(vrrh);
+						Message m = null;
+						if (waitForResponse)
+						{
+							updateMessage("Message Sent, waiting for response");
+							m = vrrh.waitForResponse();
+						}
+						else
+						{
+							updateMessage("Message Sent, but no response expected.  Not waiting.");
+						}
 						
 						if (m == null)
 						{

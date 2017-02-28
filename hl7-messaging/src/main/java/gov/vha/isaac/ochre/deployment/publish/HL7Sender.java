@@ -83,7 +83,11 @@ public class HL7Sender
 		messageProperties_ = messageProperties;
 	}
 
-	public void send(HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
+	/**
+	 * returns true, if a message was sent that we expect a response from.  False, if we should not expect a response, 
+	 * due to, for example, the userInterfaceEngine flag being false, or some error happening during the send that prevented the send.
+	 */
+	public boolean send(HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 		
 		if (useInterfaceEngine) {
@@ -102,8 +106,12 @@ public class HL7Sender
 						MessageTypeIdentifier.getMessageHeader(hl7Message_));
 				throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
 			} 
+			
+			//TODO, perhaps, in the future, we may have cases where false is the appropriate value to return for certain messages....
+			return true;
 		} else {
 			LOG.info("No Emulator, please set useInterfaceEngine to true.");
+			return false;
 		}
 	}
 

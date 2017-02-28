@@ -18,8 +18,6 @@
  */
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
-import java.util.List;
-
 public class PublishMessageDTO implements PublishMessage
 {
 	private Site site;
@@ -27,7 +25,7 @@ public class PublishMessageDTO implements PublishMessage
 	private String subset;
 	private String checksum;
 	private String version;
-	private List<SiteDiscovery> siteDiscovery;
+	private SiteDiscovery siteDiscovery;
 	private String rawHL7Message;
 	
 	/**
@@ -73,7 +71,7 @@ public class PublishMessageDTO implements PublishMessage
 	}
 
 	@Override
-	public void setSiteDiscovery(List<SiteDiscovery> siteDiscovery)
+	public void setSiteDiscovery(SiteDiscovery siteDiscovery)
 	{
 		this.siteDiscovery = siteDiscovery;
 	}
@@ -94,7 +92,7 @@ public class PublishMessageDTO implements PublishMessage
 		return version;
 	}
 
-	public List<SiteDiscovery> getSiteDiscovery()
+	public SiteDiscovery getSiteDiscovery()
 	{
 		return siteDiscovery;
 	}
