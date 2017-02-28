@@ -124,6 +124,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
                         createConcept("HL7v3 modules");
                         createConcept("NUCC modules");
+                        createConcept("CVX modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
