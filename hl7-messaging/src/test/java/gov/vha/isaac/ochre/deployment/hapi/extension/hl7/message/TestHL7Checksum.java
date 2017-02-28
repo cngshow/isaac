@@ -1,3 +1,21 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +36,21 @@ import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
+
+/**
+* This class is meant to test check sum functionality directly on a test server.
+* To run on a test server, copy all jar files listed in the effective pom.xml.
+* This class will read property values from application.properties.  Using the file
+* allows the develop or tester to change the settings and re-run without having to
+* recompile code.  ie. You can repoint the  
+* Copy the compiled classes from hl7-messaging\target\test-classes gov to the server.
+* From the a command prompt on the server run the command:
+* 	java -cp ./*:. gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message.TestHL7CheckSum
+*
+* {@link TestHL7ChecksumRequest}
+*
+* @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
+*/
 public class TestHL7Checksum
 {
 	private static final Logger LOG = LogManager.getLogger(TestHL7Checksum.class);
@@ -56,7 +89,6 @@ public class TestHL7Checksum
 			System.out.println("Waiting for response");
 			Message response = vrrh.waitForResponse();
 			
-			
 			if (response instanceof MFR_M01) {
 				MFR_M01 mfr = (MFR_M01) response;
 				LOG.info(mfr.toString());
@@ -66,15 +98,14 @@ public class TestHL7Checksum
 				LOG.info(response == null ? "null" : response.toString());	
 			}
 			
-			LOG.info("End");
-			LookupService.shutdownSystem();
-			System.exit(0);
-
 		} catch (Exception e) {
 
 			LOG.error("Error - Ending");
 			LOG.error(e.getMessage());
-			System.exit(-1);
+		} finally {
+			LOG.info("End");
+			LookupService.shutdownSystem();
+			System.exit(0);
 		}
 	}
 
