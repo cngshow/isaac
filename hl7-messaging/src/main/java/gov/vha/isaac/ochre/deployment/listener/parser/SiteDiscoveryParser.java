@@ -19,17 +19,19 @@
 package gov.vha.isaac.ochre.deployment.listener.parser;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
-import ca.uhn.hl7v2.parser.PipeParser;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDiscovery;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDiscoveryDTO;
 
 /**
- * This class will parse a HL7 message for site data/discovery into a SiteDiscovery object.
+ * This class will parse a HL7 message for site data/discovery into a
+ * SiteDiscovery object.
  * 
  * {@link SiteDiscoveryParser}
  * 
@@ -38,6 +40,8 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDiscoveryDTO;
  */
 public class SiteDiscoveryParser
 {
+	private static final Logger LOG = LogManager.getLogger(SiteDiscoveryParser.class);
+
 	private static final String MSH_SEGMENT = "MSH";
 	private static final String MSA_SEGMENT = "MSA";
 	private static final String MFE_SEGMENT = "MFE";
@@ -58,57 +62,54 @@ public class SiteDiscoveryParser
 		ArrayList<String> groupValues = new ArrayList<String>();
 		ArrayList<ArrayList<String>> values = new ArrayList<ArrayList<String>>();
 
-		try {
+		while ((line = br.readLine()) != null) {
+			String[] lineItems = line.split("\\^");
+			makeSubstitutions(lineItems);
 
-			while ((line = br.readLine()) != null) {
-				String[] lineItems = line.split("\\^");
-				makeSubstitutions(lineItems);
-
-				if (line.startsWith(MSH_SEGMENT)) {
-					if (lineItems.length < 10) {
-						throw new Exception("MSH segment parameter has {} items.  It needs to have more than 9.");
-					}
-					lastSection = MSH_SEGMENT;
+			if (line.startsWith(MSH_SEGMENT)) {
+				if (lineItems.length < 10) {
+					throw new Exception("MSH segment parameter has {} items.  It needs to have more than 9.");
 				}
+				lastSection = MSH_SEGMENT;
+			}
 
-				else if (line.startsWith(MFE_SEGMENT)) {
-					// add headers on first pass
-					if (firstPass && lastSection != ZRT_SEGMENT) {
+			else if (line.startsWith(MFE_SEGMENT)) {
+				// add headers on first pass
+				if (firstPass) {
+					if (!ZRT_SEGMENT.equals(lastSection)) {
 						headers.add(VUID);
-						if (ZRT_SEGMENT.equals(lastSection)) {
-							firstPass = false;
-						}
-					} else {
-						siteDiscovery.setRefset(lineItems[4].split("\\@")[0]);
+					}
+					if (ZRT_SEGMENT.equals(lastSection)) {
+						firstPass = false;
 						values.add(groupValues);
 						groupValues = new ArrayList<>();
 					}
-					if (lineItems.length > 3 & lineItems[4].contains("@")) {
-						groupValues.add(lineItems[4].split("\\@")[1]);
-					} else {
-						groupValues.add(null);
-					}
-					lastSection = MFE_SEGMENT;
+				} else {
+					siteDiscovery.setRefset(lineItems[4].split("\\@")[0]);
+					values.add(groupValues);
+					groupValues = new ArrayList<>();
 				}
-
-				else if (line.startsWith(ZRT_SEGMENT)) {
-					if (firstPass) {
-						if (lineItems.length >= 3) {
-							headers.add(lineItems[1]);
-						}
-					}
-					groupValues.add(lineItems.length > 2 ? lineItems[2] : null);
-					lastSection = ZRT_SEGMENT;
+				if (lineItems.length > 3 & lineItems[4].contains("@")) {
+					groupValues.add(lineItems[4].split("\\@")[1]);
+				} else {
+					groupValues.add(null);
 				}
-
+				lastSection = MFE_SEGMENT;
 			}
-			// add final group
-			values.add(groupValues);
 
-		} catch (IOException e) {
-			System.out.println("Error:");
-			System.out.println(e.getMessage());
+			else if (line.startsWith(ZRT_SEGMENT)) {
+				if (firstPass) {
+					if (lineItems.length >= 3) {
+						headers.add(lineItems[1]);
+					}
+				}
+				groupValues.add(lineItems.length > 2 ? lineItems[2] : null);
+				lastSection = ZRT_SEGMENT;
+			}
+
 		}
+		// add final group
+		values.add(groupValues);
 
 		siteDiscovery.setHeaders(headers);
 		siteDiscovery.setValues(values);
@@ -124,27 +125,4 @@ public class SiteDiscoveryParser
 		}
 	}
 
-	public static final void main(String[] args) throws Exception {
-
-		String test = "MSH^~|\\&^VETS UPDATE^660DEV2^XUMF UPDATE^^20080509095700.000-0600^^MFN~M01^^^2.4^^^AL^AL^USA\r"
-				+ "MFI^Standard Terminology~~ERT^^MUP^20080509095700.000-0600^20080509095700.000-0600^NE\r"
-				+ "MFE^MUP^^^Order Status@4500659\r" + "ZRT^Term^ACTIVE\r" + "ZRT^VistA_Short_Name^actv\r"
-				+ "ZRT^VistA_Abbreviation^a\r"
-				+ "ZRT^VistA_Description^Orders that are active or have been accepted by the service for processing.  e.g., Dietetic orders are active upon being ordered, Pharmacy orders are active when the order is verified, Lab orders are active when the sample has been collected, Radiology orders are active upon registration.\r"
-				+ "ZRT^Status^1\r" + "MFE^MUP^^^Order Status@4501011\r" + "ZRT^Term^CANCELLED\r"
-				+ "ZRT^VistA_Short_Name^canc\r" + "ZRT^VistA_Abbreviation^x\r"
-				+ "ZRT^VistA_Description^Orders that have been rejected by the ancillary service without being acted on, or terminated while still delayed.\r"
-				+ "ZRT^Status^1\r" + "MFE^MUP^^^Order Status@4501088\r" + "ZRT^Term^COMPLETE\r"
-				+ "ZRT^VistA_Short_Name^comp\r" + "ZRT^VistA_Abbreviation^c\r"
-				+ "ZRT^VistA_Description^Orders that require no further action by the ancillary service.  e.g., Lab orders are completed when results are available, Radiology orders are complete when results are available.\r"
-				+ "ZRT^Status^1\r" + "MFE^MUP^^^VERSION\r" + "ZRT^version^0\r";
-
-		PipeParser parser = new PipeParser();
-		Message message = parser.parse(test);
-
-		SiteDiscoveryParser siteDiscoveryParser = new SiteDiscoveryParser();
-		SiteDiscovery siteDiscovery = siteDiscoveryParser.parseMessage(message);
-
-		System.out.println(siteDiscovery.toString());
-	}
 }
