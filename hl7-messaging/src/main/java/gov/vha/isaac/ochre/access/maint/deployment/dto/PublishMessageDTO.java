@@ -25,7 +25,7 @@ public class PublishMessageDTO implements PublishMessage
 	private String subset;
 	private String checksum;
 	private String version;
-	private String siteDiscovery;
+	private SiteDiscovery siteDiscovery;
 	private String rawHL7Message;
 	
 	/**
@@ -71,9 +71,9 @@ public class PublishMessageDTO implements PublishMessage
 	}
 
 	@Override
-	public void setSiteDiscovery(String siteData)
+	public void setSiteDiscovery(SiteDiscovery siteDiscovery)
 	{
-		this.siteDiscovery = siteData;
+		this.siteDiscovery = siteDiscovery;
 	}
 
 	@Override
@@ -92,7 +92,7 @@ public class PublishMessageDTO implements PublishMessage
 		return version;
 	}
 
-	public String getSiteDiscovery()
+	public SiteDiscovery getSiteDiscovery()
 	{
 		return siteDiscovery;
 	}

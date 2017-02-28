@@ -31,7 +31,15 @@ public interface PublishMessage
 	
 	public void setChecksum(String checksum);
 	
-	public void setSiteDiscovery(String siteData);
+	/**
+	 * 
+	 * @param siteDiscovery
+	 */
+	public void setSiteDiscovery(SiteDiscovery siteDiscovery);
 	
+	/**
+	 * HL7 message as a string.
+	 * @param rawMessage
+	 */
 	public void setRawHL7Message(String rawMessage);
 }

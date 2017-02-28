@@ -22,15 +22,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSA;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
+import gov.vha.isaac.ochre.deployment.listener.parser.SiteDiscoveryParser;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -152,9 +155,17 @@ public class HL7Messaging
 
 						updateMessage("Sending");
 						VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
-						hl7Sender.send(vrrh);
-						updateMessage("Message Sent, waiting for response");
-						Message m = vrrh.waitForResponse();
+						boolean waitForResponse = hl7Sender.send(vrrh);
+						Message m = null;
+						if (waitForResponse)
+						{
+							updateMessage("Message Sent, waiting for response");
+							m = vrrh.waitForResponse();
+						}
+						else 
+						{
+							updateMessage("Message Sent, but no response expected.  Not waiting.");
+						}
 						
 						if (m == null)
 						{
@@ -163,7 +174,7 @@ public class HL7Messaging
 						else
 						{
 							updateMessage("Processing response");
-							if (message instanceof MFR_M01)
+							if (m instanceof MFR_M01)
 							{
 								MFR_M01 mfr = (MFR_M01) message;
 								MSA msa = mfr.getMSA();
@@ -262,9 +273,17 @@ public class HL7Messaging
 						
 						updateTitle("Sending");
 						VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
-						hl7Sender.send(vrrh);
-						updateMessage("Message Sent, waiting for response");
-						Message m = vrrh.waitForResponse();
+						boolean waitForResponse = hl7Sender.send(vrrh);
+						Message m = null;
+						if (waitForResponse)
+						{
+							updateMessage("Message Sent, waiting for response");
+							m = vrrh.waitForResponse();
+						}
+						else
+						{
+							updateMessage("Message Sent, but no response expected.  Not waiting.");
+						}
 						
 						if (m == null)
 						{
@@ -273,9 +292,14 @@ public class HL7Messaging
 						else
 						{
 							updateMessage("Processing response");
-							//TODO Nuno process
-							//We need to parse out the table of data, and change the signature of the message.setDiscovery...() to carry the parsed data table
-							//and potentially, the headers
+							if (m instanceof MFR_M01)
+							{
+								MFR_M01 mfr = (MFR_M01) message;
+								
+								SiteDiscoveryParser parser = new SiteDiscoveryParser();
+								message.setSiteDiscovery(parser.parseMessage(m));
+								message.setRawHL7Message(mfr.toString());
+							}
 						}
 
 						updateTitle("Complete");
