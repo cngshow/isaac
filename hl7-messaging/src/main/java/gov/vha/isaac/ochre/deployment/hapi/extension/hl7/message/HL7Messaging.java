@@ -83,33 +83,13 @@ public class HL7Messaging
 	 */
 	public static boolean isRunning()
 	{
-		try {
-			return LookupService.get().getService(HL7ResponseListener.class).isRunning();
-
-		} catch (Exception e) {
+		HL7ResponseListener hrl = LookupService.get().getService(HL7ResponseListener.class);
+		if (hrl == null)
+		{
+			LOG.fatal("Unable to find HL7ResponseListener class.  Misconfigured classloader enviornment!");
 			return false;
-			/**
-			 * 
-[ERROR][2017-02-28T09:05:33][/app/controllers/application_controller.rb][32] Java::JavaLang::NullPointerException
-[ERROR][2017-02-28T09:05:33][/app/controllers/application_controller.rb][33] /checksum/index
-[ERROR][2017-02-28T09:05:33][/app/controllers/application_controller.rb][34] gov.vha.isaac.ochre.api.LookupService.startupWorkExecutors(gov/vha/isaac/ochre/api/LookupService.java:199)
-gov.vha.isaac.ochre.api.LookupService.get(gov/vha/isaac/ochre/api/LookupService.java:91)
-gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message.HL7Messaging.isRunning(gov/vha/isaac/ochre/deployment/hapi/extension/hl7/message/HL7Messaging.java:86)
-java.lang.reflect.Method.invoke(java/lang/reflect/Method.java:497)
-RUBY.running?(C:/work/va-ctt/rails/rails_prisme/lib/hl7_message.rb:64)
-RUBY.verify_hl7_engine(C:/work/va-ctt/rails/rails_prisme/app/controllers/checksum_controller.rb:106)
-RUBY.block in make_lambda(C:/work/va-ctt/rails/gem_home/gems/activesupport-4.2.5/lib/active_support/callbacks.rb:432)
-org.jruby.RubyProc.call(org/jruby/RubyProc.java:318)
-RUBY.block in halting(C:/work/va-ctt/rails/gem_home/gems/activesupport-4.2.5/lib/active_support/callbacks.rb:164)
-org.jruby.RubyProc.call(org/jruby/RubyProc.java:318)
-RUBY.block in call(C:/work/va-ctt/rails/gem_home/gems/activesupport-4.2.5/lib/active_support/callbacks.rb:504)
-org.jruby.RubyArray.each(org/jruby/RubyArray.java:1560)
-RUBY.call(C:/work/va-ctt/rails/gem_home/gems/activesupport-4.2.5/lib/active_support/callbacks.rb:504)
-C_3a_.work.va_minus_ctt.rails.gem_home.gems.activesupport_minus_4_dot_2_dot_5.lib.active_support.callbacks.__run_callbacks__(C:/work/va-ctt/rails/gem_home/gems/activesupport-4.2.5/lib/active_support/call
-backs.rb:92)
-
-			 */
 		}
+		return hrl.isRunning();
 	}
 	
 	/**
