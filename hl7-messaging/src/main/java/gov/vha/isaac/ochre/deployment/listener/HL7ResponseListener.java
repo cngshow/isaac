@@ -114,7 +114,7 @@ public class HL7ResponseListener
 		
 		MAX_WAIT_TIME = props_.getResponseListenerTimeout()*60*1000;
 		
-		LOG.info("Starting HL7ResponseListener on port {}, max wait time now set to {} ms.", props_.getListenerPort() + MAX_WAIT_TIME);
+		LOG.info("Starting HL7ResponseListener on port {}, max wait time now set to {} ms.", props_.getListenerPort(),  MAX_WAIT_TIME);
 
 		responseListenerThreads_ = new ThreadPoolExecutor(200, 200, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
 				new NamedThreadFactory("HL7ResponseListenerPool", true));
