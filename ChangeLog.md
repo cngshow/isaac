@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/02/?? - 3.38 - PENDING
-    *
+    * update loader to allow the passing a a folder that contains ibdf files, rather than requiring specific lists.  part of jazz 468085
 
 * 2017/02/16 - 3.37
     * refix 460134 defect with HL7v3 source upload (again)

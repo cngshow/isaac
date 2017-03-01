@@ -8,7 +8,7 @@ public class TestDBConfiguration
 
 	public static void main(String[] args) throws Exception
 	{
-		String testURL = "https://github.com/darmbrust/test.git";
+		String testURL = "https://vadev.mantech.com:4848/git/r/dantest.git";
 		String username = "";
 		char[] password = "".toCharArray();
 		

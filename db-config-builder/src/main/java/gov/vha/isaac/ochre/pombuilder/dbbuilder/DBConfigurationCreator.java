@@ -212,13 +212,8 @@ public class DBConfigurationCreator
 		goals.getGoal().add("load-termstore");
 		pe.setGoals(goals);
 		configuration = new Configuration();
-		IbdfFiles files = new IbdfFiles();
-		for (IBDFFile ibdf : ibdfFiles)
-		{
-			files.getIbdfFile().add("${project.build.directory}/data/" + ibdf.getArtifactId() + (ibdf.hasClassifier() ? "-" + ibdf.getClassifier() : "") + ".ibdf");
-		}
-		files.getIbdfFile().add("${project.build.directory}/data/IsaacMetadataAuxiliary.ibdf");
-		configuration.setIbdfFiles(files);
+		configuration.setIbdfFileFolder("${project.build.directory}/data/");
+		
 		pe.setConfiguration(configuration);
 		executions.getExecution().add(pe);
 		

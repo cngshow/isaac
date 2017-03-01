@@ -2,6 +2,7 @@ package gov.vha.isaac.ochre.mojo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,14 +66,24 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 
 public class LoadTermstore extends AbstractMojo
 {
-	@Parameter(required = true) 
+	/**
+	 * The preferred mechanism for specifying ibdf files - provide a folder that contains IBDF files, all found IBDF files in this 
+	 * folder will be processed.
+	 */
+	@Parameter(required = false) 
+	private File ibdfFileFolder;
+	
+	/**
+	 * The optional (old) way to specify ibdf files - requires each file to be listed one by one.
+	 */
+	@Parameter(required = false) 
 	private File[] ibdfFiles;
 	
 	public void setibdfFiles(File[] files)
 	{
 		ibdfFiles = files;
 	}
-	
+
 	@Parameter(required = false) 
 	private boolean activeOnly = false;
 	
@@ -102,7 +113,50 @@ public class LoadTermstore extends AbstractMojo
 		long loadTime = System.currentTimeMillis();
 		//Load IsaacMetadataAuxiliary first, otherwise, we have issues....
 		final AtomicBoolean hasMetadata = new AtomicBoolean(false);
-		Arrays.sort(ibdfFiles, new Comparator<File>()
+		
+		Set<File> mergedFiles;
+		try
+		{
+			mergedFiles = new HashSet<>();
+			if (ibdfFiles != null)
+			{
+				for (File f : ibdfFiles)
+				{
+					mergedFiles.add(f.getCanonicalFile());
+				}
+			}
+			
+			if (ibdfFileFolder != null)
+			{
+				if (!ibdfFileFolder.isDirectory())
+				{
+					throw new MojoExecutionException("If ibdfFileFolder is provided, it must point to a folder");
+				}
+				for (File f : ibdfFileFolder.listFiles())
+				{
+					if (!f.isFile())
+					{
+						getLog().info("The file " + f.getAbsolutePath() + " is not a file - ignoring.");
+					}
+					else if (!f.getName().toLowerCase().endsWith(".ibdf"))
+					{
+						getLog().info("The file " + f.getAbsolutePath() + " does not match the expected type of ibdf - ignoring.");
+					}
+					else
+					{
+						mergedFiles.add(f);
+					}
+				}
+			}
+		}
+		catch (IOException e1)
+		{
+			throw new MojoExecutionException("Problem reading ibdf files", e1);
+		}
+		
+		File[] temp = mergedFiles.toArray(new File[mergedFiles.size()]);
+		
+		Arrays.sort(temp, new Comparator<File>()
 		{
 			@Override
 			public int compare(File o1, File o2)
@@ -128,10 +182,18 @@ public class LoadTermstore extends AbstractMojo
 		{
 			getLog().warn("No Metadata IBDF file found!  This probably isn't good....");
 		}
+		
+		if (temp.length == 0)
+		{
+			throw new MojoExecutionException("Failed to find any ibdf files to load");
+		}
+		
+		getLog().info("Identified " + temp.length + " ibdf files");
+		
 		Set<Integer> deferredActionNids = new HashSet<>();
 		try
 		{
-			for (File f : ibdfFiles)
+			for (File f : temp)
 			{
 				getLog().info("Loading termstore from " + f.getCanonicalPath() + (activeOnly ? " active items only" : ""));
 				BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(f.toPath());
@@ -187,7 +249,7 @@ public class LoadTermstore extends AbstractMojo
 											MutableLogicGraphSememe newVersion = (MutableLogicGraphSememe) existingChronology.createMutableVersion(MutableLogicGraphSememe.class, stampSequence);
 											newVersion.setGraphData(isomorphicResults.getMergedExpression().getData(DataTarget.INTERNAL));
 											
-											//TODO mess - this isn't merging properly - how should we merge!?
+//											TODO mess - this isn't merging properly - how should we merge!?
 //											for (UUID uuid : sc.getUuidList())
 //											{
 //												Get.identifierService().addUuidForNid(uuid, newVersion.getNid());
