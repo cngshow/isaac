@@ -134,6 +134,8 @@ public class TestHL7Discovery
 			ieUsage = Boolean.valueOf(useIE).booleanValue();
 		}
 		appProp.setUseInterfaceEngine(ieUsage);
+		
+		appProp.setResponseListenerTimeout( Integer.parseInt(getPropValue("waitingTimeout")));
 
 		return appProp;
 
