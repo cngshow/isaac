@@ -182,7 +182,7 @@ public class HL7Messaging
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01)
 							{
-								MFR_M01 mfr = (MFR_M01) message;
+								MFR_M01 mfr = (MFR_M01) m;
 								MSA msa = mfr.getMSA();
 								
 								/*
@@ -300,7 +300,7 @@ public class HL7Messaging
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01)
 							{
-								MFR_M01 mfr = (MFR_M01) message;
+								MFR_M01 mfr = (MFR_M01) m;
 								
 								SiteDiscoveryParser parser = new SiteDiscoveryParser();
 								message.setSiteDiscovery(parser.parseMessage(m));

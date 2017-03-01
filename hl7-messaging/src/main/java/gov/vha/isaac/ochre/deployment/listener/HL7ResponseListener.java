@@ -112,10 +112,15 @@ public class HL7ResponseListener
 		}
 		props_ = properties;
 		
-		MAX_WAIT_TIME = props_.getResponseListenerTimeout()*60*1000;
+		if (props_.getResponseListenerTimeout() > 0) {
+			MAX_WAIT_TIME = props_.getResponseListenerTimeout()*60*1000;
+		}
+		else {
+			LOG.info("Response listener timeout set to {}. It is less than is 0, using default.", props_.getResponseListenerTimeout());
+		}
 		
-		LOG.info("Starting HL7ResponseListener on port {}, max wait time now set to {} ms.", props_.getListenerPort(),  MAX_WAIT_TIME);
-
+		LOG.info("Starting HL7ResponseListener on port {}, max wait time now set to {} ms.", props_.getListenerPort(), MAX_WAIT_TIME);
+		
 		responseListenerThreads_ = new ThreadPoolExecutor(200, 200, 5, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
 				new NamedThreadFactory("HL7ResponseListenerPool", true));
 		responseListenerThreads_.allowCoreThreadTimeOut(true);
