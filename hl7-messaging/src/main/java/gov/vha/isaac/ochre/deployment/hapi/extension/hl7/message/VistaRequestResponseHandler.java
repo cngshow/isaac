@@ -37,6 +37,7 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 	private volatile Message responseMessage_ = null;
 	private long createTime_ = System.currentTimeMillis();
 	
+	/** A logger for messages produced by this class. */
 	private static Logger LOG = LogManager.getLogger(VistaRequestResponseHandler.class);
 
 	protected Message waitForResponse()
