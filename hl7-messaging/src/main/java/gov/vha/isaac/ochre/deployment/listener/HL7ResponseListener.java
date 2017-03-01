@@ -112,7 +112,7 @@ public class HL7ResponseListener
 		}
 		props_ = properties;
 		
-		MAX_WAIT_TIME = props_.getResponseListenerTimeout();
+		MAX_WAIT_TIME = props_.getResponseListenerTimeout()*60*1000;
 		
 		LOG.info("Starting HL7ResponseListener on port {}.", props_.getListenerPort());
 
