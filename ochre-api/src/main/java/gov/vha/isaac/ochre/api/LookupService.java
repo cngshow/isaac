@@ -88,7 +88,16 @@ public class LookupService {
                     catch (IOException | ClassNotFoundException | MultiException e) {
                         throw new RuntimeException(e);
                     }
-                    LookupService.startupWorkExecutors();
+                    try
+                    {
+                        LookupService.startupWorkExecutors();
+                    }
+                    catch (Exception e)
+                    {
+                        RuntimeException ex = new RuntimeException("Unexpected error trying to come up to the work executors level, possible classpath problems!", e);
+                        ex.printStackTrace();  //We are in a world of hurt if this happens, make sure this exception makes it out somewhere, and doesn't get eaten.
+                        throw ex;
+                    }
                 }
             }
         }
