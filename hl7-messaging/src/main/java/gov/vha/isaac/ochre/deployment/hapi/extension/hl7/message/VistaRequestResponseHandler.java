@@ -18,6 +18,8 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
@@ -34,6 +36,8 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 	final Object lock_ = new Object();
 	private volatile Message responseMessage_ = null;
 	private long createTime_ = System.currentTimeMillis();
+	
+	private static Logger LOG = LogManager.getLogger(VistaRequestResponseHandler.class);
 
 	protected Message waitForResponse()
 	{
@@ -44,6 +48,7 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 			{
 				try
 				{
+					LOG.debug("Sleeping for " + sleepTime + "ms");  //TODO change this to trace later
 					lock_.wait(sleepTime);
 				}
 				catch (InterruptedException e)
@@ -52,6 +57,11 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 				}
 			}
 			sleepTime = calculateNextSleep();
+		}
+		if (responseMessage_ == null)
+		{
+			LOG.debug("No response was generated - left the wait loop with last calculated sleep time: " + sleepTime
+					+ " isRunning: " + LookupService.get().getService(HL7ResponseListener.class).isRunning());
 		}
 		return responseMessage_;
 	}
