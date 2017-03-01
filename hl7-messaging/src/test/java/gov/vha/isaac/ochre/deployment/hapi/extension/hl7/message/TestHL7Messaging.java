@@ -41,6 +41,8 @@ import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Task;
 
 /**
@@ -122,7 +124,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -143,7 +145,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 	}
@@ -169,7 +171,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -196,7 +198,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -224,7 +226,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -245,7 +247,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 	}
@@ -271,7 +273,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -298,7 +300,7 @@ public class TestHL7Messaging
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
-		// taskLog(t);
+		taskLog(t);
 		// unit test does not send message to server, the result is null.
 		Assert.assertNull(t.get());
 
@@ -380,29 +382,16 @@ public class TestHL7Messaging
 
 	}
 
-	// private void taskLog(Task<?> t) {
-	//
-	// t.progressProperty().addListener(new ChangeListener<Number>() {
-	// @Override
-	// public void changed(ObservableValue<? extends Number> observable, Number
-	// oldValue, Number newValue) {
-	// LOG.info("[Change] Progress " + newValue);
-	// }
-	// });
-	// t.messageProperty().addListener(new ChangeListener<String>() {
-	// @Override
-	// public void changed(ObservableValue<? extends String> observable, String
-	// oldValue, String newValue) {
-	// LOG.info("[Change] Message " + newValue);
-	// }
-	// });
-	// t.titleProperty().addListener(new ChangeListener<String>() {
-	// @Override
-	// public void changed(ObservableValue<? extends String> observable, String
-	// oldValue, String newValue) {
-	// LOG.info("[Change] Title " + newValue);
-	// }
-	// });
-	//
-	// }
+	private void taskLog(Task<?> t) {
+
+		t.messageProperty().addListener(new ChangeListener<String>()
+		{
+			@Override
+			public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue)
+			{
+				LOG.info("Message: " + newValue);
+			}
+		});
+
+	}
 }

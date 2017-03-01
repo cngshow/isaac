@@ -309,6 +309,8 @@ public class HL7ResponseListener
 
 					String messageToParse = inboundMessageBuffer.toString();
 					HL7LOG.info(messageToParse);
+					//log message on one line
+					LOG.debug(messageToParse.replace("\r", " ").replaceAll("\n", " "));
 
 					// get the MSH line and save to a string
 					String messageHeader = MessageTypeIdentifier.getMessageHeader(messageToParse);

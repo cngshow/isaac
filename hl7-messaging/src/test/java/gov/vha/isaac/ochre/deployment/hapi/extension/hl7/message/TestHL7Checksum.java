@@ -89,9 +89,11 @@ public class TestHL7Checksum
 			System.out.println("Waiting for response");
 			Message response = vrrh.waitForResponse();
 			
+			LOG.info("Got response {}", response.printStructure());
+			
 			if (response instanceof MFR_M01) {
 				MFR_M01 mfr = (MFR_M01) response;
-				LOG.info(mfr.toString());
+				LOG.info("Got response {}", mfr.toString().replace("\r", " ").replace("\n", " "));
 			}
 			else {
 				LOG.info("Response does not contain a checksum");
@@ -142,6 +144,8 @@ public class TestHL7Checksum
 			ieUsage = Boolean.valueOf(useIE).booleanValue();
 		}
 		appProp.setUseInterfaceEngine(ieUsage);
+		
+		appProp.setResponseListenerTimeout( Integer.parseInt(getPropValue("waitingTimeout")));
 
 		return appProp;
 
