@@ -359,9 +359,9 @@ public class HL7Messaging
 		while (tokenizer.hasMoreTokens()) {
 			currentToken = tokenizer.nextToken();
 			if (currentToken.startsWith(token)) {
-				colonIndex = token.indexOf(':');
-				if (colonIndex != -1 && (token.length() > (colonIndex + 1))) {
-					result = token.substring(colonIndex + 1);
+				colonIndex = currentToken.indexOf(':');
+				if (colonIndex != -1 && (currentToken.length() > (colonIndex + 1))) {
+					result = currentToken.substring(colonIndex + 1);
 				}
 			}
 		}
