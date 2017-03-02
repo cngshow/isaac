@@ -313,7 +313,7 @@ public class HL7ResponseListener
 					}
 
 					String messageToParse = inboundMessageBuffer.toString();
-					HL7LOG.info(messageToParse);
+					HL7LOG.info("RECEIVE: {} " , messageToParse);
 					//log message on one line
 					LOG.debug(messageToParse.replace("\r", " ").replaceAll("\n", " "));
 
