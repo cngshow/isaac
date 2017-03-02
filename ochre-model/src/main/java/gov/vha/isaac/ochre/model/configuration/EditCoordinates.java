@@ -39,7 +39,7 @@ public class EditCoordinates {
 
         EditCoordinate editCoordinate = new EditCoordinateImpl(
                 getNid(TermAux.USER),
-                getNid(TermAux.VHA_MODULE),
+                getNid(TermAux.VHA_MODULES),
                 getNid(TermAux.DEVELOPMENT_PATH));
 
         return editCoordinate;

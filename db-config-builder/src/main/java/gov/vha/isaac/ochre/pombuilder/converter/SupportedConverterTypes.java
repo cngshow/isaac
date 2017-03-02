@@ -98,13 +98,13 @@ public enum SupportedConverterTypes
 	}, "rxnorm-mojo", "rxnorm-ibdf", "convert-rxnorm-to-ibdf", "gov.vha.isaac.terminology.source.rxnorm","RxNorm", 
 			new String[] {"shared/licenses/rxnorm.xml"}, 
 			new String[] {"shared/noticeAdditions/rxnorm-NOTICE-addition.txt"}),
-	RXNORM_SOLOR("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
-			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
-					"RxNorm_full_06062016.zip",
-					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
-	}, "rxnorm-mojo", "rxnorm-ibdf-solor", "convert-rxnorm-solor-to-ibdf", "gov.vha.isaac.terminology.source.rxnorm", "RxNorm Solor", 
-			new String[] {"shared/licenses/rxnorm.xml"}, 
-			new String[] {"shared/noticeAdditions/rxnorm-NOTICE-addition.txt"}),
+//	RXNORM_SOLOR("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
+//			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
+//					"RxNorm_full_06062016.zip",
+//					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
+//	}, "rxnorm-mojo", "rxnorm-ibdf-solor", "convert-rxnorm-solor-to-ibdf", "gov.vha.isaac.terminology.source.rxnorm", "RxNorm Solor", 
+//			new String[] {"shared/licenses/rxnorm.xml"}, 
+//			new String[] {"shared/noticeAdditions/rxnorm-NOTICE-addition.txt"}),
 	
 	HL7v3("hl7v3-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 		new UploadFileInfo("", "http://gforge.hl7.org/gf/project/design-repos/frs/?action=FrsReleaseBrowse&frs_package_id=30", 
@@ -113,7 +113,27 @@ public enum SupportedConverterTypes
 				 " MUST contain a file that has 'DEFN=UV=VO' in the file name, and ends with .coremif", ".*rim.*\\.zip$", true)
 	}, "hl7v3-mojo", "hl7v3-ibdf", "convert-hl7v3-to-ibdf", "gov.vha.isaac.terminology.source.hl7v3", "HL7v3", 
 			new String[] {"shared/licenses/hl7v3.xml"}, 
-			new String[] {"shared/noticeAdditions/hl7v3-NOTICE-addition.txt"});
+			new String[] {"shared/noticeAdditions/hl7v3-NOTICE-addition.txt"}),
+	
+	NUCC("nucc-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "http://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40/csv-mainmenu-57",
+					"nucc_taxonomy_170.csv",
+					"The file name is ignored - it just needs to be a csv file which ends with .csv.", 
+					".*\\.csv$", true)
+	}, "nucc-mojo", "nucc-ibdf", "convert-NUCC-to-ibdf", "gov.vha.isaac.terminology.source.nucc", "National Uniform Claim Committee", 
+			new String[] {""}, //TODO
+			new String[] {""}), //TODO
+	
+	CVX("cvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
+					"cvx.xml",
+					"The file name is ignored - it just needs to be an xml file which ends with .xml.  Download the 'XML-new format' type, " + 
+					"and store it into a file with the extension .xml", 
+					".*\\.xml$", true)
+	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
+			new String[] {""}, //TODO
+			new String[] {""}) //TODO
+	;
 	
 	private String srcArtifactId_;
 	private List<String> artifactSrcDependencies_;

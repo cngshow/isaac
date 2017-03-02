@@ -107,18 +107,15 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept("module").mergeFromSpec(TermAux.UNSPECIFIED_MODULE);
                     pushParent(current());
                         createConcept(TermAux.ISAAC_MODULE);
-                        createConcept("SNOMED CT core module").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
-                        createConcept("US Extension module");
-                        createConcept("LOINC module");
-                        createConcept("LOINC Solor module");
-                        createConcept("RxNorm module");
-                        createConcept("RxNorm Solor module");
-                        createConcept("AMT module");
+                        createConcept("SNOMED CT core modules").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
+                        createConcept("US Extension modules");
+                        createConcept("LOINC modules");
+                        createConcept("LOINC Solor modules");
+                        createConcept("RxNorm modules");
+                        createConcept("RxNorm Solor modules");
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
-                        createConcept(TermAux.VHA_MODULE).addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
-                        createConcept("DOD module");
-                        createConcept("IPO module");
+                        createConcept(TermAux.VHA_MODULES).addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
                         createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));

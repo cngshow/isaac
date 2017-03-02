@@ -45,11 +45,11 @@ public class MappingUtils
 	public static final HashMap<String, ConceptSpecification> CODE_SYSTEM_CONCEPTS = new HashMap<String, ConceptSpecification>(); 
 	static 
 	{
-		CODE_SYSTEM_CONCEPTS.put("SNOMED CT", MetaData.SNOMED_CT_CORE_MODULE);
-		CODE_SYSTEM_CONCEPTS.put("SNOMED CT US Extension", MetaData.US_EXTENSION_MODULE);
-		CODE_SYSTEM_CONCEPTS.put("LOINC", MetaData.LOINC_MODULE);
-		CODE_SYSTEM_CONCEPTS.put("RxNorm", MetaData.RXNORM_MODULE);
-		CODE_SYSTEM_CONCEPTS.put("VHAT", MetaData.VHA_MODULE);
+		CODE_SYSTEM_CONCEPTS.put("SNOMED CT", MetaData.SNOMED_CT_CORE_MODULES);
+		CODE_SYSTEM_CONCEPTS.put("SNOMED CT US Extension", MetaData.US_EXTENSION_MODULES);
+		CODE_SYSTEM_CONCEPTS.put("LOINC", MetaData.LOINC_MODULES);
+		CODE_SYSTEM_CONCEPTS.put("RxNorm", MetaData.RXNORM_MODULES);
+		CODE_SYSTEM_CONCEPTS.put("VHAT", MetaData.VHA_MODULES);
 	}
 	
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException

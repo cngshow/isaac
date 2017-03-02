@@ -56,7 +56,7 @@ public class TestConversionConfiguration
 		{
 			if (x.getInternalName().equals("moduleUUID"))
 			{
-				options.put(x, new HashSet<String>(Arrays.asList(new String[] {"4822ec5a-fa64-5e0c-b88b-e81fff954eb9"})));
+				options.put(x, new HashSet<String>(Arrays.asList(new String[] {"c82efad7-f4bf-5e81-b223-b5b0305f6652"})));
 			}
 		}
 		
