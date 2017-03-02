@@ -20,7 +20,6 @@ package gov.vha.isaac.ochre.deployment.publish;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import ca.uhn.hl7v2.model.DataTypeException;
 import ca.uhn.hl7v2.model.v24.message.MFN_M01;
 import ca.uhn.hl7v2.model.v24.message.MFQ_M01;
@@ -29,10 +28,12 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.MessageDispatcher;
 import gov.vha.isaac.ochre.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
+import gov.vha.isaac.ochre.deployment.listener.HL7ResponseReceiveListener;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 import gov.vha.isaac.ochre.services.exception.STSException;
-import javafx.concurrent.Task;
 
 /**
  * The <code>HL7Sender</code> class manages the conversion from the deployment
@@ -46,7 +47,7 @@ import javafx.concurrent.Task;
  * @author vhaislempeyd
  */
 
-public class HL7Sender extends Task<Integer>
+public class HL7Sender
 {
 	private static Logger LOG = LogManager.getLogger(HL7Sender.class);
 
@@ -82,7 +83,11 @@ public class HL7Sender extends Task<Integer>
 		messageProperties_ = messageProperties;
 	}
 
-	public void send() throws STSException {
+	/**
+	 * returns true, if a message was sent that we expect a response from.  False, if we should not expect a response, 
+	 * due to, for example, the userInterfaceEngine flag being false, or some error happening during the send that prevented the send.
+	 */
+	public boolean send(HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
 		useInterfaceEngine = getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
 		
 		if (useInterfaceEngine) {
@@ -91,54 +96,24 @@ public class HL7Sender extends Task<Integer>
 			if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
 				// MFN M01: Master file not otherwise specified
 				MFN_M01 message = HL7SubsetUpdateGenerator.getMessage(hl7Message_);
-				sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
+				sendHL7UpdateMessage(message, publishMessage_, applicationProperties_, notifyOnResponseReceived);
 			} else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
 				// MFQ M01: Query for master file record
 				MFQ_M01 message = HL7RequestGenerator.getRequestMessage(hl7Message_);
-				sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_);
+				sendHL7RequestMessage(message, publishMessage_, applicationProperties_, messageProperties_, notifyOnResponseReceived);
 			} else {
 				LOG.error("Unknown message type.  Message header: {} ",
 						MessageTypeIdentifier.getMessageHeader(hl7Message_));
 				throw new STSException("Unkown message type. " + MessageTypeIdentifier.getMessageHeader(hl7Message_));
 			} 
+			
+			//TODO, perhaps, in the future, we may have cases where false is the appropriate value to return for certain messages....
+			return true;
 		} else {
-			LOG.error("No Emulator, please set useInterfaceEngine to true.");
+			LOG.info("No Emulator, please set useInterfaceEngine to true.");
+			return false;
 		}
 	}
-
-	// public void send(String hl7Message, PublishMessage publishMessage,
-	// ApplicationProperties applicationProperties, MessageProperties
-	// messageProperties) throws STSException {
-	//
-	// this.hl7Message_ = hl7Message;
-	// this.publishMessage_ = publishMessage;
-	// this.applicationProperties_ = applicationProperties;
-	// this.messageProperties_ = messageProperties;
-	//
-	// useInterfaceEngine =
-	// getInterfaceEngineUsage(Boolean.toString(applicationProperties_.getUseInterfaceEngine()));
-	//
-	// String messageType = MessageTypeIdentifier
-	// .getMessageType(MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	//
-	// if (MessageTypeIdentifier.MFN_TYPE.equals(messageType)) {
-	// // MFN M01: Master file not otherwise specified
-	// MFN_M01 message =
-	// HL7SubsetUpdateGenerator.getMessage(publishMessage_.getSubset());
-	// sendHL7UpdateMessage(message, publishMessage_, applicationProperties_);
-	// } else if (MessageTypeIdentifier.MFQ_TYPE.equals(messageType)) {
-	// // MFQ M01: Query for master file record
-	// MFQ_M01 message =
-	// HL7RequestGenerator.getRequestMessage(publishMessage_.getSubset());
-	// sendHL7RequestMessage(message, publishMessage_, applicationProperties_,
-	// messageProperties_);
-	// } else {
-	// LOG.error("Unknown message type. Message header: {} ",
-	// MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	// throw new STSException("Unkown message type. " +
-	// MessageTypeIdentifier.getMessageHeader(publishMessage_.getSubset()));
-	// }
-	// }
 
 	/*
 	 * Send the HL7 Update Message to the specified topics. A new message id is
@@ -154,7 +129,7 @@ public class HL7Sender extends Task<Integer>
 	 * @throws STSException
 	 */
 	private synchronized static void sendHL7UpdateMessage(MFN_M01 message, PublishMessage publishMessage,
-			ApplicationProperties applicationProperties) throws STSException {
+			ApplicationProperties applicationProperties, HL7ResponseReceiveListener notifyOnResponseReceived) throws STSException {
 		try {
 			// insert the topic and message id
 			MSH msh = message.getMSH();
@@ -170,6 +145,7 @@ public class HL7Sender extends Task<Integer>
 			LOG.info("Use interface engine is set to " + useInterfaceEngine + " and applicationProperties.getUseInterfaceEngine() is " + applicationProperties.getUseInterfaceEngine());
 			// Send the HL7 message
 			if (applicationProperties.getUseInterfaceEngine()) {
+				LookupService.get().getService(HL7ResponseListener.class).registerListener(publishMessage.getMessageId(), notifyOnResponseReceived);
 				dispatcher.send(message, applicationProperties);
 			} else {
 				// TODO: find code to re-implement if necessary. Leaving
@@ -181,7 +157,7 @@ public class HL7Sender extends Task<Integer>
 				 * EmulatorDelegate.sendMessage(HL7SubsetUpdateGenerator.
 				 * getMessage(message), url); }
 				 */
-				LOG.error("No Emulator, please set useInterfaceEngine to true.");
+				LOG.info("No Emulator, please set useInterfaceEngine to true.");
 			}
 
 			getDeploymentStatusMessage(HL7SubsetUpdateGenerator.getMessage(message), useInterfaceEngine, site,
@@ -217,7 +193,7 @@ public class HL7Sender extends Task<Integer>
 	 * @throws HL7Exception
 	 */
 	private synchronized static void sendHL7RequestMessage(MFQ_M01 message, PublishMessage publishMessage,
-			ApplicationProperties applicationProperties, MessageProperties messageProperties)
+			ApplicationProperties applicationProperties, MessageProperties messageProperties, HL7ResponseReceiveListener notifyOnResponseReceived)
 			throws STSException, STSException {
 		try {
 
@@ -246,6 +222,7 @@ public class HL7Sender extends Task<Integer>
 			// Send the HL7 message
 			if (useInterfaceEngine) {
 				LOG.info("calling dispatcher to send message");
+				LookupService.get().getService(HL7ResponseListener.class).registerListener(publishMessage.getMessageId(), notifyOnResponseReceived);
 				dispatcher.send(message, applicationProperties);
 			} else {
 				// TODO: find code to re-implement if necessary. Leaving
@@ -324,20 +301,5 @@ public class HL7Sender extends Task<Integer>
 			throw new STSException("useInterfaceEngine parameter must be 'true' or 'false'.");
 		}
 		return ieUsage;
-	}
-
-	/**
-	 * @see javafx.concurrent.Task#call()
-	 */
-	@Override
-	protected Integer call() throws Exception {
-		updateProgress(-1, 0);
-
-		updateMessage("Send Begin");
-		send();
-		updateMessage("Send Complete");
-
-		updateProgress(10, 10);
-		return 0;
 	}
 }

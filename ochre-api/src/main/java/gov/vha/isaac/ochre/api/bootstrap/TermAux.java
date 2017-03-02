@@ -201,8 +201,8 @@ public class TermAux {
             = new ConceptProxy("master path",
                     UUID.fromString("1f20134a-960e-11e5-8994-feff819cdc9f"));
     
-    public static ConceptSpecification VHA_MODULE
-            = new ConceptProxy("VHA module",
+    public static ConceptSpecification VHA_MODULES
+            = new ConceptProxy("VHA modules",
                     UUID.fromString("8aa5fda8-33e9-5eaf-88e8-dd8a024d2489"));
     
     public static ConceptSpecification SOLOR_OVERLAY_MODULE

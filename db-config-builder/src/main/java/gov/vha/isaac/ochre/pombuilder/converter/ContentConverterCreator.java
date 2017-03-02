@@ -69,21 +69,9 @@ public class ContentConverterCreator
 	 */
 	public static Converter getConverterForSourceArtifact(String artifactId)
 	{
-		switch(getConverterType(artifactId).getKey())
-		{
-			case SCT: case SCT_EXTENSION:
-				return new Converter("gov.vha.isaac.terminology.converters", "rf2-mojo", "");
-			case LOINC: case LOINC_TECH_PREVIEW:
-				return new Converter("gov.vha.isaac.terminology.converters", "loinc-mojo", "");
-			case VHAT:
-				return new Converter("gov.vha.isaac.terminology.converters", "vhat-mojo", "");
-			case HL7v3:
-				return new Converter("gov.vha.isaac.terminology.converters", "hl7v3-mojo", "");
-			case RXNORM: case RXNORM_SOLOR:
-				return new Converter("gov.vha.isaac.terminology.converters", "rxnorm-mojo", "");
-			default :
-				throw new RuntimeException("Oops - forgot to support converter type");
-		}
+		SupportedConverterTypes supportedConverterType = getConverterType(artifactId).getKey();
+		
+		return new Converter(supportedConverterType.getConverterGroupId(), supportedConverterType.getConverterArtifactId(), "");
 	}
 	
 	private static Pair<SupportedConverterTypes, String> getConverterType(String artifactId)
@@ -154,7 +142,7 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#VERSION#", sourceContent.getVersion() + "-loader-" + converterVersion);
 		
-		pomSwaps.put("#NAME#", conversionType.name() + " Artifact Converter");
+		pomSwaps.put("#NAME#", conversionType.getNiceName() + " Artifact Converter");
 		
 		pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
 		pomSwaps.put("#LOADER_VERSION#", converterVersion);
@@ -211,71 +199,19 @@ public class ContentConverterCreator
 		
 		pomSwaps.put("#UNPACK_DEPENDENCIES#", unpackDependencies);
 		
-		String goal = null;
-		String converter = null;
+		String goal = conversionType.getConverterMojoName();
 		
-		switch(conversionType)
+		pomSwaps.put("#LOADER_ARTIFACT#", conversionType.getConverterArtifactId());
+		pomSwaps.put("#ARTIFACTID#", conversionType.getConverterOutputArtifactId() + extensionSuffix);
+		StringBuffer licenseInfo = new StringBuffer();
+		for (String s : conversionType.getLicenseInformation())
 		{
-			case SCT:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-sct");
-				pomSwaps.put("#LOADER_ARTIFACT#", "rf2-mojo");
-				converter = "rf2-mojo";
-				goal = "convert-RF2-to-ibdf";
-				break;
-			case LOINC:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-				pomSwaps.put("#ARTIFACTID#", "loinc-ibdf");
-				pomSwaps.put("#LOADER_ARTIFACT#", "loinc-mojo");
-				converter = "loinc-mojo";
-				goal = "convert-loinc-to-ibdf";
-				break;
-			case LOINC_TECH_PREVIEW:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-				pomSwaps.put("#ARTIFACTID#", "loinc-ibdf-tech-preview");
-				pomSwaps.put("#LOADER_ARTIFACT#", "loinc-mojo");
-				converter = "loinc-mojo";
-				goal = "convert-loinc-tech-preview-to-ibdf";
-				break;
-			case SCT_EXTENSION:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-				pomSwaps.put("#ARTIFACTID#", "rf2-ibdf-" + extensionSuffix);
-				pomSwaps.put("#LOADER_ARTIFACT#", "rf2-mojo");
-				converter = "rf2-mojo";
-				goal = "convert-RF2-to-ibdf";
-				break;
-			case VHAT:
-				pomSwaps.put("#LICENSE#", "");
-				pomSwaps.put("#ARTIFACTID#", "vhat-ibdf");
-				pomSwaps.put("#LOADER_ARTIFACT#", "vhat-mojo");
-				converter = "vhat-mojo";
-				goal = "convert-VHAT-to-ibdf";
-				break;
-			case RXNORM:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rxnorm-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/rxnorm.xml"));
-				pomSwaps.put("#ARTIFACTID#", "rxnorm-ibdf");
-				pomSwaps.put("#LOADER_ARTIFACT#", "rxnorm-mojo");
-				converter = "rxnorm-mojo";
-				goal = "convert-rxnorm-to-ibdf";
-				break;
-			case HL7v3:
-				noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/hl7v3-NOTICE-addition.txt"));
-				pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/hl7v3.xml"));
-				pomSwaps.put("#ARTIFACTID#", "hl7v3-ibdf");
-				pomSwaps.put("#LOADER_ARTIFACT#", "hl7v3-mojo");
-				converter = "hl7v3-mojo";
-				goal = "convert-hl7v3-to-ibdf";
-				break;
-			//TODO RXNORM_SOLOR support
-			default :
-				throw new RuntimeException("forgot to support converter type");
+			licenseInfo.append(s);
+		}
+		pomSwaps.put("#LICENSE#", licenseInfo.toString());
+		for (String s : conversionType.getNoticeInformation())
+		{
+			noticeAppend.append(s);
 		}
 		
 		StringBuilder userOptions = new StringBuilder();
@@ -359,7 +295,7 @@ public class ContentConverterCreator
 		{
 			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/profile.xml");
 			temp = temp.replaceAll("#CLASSIFIER#", classifier);
-			temp = temp.replaceAll("#CONVERTER#", converter);
+			temp = temp.replaceAll("#CONVERTER#", conversionType.getConverterArtifactId());
 			temp = temp.replaceAll("#CONVERTER_VERSION#", converterVersion);
 			temp = temp.replaceAll("#GOAL#", goal);
 			temp = temp.replaceAll("#USER_CONFIGURATION_OPTIONS#", userOptions.toString());
@@ -374,7 +310,14 @@ public class ContentConverterCreator
 				assemblySnippits.append(assemblyRef);
 			}
 			assemblyInfo = assemblyInfo.replace("#ASSEMBLY_FILES#", assemblySnippits.toString());
-			assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
+			if (classifier.length() == 0)
+			{
+				assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
+			}
+			else
+			{
+				assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier + "*");
+			}
 			File assemblyFile = new File(f, "src/assembly/assembly-" + classifier + ".xml");
 			assemblyFile.getParentFile().mkdirs();
 			Files.write(assemblyFile.toPath(), assemblyInfo.getBytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);

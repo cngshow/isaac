@@ -3,6 +3,12 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/03/02 - 3.38
+    * update loader to allow the passing a a folder that contains ibdf files, rather than requiring specific lists.  part of jazz 468085
+    * add nucc and cvx to prisme integrations.  jazz 469791, 469788
+    * refactoring for reduced bugs on prisme integrations, updates for content-per-module design changes.  jazz 468087
+    * Much work on the backend code for HL7 messaging protocol to VistA sites via VIE (checksum, discovery)
+
 * 2017/02/16 - 3.37
     * refix 460134 defect with HL7v3 source upload (again)
     * VetsExporter code modified to no rely on string identifiers for mapping types

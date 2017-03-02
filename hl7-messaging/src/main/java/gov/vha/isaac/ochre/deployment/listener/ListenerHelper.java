@@ -60,6 +60,10 @@ public class ListenerHelper
 		String msaSegmentType = "MSA";
 		String ackCode = "CA";
 		String messageControlId = "";
+		String localRecAppSubfieldSeparator = "";
+		String localSendAppSubfieldSeparator = "";
+		String hl7DateString = "";
+		String hl7MessageID = "";
 
 		PipeParser parser = new PipeParser();
 
@@ -83,47 +87,45 @@ public class ListenerHelper
 				System.out.println("MESSAGE TYPE UNRECOGNIZED");
 			}
 
-			sendingAppNamespaceId = msh.getSendingApplication().getNamespaceID().toString();
+			if (msh != null) {
+				sendingAppNamespaceId = msh.getSendingApplication().getNamespaceID().toString();
 
-			// If the result of getting the sending app universal ID type is
-			// null,
-			// leave sendingAppUniversalIdType field as "".
-			String testSendingApplicationUniversalIDType = msh.getSendingApplication().getUniversalIDType().toString();
-			if (testSendingApplicationUniversalIDType != null) {
-				sendingAppUniversalIdType = testSendingApplicationUniversalIDType;
+				// If the result of getting the sending app universal ID type is
+				// null, leave sendingAppUniversalIdType field as "".
+				String testSendingApplicationUniversalIDType = msh.getSendingApplication().getUniversalIDType()
+						.toString();
+				if (testSendingApplicationUniversalIDType != null) {
+					sendingAppUniversalIdType = testSendingApplicationUniversalIDType;
+				}
+
+				sendingFacility = msh.getSendingFacility().getNamespaceID().toString();
+				receivingAppNamespaceId = msh.getReceivingApplication().getNamespaceID().toString();
+
+				// If the result of getting the receiving app universal ID type
+				// is
+				// null, leave receivingAppUniversalIdType field as "".
+				String testReceivingAppUniversalIdType = msh.getReceivingApplication().getUniversalIDType().toString();
+				if (testReceivingAppUniversalIdType != null) {
+					receivingAppUniversalIdType = testReceivingAppUniversalIdType;
+				}
+
+				receivingFacility = msh.getReceivingFacility().getNamespaceID().toString();
+				messageType = msh.getMessageType().getMessage().toString();
+				messageControlId = msh.getMessageControlID().toString();
+				processingId = msh.getProcessingID().getProcessingID().toString();
 			}
 
-			sendingFacility = msh.getSendingFacility().getNamespaceID().toString();
-
-			receivingAppNamespaceId = msh.getReceivingApplication().getNamespaceID().toString();
-
-			// If the result of getting the receiving app universal ID type is
-			// null,
-			// leave receivingAppUniversalIdType field as "".
-			String testReceivingAppUniversalIdType = msh.getReceivingApplication().getUniversalIDType().toString();
-			if (testReceivingAppUniversalIdType != null) {
-				receivingAppUniversalIdType = testReceivingAppUniversalIdType;
-			}
-
-			receivingFacility = msh.getReceivingFacility().getNamespaceID().toString();
-			// messageType = msh.getMessageType().getMessageType().toString();
-			messageType = msh.getMessageType().getMessage().toString();
-			messageControlId = msh.getMessageControlID().toString();
-			processingId = msh.getProcessingID().getProcessingID().toString();
-
-			String localRecAppSubfieldSeparator = "";
 			if ((receivingAppUniversalIdType != null) && (receivingAppUniversalIdType.length() > 0)) {
 				localRecAppSubfieldSeparator = subFieldSeparator + subFieldSeparator;
 			}
 
-			String localSendAppSubfieldSeparator = "";
 			if ((sendingAppUniversalIdType != null) && (sendingAppUniversalIdType.length() > 0)) {
 				localSendAppSubfieldSeparator = subFieldSeparator + subFieldSeparator;
 			}
 
-			String hl7DateString = HL7DateHelper.getHL7DateFormat(HL7DateHelper.getCurrentDate());
+			hl7DateString = HL7DateHelper.getHL7DateFormat(HL7DateHelper.getCurrentDate());
 
-			String hl7MessageID = HL7DateHelper.getCurrentYear() + HL7DateHelper.getCurrentMonth()
+			hl7MessageID = HL7DateHelper.getCurrentYear() + HL7DateHelper.getCurrentMonth()
 					+ HL7DateHelper.getCurrentDay() + HL7DateHelper.getCurrentHour() + HL7DateHelper.getCurrentMinute()
 					+ HL7DateHelper.getCurrentSecond();
 
@@ -135,6 +137,7 @@ public class ListenerHelper
 					+ hl7MessageID + fieldSeparator + processingId + fieldSeparator + versionId + "" + (char) 13
 					+ msaSegmentType + fieldSeparator + ackCode + fieldSeparator + messageControlId + fieldSeparator
 					+ (char) 13 + (char) 28 + (char) 13;
+
 		} catch (EncodingNotSupportedException e) {
 			throw new Exception(e);
 		} catch (HL7Exception e) {

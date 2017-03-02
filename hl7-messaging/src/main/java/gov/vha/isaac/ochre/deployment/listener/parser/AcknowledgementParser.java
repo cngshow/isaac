@@ -69,14 +69,13 @@ public class AcknowledgementParser extends BaseParser
 				msaMessage = msa.getTextMessage().toString();
 
 				Site site = this.resolveSiteId(mshSendingFacility);
-				log.info("STATUS: " + msaAcknowledgementCode + "; SITE NAME: " + site.getName() + "; SITE ID: "
-						+ site.getVaSiteId() + "; ACK MSG. ID: " + mshMessageControlId + "; ORIGINAL MSG. ID: "
-						+ msaMessageControlId);
+				log.info("STATUS: {} SITE NAME: {}; SITE ID: {}; ACK MSG. ID: {}; ORIGINAL MSG. ID: {}",
+						 msaAcknowledgementCode,
+						 (site!= null) ? site.getName() : "null",
+						 (site!= null ) ? site.getVaSiteId() : "null",
+						 mshMessageControlId,
+						 msaMessageControlId);
 
-				// update deployment history acknowledgment status
-				// TODO: is this needed?
-				// ListenerDelegate.updateDeploymentHistory(messageId,
-				// msaAcknowledgementCode);
 			} else {
 				log.error("Unknown message type.  Message header: " + msaMessage);
 			}

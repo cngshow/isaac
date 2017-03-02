@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -123,60 +122,18 @@ public class SrcUploadCreator
 						throw new Exception("ExtensionName is required when the upload type artifact id contains a wildcard");
 					}
 					
-					switch(uploadType)
+					pomSwaps.put("#GROUPID#", uploadType.getSourceUploadGroupId());
+					
+					String temp = uploadType.getArtifactId();
+					if (temp.contains("*"))
 					{
-						case SCT:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
-							pomSwaps.put("#ARTIFACTID#", "rf2-src-data-sct");
-							pomSwaps.put("#NAME#", "SnomedCT Source Upload");
-							break;
-						case SCT_EXTENSION:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/sct.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rf2");
-							pomSwaps.put("#ARTIFACTID#", "rf2-src-data-" + extensionName + "-extension");
-							pomSwaps.put("#NAME#", "SnomedCT Extension Source Upload");
-							break;
-						case LOINC:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
-							pomSwaps.put("#ARTIFACTID#", "loinc-src-data");
-							pomSwaps.put("#NAME#", "LOINC Source Upload");
-							break;
-						case LOINC_TECH_PREVIEW:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/loinc.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.loinc");
-							pomSwaps.put("#ARTIFACTID#", "loinc-src-data-tech-preview");
-							pomSwaps.put("#NAME#", "LOINC Tech Preview Source Upload");
-							break;
-						case VHAT:
-							pomSwaps.put("#LICENSE#", "");
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.vhat");
-							pomSwaps.put("#ARTIFACTID#", "vhat-src-data");
-							pomSwaps.put("#NAME#", "VHAT Source Upload");
-							break;
-						case RXNORM:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/rxnorm-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/rxnorm.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.rxnorm");
-							pomSwaps.put("#ARTIFACTID#", "rxnorm-src-data");
-							pomSwaps.put("#NAME#", "RxNorm Source Upload");
-							break;
-						case HL7v3:
-							noticeAppend.append(FileUtil.readFile("shared/noticeAdditions/hl7v3-NOTICE-addition.txt"));
-							pomSwaps.put("#LICENSE#", FileUtil.readFile("shared/licenses/hl7v3.xml"));
-							pomSwaps.put("#GROUPID#", "gov.vha.isaac.terminology.source.hl7v3");
-							pomSwaps.put("#ARTIFACTID#", "hl7v3-src-data");
-							pomSwaps.put("#NAME#", "HL7v3 Source Upload");
-							break;
-						//TODO RXNORM_SOLOR support
-						default :
-							throw new RuntimeException("oops - forgot to support a case");
+						temp = temp.replace("*", extensionName);
 					}
+					
+					pomSwaps.put("#ARTIFACTID#", temp);
+					pomSwaps.put("#NAME#", uploadType.getNiceName() + " Source Upload");
+					pomSwaps.put("#LICENSE#", uploadType.getLicenseInformation()[0]);  //we only use the first license for source upload
+					noticeAppend.append(uploadType.getNoticeInformation()[0]);  //only use the first notice info
 					
 					String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
 					
@@ -323,22 +280,6 @@ public class SrcUploadCreator
 			result = e.getMessage();
 			LOG.error("Exception thrown during task.get", e);
 		} 
-		return result;
-	}
-	
-	/**
-	 * A utility method to execute a task and wait for it to complete.
-	 * @param task
-	 * @return the string returned by the task
-	 * @throws InterruptedException
-	 * @throws ExecutionException
-	 */
-	public static String executeAndBlock(Task<String> task) throws InterruptedException, ExecutionException
-	{
-		LOG.trace("executeAndBlock with task " + task);
-		WorkExecutors.get().getExecutor().execute(task);
-		String result = task.get();
-		LOG.trace("result of task: " + result);
 		return result;
 	}
 }

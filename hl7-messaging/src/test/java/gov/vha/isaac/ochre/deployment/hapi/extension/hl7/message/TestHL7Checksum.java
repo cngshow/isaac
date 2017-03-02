@@ -1,14 +1,36 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ca.uhn.hl7v2.model.Message;
+import ca.uhn.hl7v2.model.v24.message.MFR_M01;
+import ca.uhn.hl7v2.model.v24.segment.MSA;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
-import gov.vha.isaac.ochre.deployment.listener.ResponseListener;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.parser.ChecksumVersionParser;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -16,38 +38,33 @@ import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
+
+/**
+* This class is meant to test check sum functionality directly on a test server.
+* To run on a test server, copy all jar files listed in the effective pom.xml.
+* This class will read property values from application.properties.  Using the file
+* allows the develop or tester to change the settings and re-run without having to
+* recompile code.  ie. You can repoint the  
+* Copy the compiled classes from hl7-messaging\target\test-classes gov to the server.
+* From the a command prompt on the server run the command:
+* 	java -cp ./*:. gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message.TestHL7CheckSum
+*
+* {@link TestHL7ChecksumRequest}
+*
+* @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
+*/
 public class TestHL7Checksum
 {
 	private static final Logger LOG = LogManager.getLogger(TestHL7Checksum.class);
 
 	public static void main(String[] args) throws Throwable {
-		int timeToWaitForShutdown = 60 * 1000;
-		String subset = "";
+		String subset = getPropValue("test.checksum.name");
 		
 		try {
-			
-			// time to wait in seconds before shutdown
-			if (args.length > 0) {
-				try {
-					if (Integer.parseInt(args[0]) > 0) {
-						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
-					}
-					if (StringUtils.isNotEmpty(args[1])) {
-						subset = args[1];						
-					}
-					
-				} catch (Exception e) {
-					System.out.println("Parameter must be a number.");
-				}
-			}
-
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
 
-			// Launch listener before sending message.
-			ResponseListener listener;
-			listener = new ResponseListener(applicationProperties.getListenerPort());
-			listener.start();
+			HL7Messaging.enableListener(applicationProperties);
 
 			LOG.info("Begin - get checksum for: {}", subset);
 
@@ -65,28 +82,44 @@ public class TestHL7Checksum
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessage publishMessage = new PublishMessageDTO();
-			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSubset(subset);
-			publishMessage.setSite(site);
+			PublishMessage publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
-			sender.send();
+			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+			sender.send(vrrh);
 
-			// Wait for before shutdown
-			Thread.sleep(timeToWaitForShutdown);
-
-			LOG.info("End");
-			System.exit(0);
-
+			System.out.println("Waiting for response");
+			Message response = vrrh.waitForResponse();
+			
+			LOG.info("Got response {}", response.printStructure());
+			
+			if (response instanceof MFR_M01) {
+				MFR_M01 mfr = (MFR_M01) response;
+				MSA msa = mfr.getMSA();			
+				
+				LOG.debug("MSA text: {}", msa.getTextMessage().toString());
+				LOG.info("CHECKSUM: {}", ChecksumVersionParser.getValueFromTokenizedString("CHECKSUM", msa.getTextMessage().toString()));
+				LOG.info("VERSION: {}", ChecksumVersionParser.getValueFromTokenizedString("VERSION", msa.getTextMessage().toString()));
+				LOG.info("RAW: {}", mfr.toString());
+				
+				LOG.info("Got response {}", mfr.toString().replace("\r", " ").replace("\n", " "));
+			}
+			else {
+				LOG.info("Response does not contain a checksum");
+				LOG.info(response == null ? "null" : response.toString());	
+			}
+			
 		} catch (Exception e) {
 
 			LOG.error("Error - Ending");
 			LOG.error(e.getMessage());
-			System.exit(-1);
+		} finally {
+			LOG.info("End");
+			LookupService.shutdownSystem();
+			System.exit(0);
 		}
 	}
-
+	
 	private static ApplicationProperties getDefaultServerPropertiesFromFile() {
 
 		ApplicationProperties appProp = new HL7ApplicationProperties();
@@ -120,6 +153,8 @@ public class TestHL7Checksum
 			ieUsage = Boolean.valueOf(useIE).booleanValue();
 		}
 		appProp.setUseInterfaceEngine(ieUsage);
+		
+		appProp.setResponseListenerTimeout( Integer.parseInt(getPropValue("waitingTimeout")));
 
 		return appProp;
 

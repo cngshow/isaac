@@ -1,46 +1,45 @@
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
+/**
+ * An interface for passing over the necessary site / subset information for sending a request, with the messageID prepopulated
+ * and setters for putting in the result(s).
+ * 
+ * {@link PublishMessage}
+ *
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
+ */
 public interface PublishMessage
 {
 
-	String getSubset();
+	public String getSubset();
 	
-	void setSubset(String subset);
-	
-	void setVersion(String version);
-	
-	void setChecksum(String checksum);
-	
-	void setSiteDiscovery(String siteData);
+	/**
+	 * Returns the site to which the message (with message ID) was sent
+	 * 
+	 * @return Returns the site.
+	 */
+	public Site getSite();
 	
 	/**
 	 * Returns the HL7 message ID
 	 * 
 	 * @return Returns the messageId.
 	 */
-	long getMessageId();
-
+	public long getMessageId();
+	
+	public void setVersion(String version);
+	
+	public void setChecksum(String checksum);
+	
 	/**
-	 * Sets the HL7 message ID
 	 * 
-	 * @param messageId
-	 *            The messageId to set.
+	 * @param siteDiscovery
 	 */
-	void setMessageId(long messageId);
-
+	public void setSiteDiscovery(SiteDiscovery siteDiscovery);
+	
 	/**
-	 * Returns the site to which the message (with message ID) was sent
-	 * 
-	 * @return Returns the site.
+	 * HL7 message as a string.
+	 * @param rawMessage
 	 */
-	Site getSite();
-
-	/**
-	 * Sets the site to which the message (with message ID) was sent
-	 * 
-	 * @param site
-	 *            The site to set.
-	 */
-	void setSite(Site site);
-
+	public void setRawHL7Message(String rawMessage);
 }

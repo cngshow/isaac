@@ -182,16 +182,17 @@ public class IBDFCreationUtility
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
 	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
-	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
-	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file
+	 * @param outputArtifactId - Combined with outputArtifactClassifier and outputArtifactVersion to name the final ibdf file
+	 * @param outputArtifactVersion - Combined with outputArtifactClassifier and outputArtifactId to name the final ibdf file
+	 * @param outputArtifactClassifier - optional - Combined with outputArtifactId and outputArtifactVersion to name the final ibdf file	
 	 * @param outputGson - true to dump out the data in gson format for debug
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @throws Exception
 	 */
 	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
-			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
+			String outputArtifactId,  String outputArtifactVersion, String outputArtifactClassifier, boolean outputGson, long defaultTime) throws Exception
 	{
-		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactClassifier, outputGson, defaultTime, null, null);
+		this(moduleToCreate, preExistingModule, outputDirectory, outputArtifactId, outputArtifactVersion, outputArtifactClassifier, outputGson, defaultTime, null, null);
 	}
 
 	/**
@@ -202,8 +203,9 @@ public class IBDFCreationUtility
 	 * @param preExistingModule - if moduleToCreate is not present, lookup the concept with this UUID to use as the module.  if moduleToCreate is present
 	 *   use preExistingModule as the parent concept for the moduleToCreate, rather than the default of MODULE.
 	 * @param outputDirectory - The path to write the output files to
-	 * @param outputArtifactId - Combined with outputArtifactClassifier to name the final ibdf file
-	 * @param outputArtifactClassifier - optional - Combinded with outputArtifactId to name the final ibdf file	 
+	 * @param outputArtifactId - Combined with outputArtifactClassifier and outputArtifactVersion to name the final ibdf file
+	 * @param outputArtifactVersion - Combined with outputArtifactClassifier and outputArtifactId to name the final ibdf file
+	 * @param outputArtifactClassifier - optional - Combined with outputArtifactId and outputArtifactVersion to name the final ibdf file	 
 	 * @param outputGson - true to dump out the data in gson format for debug
 	 * @param defaultTime - the timestamp to place on created elements, when no other timestamp is specified on the element itself.
 	 * @param sememeTypesToSkip - if ibdfPreLoadFiles are provided, this list of types can be specified as the types to ignore in the preload files
@@ -211,8 +213,8 @@ public class IBDFCreationUtility
 	 * @throws Exception
 	 */
 	public IBDFCreationUtility(Optional<String> moduleToCreate, Optional<ConceptSpecification> preExistingModule, File outputDirectory, 
-			String outputArtifactId, String outputArtifactClassifier, boolean outputGson, long defaultTime, Collection<SememeType> sememeTypesToSkip, 
-			Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
+			String outputArtifactId, String outputArtifactVersion, String outputArtifactClassifier, boolean outputGson, long defaultTime, 
+			Collection<SememeType> sememeTypesToSkip, Boolean preloadActiveOnly, File ... ibdfPreLoadFiles) throws Exception
 	{
 		UuidIntMapMap.NID_TO_UUID_CACHE_SIZE = 5000000;
 		File file = new File(outputDirectory, "isaac-db");
@@ -288,7 +290,9 @@ public class IBDFCreationUtility
 		ConverterUUID.configureNamespace(((moduleToCreate.isPresent() && preExistingModule.isPresent()) ? preExistingModule.get().getPrimordialUuid() : 
 			moduleUUID));
 		
-		String outputName = outputArtifactId + (StringUtils.isBlank(outputArtifactClassifier) ? "" : "-" + outputArtifactClassifier);
+		//tack the version onto the end of the ibdf file, so that when multiple ibdf files for a single type of content, such as 
+		//loinc 2.52, loinc 2.54 - we don't have a file name collision during the ibdf build.
+		String outputName = outputArtifactId + (StringUtils.isBlank(outputArtifactClassifier) ? "" : "-" + outputArtifactClassifier) + "-" + outputArtifactVersion;
 		
 		writer_ = new MultipleDataWriterService(
 				outputGson ? Optional.of(new File(outputDirectory, outputName + ".json").toPath()) : Optional.empty(),
@@ -917,6 +921,7 @@ public class IBDFCreationUtility
 	{
 		if (!isConfiguredAsDynamicSememe(associationTypeUuid))
 		{
+			ConsoleUtil.printErrorln("Asked to create an association with an unregistered association type.  This is deprecated, and should be fixed...");
 			configureConceptAsAssociation(associationTypeUuid, null);
 		}
 		return addAnnotation(concept, associationPrimordialUuid, 
@@ -1199,16 +1204,19 @@ public class IBDFCreationUtility
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), item.getSourcePropertyDefinition(),
 								item.getDataColumnsForDynamicRefex(), item.getAssociationComponentTypeRestriction(), item.getAssociationComponentTypeSubRestriction());
 						
-						//add the inverse name, if it has one
-						if (!StringUtils.isBlank(item.getAssociationInverseName()))
-						{
-							addDescription(ComponentReference.fromConcept(concept), item.getAssociationInverseName(), DescriptionType.SYNONYM, false, null, 
-									State.ACTIVE);
-						}
-						
 						//Add this concept to the association sememe
 						addRefsetMembership(ComponentReference.fromConcept(concept), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME.getUUID(), 
 								State.ACTIVE, null);
+						
+						//add the inverse name, if it has one
+						if (!StringUtils.isBlank(item.getAssociationInverseName()))
+						{
+							SememeChronology<DescriptionSememe<?>> inverseDesc = addDescription(ComponentReference.fromConcept(concept), item.getAssociationInverseName(), 
+									DescriptionType.SYNONYM, false, null, State.ACTIVE);
+							
+							addRefsetMembership(ComponentReference.fromChronology(inverseDesc), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getUUID(), 
+									State.ACTIVE, selectTime(null, ComponentReference.fromChronology(inverseDesc)));
+						}
 					}
 				}
 			}
@@ -1271,6 +1279,12 @@ public class IBDFCreationUtility
 		refexAllowedColumnTypes_.put(sememeUUID, columnInfo);
 	}
 	
+	/**
+	 * This method probably shouldn't be used - better to use the PropertyAssotion type
+	 * @param associationTypeConcept
+	 * @param inverseName
+	 * @deprecated - Better to set things up as {@link BPT_Associations}
+	 */
 	public void configureConceptAsAssociation(UUID associationTypeConcept, String inverseName)
 	{
 		DynamicSememeColumnInfo[] colInfo = new DynamicSememeColumnInfo[] {new DynamicSememeColumnInfo(

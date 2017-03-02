@@ -1,13 +1,32 @@
+/**
+ * Copyright Notice
+ *
+ * This is a work of the U.S. Government and is not subject to copyright
+ * protection in the United States. Foreign copyrights may apply.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
-import gov.vha.isaac.ochre.deployment.listener.ResponseListener;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -15,37 +34,39 @@ import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7MessageProperties;
 import gov.vha.isaac.ochre.services.dto.publish.MessageProperties;
 
+/**
+* This class is meant to test site data / discovery functionality directly on a test server.
+* To run on a test server, copy all jar files listed in the effective pom.xml and
+* the compiled classes from hl7-messaging\target\test-classes gov to the server.
+* 
+* This class will read property values from application.properties.  Using the file
+* allows the develop or tester to change the settings and re-run without having to
+* recompile code.  ie. You can re-point to a different interface server.
+* 
+* From the a command prompt on the server run the command:
+* 	java -cp ./*:. gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message.TestHL7Discovery
+*
+* {@link TestHL7Discovery}
+*
+* @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
+*/
 public class TestHL7Discovery
 {
 	private static final Logger LOG = LogManager.getLogger(TestHL7Discovery.class);
 
 	public static void main(String[] args) throws Throwable {
-		int timeToWaitForShutdown = 60 * 1000;
-
+		String subset = getPropValue("test.discovery.name");
+	
 		try {
-			// time to wait in seconds before shutdown
-			if (args.length > 0) {
-				try {
-					if (Integer.parseInt(args[0]) > 0) {
-						timeToWaitForShutdown = Integer.parseInt(args[0]) * 1000;
-					}
-				} catch (Exception e) {
-					System.out.println("Parameter must be a number.");
-				}
-			}
-
 			ApplicationProperties applicationProperties = getDefaultServerPropertiesFromFile();
 			MessageProperties messageProperties = getDefaultMessagePropertiesFromFile();
+			
+			HL7Messaging.enableListener(applicationProperties);
 
-			// Launch listener before sending message.
-			ResponseListener listener;
-			listener = new ResponseListener(applicationProperties.getListenerPort());
-			listener.start();
+			LOG.info("Begin - get site data for: {}", subset);
 
-			LOG.info("Begin");
-
-			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage("Vital Qualifiers", applicationProperties,
-					messageProperties);
+			String hl7Message = HL7RequestGenerator.getSiteDataRequestMessage(subset, 
+					applicationProperties, messageProperties);
 
 			LOG.info("MESSAGE: {}", hl7Message);
 
@@ -59,26 +80,25 @@ public class TestHL7Discovery
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessageDTO publishMessage;
-			publishMessage = new PublishMessageDTO();
-
-			publishMessage.setMessageId(System.currentTimeMillis());
-			publishMessage.setSite(site);
+			PublishMessageDTO publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
-			sender.send();
+			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();
+			sender.send(vrrh);
+			
+			System.out.println("Waiting for response");
+			Message response = vrrh.waitForResponse();
 
-			// Wait for before shutdown
-			Thread.sleep(timeToWaitForShutdown);
-
-			LOG.info("End");
-			System.exit(0);
+			System.out.println(response == null ? "null" : response.toString());
 
 		} catch (Exception e) {
 
 			LOG.error("Error - Ending");
 			LOG.error(e.getMessage());
-			System.exit(-1);
+		} finally {
+			LOG.info("End");
+			LookupService.shutdownSystem();
+			System.exit(0);
 		}
 	}
 
@@ -99,9 +119,8 @@ public class TestHL7Discovery
 		appProp.setSendingFacilityNamespaceId(getPropValue("msh.sendingFacility.namespaceId"));
 
 		// Target Vitria Interface Engine
-		// Target Vitria Interface Engine
-		appProp.setInterfaceEngineURL(
-				"http://vaaacvies64.aac.dva.va.gov:8080/FrameworkClient-1.1/Framework2ServletHTTPtoChannel");
+				appProp.setInterfaceEngineURL(getPropValue(
+						"gov.vha.isaac.orche.term.access.maint.messaging.hl7.factory.BusinessWareMessageDispatcher/url"));
 
 		// Encoding type
 		appProp.setHl7EncodingType(getPropValue(
@@ -115,6 +134,8 @@ public class TestHL7Discovery
 			ieUsage = Boolean.valueOf(useIE).booleanValue();
 		}
 		appProp.setUseInterfaceEngine(ieUsage);
+		
+		appProp.setResponseListenerTimeout( Integer.parseInt(getPropValue("waitingTimeout")));
 
 		return appProp;
 

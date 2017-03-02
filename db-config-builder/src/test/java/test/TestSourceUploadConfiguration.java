@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
 import gov.vha.isaac.ochre.pombuilder.converter.SupportedConverterTypes;
@@ -64,7 +65,7 @@ public class TestSourceUploadConfiguration
 			}
 		});
 		
-		SrcUploadCreator.executeAndBlock(t);
+		WorkExecutors.get().getExecutor().execute(t);
 		System.out.println("Result " + t.get());
 		FileUtil.recursiveDelete(f);
 	}

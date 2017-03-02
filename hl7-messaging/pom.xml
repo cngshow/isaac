@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>3.37</version>
+		<version>3.38</version>
 	</parent>
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>hl7-messaging</artifactId>
@@ -35,6 +35,13 @@
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.1.0</version>
 		</dependency>
+		<!--  test
+		<dependency>
+    		<groupId>org.codehaus.xfire</groupId>
+    		<artifactId>xfire-core</artifactId>
+    		<version>1.2.6</version>
+		</dependency>
+		test  -->
 	</dependencies>
 	<build>
         <plugins>

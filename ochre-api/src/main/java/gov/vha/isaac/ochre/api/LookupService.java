@@ -88,7 +88,16 @@ public class LookupService {
                     catch (IOException | ClassNotFoundException | MultiException e) {
                         throw new RuntimeException(e);
                     }
-                    LookupService.startupWorkExecutors();
+                    try
+                    {
+                        LookupService.startupWorkExecutors();
+                    }
+                    catch (Exception e)
+                    {
+                        RuntimeException ex = new RuntimeException("Unexpected error trying to come up to the work executors level, possible classpath problems!", e);
+                        ex.printStackTrace();  //We are in a world of hurt if this happens, make sure this exception makes it out somewhere, and doesn't get eaten.
+                        throw ex;
+                    }
                 }
             }
         }
@@ -250,7 +259,7 @@ public class LookupService {
                 if (discoveredValidityValue == null) {
                     // Initial time through. All other database directories and lucene directories must have same state
                     discoveredValidityValue = handle.getService().getDatabaseValidityStatus();
-                    LOG.info("First batabase service handler (" + handle.getActiveDescriptor().getImplementation()
+                    LOG.info("First database service handler (" + handle.getActiveDescriptor().getImplementation()
                             + ") has database validity value: " + discoveredValidityValue);
                 } else {
                     // Verify database directories have same state as identified in first time through
