@@ -132,6 +132,15 @@ public enum SupportedConverterTypes
 					".*\\.xml$", true)
 	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
 			new String[] {""}, //TODO
+			new String[] {""}), //TODO
+	
+	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "File a bug, assign to Dan",  //TODO dan fix... this is a stub for the moment
+					"TBD",
+					"File a bug, assign to Dan", 
+					".*$", true)
+	}, "cpt-mojo", "cpt-ibdf", "convert-CPT-to-ibdf", "gov.vha.isaac.terminology.source.cpt", "Current Procedural Terminology", 
+			new String[] {""}, //TODO
 			new String[] {""}) //TODO
 	;
 	
