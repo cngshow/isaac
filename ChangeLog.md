@@ -5,6 +5,8 @@ where provided, and the git commit history.
 
 * 2017/02/?? - 3.38 - PENDING
     * update loader to allow the passing a a folder that contains ibdf files, rather than requiring specific lists.  part of jazz 468085
+    * add nucc and cvx to prisme integrations.  jazz 469791, 469788
+    * refactoring for reduced bugs on prisme integrations, updates for content-per-module design changes.  jazz 468087
 
 * 2017/02/16 - 3.37
     * refix 460134 defect with HL7v3 source upload (again)
