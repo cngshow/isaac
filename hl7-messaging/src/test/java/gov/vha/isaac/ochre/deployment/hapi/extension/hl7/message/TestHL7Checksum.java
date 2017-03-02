@@ -18,8 +18,6 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
-import java.util.StringTokenizer;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +30,7 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.parser.ChecksumVersionParser;
 import gov.vha.isaac.ochre.deployment.publish.HL7RequestGenerator;
 import gov.vha.isaac.ochre.deployment.publish.HL7Sender;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
@@ -99,8 +98,8 @@ public class TestHL7Checksum
 				MSA msa = mfr.getMSA();			
 				
 				LOG.debug("MSA text: {}", msa.getTextMessage().toString());
-				LOG.info("CHECKSUM: {}", getValueFromTokenizedString("CHECKSUM", msa.getTextMessage().toString()));
-				LOG.info("VERSION: {}", getValueFromTokenizedString("VERSION", msa.getTextMessage().toString()));
+				LOG.info("CHECKSUM: {}", ChecksumVersionParser.getValueFromTokenizedString("CHECKSUM", msa.getTextMessage().toString()));
+				LOG.info("VERSION: {}", ChecksumVersionParser.getValueFromTokenizedString("VERSION", msa.getTextMessage().toString()));
 				LOG.info("RAW: {}", mfr.toString());
 				
 				LOG.info("Got response {}", mfr.toString().replace("\r", " ").replace("\n", " "));
@@ -119,25 +118,6 @@ public class TestHL7Checksum
 			LookupService.shutdownSystem();
 			System.exit(0);
 		}
-	}
-
-	private static String getValueFromTokenizedString(String token, String input) {
-		StringTokenizer tokenizer = new StringTokenizer(input, ";");
-		String currentToken = null;
-		int colonIndex = -1;
-		String result = "";
-		
-		while (tokenizer.hasMoreTokens()) {
-			currentToken = tokenizer.nextToken();
-			if (currentToken.startsWith(token)) {
-				colonIndex = currentToken.indexOf(':');
-				if (colonIndex != -1 && (currentToken.length() > (colonIndex + 1))) {
-					result = currentToken.substring(colonIndex + 1);
-				}
-			}
-		}
-		
-		return result; 
 	}
 	
 	private static ApplicationProperties getDefaultServerPropertiesFromFile() {

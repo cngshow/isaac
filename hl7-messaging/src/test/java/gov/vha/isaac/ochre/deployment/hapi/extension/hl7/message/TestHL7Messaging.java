@@ -36,6 +36,7 @@ import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDiscovery;
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.deployment.listener.parser.ChecksumVersionParser;
 import gov.vha.isaac.ochre.deployment.listener.parser.SiteDiscoveryParser;
 import gov.vha.isaac.ochre.services.dto.publish.ApplicationProperties;
 import gov.vha.isaac.ochre.services.dto.publish.HL7ApplicationProperties;
@@ -101,6 +102,16 @@ public class TestHL7Messaging
 			Assert.assertEquals(row.size(), 6);
 		}
 
+	}
+	
+	@Test
+	public void testChecksumVersionParser()
+	{
+		String test = ";CHECKSUM:4bdb6ba422ce11216529bb9b085eb54f;VERSION:25;";
+		
+		Assert.assertEquals("4bdb6ba422ce11216529bb9b085eb54f", ChecksumVersionParser.getValueFromTokenizedString("CHECKSUM", test));
+		Assert.assertEquals("25", ChecksumVersionParser.getValueFromTokenizedString("VERSION", test));
+		
 	}
 
 	@Test(expected = Exception.class)

@@ -105,7 +105,7 @@ public class BusinessWareMessageDispatcher implements MessageDispatcher
 					+ "[ctrl_id=" + terser.get("MSH-10") /* control id */
 					+ "]: " + encodedMessage.length() + " characters");
 			
-			HL7LOG.info(encodedMessage);
+			HL7LOG.info("SEND: {}", encodedMessage);
 			
 		} catch (Exception e) {
 			final String msg = "Error sending message.";
