@@ -18,12 +18,15 @@
  */
 package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
+import java.util.StringTokenizer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
+import ca.uhn.hl7v2.model.v24.segment.MSA;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
@@ -93,6 +96,13 @@ public class TestHL7Checksum
 			
 			if (response instanceof MFR_M01) {
 				MFR_M01 mfr = (MFR_M01) response;
+				MSA msa = mfr.getMSA();			
+				
+				LOG.debug("MSA text: {}", msa.getTextMessage().toString());
+				LOG.info("CHECKSUM: {}", getValueFromTokenizedString("CHECKSUM", msa.getTextMessage().toString()));
+				LOG.info("VERSION: {}", getValueFromTokenizedString("VERSION", msa.getTextMessage().toString()));
+				LOG.info("RAW: {}", mfr.toString());
+				
 				LOG.info("Got response {}", mfr.toString().replace("\r", " ").replace("\n", " "));
 			}
 			else {
@@ -111,6 +121,25 @@ public class TestHL7Checksum
 		}
 	}
 
+	private static String getValueFromTokenizedString(String token, String input) {
+		StringTokenizer tokenizer = new StringTokenizer(input, ";");
+		String currentToken = null;
+		int colonIndex = -1;
+		String result = "";
+		
+		while (tokenizer.hasMoreTokens()) {
+			currentToken = tokenizer.nextToken();
+			if (currentToken.startsWith(token)) {
+				colonIndex = currentToken.indexOf(':');
+				if (colonIndex != -1 && (currentToken.length() > (colonIndex + 1))) {
+					result = currentToken.substring(colonIndex + 1);
+				}
+			}
+		}
+		
+		return result; 
+	}
+	
 	private static ApplicationProperties getDefaultServerPropertiesFromFile() {
 
 		ApplicationProperties appProp = new HL7ApplicationProperties();
