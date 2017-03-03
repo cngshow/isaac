@@ -23,7 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ca.uhn.hl7v2.model.Message;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishChecksumMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -80,7 +80,7 @@ public class TestHL7Discovery
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessageDTO publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
+			PublishChecksumMessageDTO publishMessage = new PublishChecksumMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
 			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();

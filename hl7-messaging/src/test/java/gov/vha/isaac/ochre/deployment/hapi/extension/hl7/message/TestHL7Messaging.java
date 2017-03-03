@@ -30,8 +30,10 @@ import org.junit.Test;
 
 import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.parser.PipeParser;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishChecksumMessage;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishChecksumMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishSiteDiscoveryMessage;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishSiteDiscoveryMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDiscovery;
@@ -129,9 +131,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishChecksumMessage publishMessage = new PublishChecksumMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishChecksumMessage> publishMessages = new ArrayList<PublishChecksumMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
@@ -150,9 +152,9 @@ public class TestHL7Messaging
 
 		Site site = new SiteDTO();
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishChecksumMessage publishMessage = new PublishChecksumMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishChecksumMessage> publishMessages = new ArrayList<PublishChecksumMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
@@ -176,9 +178,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishChecksumMessage publishMessage = new PublishChecksumMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishChecksumMessage> publishMessages = new ArrayList<PublishChecksumMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
@@ -203,9 +205,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishChecksumMessage publishMessage = new PublishChecksumMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishChecksumMessage> publishMessages = new ArrayList<PublishChecksumMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.checksum(publishMessages, getDefaultMessageProperties()).get(0);
@@ -231,9 +233,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishSiteDiscoveryMessage publishMessage = new PublishSiteDiscoveryMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishSiteDiscoveryMessage> publishMessages = new ArrayList<PublishSiteDiscoveryMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
@@ -252,9 +254,9 @@ public class TestHL7Messaging
 
 		Site site = new SiteDTO();
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishSiteDiscoveryMessage publishMessage = new PublishSiteDiscoveryMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishSiteDiscoveryMessage> publishMessages = new ArrayList<PublishSiteDiscoveryMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
@@ -278,9 +280,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishSiteDiscoveryMessage publishMessage = new PublishSiteDiscoveryMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishSiteDiscoveryMessage> publishMessages = new ArrayList<PublishSiteDiscoveryMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
@@ -305,9 +307,9 @@ public class TestHL7Messaging
 		site.setType("");
 		site.setMessageType("T");
 
-		PublishMessage publishMessage = new PublishMessageDTO(1, site, hl7Message);
+		PublishSiteDiscoveryMessage publishMessage = new PublishSiteDiscoveryMessageDTO(1, site, hl7Message);
 
-		List<PublishMessage> publishMessages = new ArrayList<PublishMessage>();
+		List<PublishSiteDiscoveryMessage> publishMessages = new ArrayList<PublishSiteDiscoveryMessage>();
 		publishMessages.add(publishMessage);
 
 		Task<Void> t = HL7Messaging.discovery(publishMessages, getDefaultMessageProperties()).get(0);
