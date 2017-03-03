@@ -148,6 +148,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("VUID", "Vets Unique Identifier");
                         createConcept("OID", "HL7 Object Identifier");
                         createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
+                        createConcept("CVXCode", "CVX Unique Identifier");
+                        createConcept("MVX_CODE", "MVX Unique Identifier");
                         
                     popParent();
                     createConcept("language");
