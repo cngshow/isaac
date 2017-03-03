@@ -530,10 +530,10 @@ public class IBDFCreationUtility
 	 * Add a description to the concept.  UUID for the description is calculated from the target concept, description value, type, and preferred flag.
 	 */
 	public SememeChronology<DescriptionSememe<?>> addDescription(ComponentReference concept, String descriptionValue, DescriptionType wbDescriptionType, 
-			boolean preferred, UUID sourceDescriptionTypeUUID, State status)
+			boolean preferred, UUID sourceDescriptionTypeUUID, State state)
 	{
 		return addDescription(concept, null, descriptionValue, wbDescriptionType, preferred, null, null, null, null, sourceDescriptionTypeUUID, 
-				status, null);
+				state, null);
 	}
 	
 	/**
