@@ -335,53 +335,42 @@ public class HL7Messaging
 		return tasks;
 	}
 
-	public static Task<Void> convertDiscoveryText(String siteDiscoveryRawHL7) throws Exception {
+	public static SiteDiscovery convertDiscoveryText(String siteDiscoveryRawHL7) throws Exception {
 
 		if (siteDiscoveryRawHL7 == null || siteDiscoveryRawHL7.isEmpty())
 		{
 			throw new Exception("The HL7 message string to parse is null or empty!");
 		}
 		
-		Task<Void> convert = new Task<Void>() {
+		SiteDiscovery siteDiscovery = new SiteDiscoveryDTO();
+		try {
+			// convert text to object, make sure it is valid by parsing into Message
+			PipeParser parser = new PipeParser();
+			Message messageToParse = parser.parse(siteDiscoveryRawHL7);
 
-			@Override
-			protected Void call() throws Exception {
-				updateTitle("Discovery Request");
-				updateMessage("Preparing to send discovery");
-
-				try {
-					// convert text to object, make sure it is valid by parsing into Message
-					PipeParser parser = new PipeParser();
-					Message messageToParse = parser.parse(siteDiscoveryRawHL7);
-
-					updateMessage("Processing site discovery HL7 message");
-					if (messageToParse instanceof MFR_M01) {
-						SiteDiscoveryParser siteDiscoveryParser = new SiteDiscoveryParser();
-						SiteDiscovery siteDiscovery = new SiteDiscoveryDTO();
-						siteDiscovery = siteDiscoveryParser.parseMessage(messageToParse);
-					}
-					else
-					{
-						LOG.error("The message to parse is not a site discovery HL7 message! {}",siteDiscoveryRawHL7 );
-						throw new Exception("The message to parse is not a site discovery HL7 message!");
-					}
-
-					updateTitle("Complete");
-				} catch (STSException e) {
-					String msg = "Failed to convert incoming HL7 string";
-					LOG.error(msg);
-					updateMessage("Unexpected internal error");
-					throw new RuntimeException(msg);
-				} catch (Throwable e) {
-					LOG.error("Unexpected error", e);
-					updateMessage("Unexpected internal error");
-					throw new RuntimeException(e);
-				}
-				return null;
+			if (messageToParse instanceof MFR_M01) {
+				SiteDiscoveryParser siteDiscoveryParser = new SiteDiscoveryParser();
+				
+				siteDiscovery = siteDiscoveryParser.parseMessage(messageToParse);
 			}
-		};
+			else
+			{
+				LOG.error("The message to parse is not a site discovery HL7 message! {}",siteDiscoveryRawHL7 );
+				throw new Exception("The message to parse is not a site discovery HL7 message!");
+			}
 
-		return convert;
+		} catch (STSException e) {
+			String msg = "Failed to convert incoming HL7 string";
+			LOG.error(msg);
+
+			throw new RuntimeException(msg);
+		} catch (Throwable e) {
+			LOG.error("Unexpected error", e);
+
+			throw new RuntimeException(e);
+		}
+
+		return siteDiscovery;
 	}
 
 	private static void checkMessage(PublishMessage message) {
