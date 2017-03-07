@@ -72,4 +72,10 @@ public abstract class Artifact
 		}
 		return true;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Artifact [groupId_=" + groupId_ + ", artifactId_=" + artifactId_ + ", version_=" + version_ + ", classifier_=" + classifier_ + "]";
+	}
 }

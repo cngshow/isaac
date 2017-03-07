@@ -68,6 +68,7 @@ public class MavenPublish extends Task<Integer>
 		url_ = url;
 		username_ = username;
 		psswrd_ = psswrd;
+		log.debug("Maven Publish task constructed for GAV: {}:{}:{}", groupId, artifactId, version);
 	}
 
 	private void writeChecksumFile(File file, String type) throws IOException, InterruptedException, ExecutionException
@@ -96,6 +97,7 @@ public class MavenPublish extends Task<Integer>
 		String checksum = gen.get();
 
 		updateMessage("Writing checksum file");
+		log.debug("Writing {} checksum file with {}", type, checksum);
 
 		Files.write(new File(file.getParentFile(), file.getName() + "." + type.toLowerCase()).toPath(),
 				(checksum + "  " + file.getName()).getBytes(), StandardOpenOption.WRITE,
@@ -181,6 +183,7 @@ public class MavenPublish extends Task<Integer>
 	@Override
 	protected Integer call() throws Exception
 	{
+		log.debug("Maven publish task begins");
 		updateProgress(-1, 0);
 
 		updateMessage("Creating Checksum Files");
@@ -209,6 +212,7 @@ public class MavenPublish extends Task<Integer>
 
 		updateMessage("Publish Complete");
 		updateProgress(10, 10);
+		log.debug("Maven Publish Task Complete");
 		return 0;
 	}
 }

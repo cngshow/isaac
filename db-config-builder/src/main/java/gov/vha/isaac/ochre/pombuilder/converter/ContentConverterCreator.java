@@ -22,12 +22,13 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.util.Set;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.GitPublish;
@@ -98,6 +99,7 @@ public class ContentConverterCreator
 		}
 		if (conversionType == null)
 		{
+			LOG.info("Throwing Runtime exception back from getConverterType, as the artifact {} could not be matched to a content artifact type", artifactId);
 			throw new RuntimeException("Unuspported source content artifact type");
 		}
 		return new Pair<>(conversionType, extensionSuffix);
@@ -126,6 +128,7 @@ public class ContentConverterCreator
 		IBDFFile[] additionalIBDFDependencies, Map<ConverterOptionParam, Set<String>> converterOptionValues, String gitRepositoryURL, String gitUsername, char[] gitPassword) 
 				throws Exception
 	{
+		LOG.debug("Creating a content converter for '{}' with converter version '{}' on the server '{}'", sourceContent, converterVersion, gitRepositoryURL);
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
 		Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
@@ -224,10 +227,12 @@ public class ContentConverterCreator
 				{
 					if (!option.getKey().isAllowMultiSelect() && option.getValue().size() > 1)
 					{
+						LOG.info("Throwing exception back because the option " + option.getKey().getDisplayName() + " allows at most, one value");
 						throw new Exception("The option " + option.getKey().getDisplayName() + " allows at most, one value");
 					}
 					if (!option.getKey().isAllowNoSelection() && option.getValue().size() == 0)
 					{
+						LOG.info("Throwing exception back because This option " + option.getKey().getDisplayName() + " requires a value");
 						throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
 					}
 					if (option.getValue().size() > 0)
@@ -274,6 +279,7 @@ public class ContentConverterCreator
 				}
 				else if (!option.getKey().isAllowNoSelection())
 				{
+					LOG.info("Throwing exception back because this option " + option.getKey().getDisplayName() + " requires a value");
 					throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
 				}
 			}
@@ -327,7 +333,15 @@ public class ContentConverterCreator
 		
 		String tagWithoutRevNumber = "gov.vha.isaac.terminology.converted" + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
 		
+		LOG.debug("Generated tag (without rev number): '{}'", tagWithoutRevNumber);
+		
 		ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
+		
+		if (LOG.isDebugEnabled())
+		{
+			LOG.debug("Currently Existing tags in '{}': {} ", gitRepositoryURL, Arrays.toString(existingTags.toArray(new String[existingTags.size()])));
+		}
+		
 		int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
 		
 		String tag;
@@ -346,6 +360,8 @@ public class ContentConverterCreator
 			}
 			tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
 		}
+		
+		LOG.info("Final calculated tag: '{}'", tag);
 		
 		pomSwaps.put("#SCM_TAG#", tag);
 		if (extraProperties.length() > 0)

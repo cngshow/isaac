@@ -117,4 +117,10 @@ public class ConverterOptionParamSuggestedValue
 		}
 		return true;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "ConverterOptionParamSuggestedValue [value=" + value + ", description=" + description + "]";
+	}
 }
