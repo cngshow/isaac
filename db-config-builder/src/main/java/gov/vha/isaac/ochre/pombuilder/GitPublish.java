@@ -61,6 +61,7 @@ public class GitPublish
 		}
 		else
 		{
+			LOG.info("Failing constructChangesetRepositoryURL {}", gitblitBaseURL);
 			throw new IOException("Unexpected gitblit server pattern");
 		}
 	}
@@ -74,6 +75,7 @@ public class GitPublish
 	 */
 	public static void publish(File folderWithProject, String gitRepository, String gitUserName, char[] gitPassword, String tagToCreate) throws Exception
 	{
+		LOG.debug("Publishing '{}' to '{}' using tag '{}'", folderWithProject.getAbsolutePath(), gitRepository, tagToCreate);
 		String correctedURL = constructChangesetRepositoryURL(gitRepository);
 		createRepositoryIfNecessary(correctedURL, gitUserName, gitPassword);
 		SyncServiceGIT svc = new SyncServiceGIT();

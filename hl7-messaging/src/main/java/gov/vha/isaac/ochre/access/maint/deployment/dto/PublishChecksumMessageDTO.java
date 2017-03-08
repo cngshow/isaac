@@ -18,14 +18,13 @@
  */
 package gov.vha.isaac.ochre.access.maint.deployment.dto;
 
-public class PublishMessageDTO implements PublishMessage
+public class PublishChecksumMessageDTO implements PublishChecksumMessage
 {
 	private Site site;
 	private long messageId;
 	private String subset;
 	private String checksum;
 	private String version;
-	private SiteDiscovery siteDiscovery;
 	private String rawHL7Message;
 	
 	/**
@@ -34,7 +33,7 @@ public class PublishMessageDTO implements PublishMessage
 	 * @param site
 	 * @param messageId
 	 */
-	public PublishMessageDTO(long messageId, Site site, String subset) {
+	public PublishChecksumMessageDTO(long messageId, Site site, String subset) {
 		this.site = site;
 		this.messageId = messageId;
 		this.subset = subset;
@@ -71,12 +70,6 @@ public class PublishMessageDTO implements PublishMessage
 	}
 
 	@Override
-	public void setSiteDiscovery(SiteDiscovery siteDiscovery)
-	{
-		this.siteDiscovery = siteDiscovery;
-	}
-
-	@Override
 	public void setRawHL7Message(String rawMessage)
 	{
 		this.rawHL7Message = rawMessage;
@@ -90,11 +83,6 @@ public class PublishMessageDTO implements PublishMessage
 	public String getVersion()
 	{
 		return version;
-	}
-
-	public SiteDiscovery getSiteDiscovery()
-	{
-		return siteDiscovery;
 	}
 
 	public String getRawHL7Message()

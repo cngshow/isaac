@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/03/08 - 3.39
+    * Improved debugging code for chasing various issues in AITC.
+
 * 2017/03/02 - 3.38
     * update loader to allow the passing a a folder that contains ibdf files, rather than requiring specific lists.  part of jazz 468085
     * add nucc and cvx to prisme integrations.  jazz 469791, 469788

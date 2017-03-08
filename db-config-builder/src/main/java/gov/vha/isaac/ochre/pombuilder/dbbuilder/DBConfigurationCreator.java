@@ -20,7 +20,7 @@ package gov.vha.isaac.ochre.pombuilder.dbbuilder;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.UUID;
+import java.util.Arrays;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.maven.pom._4_0.Build;
@@ -36,7 +36,6 @@ import org.apache.maven.pom._4_0.Plugin;
 import org.apache.maven.pom._4_0.Plugin.Executions;
 import org.apache.maven.pom._4_0.PluginExecution;
 import org.apache.maven.pom._4_0.PluginExecution.Configuration;
-import org.apache.maven.pom._4_0.PluginExecution.Configuration.IbdfFiles;
 import org.apache.maven.pom._4_0.PluginExecution.Goals;
 import org.apache.maven.pom._4_0.Scm;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
@@ -77,6 +76,14 @@ public class DBConfigurationCreator
 	public static String createDBConfiguration(String name, String version, String description,  String resultClassifier, boolean classify, 
 			IBDFFile[] ibdfFiles, String metadataVersion, String gitRepositoryURL, String gitUsername, char[] gitPassword) throws Exception
 	{
+		LOG.info("Creating a db configuration name: {} version: {} description: {}, with a classifier: '{}' on '{}' and the classify flag set to {}", 
+				name, version, description, resultClassifier, gitRepositoryURL, classify);
+		
+		if (LOG.isDebugEnabled())
+		{
+			LOG.debug("metadataVersion: {}, IBDF Files: {}", metadataVersion, Arrays.toString(ibdfFiles));
+		}
+		
 		Model model = new Model();
 		
 		model.setModelVersion("4.0.0");

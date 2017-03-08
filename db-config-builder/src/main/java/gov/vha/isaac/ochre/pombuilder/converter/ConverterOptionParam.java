@@ -22,12 +22,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.concurrent.ForkJoinPool;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
@@ -45,6 +43,8 @@ import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 public class ConverterOptionParam
 {
 	public static final String MAVEN_FILE_TYPE = "options.json";
+	private static final Logger LOG = LogManager.getLogger();
+	
 	private String displayName;
 	private String internalName;
 	private String description;
@@ -86,6 +86,7 @@ public class ConverterOptionParam
 	 */
 	public static ConverterOptionParam[] fromArtifact(Converter artifact, String baseMavenUrl, String mavenUsername, String mavenPassword) throws Exception
 	{
+		LOG.debug("Trying to read 'options.json' for {} from '{}'", artifact, baseMavenUrl);
 		File tempFolder = File.createTempFile("jsonDownload", "");
 		tempFolder.delete();
 		tempFolder.mkdir();
@@ -100,6 +101,7 @@ public class ConverterOptionParam
 		File pomFile = dut.get();
 		if (!pomFile.exists())
 		{
+			LOG.debug("Throwing back an exception, as no pom was readable for the specified artifact");
 			throw new Exception("Failed to find the pom file for the specified project");
 		}
 		else
@@ -117,13 +119,21 @@ public class ConverterOptionParam
 			WorkExecutors.get().getExecutor().execute(dut);
 
 			File jsonFile = dut.get();
-			return fromFile(jsonFile);
+			ConverterOptionParam[] temp = fromFile(jsonFile);
+			if (LOG.isDebugEnabled())
+			{
+				LOG.debug("Found options: {}", Arrays.toString(temp));
+			}
+			else
+			{
+				LOG.info("Read {} options", temp.length);
+			}
+			return temp;
 		}
 		catch (Exception e)
 		{ 
 			//If we successfully downloaded the pom file, but failed here, just assume this file doesn't exist / isn't applicable to this converter.
-			LoggerFactory.getLogger(ConverterOptionParam.class)
-				.info("No config file found for converter " + artifact.getArtifactId());
+			LOG.info("No config file found for converter " + artifact.getArtifactId());
 			return new ConverterOptionParam[] {};
 		}
 	}
@@ -280,5 +290,12 @@ public class ConverterOptionParam
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "ConverterOptionParam [displayName=" + displayName + ", internalName=" + internalName + ", description=" + description + ", allowNoSelection="
+				+ allowNoSelection + ", allowMultiSelect=" + allowMultiSelect + ", suggestedPickListValues=" + Arrays.toString(suggestedPickListValues) + "]";
 	}
 }

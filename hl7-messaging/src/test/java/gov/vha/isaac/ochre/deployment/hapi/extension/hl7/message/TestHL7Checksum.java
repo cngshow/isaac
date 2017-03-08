@@ -26,7 +26,7 @@ import ca.uhn.hl7v2.model.Message;
 import ca.uhn.hl7v2.model.v24.message.MFR_M01;
 import ca.uhn.hl7v2.model.v24.segment.MSA;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessage;
-import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishMessageDTO;
+import gov.vha.isaac.ochre.access.maint.deployment.dto.PublishChecksumMessageDTO;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.Site;
 import gov.vha.isaac.ochre.access.maint.deployment.dto.SiteDTO;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -82,7 +82,7 @@ public class TestHL7Checksum
 			site.setType(getPropValue("test.site.type"));
 			site.setMessageType(getPropValue("test.site.message.type"));
 
-			PublishMessage publishMessage = new PublishMessageDTO(System.currentTimeMillis(), site, subset);
+			PublishMessage publishMessage = new PublishChecksumMessageDTO(System.currentTimeMillis(), site, subset);
 
 			HL7Sender sender = new HL7Sender(hl7Message, publishMessage, applicationProperties, messageProperties);
 			VistaRequestResponseHandler vrrh = new VistaRequestResponseHandler();

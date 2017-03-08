@@ -25,6 +25,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -35,6 +37,8 @@ import org.w3c.dom.Node;
  */
 public class VersionFinder
 {
+	private static final Logger LOG = LogManager.getLogger();
+			
 	public static String findProjectVersion()
 	{
 		try (InputStream is = VersionFinder.class.getResourceAsStream("/META-INF/maven/gov.vha.isaac.ochre.modules/db-config-builder/pom.xml");)
@@ -57,7 +61,9 @@ public class VersionFinder
 			}
 
 			XPath xPath = XPathFactory.newInstance().newXPath();
-			return ((Node) xPath.evaluate("/project/parent/version", dDoc, XPathConstants.NODE)).getTextContent();
+			String temp = ((Node) xPath.evaluate("/project/parent/version", dDoc, XPathConstants.NODE)).getTextContent();
+			LOG.debug("VersionFinder finds {} (for the version of this release of the converter library)", temp);
+			return temp;
 		}
 		catch (Exception e)
 		{

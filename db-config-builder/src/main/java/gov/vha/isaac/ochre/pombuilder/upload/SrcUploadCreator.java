@@ -21,13 +21,12 @@ package gov.vha.isaac.ochre.pombuilder.upload;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -73,10 +72,16 @@ public class SrcUploadCreator
 			String gitRepositoryURL, String gitUsername, char[] gitPassword,
 			String artifactRepositoryURL, String repositoryUsername, String repositoryPassword) throws Throwable
 	{
-		LOG.info("Building the task to create a source upload configuration...");
+		LOG.info("Building the task to create a source upload configuration for {}, version: {}, extensionName: {}, to git: {} and artifact server: {}", 
+				uploadType, version, extensionName, gitRepositoryURL, artifactRepositoryURL);
+		if (LOG.isDebugEnabled() && filesToUpload != null)
+		{
+			LOG.debug("Provided files []", Arrays.toString(filesToUpload.toArray(new File[filesToUpload.size()])));
+		}
 
 		if (filesToUpload == null || filesToUpload.size() == 0)
 		{
+			LOG.info("Throwing an exception because No content was found to upload");
 			throw new Exception("No content was found to upload!");
 		}
 		
@@ -90,11 +95,11 @@ public class SrcUploadCreator
 				{
 					File baseFolder = Files.createTempDirectory("src-upload").toFile();
 					
-					
 					//Otherwise, move forward.  Create our native-source folder, and move everything into it.
 					File nativeSource = new File(baseFolder, "native-source");
 					if (nativeSource.exists())
 					{
+						LOG.info("Task failing due to unexpected file in upload content '{}'", nativeSource);
 						throw new RuntimeException("Unexpected file found in upload content!");
 					}
 					nativeSource.mkdir();
@@ -108,6 +113,7 @@ public class SrcUploadCreator
 						}
 						else
 						{
+							LOG.info("Task failing due to unexpected directory in upload content: '{}'", f.getAbsolutePath());
 							throw new Exception("Unexpected directory found in upload content!  " + f.getAbsolutePath());
 						}
 					}
@@ -136,8 +142,15 @@ public class SrcUploadCreator
 					noticeAppend.append(uploadType.getNoticeInformation()[0]);  //only use the first notice info
 					
 					String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+					LOG.debug("Desired tag (withoutRevNumber): {}", tagWithoutRevNumber);
 					
 					ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
+					
+					if (LOG.isDebugEnabled())
+					{
+						LOG.debug("Currently Existing tags in '{}': {} ", gitRepositoryURL, Arrays.toString(existingTags.toArray(new String[existingTags.size()])));
+					}
+					
 					int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
 					
 					String tag;
@@ -156,6 +169,8 @@ public class SrcUploadCreator
 						}
 						tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
 					}
+					
+					LOG.info("Final calculated tag: '{}'", tag);
 
 					pomSwaps.put("#SCM_TAG#", tag);
 
@@ -169,6 +184,7 @@ public class SrcUploadCreator
 					GitPublish.publish(baseFolder, gitRepositoryURL, gitUsername, gitPassword, tag);
 					
 					updateTitle("Zipping content");
+					LOG.debug("Zipping content");
 					
 					Zip z = new Zip(pomSwaps.get("#ARTIFACTID#"), pomSwaps.get("#VERSION#"), null, null, new File(baseFolder, "target"), nativeSource, false);
 					
@@ -205,6 +221,7 @@ public class SrcUploadCreator
 					//This blocks till complete
 					File zipFile = z.addFiles(toZip);
 					
+					LOG.info("Zip complete, publishing to artifact repo {}", artifactRepositoryURL);
 					updateTitle("Publishing files to the Artifact Repository");
 					
 					MavenPublish pm = new MavenPublish(pomSwaps.get("#GROUPID#"), pomSwaps.get("#ARTIFACTID#"), pomSwaps.get("#VERSION#"), 
@@ -255,31 +272,5 @@ public class SrcUploadCreator
 		};
 		
 		return uploader;
-	}
-	
-	/**
-	 * A utility method to fetch a tasks result.  It assumes the task has been previously started.
-	 * @param task
-	 * @return the string returned by the task
-	 */
-	public static String fetchResult(Task<String> task) 
-	{
-		LOG.trace("In fetchResult");
-		
-		javafx.concurrent.Worker.State s = task.getState();
-		LOG.trace("Current state is " + s.toString());
-		if(s == javafx.concurrent.Worker.State.READY) {
-			//throw new IllegalStateException("The task has not been started.  Please start the task.");
-		}
-		String result = null;
-		try {
-			LOG.trace("Calling task.get");
-			result = task.get();
-			LOG.trace("task.get is done, result= " + result);
-		} catch (Exception e) {
-			result = e.getMessage();
-			LOG.error("Exception thrown during task.get", e);
-		} 
-		return result;
 	}
 }
