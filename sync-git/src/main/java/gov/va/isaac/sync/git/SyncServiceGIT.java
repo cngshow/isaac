@@ -1066,7 +1066,8 @@ public class SyncServiceGIT implements SyncFiles
 					log.debug("Push Result Messages: " + t.getMessages());
 					if (t.getRemoteUpdate("refs/tags/" + tagName).getStatus() != org.eclipse.jgit.transport.RemoteRefUpdate.Status.OK)
 					{
-						failures.append("Push Failed: " + t.getRemoteUpdate("refs/tags/" + tagName).getStatus().name());
+						failures.append("Push Failed: " + t.getRemoteUpdate("refs/tags/" + tagName).getStatus().name() 
+								+ " reason: " + t.getRemoteUpdate("refs/tags/" + tagName).getMessage());
 					}
 				}
 			});
