@@ -65,7 +65,8 @@ public class SrcUploadCreator
 	 * This should not point to a URL that represents a 'group' repository view.
 	 * @param repositoryUsername - The username to utilize to upload the artifact to the artifact server
 	 * @param repositoryPassword - The passwordto utilize to upload the artifact to the artifact server
-	 * @return - the task handle - which will return the tag that was created in the git repository upon completion.
+	 * @return - the task handle - which will return the tag that was created in the git repository upon completion.  Note that the task is NOT yet started, when 
+	 * it is returned.
 	 * @throws Throwable 
 	 */
 	public static Task<String> createSrcUploadConfiguration(SupportedConverterTypes uploadType, String version, String extensionName, List<File> filesToUpload, 
@@ -91,9 +92,10 @@ public class SrcUploadCreator
 			protected String call() throws Exception
 			{
 				updateMessage("Preparing");
+				File baseFolder = null;
 				try
 				{
-					File baseFolder = Files.createTempDirectory("src-upload").toFile();
+					baseFolder = Files.createTempDirectory("src-upload").toFile();
 					
 					//Otherwise, move forward.  Create our native-source folder, and move everything into it.
 					File nativeSource = new File(baseFolder, "native-source");
@@ -266,6 +268,17 @@ public class SrcUploadCreator
 				{
 					LOG.error("Unexpected error", e);
 					throw new RuntimeException(e);
+				}
+				finally
+				{
+					try
+					{
+						FileUtil.recursiveDelete(baseFolder);
+					}
+					catch (Exception e)
+					{
+						LOG.error("Problem cleaning up temp folder " + baseFolder, e);
+					}
 				}
 				
 			}
