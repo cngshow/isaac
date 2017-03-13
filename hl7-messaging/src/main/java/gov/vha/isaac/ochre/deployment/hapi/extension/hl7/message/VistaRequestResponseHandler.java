@@ -64,8 +64,6 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 		{
 			LOG.debug("No response was generated - left the wait loop with last calculated sleep time: " + sleepTime
 					+ " isRunning: " + LookupService.get().getService(HL7ResponseListener.class).isRunning());
-			
-			throw new RuntimeException("No response was received.");
 		}
 		return responseMessage_;
 	}

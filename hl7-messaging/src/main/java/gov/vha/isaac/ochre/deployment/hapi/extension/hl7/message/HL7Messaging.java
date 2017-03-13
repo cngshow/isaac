@@ -191,6 +191,7 @@ public class HL7Messaging
 
 						if (m == null) {
 							updateMessage("No response received");
+							throw new RuntimeException("No response received for messageId " + message.getMessageId());
 						} else {
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01) {
@@ -297,6 +298,7 @@ public class HL7Messaging
 
 						if (m == null) {
 							updateMessage("No response received");
+							throw new RuntimeException("No response received for messageId " + message.getMessageId());
 						} else {
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01) {
