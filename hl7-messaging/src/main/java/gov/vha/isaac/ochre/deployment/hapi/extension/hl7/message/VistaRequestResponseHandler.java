@@ -20,6 +20,7 @@ package gov.vha.isaac.ochre.deployment.hapi.extension.hl7.message;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import ca.uhn.hl7v2.model.Message;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.deployment.listener.HL7ResponseListener;
@@ -63,6 +64,8 @@ public class VistaRequestResponseHandler implements HL7ResponseReceiveListener
 		{
 			LOG.debug("No response was generated - left the wait loop with last calculated sleep time: " + sleepTime
 					+ " isRunning: " + LookupService.get().getService(HL7ResponseListener.class).isRunning());
+			
+			throw new RuntimeException("No response was received.");
 		}
 		return responseMessage_;
 	}
