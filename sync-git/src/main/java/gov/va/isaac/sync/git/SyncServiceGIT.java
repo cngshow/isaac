@@ -1073,6 +1073,7 @@ public class SyncServiceGIT implements SyncFiles
 			});
 			if (failures.length() > 0)
 			{
+				log.warn("Throwing IO Exception back to pushTag call because: " + failures.toString());
 				throw new IOException(failures.toString());
 			}
 		}

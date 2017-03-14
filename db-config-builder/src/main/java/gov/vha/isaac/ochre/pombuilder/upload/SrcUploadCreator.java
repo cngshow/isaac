@@ -146,6 +146,8 @@ public class SrcUploadCreator
 					String tagWithoutRevNumber = pomSwaps.get("#GROUPID#") + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
 					LOG.debug("Desired tag (withoutRevNumber): {}", tagWithoutRevNumber);
 					
+					//Lock over the time period where we are calculating the new tag
+					GitPublish.lock(gitRepositoryURL);
 					ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
 					
 					if (LOG.isDebugEnabled())
@@ -184,6 +186,7 @@ public class SrcUploadCreator
 					
 					updateTitle("Publishing configuration to Git");
 					GitPublish.publish(baseFolder, gitRepositoryURL, gitUsername, gitPassword, tag);
+					GitPublish.unlock(gitRepositoryURL);
 					
 					updateTitle("Zipping content");
 					LOG.debug("Zipping content");
@@ -271,6 +274,7 @@ public class SrcUploadCreator
 				}
 				finally
 				{
+					GitPublish.unlock(gitRepositoryURL);
 					try
 					{
 						FileUtil.recursiveDelete(baseFolder);

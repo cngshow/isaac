@@ -337,6 +337,9 @@ public class ContentConverterCreator
 			
 			LOG.debug("Generated tag (without rev number): '{}'", tagWithoutRevNumber);
 			
+			//Lock over the duration where we are determining what tag to use.
+			GitPublish.lock(gitRepositoryURL);
+			
 			ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
 			
 			if (LOG.isDebugEnabled())
@@ -381,6 +384,7 @@ public class ContentConverterCreator
 		}
 		finally
 		{
+			GitPublish.unlock(gitRepositoryURL);
 			try
 			{
 				FileUtil.recursiveDelete(f);
