@@ -79,7 +79,7 @@ public class SiteDiscoveryDTO implements SiteDiscovery
 		sb.append("headers: ").append(String.join(", ", headers)).append(";\n");
 		
 		for(ArrayList<String> group : values) {
-			sb.append("values: ").append(String.join(", ", group)).append(";\n");
+			sb.append("values: ").append("\"").append(String.join("\", \"", group)).append("\";\n");
 		}
 		
 		return sb.toString();

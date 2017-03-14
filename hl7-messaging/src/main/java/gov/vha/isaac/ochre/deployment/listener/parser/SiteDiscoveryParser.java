@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.deployment.listener.parser;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,14 +61,14 @@ public class SiteDiscoveryParser
 		String lastSection = "";
 		String lastZRTKey = "";
 		ArrayList<String> headers = new ArrayList<String>();
-		
+
 		ArrayList<ArrayList<String>> values = new ArrayList<ArrayList<String>>();
 
 		headers.add("VUID");
-		//get columns headers
-		while((line = br.readLine()) != null) {
-			//if line begins with ZRT add header to list if not already there
-			if (line.startsWith(ZRT_SEGMENT))  {
+		// get columns headers
+		while ((line = br.readLine()) != null) {
+			// if line begins with ZRT add header to list if not already there
+			if (line.startsWith(ZRT_SEGMENT)) {
 				String[] lineItems = line.split("\\^");
 				makeSubstitutions(lineItems);
 				if (!headers.contains(lineItems[1].toString().trim())) {
@@ -75,11 +76,11 @@ public class SiteDiscoveryParser
 				}
 			}
 		}
-		
+
 		line = null;
-		ArrayList<String> groupValues = new ArrayList<String>(headers.size());
+		String groupValues[] = new String[headers.size()];
 		br = new BufferedReader(new StringReader(message.toString()));
-		
+
 		while ((line = br.readLine()) != null) {
 			String[] lineItems = line.split("\\^");
 			makeSubstitutions(lineItems);
@@ -93,44 +94,27 @@ public class SiteDiscoveryParser
 			}
 
 			else if (line.startsWith(MFE_SEGMENT)) {
-				// add headers on first pass
-				if (firstPass) {
-					if (ZRT_SEGMENT.equals(lastSection)) {
-						firstPass = false;
-						values.add(groupValues);
-						groupValues = new ArrayList<>(headers.size());
-						//seed row with nulls
-						for (int i = 0; i < headers.size(); i++)
-						{
-							groupValues.add(null);
-						}
-					}
+				if (ZRT_SEGMENT.equals(lastSection)) {
+					values.add(new ArrayList<String>(Arrays.asList(groupValues)));
+					groupValues = new String[headers.size()];
 				} else {
 					siteDiscovery.setRefset(lineItems[4].split("\\@")[0]);
-					values.add(groupValues);
-					groupValues = new ArrayList<>(headers.size());
-					for (int i = 0; i < headers.size(); i++) {
-						groupValues.add(null);
-					}
 				}
 				if (lineItems.length > 3 & lineItems[4].contains("@")) {
-					groupValues.add(headers.indexOf("VUID"), lineItems[4].split("\\@")[1]);
-				} 
+					groupValues[headers.indexOf("VUID")] = lineItems[4].split("\\@")[1];
+				}
 				lastSection = MFE_SEGMENT;
 				lastZRTKey = "";
 			}
 
 			else if (line.startsWith(ZRT_SEGMENT)) {
-				
-				if (lastZRTKey.equals(lineItems[1].toString())) {
-					groupValues.set(
-						headers.indexOf(lineItems[1]), 
-						groupValues.get(headers.indexOf(lineItems[1])) +"|" +  (lineItems.length > 2 ? lineItems[2] : null));
-				}
-				else {
-					groupValues.add(
-							headers.indexOf(lineItems[1]), 
-							lineItems.length > 2 ? lineItems[2] : null);
+				if (lineItems.length > 2) {
+					if (groupValues[headers.indexOf(lineItems[1])] != null) {
+						groupValues[headers.indexOf(lineItems[1])] = groupValues[headers.indexOf(lineItems[1])] + "|"
+								+ lineItems[2];
+					} else {
+						groupValues[headers.indexOf(lineItems[1])] = lineItems[2];
+					}
 				}
 
 				lastSection = ZRT_SEGMENT;
@@ -139,7 +123,7 @@ public class SiteDiscoveryParser
 
 		}
 		// add final group
-		values.add(groupValues);
+		values.add(new ArrayList<String>(Arrays.asList(groupValues)));
 
 		siteDiscovery.setHeaders(headers);
 		siteDiscovery.setValues(values);
