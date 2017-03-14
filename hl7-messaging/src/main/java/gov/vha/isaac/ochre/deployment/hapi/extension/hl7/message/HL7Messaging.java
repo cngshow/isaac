@@ -220,6 +220,8 @@ public class HL7Messaging
 						LOG.error(msg);
 						updateMessage("Unexpected internal error");
 						throw new Exception(msg);
+					} catch (RuntimeException e ) {
+						throw e;	
 					} catch (Throwable e) {
 						LOG.error("Unexpected error", e);
 						updateMessage("Unexpected internal error");
@@ -317,6 +319,8 @@ public class HL7Messaging
 						LOG.error(msg);
 						updateMessage("Unexpected internal error");
 						throw new RuntimeException(msg);
+					} catch (RuntimeException e ) {
+						throw e;					
 					} catch (Throwable e) {
 						LOG.error("Unexpected error", e);
 						updateMessage("Unexpected internal error");

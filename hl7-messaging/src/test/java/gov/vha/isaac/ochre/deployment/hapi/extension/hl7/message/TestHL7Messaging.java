@@ -165,7 +165,7 @@ public class TestHL7Messaging
 
 	}
 
-	// @Test // (expected = Exception.class)
+	@Test (expected = Exception.class)
 	public void testSendChecksumMessageNoSite() throws Throwable {
 		// 2. Fail if no site.
 		LOG.info("2. Fail if no site.");
@@ -267,7 +267,7 @@ public class TestHL7Messaging
 
 	}
 
-	// @Test // (expected = Exception.class)
+	@Test (expected = Exception.class)
 	public void testSendSiteDataMessageNoSite() throws Throwable {
 		// 2. Fail if no site.
 		LOG.info("2. Fail if no site.");
