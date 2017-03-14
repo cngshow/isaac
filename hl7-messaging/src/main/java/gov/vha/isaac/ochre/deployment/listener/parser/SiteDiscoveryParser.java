@@ -58,10 +58,28 @@ public class SiteDiscoveryParser
 		String line;
 		boolean firstPass = true;
 		String lastSection = "";
+		String lastZRTKey = "";
 		ArrayList<String> headers = new ArrayList<String>();
-		ArrayList<String> groupValues = new ArrayList<String>();
+		
 		ArrayList<ArrayList<String>> values = new ArrayList<ArrayList<String>>();
 
+		headers.add("VUID");
+		//get columns headers
+		while((line = br.readLine()) != null) {
+			//if line begins with ZRT add header to list if not already there
+			if (line.startsWith(ZRT_SEGMENT))  {
+				String[] lineItems = line.split("\\^");
+				makeSubstitutions(lineItems);
+				if (!headers.contains(lineItems[1].toString().trim())) {
+					headers.add(lineItems[1].toString().trim());
+				}
+			}
+		}
+		
+		line = null;
+		ArrayList<String> groupValues = new ArrayList<String>(headers.size());
+		br = new BufferedReader(new StringReader(message.toString()));
+		
 		while ((line = br.readLine()) != null) {
 			String[] lineItems = line.split("\\^");
 			makeSubstitutions(lineItems);
@@ -71,40 +89,52 @@ public class SiteDiscoveryParser
 					throw new Exception("MSH segment parameter has {} items.  It needs to have more than 9.");
 				}
 				lastSection = MSH_SEGMENT;
+				lastZRTKey = "";
 			}
 
 			else if (line.startsWith(MFE_SEGMENT)) {
 				// add headers on first pass
 				if (firstPass) {
-					if (!ZRT_SEGMENT.equals(lastSection)) {
-						headers.add(VUID);
-					}
 					if (ZRT_SEGMENT.equals(lastSection)) {
 						firstPass = false;
 						values.add(groupValues);
-						groupValues = new ArrayList<>();
+						groupValues = new ArrayList<>(headers.size());
+						//seed row with nulls
+						for (int i = 0; i < headers.size(); i++)
+						{
+							groupValues.add(null);
+						}
 					}
 				} else {
 					siteDiscovery.setRefset(lineItems[4].split("\\@")[0]);
 					values.add(groupValues);
-					groupValues = new ArrayList<>();
+					groupValues = new ArrayList<>(headers.size());
+					for (int i = 0; i < headers.size(); i++) {
+						groupValues.add(null);
+					}
 				}
 				if (lineItems.length > 3 & lineItems[4].contains("@")) {
-					groupValues.add(lineItems[4].split("\\@")[1]);
-				} else {
-					groupValues.add(null);
-				}
+					groupValues.add(headers.indexOf("VUID"), lineItems[4].split("\\@")[1]);
+				} 
 				lastSection = MFE_SEGMENT;
+				lastZRTKey = "";
 			}
 
 			else if (line.startsWith(ZRT_SEGMENT)) {
-				if (firstPass) {
-					if (lineItems.length >= 3) {
-						headers.add(lineItems[1]);
-					}
+				
+				if (lastZRTKey.equals(lineItems[1].toString())) {
+					groupValues.set(
+						headers.indexOf(lineItems[1]), 
+						groupValues.get(headers.indexOf(lineItems[1])) +"|" +  (lineItems.length > 2 ? lineItems[2] : null));
 				}
-				groupValues.add(lineItems.length > 2 ? lineItems[2] : null);
+				else {
+					groupValues.add(
+							headers.indexOf(lineItems[1]), 
+							lineItems.length > 2 ? lineItems[2] : null);
+				}
+
 				lastSection = ZRT_SEGMENT;
+				lastZRTKey = lineItems[1].toString();
 			}
 
 		}
