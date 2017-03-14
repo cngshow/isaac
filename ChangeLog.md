@@ -7,6 +7,7 @@ where provided, and the git commit history.
     * prevent duplicate tag push / push failure issue with source upload and content converter creator by locking on the repo.  Note, this simplistic 
         solution only works if we assume that this PRISME instace is the only instance using a particular changeset config repo (which should be
         the case in our VA deployments) Jazz 479051
+    * Add missing documentation to CPT upload dialog to correct Jazz 476865
 
 * 2017/03/08 - 3.39
     * Improved debugging code for chasing various issues in AITC.
