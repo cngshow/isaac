@@ -3,6 +3,14 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/03/15 - 3.40
+    * prevent duplicate tag push / push failure issue with source upload and content converter creator by locking on the repo.  Note, this simplistic 
+        solution only works if we assume that this PRISME instace is the only instance using a particular changeset config repo (which should be
+        the case in our VA deployments) Jazz 479051
+    * Add missing documentation to CPT upload dialog to correct Jazz 476865
+    * Fix issues with missing temp folder cleanup after git operations
+    * Fix various parsing / alignment bugs with HL7 message parsing / processing
+
 * 2017/03/08 - 3.39
     * Improved debugging code for chasing various issues in AITC.
 

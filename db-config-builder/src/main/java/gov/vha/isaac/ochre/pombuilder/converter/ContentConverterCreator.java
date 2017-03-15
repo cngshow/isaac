@@ -131,258 +131,269 @@ public class ContentConverterCreator
 		LOG.debug("Creating a content converter for '{}' with converter version '{}' on the server '{}'", sourceContent, converterVersion, gitRepositoryURL);
 		File f = Files.createTempDirectory("converter-builder").toFile();
 		
-		Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
-		SupportedConverterTypes conversionType = artifactInfo.getKey();
-		String extensionSuffix = artifactInfo.getValue();
-		
-		StringBuilder extraProperties = new StringBuilder();
-		
-		FileUtil.writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
-		FileUtil.writeFile("shared", "LICENSE.txt", f, new HashMap<>(), "");
-		
-		StringBuffer noticeAppend = new StringBuffer();
-		HashMap<String, String> pomSwaps = new HashMap<>();
-		
-		pomSwaps.put("#VERSION#", sourceContent.getVersion() + "-loader-" + converterVersion);
-		
-		pomSwaps.put("#NAME#", conversionType.getNiceName() + " Artifact Converter");
-		
-		pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
-		pomSwaps.put("#LOADER_VERSION#", converterVersion);
-		
-		pomSwaps.put("#SCM_URL#", GitPublish.constructChangesetRepositoryURL(gitRepositoryURL));
-		
-		String temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
-		temp = temp.replace("#GROUPID#", sourceContent.getGroupId());
-		temp = temp.replace("#ARTIFACTID#", sourceContent.getArtifactId());
-		temp = temp.replace("#VERSION#", sourceContent.getVersion());
-		
-		StringBuilder fetches = new StringBuilder(temp);
-		
-		for (SDOSourceContent ac : additionalSourceDependencies)
+		try
 		{
-			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
-			temp = temp.replace("#GROUPID#", ac.getGroupId());
-			temp = temp.replace("#ARTIFACTID#", ac.getArtifactId());
-			temp = temp.replace("#VERSION#", ac.getVersion());
-			fetches.append(temp);
-			extraProperties.append("<" + ac.getArtifactId() + ".version>" + ac.getVersion() + "</" + ac.getArtifactId() + ".version>\n");
-		}
-		
-		pomSwaps.put("#FETCH_EXECUTION#", fetches.toString());
-
-		StringBuilder dependencies = new StringBuilder();
-		StringBuilder unpackArtifacts = new StringBuilder();
-		String unpackDependencies = "";
-		if (additionalIBDFDependencies.length > 0)
-		{
-			unpackDependencies = FileUtil.readFile("converterProjectTemplate/pomSnippits/unpackDependency.xml");
-			for (IBDFFile ibdf : additionalIBDFDependencies)
+			Pair<SupportedConverterTypes, String> artifactInfo = getConverterType(sourceContent.getArtifactId());
+			SupportedConverterTypes conversionType = artifactInfo.getKey();
+			String extensionSuffix = artifactInfo.getValue();
+			
+			StringBuilder extraProperties = new StringBuilder();
+			
+			FileUtil.writeFile("converterProjectTemplate", "src/assembly/MANIFEST.MF", f, new HashMap<>(), "");
+			FileUtil.writeFile("shared", "LICENSE.txt", f, new HashMap<>(), "");
+			
+			StringBuffer noticeAppend = new StringBuffer();
+			HashMap<String, String> pomSwaps = new HashMap<>();
+			
+			pomSwaps.put("#VERSION#", sourceContent.getVersion() + "-loader-" + converterVersion);
+			
+			pomSwaps.put("#NAME#", conversionType.getNiceName() + " Artifact Converter");
+			
+			pomSwaps.put("#SOURCE_DATA_VERSION#", sourceContent.getVersion());
+			pomSwaps.put("#LOADER_VERSION#", converterVersion);
+			
+			pomSwaps.put("#SCM_URL#", GitPublish.constructChangesetRepositoryURL(gitRepositoryURL));
+			
+			String temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
+			temp = temp.replace("#GROUPID#", sourceContent.getGroupId());
+			temp = temp.replace("#ARTIFACTID#", sourceContent.getArtifactId());
+			temp = temp.replace("#VERSION#", sourceContent.getVersion());
+			
+			StringBuilder fetches = new StringBuilder(temp);
+			
+			for (SDOSourceContent ac : additionalSourceDependencies)
 			{
-				temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
-				temp = temp.replace("#GROUPID#", ibdf.getGroupId());
-				temp = temp.replace("#ARTIFACTID#", ibdf.getArtifactId());
-				temp = temp.replace("#CLASSIFIER#", (ibdf.hasClassifier() ? ibdf.getClassifier() : ""));
-				temp = temp.replace("#VERSION#", ibdf.getVersion());
-				dependencies.append(temp);
-				unpackArtifacts.append(ibdf.getArtifactId());
-				unpackArtifacts.append(",");
+				temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/fetchExecution.xml");
+				temp = temp.replace("#GROUPID#", ac.getGroupId());
+				temp = temp.replace("#ARTIFACTID#", ac.getArtifactId());
+				temp = temp.replace("#VERSION#", ac.getVersion());
+				fetches.append(temp);
+				extraProperties.append("<" + ac.getArtifactId() + ".version>" + ac.getVersion() + "</" + ac.getArtifactId() + ".version>\n");
 			}
-			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
-			temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
-			temp = temp.replace("#ARTIFACTID#", "ochre-metadata");
-			temp = temp.replace("#CLASSIFIER#", "all");
-			temp = temp.replace("#VERSION#", VersionFinder.findProjectVersion());
-			dependencies.append(temp);
-			unpackArtifacts.append("ochre-metadata");
-			unpackDependencies = unpackDependencies.replace("#UNPACK_ARTIFACTS#", unpackArtifacts.toString());
-		}
-		
-		pomSwaps.put("#IBDF_DEPENDENCY#", dependencies.toString());
-		
-		pomSwaps.put("#UNPACK_DEPENDENCIES#", unpackDependencies);
-		
-		String goal = conversionType.getConverterMojoName();
-		
-		pomSwaps.put("#LOADER_ARTIFACT#", conversionType.getConverterArtifactId());
-		pomSwaps.put("#ARTIFACTID#", conversionType.getConverterOutputArtifactId() + extensionSuffix);
-		StringBuffer licenseInfo = new StringBuffer();
-		for (String s : conversionType.getLicenseInformation())
-		{
-			licenseInfo.append(s);
-		}
-		pomSwaps.put("#LICENSE#", licenseInfo.toString());
-		for (String s : conversionType.getNoticeInformation())
-		{
-			noticeAppend.append(s);
-		}
-		
-		StringBuilder userOptions = new StringBuilder();
-		if (converterOptionValues != null)
-		{
-			String optionIndent = "									";
-			for (Entry<ConverterOptionParam, Set<String>> option : converterOptionValues.entrySet())
+			
+			pomSwaps.put("#FETCH_EXECUTION#", fetches.toString());
+	
+			StringBuilder dependencies = new StringBuilder();
+			StringBuilder unpackArtifacts = new StringBuilder();
+			String unpackDependencies = "";
+			if (additionalIBDFDependencies.length > 0)
 			{
-				if (option.getValue() != null)
+				unpackDependencies = FileUtil.readFile("converterProjectTemplate/pomSnippits/unpackDependency.xml");
+				for (IBDFFile ibdf : additionalIBDFDependencies)
 				{
-					if (!option.getKey().isAllowMultiSelect() && option.getValue().size() > 1)
+					temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
+					temp = temp.replace("#GROUPID#", ibdf.getGroupId());
+					temp = temp.replace("#ARTIFACTID#", ibdf.getArtifactId());
+					temp = temp.replace("#CLASSIFIER#", (ibdf.hasClassifier() ? ibdf.getClassifier() : ""));
+					temp = temp.replace("#VERSION#", ibdf.getVersion());
+					dependencies.append(temp);
+					unpackArtifacts.append(ibdf.getArtifactId());
+					unpackArtifacts.append(",");
+				}
+				temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/ibdfDependency.xml");
+				temp = temp.replace("#GROUPID#", "gov.vha.isaac.ochre.modules");
+				temp = temp.replace("#ARTIFACTID#", "ochre-metadata");
+				temp = temp.replace("#CLASSIFIER#", "all");
+				temp = temp.replace("#VERSION#", VersionFinder.findProjectVersion());
+				dependencies.append(temp);
+				unpackArtifacts.append("ochre-metadata");
+				unpackDependencies = unpackDependencies.replace("#UNPACK_ARTIFACTS#", unpackArtifacts.toString());
+			}
+			
+			pomSwaps.put("#IBDF_DEPENDENCY#", dependencies.toString());
+			
+			pomSwaps.put("#UNPACK_DEPENDENCIES#", unpackDependencies);
+			
+			String goal = conversionType.getConverterMojoName();
+			
+			pomSwaps.put("#LOADER_ARTIFACT#", conversionType.getConverterArtifactId());
+			pomSwaps.put("#ARTIFACTID#", conversionType.getConverterOutputArtifactId() + extensionSuffix);
+			StringBuffer licenseInfo = new StringBuffer();
+			for (String s : conversionType.getLicenseInformation())
+			{
+				licenseInfo.append(s);
+			}
+			pomSwaps.put("#LICENSE#", licenseInfo.toString());
+			for (String s : conversionType.getNoticeInformation())
+			{
+				noticeAppend.append(s);
+			}
+			
+			StringBuilder userOptions = new StringBuilder();
+			if (converterOptionValues != null)
+			{
+				String optionIndent = "									";
+				for (Entry<ConverterOptionParam, Set<String>> option : converterOptionValues.entrySet())
+				{
+					if (option.getValue() != null)
 					{
-						LOG.info("Throwing exception back because the option " + option.getKey().getDisplayName() + " allows at most, one value");
-						throw new Exception("The option " + option.getKey().getDisplayName() + " allows at most, one value");
-					}
-					if (!option.getKey().isAllowNoSelection() && option.getValue().size() == 0)
-					{
-						LOG.info("Throwing exception back because This option " + option.getKey().getDisplayName() + " requires a value");
-						throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
-					}
-					if (option.getValue().size() > 0)
-					{
-						if (option.getKey().isAllowMultiSelect())
+						if (!option.getKey().isAllowMultiSelect() && option.getValue().size() > 1)
 						{
-							userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + "s>\n");
-							for (String value : option.getValue())
+							LOG.info("Throwing exception back because the option " + option.getKey().getDisplayName() + " allows at most, one value");
+							throw new Exception("The option " + option.getKey().getDisplayName() + " allows at most, one value");
+						}
+						if (!option.getKey().isAllowNoSelection() && option.getValue().size() == 0)
+						{
+							LOG.info("Throwing exception back because This option " + option.getKey().getDisplayName() + " requires a value");
+							throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
+						}
+						if (option.getValue().size() > 0)
+						{
+							if (option.getKey().isAllowMultiSelect())
 							{
-								userOptions.append(optionIndent + "\t<" + option.getKey().getInternalName() + ">");
+								userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + "s>\n");
+								for (String value : option.getValue())
+								{
+									userOptions.append(optionIndent + "\t<" + option.getKey().getInternalName() + ">");
+									if (UUIDUtil.isUUID(value))
+									{
+										userOptions.append("\n");
+										userOptions.append(optionIndent + "\t\t<description></description>\n");  //Its ok not to populate this
+										userOptions.append(optionIndent + "\t\t<uuid>" + value + "</uuid>\n");
+										userOptions.append(optionIndent + "\t");
+									}
+									else
+									{
+										userOptions.append(value);
+									}
+									userOptions.append("</" + option.getKey().getInternalName() + ">\n");
+								}
+								userOptions.append(optionIndent + "</" + option.getKey().getInternalName() + "s>");
+							}
+							else
+							{
+								String value = option.getValue().iterator().next();
+								userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + ">");
 								if (UUIDUtil.isUUID(value))
 								{
 									userOptions.append("\n");
-									userOptions.append(optionIndent + "\t\t<description></description>\n");  //Its ok not to populate this
-									userOptions.append(optionIndent + "\t\t<uuid>" + value + "</uuid>\n");
-									userOptions.append(optionIndent + "\t");
+									userOptions.append(optionIndent + "\t<description></description>\n");  //Its ok not to populate this
+									userOptions.append(optionIndent + "\t<uuid>" + value + "</uuid>\n");
+									userOptions.append(optionIndent);
 								}
 								else
 								{
 									userOptions.append(value);
 								}
-								userOptions.append("</" + option.getKey().getInternalName() + ">\n");
+								userOptions.append("</" + option.getKey().getInternalName() + ">");
 							}
-							userOptions.append(optionIndent + "</" + option.getKey().getInternalName() + "s>");
-						}
-						else
-						{
-							String value = option.getValue().iterator().next();
-							userOptions.append(optionIndent + "<" + option.getKey().getInternalName() + ">");
-							if (UUIDUtil.isUUID(value))
-							{
-								userOptions.append("\n");
-								userOptions.append(optionIndent + "\t<description></description>\n");  //Its ok not to populate this
-								userOptions.append(optionIndent + "\t<uuid>" + value + "</uuid>\n");
-								userOptions.append(optionIndent);
-							}
-							else
-							{
-								userOptions.append(value);
-							}
-							userOptions.append("</" + option.getKey().getInternalName() + ">");
 						}
 					}
+					else if (!option.getKey().isAllowNoSelection())
+					{
+						LOG.info("Throwing exception back because this option " + option.getKey().getDisplayName() + " requires a value");
+						throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
+					}
 				}
-				else if (!option.getKey().isAllowNoSelection())
+			}
+	
+			StringBuilder profiles = new StringBuilder();
+			String[] classifiers = new String[] {};
+			switch(conversionType)
+			{
+				case SCT: case SCT_EXTENSION:
+					classifiers = new String[] {"Snapshot", "Delta", "Full"};
+					break;
+				default :
+					classifiers = new String[] {""};
+					break;
+				
+			}
+			for (String classifier : classifiers)
+			{
+				temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/profile.xml");
+				temp = temp.replaceAll("#CLASSIFIER#", classifier);
+				temp = temp.replaceAll("#CONVERTER#", conversionType.getConverterArtifactId());
+				temp = temp.replaceAll("#CONVERTER_VERSION#", converterVersion);
+				temp = temp.replaceAll("#GOAL#", goal);
+				temp = temp.replaceAll("#USER_CONFIGURATION_OPTIONS#", userOptions.toString());
+				profiles.append(temp);
+				
+				String assemblyInfo = FileUtil.readFile("converterProjectTemplate/src/assembly/assembly.xml");
+				StringBuilder assemblySnippits = new StringBuilder();
+				for (String classifier2 : classifiers)
 				{
-					LOG.info("Throwing exception back because this option " + option.getKey().getDisplayName() + " requires a value");
-					throw new Exception("This option " + option.getKey().getDisplayName() + " requires a value");
+					String assemblyRef = FileUtil.readFile("converterProjectTemplate/src/assembly/assemblySnippits/assemblyRef.xml");
+					assemblyRef = assemblyRef.replace("#ASSEMBLY#", "assembly-" + classifier2 + ".xml");
+					assemblySnippits.append(assemblyRef);
 				}
+				assemblyInfo = assemblyInfo.replace("#ASSEMBLY_FILES#", assemblySnippits.toString());
+				if (classifier.length() == 0)
+				{
+					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
+				}
+				else
+				{
+					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier + "*");
+				}
+				File assemblyFile = new File(f, "src/assembly/assembly-" + classifier + ".xml");
+				assemblyFile.getParentFile().mkdirs();
+				Files.write(assemblyFile.toPath(), assemblyInfo.getBytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 			}
-		}
-
-		StringBuilder profiles = new StringBuilder();
-		String[] classifiers = new String[] {};
-		switch(conversionType)
-		{
-			case SCT: case SCT_EXTENSION:
-				classifiers = new String[] {"Snapshot", "Delta", "Full"};
-				break;
-			default :
-				classifiers = new String[] {""};
-				break;
 			
-		}
-		for (String classifier : classifiers)
-		{
-			temp = FileUtil.readFile("converterProjectTemplate/pomSnippits/profile.xml");
-			temp = temp.replaceAll("#CLASSIFIER#", classifier);
-			temp = temp.replaceAll("#CONVERTER#", conversionType.getConverterArtifactId());
-			temp = temp.replaceAll("#CONVERTER_VERSION#", converterVersion);
-			temp = temp.replaceAll("#GOAL#", goal);
-			temp = temp.replaceAll("#USER_CONFIGURATION_OPTIONS#", userOptions.toString());
-			profiles.append(temp);
+			pomSwaps.put("#PROFILE#", profiles.toString());
 			
-			String assemblyInfo = FileUtil.readFile("converterProjectTemplate/src/assembly/assembly.xml");
-			StringBuilder assemblySnippits = new StringBuilder();
-			for (String classifier2 : classifiers)
+			String tagWithoutRevNumber = "gov.vha.isaac.terminology.converted" + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
+			
+			LOG.debug("Generated tag (without rev number): '{}'", tagWithoutRevNumber);
+			
+			//Lock over the duration where we are determining what tag to use.
+			GitPublish.lock(gitRepositoryURL);
+			
+			ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
+			
+			if (LOG.isDebugEnabled())
 			{
-				String assemblyRef = FileUtil.readFile("converterProjectTemplate/src/assembly/assemblySnippits/assemblyRef.xml");
-				assemblyRef = assemblyRef.replace("#ASSEMBLY#", "assembly-" + classifier2 + ".xml");
-				assemblySnippits.append(assemblyRef);
+				LOG.debug("Currently Existing tags in '{}': {} ", gitRepositoryURL, Arrays.toString(existingTags.toArray(new String[existingTags.size()])));
 			}
-			assemblyInfo = assemblyInfo.replace("#ASSEMBLY_FILES#", assemblySnippits.toString());
-			if (classifier.length() == 0)
+			
+			int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
+			
+			String tag;
+			//Fix version number
+			if (highestBuildRevision == -1)
 			{
-				assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
+				//No tag at all - create without rev number, don't need to change our pomSwaps
+				tag = tagWithoutRevNumber;
 			}
 			else
 			{
-				assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier + "*");
+				//If we are a SNAPSHOT, don't embed a build number, because nexus won't allow the upload, otherwise, embed a rev number
+				if (!pomSwaps.get("#VERSION#").endsWith("SNAPSHOT"))
+				{
+					pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+				}
+				tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
 			}
-			File assemblyFile = new File(f, "src/assembly/assembly-" + classifier + ".xml");
-			assemblyFile.getParentFile().mkdirs();
-			Files.write(assemblyFile.toPath(), assemblyInfo.getBytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-		}
-		
-		pomSwaps.put("#PROFILE#", profiles.toString());
-		
-		String tagWithoutRevNumber = "gov.vha.isaac.terminology.converted" + "/" + pomSwaps.get("#ARTIFACTID#") + "/" + pomSwaps.get("#VERSION#");
-		
-		LOG.debug("Generated tag (without rev number): '{}'", tagWithoutRevNumber);
-		
-		ArrayList<String> existingTags = GitPublish.readTags(gitRepositoryURL, gitUsername, gitPassword);
-		
-		if (LOG.isDebugEnabled())
-		{
-			LOG.debug("Currently Existing tags in '{}': {} ", gitRepositoryURL, Arrays.toString(existingTags.toArray(new String[existingTags.size()])));
-		}
-		
-		int highestBuildRevision = GitPublish.readHighestRevisionNumber(existingTags, tagWithoutRevNumber);
-		
-		String tag;
-		//Fix version number
-		if (highestBuildRevision == -1)
-		{
-			//No tag at all - create without rev number, don't need to change our pomSwaps
-			tag = tagWithoutRevNumber;
-		}
-		else
-		{
-			//If we are a SNAPSHOT, don't embed a build number, because nexus won't allow the upload, otherwise, embed a rev number
-			if (!pomSwaps.get("#VERSION#").endsWith("SNAPSHOT"))
+			
+			LOG.info("Final calculated tag: '{}'", tag);
+			
+			pomSwaps.put("#SCM_TAG#", tag);
+			if (extraProperties.length() > 0)
 			{
-				pomSwaps.put("#VERSION#", pomSwaps.get("#VERSION#") + "-" + (highestBuildRevision + 1));
+				extraProperties.setLength(extraProperties.length() - 1);
 			}
-			tag = tagWithoutRevNumber + "-" + (highestBuildRevision + 1);
+			pomSwaps.put("#EXTRA_PROPERTIES#", extraProperties.toString());
+			
+			FileUtil.writeFile("shared", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
+			FileUtil.writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
+			
+			GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
+			
+			return tag;
 		}
-		
-		LOG.info("Final calculated tag: '{}'", tag);
-		
-		pomSwaps.put("#SCM_TAG#", tag);
-		if (extraProperties.length() > 0)
+		finally
 		{
-			extraProperties.setLength(extraProperties.length() - 1);
+			GitPublish.unlock(gitRepositoryURL);
+			try
+			{
+				FileUtil.recursiveDelete(f);
+			}
+			catch (Exception e)
+			{
+				LOG.error("Problem cleaning up temp folder " + f, e);
+			}
 		}
-		pomSwaps.put("#EXTRA_PROPERTIES#", extraProperties.toString());
-		
-		FileUtil.writeFile("shared", "NOTICE.txt", f, new HashMap<>(), noticeAppend.toString());
-		FileUtil.writeFile("converterProjectTemplate", "pom.xml", f, pomSwaps, "");
-		
-		GitPublish.publish(f, gitRepositoryURL, gitUsername, gitPassword, tag);
-		try
-		{
-			FileUtil.recursiveDelete(f);
-		}
-		catch (Exception e)
-		{
-			LOG.error("Problem cleaning up temp folder " + f, e);
-		}
-		return tag;
 	}
 
 	/**

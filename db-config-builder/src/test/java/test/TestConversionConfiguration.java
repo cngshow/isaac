@@ -10,6 +10,7 @@ import gov.vha.isaac.ochre.pombuilder.artifacts.IBDFFile;
 import gov.vha.isaac.ochre.pombuilder.artifacts.SDOSourceContent;
 import gov.vha.isaac.ochre.pombuilder.converter.ContentConverterCreator;
 import gov.vha.isaac.ochre.pombuilder.converter.ConverterOptionParam;
+import javafx.application.Platform;
 
 public class TestConversionConfiguration
 {
@@ -48,7 +49,7 @@ public class TestConversionConfiguration
 		
 		//sct-us-ext
 		
-		ConverterOptionParam[] optionTypes = ContentConverterCreator.getConverterOptions(new Converter("gov.vha.isaac.terminology.converters", "rf2-mojo", "3.3-SNAPSHOT"), 
+		ConverterOptionParam[] optionTypes = ContentConverterCreator.getConverterOptions(new Converter("gov.vha.isaac.terminology.converters", "rf2-mojo", "3.7-SNAPSHOT"), 
 				nexusUrl, nexusUsername, nexusPassword);
 		
 		HashMap<ConverterOptionParam, Set<String>> options = new HashMap<>();
@@ -60,11 +61,35 @@ public class TestConversionConfiguration
 			}
 		}
 		
-		System.out.println(ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "20150301"), 
+		Platform.runLater(() ->
+		{
+			try
+			{
+				System.out.println(ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "aabbCcdd"), 
+						"3.3-SNAPSHOT", 
+						new SDOSourceContent[0], 
+						new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.3-SNAPSHOT", "Snapshot")},
+							options, gitTestURL, gitUsername, gitPassword));
+			}
+			catch (Exception e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+		System.out.println(ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "aabbCcdd"), 
 			"3.3-SNAPSHOT", 
 			new SDOSourceContent[0], 
 			new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.3-SNAPSHOT", "Snapshot")},
 				options, gitTestURL, gitUsername, gitPassword));
+		
+		System.out.println(ContentConverterCreator.createContentConverter(new SDOSourceContent("gov.vha.isaac.terminology.source.rf2", "rf2-src-data-us-extension", "aabbCcdd"), 
+				"3.3-SNAPSHOT", 
+				new SDOSourceContent[0], 
+				new IBDFFile[] {new IBDFFile("gov.vha.isaac.terminology.converted", "rf2-ibdf-sct", "20150731-loader-3.3-SNAPSHOT", "Snapshot")},
+					options, gitTestURL, gitUsername, gitPassword));
+		
+
 		
 		//rxnorm
 		

@@ -191,6 +191,7 @@ public class HL7Messaging
 
 						if (m == null) {
 							updateMessage("No response received");
+							throw new RuntimeException("No response received for messageId " + message.getMessageId());
 						} else {
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01) {
@@ -219,6 +220,8 @@ public class HL7Messaging
 						LOG.error(msg);
 						updateMessage("Unexpected internal error");
 						throw new Exception(msg);
+					} catch (RuntimeException e ) {
+						throw e;	
 					} catch (Throwable e) {
 						LOG.error("Unexpected error", e);
 						updateMessage("Unexpected internal error");
@@ -297,6 +300,7 @@ public class HL7Messaging
 
 						if (m == null) {
 							updateMessage("No response received");
+							throw new RuntimeException("No response received for messageId " + message.getMessageId());
 						} else {
 							updateMessage("Processing response");
 							if (m instanceof MFR_M01) {
@@ -315,6 +319,8 @@ public class HL7Messaging
 						LOG.error(msg);
 						updateMessage("Unexpected internal error");
 						throw new RuntimeException(msg);
+					} catch (RuntimeException e ) {
+						throw e;					
 					} catch (Throwable e) {
 						LOG.error("Unexpected error", e);
 						updateMessage("Unexpected internal error");

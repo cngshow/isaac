@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
+import gov.vha.isaac.ochre.pombuilder.FileUtil;
 import gov.vha.isaac.ochre.pombuilder.artifacts.Converter;
 
 /**
@@ -85,56 +86,71 @@ public class ConverterOptionParam
 	 * @throws Exception 
 	 */
 	public static ConverterOptionParam[] fromArtifact(Converter artifact, String baseMavenUrl, String mavenUsername, String mavenPassword) throws Exception
-	{
-		LOG.debug("Trying to read 'options.json' for {} from '{}'", artifact, baseMavenUrl);
-		File tempFolder = File.createTempFile("jsonDownload", "");
-		tempFolder.delete();
-		tempFolder.mkdir();
-		
-		//First, try to get the pom file to validate the params they sent us.  If this fails, they sent bad info, and we fail.
-		URL pomURL = ArtifactUtilities.makeFullURL(baseMavenUrl, mavenUsername, mavenPassword, artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
-				artifact.getClassifier(), "pom");
-
-		DownloadUnzipTask dut = new DownloadUnzipTask(mavenUsername, mavenPassword, pomURL, false, true, tempFolder);
-		WorkExecutors.get().getExecutor().execute(dut);
-
-		File pomFile = dut.get();
-		if (!pomFile.exists())
-		{
-			LOG.debug("Throwing back an exception, as no pom was readable for the specified artifact");
-			throw new Exception("Failed to find the pom file for the specified project");
-		}
-		else
-		{
-			pomFile.delete();
-		}
-		
-		//Now that we know that the credentials / artifact / version are good - see if there is a config file (there may not be)
+	{	File tempFolder = null;
 		try
 		{
-			URL config = ArtifactUtilities.makeFullURL(baseMavenUrl, mavenUsername, mavenPassword, artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
-					artifact.getClassifier(), MAVEN_FILE_TYPE);
+			LOG.debug("Trying to read 'options.json' for {} from '{}'", artifact, baseMavenUrl);
+			tempFolder = File.createTempFile("jsonDownload", "");
+			tempFolder.delete();
+			tempFolder.mkdir();
+			
+			//First, try to get the pom file to validate the params they sent us.  If this fails, they sent bad info, and we fail.
+			URL pomURL = ArtifactUtilities.makeFullURL(baseMavenUrl, mavenUsername, mavenPassword, artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+					artifact.getClassifier(), "pom");
 
-			dut = new DownloadUnzipTask(mavenUsername, mavenPassword, config, false, true, tempFolder);
+			DownloadUnzipTask dut = new DownloadUnzipTask(mavenUsername, mavenPassword, pomURL, false, true, tempFolder);
 			WorkExecutors.get().getExecutor().execute(dut);
 
-			File jsonFile = dut.get();
-			ConverterOptionParam[] temp = fromFile(jsonFile);
-			if (LOG.isDebugEnabled())
+			File pomFile = dut.get();
+			if (!pomFile.exists())
 			{
-				LOG.debug("Found options: {}", Arrays.toString(temp));
+				LOG.debug("Throwing back an exception, as no pom was readable for the specified artifact");
+				throw new Exception("Failed to find the pom file for the specified project");
 			}
 			else
 			{
-				LOG.info("Read {} options", temp.length);
+				pomFile.delete();
 			}
-			return temp;
+			
+			//Now that we know that the credentials / artifact / version are good - see if there is a config file (there may not be)
+			try
+			{
+				URL config = ArtifactUtilities.makeFullURL(baseMavenUrl, mavenUsername, mavenPassword, artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(),
+						artifact.getClassifier(), MAVEN_FILE_TYPE);
+
+				dut = new DownloadUnzipTask(mavenUsername, mavenPassword, config, false, true, tempFolder);
+				WorkExecutors.get().getExecutor().execute(dut);
+
+				File jsonFile = dut.get();
+				ConverterOptionParam[] temp = fromFile(jsonFile);
+				if (LOG.isDebugEnabled())
+				{
+					LOG.debug("Found options: {}", Arrays.toString(temp));
+				}
+				else
+				{
+					LOG.info("Read {} options", temp.length);
+				}
+				jsonFile.delete();
+				return temp;
+			}
+			catch (Exception e)
+			{ 
+				//If we successfully downloaded the pom file, but failed here, just assume this file doesn't exist / isn't applicable to this converter.
+				LOG.info("No config file found for converter " + artifact.getArtifactId());
+				return new ConverterOptionParam[] {};
+			}
 		}
-		catch (Exception e)
-		{ 
-			//If we successfully downloaded the pom file, but failed here, just assume this file doesn't exist / isn't applicable to this converter.
-			LOG.info("No config file found for converter " + artifact.getArtifactId());
-			return new ConverterOptionParam[] {};
+		finally
+		{
+			try
+			{
+				FileUtil.recursiveDelete(tempFolder);
+			}
+			catch (Exception e)
+			{
+				LOG.error("Problem cleaning up temp folder " + tempFolder, e);
+			}
 		}
 	}
 

@@ -145,10 +145,13 @@ public enum SupportedConverterTypes
 			new String[] {""}), //TODO
 	
 	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
-			new UploadFileInfo("", "File a bug, assign to Dan",  //TODO dan fix... this is a stub for the moment
-					"TBD",
-					"File a bug, assign to Dan", 
-					".*$", true)
+			new UploadFileInfo("CPT is licensed, and is only available to a licensed user.  The VA has a license, but in practice, has purchased a copy for ease of access.  "
+					+ "See Jazz 355069", 
+					"https://commerce.ama-assn.org/store/catalog/productDetail.jsp?product_id=prod2680002&navAction=push",
+					"cpt.zip",
+					"The file name is ignored - it just needs to be a zip file which ends in .zip.  The zip file must contain "
+					+ "LONGULT.txt, MEDU.txt and SHORTU.txt", 
+					".*\\.zip$", true)
 	}, "cpt-mojo", "cpt-ibdf", "convert-CPT-to-ibdf", "gov.vha.isaac.terminology.source.cpt", "Current Procedural Terminology", 
 			new String[] {""}, //TODO
 			new String[] {""}) //TODO

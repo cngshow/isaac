@@ -22,7 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import gov.va.isaac.sync.git.SyncServiceGIT;
@@ -37,6 +39,12 @@ import gov.vha.isaac.ochre.api.util.NumericUtils;
 public class GitPublish
 {
 	private static final Logger LOG = LogManager.getLogger();
+	
+	/**
+	 * Support locking our threads across multiple operations (such as read tags, push a new tag) to ensure that two threads running in parallel 
+	 * don't end up in a state where they can't push, due to a non-fastforward.
+	 */
+	private static final HashMap<String, ReentrantLock> repoLock = new HashMap<>();
 	
 	/**
 	 * Take in a URL such as https://vadev.mantech.com:4848/git/ or https://vadev.mantech.com:4848/git and turn it into
@@ -181,5 +189,48 @@ public class GitPublish
 			}
 		}
 		return highestBuildRevision;
+	}
+	
+	public static void lock(String gitRepository) throws IOException
+	{
+		String correctedURL = constructChangesetRepositoryURL(gitRepository);
+		ReentrantLock lock = repoLock.get(correctedURL);
+		if (lock == null)
+		{
+			synchronized (repoLock)
+			{
+				lock = repoLock.get(correctedURL);
+				if (lock == null)
+				{
+					lock = new ReentrantLock();
+					repoLock.put(correctedURL, lock);
+				}
+			}
+		}
+		LOG.debug("Locking {}", correctedURL);
+		lock.lock();
+	}
+	
+	public static void unlock(String gitRepository) throws IOException
+	{
+		String correctedURL = constructChangesetRepositoryURL(gitRepository);
+		ReentrantLock lock = repoLock.get(correctedURL);
+		if (lock == null)
+		{
+			LOG.error("Unlock called, but no lock was present!");
+		}
+		else
+		{
+			if (lock.isHeldByCurrentThread())
+			{
+				LOG.debug("Unlocking {}", correctedURL);
+				lock.unlock();
+			}
+			else
+			{
+				//To support rapid unlock, but also allow an unlock in a finally block, make it ok to unlock when not locked
+				LOG.debug("Unlock called, but the lock wasn't held by this thread for {}", correctedURL);
+			}
+		}
 	}
 }

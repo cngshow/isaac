@@ -130,6 +130,10 @@ public class FileUtil
 	
 	public static void recursiveDelete(File file) throws IOException
 	{
+		if (file == null || !file.exists())
+		{
+			return;
+		}
 		Files.walkFileTree(file.toPath(), new SimpleFileVisitor<Path>()
 		{
 			@Override
