@@ -98,12 +98,44 @@ public class IsaacTaxonomy {
         return builder;
     }
 
+    // The DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID is hard-coded
+    // but should correspond to hard-coded value DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME
+    private final static UUID DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID = UUID.fromString(DynamicSememeConstants.DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING);
+    private final static ConceptBuilder addIdentifierAssemblageMembership(ConceptBuilder builder) {
+        // add static member sememe
+        final int identifierAssemblageNid = Get.conceptService().getConcept(DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID).getNid();
+        SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(builder, identifierAssemblageNid);
+        builder.addSememe(sb);
+
+        return builder;
+    }
+    
+    protected final ConceptBuilder createConcept(String name, boolean isId) {
+        ConceptBuilder builder = createConcept(name, null, null);
+    	
+        if (isId) {
+            addIdentifierAssemblageMembership(builder);
+        }
+    		
+        return builder;
+    }
+    
     protected final ConceptBuilder createConcept(String name) {
         return createConcept(name, null, null);
     }
     
     protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym) {
-        return createConcept(name, null, nonPreferredSynonym);
+    	return createConcept(name, nonPreferredSynonym, false);
+    }
+
+    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, boolean isIdentifier) {
+        ConceptBuilder builder = createConcept(name, null, nonPreferredSynonym);
+	
+        if (isIdentifier) {
+            addIdentifierAssemblageMembership(builder);
+        }
+	
+        return builder;
     }
     
     /**
@@ -138,6 +170,10 @@ public class IsaacTaxonomy {
     }
     
     public ConceptBuilder createConcept(MetadataConceptConstant cc) throws Exception {
+    	return createConcept(cc, false);
+    }
+
+    public ConceptBuilder createConcept(MetadataConceptConstant cc, boolean isIdentifier) throws Exception {
         try {
             ConceptBuilder cb = createConcept(cc.getPrimaryName(), cc.getParent() != null ? cc.getParent().getConceptSequence() : null, null);
             cb.setPrimordialUuid(cc.getUUID());
@@ -198,6 +234,10 @@ public class IsaacTaxonomy {
                  }
             }
             
+            if (isIdentifier) {
+                addIdentifierAssemblageMembership(cb);
+        	}
+
             return cb;
         } catch (Exception e) {
             throw new Exception("Problem with '" + cc.getPrimaryName() + "'", e);

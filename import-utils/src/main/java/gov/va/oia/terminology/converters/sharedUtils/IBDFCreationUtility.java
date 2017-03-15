@@ -264,6 +264,8 @@ public class IBDFCreationUtility
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getDynamicSememeColumns());
 		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getUUID(), 
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getDynamicSememeColumns());
+		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getUUID(), 
+				DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getDynamicSememeColumns());
 		//TODO figure out how to get rid of this copy/paste mess too
 		registerDynamicSememeColumnInfo(MetaData.LOINC_NUM.getPrimordialUuid(), new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(0,
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, true) });
@@ -1186,7 +1188,7 @@ public class IBDFCreationUtility
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
 							pt.getPropertyTypeUUID(), secondParent);
-					
+
 					if (pt.createAsDynamicRefex())
 					{
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
@@ -1194,6 +1196,17 @@ public class IBDFCreationUtility
 								p.getDataColumnsForDynamicRefex(), null, null);
 					}
 					
+					if (p.isIdentifier()) {
+						//Add this concept to the IDENTIFIER_ASSEMBLAGE membership assemblage
+						// TODO assert !pt.createAsDynamicRefex()
+//						if (pt.createAsDynamicRefex()) {
+//							throw new RuntimeException("PropertyType \"" + pt.getPropertyTypeDescription() + "\" for identifier \"" + p.getSourcePropertyNameFSN() + "\" cannot be defined as a dynamic refex (createAsDynamicRefex() == " + pt.createAsDynamicRefex() + ")");
+//						}
+						// TODO validate sememe types
+						addRefsetMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_ASSEMBLAGE.getPrimordialUuid(), 
+								State.ACTIVE, null);
+					}
+
 					else if (p instanceof PropertyAssociation)
 					{
 						//TODO need to migrate code from api-util (AssociationType, etc) down into the ISAAC packages... integrate here, at least at doc level
