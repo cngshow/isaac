@@ -22,10 +22,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gov.vha.isaac.ochre.api.util.ArtifactUtilities;
 import gov.vha.isaac.ochre.api.util.DownloadUnzipTask;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
@@ -149,7 +152,7 @@ public class ConverterOptionParam
 			}
 			catch (Exception e)
 			{
-				LOG.error("Problem cleaning up temp folder " + tempFolder, e);
+				LOG.error("Problem cleaning up temp folder {}", tempFolder, e);
 			}
 		}
 	}
