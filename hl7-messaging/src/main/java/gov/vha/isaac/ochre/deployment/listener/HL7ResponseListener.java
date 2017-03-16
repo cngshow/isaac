@@ -242,6 +242,9 @@ public class HL7ResponseListener
 		{
 			listening = false;
 			hl7ResponseListeners.clear();
+			if (selectableChannel != null) {
+				selectableChannel.close();
+			}
 			LOG.info("HL7ResponseListner stops listening for responses");
 		}
 	}

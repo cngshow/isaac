@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.util.MavenPublish;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.api.util.Zip;
@@ -261,7 +263,7 @@ public class SrcUploadCreator
 					}
 					catch (Exception e)
 					{
-						LOG.error("Problem cleaning up temp folder " + baseFolder, e);
+						LOG.error("Problem cleaning up temp folder {}", baseFolder, e);
 					}
 					
 					updateTitle("Complete");
@@ -281,7 +283,7 @@ public class SrcUploadCreator
 					}
 					catch (Exception e)
 					{
-						LOG.error("Problem cleaning up temp folder " + baseFolder, e);
+						LOG.error("Problem cleaning up temp folder {}", baseFolder, e);
 					}
 				}
 				

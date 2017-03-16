@@ -176,7 +176,14 @@ public class MetaInfReader
 	
 			if (!readDbMetadataFromProperties.get())
 			{
-				LOG.error("Failed to read the metadata about the database from the database package.");
+				if (dbMetadata.isDirectory())
+				{
+					LOG.error("Failed to read the metadata about the database from the database package.");
+				}
+				else
+				{
+					LOG.info("No metadata folder found in DB folder - this is expected, if we are building a new database");
+				}
 			}
 			else
 			{
