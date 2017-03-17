@@ -21,7 +21,6 @@ package gov.vha.isaac.ochre.deployment.listener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -179,8 +178,7 @@ public class HL7ResponseListener
 		this.selector = SelectorProvider.provider().openSelector();
 		this.selectableChannel = ServerSocketChannel.open();
 		this.selectableChannel.configureBlocking(false);
-		InetAddress localHost = InetAddress.getLocalHost();
-		InetSocketAddress isa = new InetSocketAddress(localHost, props_.getListenerPort());
+		InetSocketAddress isa = new InetSocketAddress(props_.getListenerPort());
 
 		if (this.selectableChannel.isOpen() == true) {
 			this.selectableChannel.socket().setReuseAddress(true);
@@ -242,6 +240,9 @@ public class HL7ResponseListener
 		{
 			listening = false;
 			hl7ResponseListeners.clear();
+			if (selectableChannel != null) {
+				selectableChannel.close();
+			}
 			LOG.info("HL7ResponseListner stops listening for responses");
 		}
 	}
