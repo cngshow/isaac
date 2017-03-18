@@ -120,6 +120,12 @@ public class Property
 		this.isIdentifier_ = isIdentifier;
 	}
 	
+	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+		this(owner, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, isIdentifier, Integer.MAX_VALUE, null);
+	}
+	public Property(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+		this(null, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, isIdentifier, Integer.MAX_VALUE, null);
+	}
 	/**
 	 * owner must be set via the set method after using this constructor!
 	 */

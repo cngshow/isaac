@@ -20,6 +20,7 @@ package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
 import gov.va.oia.terminology.converters.sharedUtils.ConsoleUtil;
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
+import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
 import java.util.Collection;
@@ -162,25 +163,38 @@ public abstract class PropertyType
 		return property;
 	}
 
-	public Property addProperty(String propertyNameFSN)
+	public Property addProperty(String propertyNameFSN) {
+		return addProperty(propertyNameFSN, false);
+	}
+	public Property addProperty(String propertyNameFSN, boolean isIdentifier)
 	{
-		return addProperty(propertyNameFSN, -1);
+		return addProperty(propertyNameFSN, -1, isIdentifier);
 	}
 	
-	public Property addProperty(String propertyNameFSN, int propertySubType)
+	public Property addProperty(String propertyNameFSN, int propertySubType) {
+		return addProperty(propertyNameFSN, propertySubType, false);
+	}
+	public Property addProperty(String propertyNameFSN, int propertySubType, boolean isIdentifier)
 	{
-		return addProperty(propertyNameFSN, null, null, false, propertySubType, null);
+		return addProperty(propertyNameFSN, null, null, false, isIdentifier, propertySubType, null);
 	}
 	
+	public Property addProperty(PropertyType owner, ConceptSpecification cs, boolean isIdentifier) {
+		return addProperty(new Property(owner, cs, isIdentifier));
+	}
 	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition)
 	{
 		return addProperty(sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, -1, null);
 	}
 	
 	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, 
-			boolean disabled, int propertySubType, DynamicSememeColumnInfo[] dataColumnForDynamicRefex)
+			boolean disabled, int propertySubType, DynamicSememeColumnInfo[] dataColumnForDynamicRefex) {
+		return addProperty(sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, false, propertySubType, dataColumnForDynamicRefex);
+	}
+	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, 
+			boolean disabled, boolean isIdentifier, int propertySubType, DynamicSememeColumnInfo[] dataColumnForDynamicRefex)
 	{
-		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, 
+		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, isIdentifier,
 				propertySubType, dataColumnForDynamicRefex));
 	}
 

@@ -267,8 +267,8 @@ public class IBDFCreationUtility
 		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getUUID(), 
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getDynamicSememeColumns());
 		//TODO figure out how to get rid of this copy/paste mess too
-		registerDynamicSememeColumnInfo(MetaData.LOINC_NUM.getPrimordialUuid(), new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(0,
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, true) });
+//		registerDynamicSememeColumnInfo(MetaData.LOINC_NUM.getPrimordialUuid(), new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(0,
+//				DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, true) });
 		
 		
 		conceptBuilderService_ = Get.conceptBuilderService();
@@ -681,6 +681,61 @@ public class IBDFCreationUtility
 		return sc;
 	}
 	
+	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
+			ComponentReference concept,
+			String stringValue,
+			UUID module, State state, Long time) {
+		return addStaticStringIdentifierSememe(concept, (UUID)null, stringValue, module, state, time);
+	}
+	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
+			ComponentReference concept,
+			UUID newSememeUuid,
+			String stringValue,
+			UUID module, State state, Long time) {
+		if (newSememeUuid == null)
+		{
+			newSememeUuid = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), MetaData.IDENTIFIER_ASSEMBLAGE.getPrimordialUuid().toString(), "identifier static string sememe", stringValue);
+		}
+		return addStaticStringSememe(concept, newSememeUuid, stringValue, MetaData.IDENTIFIER_ASSEMBLAGE.getNid(), module, state, time);
+	}
+	@SuppressWarnings("unchecked")
+	public SememeChronology<StringSememe<?>> addStaticStringSememe(
+			ComponentReference concept,
+			UUID newSememeUuid,
+			String stringValue,
+			int assemblageNid,
+			UUID module, State state, Long time)
+	{
+		if (stringValue == null)
+		{
+			throw new RuntimeException("String value is required for static string sememe on concept \"" + Get.conceptDescriptionText(concept.getNid()) + "\"");
+		}
+		if (newSememeUuid == null)
+		{
+			newSememeUuid = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "static string sememe", stringValue);
+		}
+		
+		@SuppressWarnings({ "rawtypes" }) 
+		SememeBuilder<? extends SememeChronology<? extends StringSememe>> stringSememeBuilder = (SememeBuilder<? extends SememeChronology<? extends StringSememe>>)sememeBuilderService_.getStringSememeBuilder(stringValue, concept.getNid(), assemblageNid);
+		stringSememeBuilder.setPrimordialUuid(newSememeUuid);
+
+		List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
+		
+		SememeChronology<StringSememe<?>> newStringSememe = (SememeChronology<StringSememe<?>>)
+				stringSememeBuilder.build(
+						createStamp(state, selectTime(time, concept), module), 
+						builtObjects);
+
+		for (OchreExternalizable ochreObject : builtObjects)
+		{
+			writer_.put(ochreObject);
+		}
+		
+		ls_.addAnnotation(Get.conceptDescriptionText(concept.getNid()), stringValue);
+		
+		return newStringSememe;
+	}
+
 	/**
 	 * Add an alternate ID to the concept.
 	 */
@@ -1189,22 +1244,14 @@ public class IBDFCreationUtility
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
 							pt.getPropertyTypeUUID(), secondParent);
 
-					if (pt.createAsDynamicRefex())
-					{
+					if (p.isIdentifier()) {
+						//
+						//Add this IDENTIFIER_ASSEMBLAGE annotation
+						//addStaticStringIdentifierSememe
+					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),
 								p.getDataColumnsForDynamicRefex(), null, null);
-					}
-					
-					if (p.isIdentifier()) {
-						//Add this concept to the IDENTIFIER_ASSEMBLAGE membership assemblage
-						// TODO assert !pt.createAsDynamicRefex()
-//						if (pt.createAsDynamicRefex()) {
-//							throw new RuntimeException("PropertyType \"" + pt.getPropertyTypeDescription() + "\" for identifier \"" + p.getSourcePropertyNameFSN() + "\" cannot be defined as a dynamic refex (createAsDynamicRefex() == " + pt.createAsDynamicRefex() + ")");
-//						}
-						// TODO validate sememe types
-						addRefsetMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_ASSEMBLAGE.getPrimordialUuid(), 
-								State.ACTIVE, null);
 					}
 
 					else if (p instanceof PropertyAssociation)

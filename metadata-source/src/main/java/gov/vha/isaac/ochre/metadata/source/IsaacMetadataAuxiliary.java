@@ -141,10 +141,10 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     pushParent(current());
                         createConcept("SCTID", true).mergeFromSpec(TermAux.SNOMED_IDENTIFIER);
                         createConcept("generated UUID", true).setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66");
-                        createConcept(new MetadataDynamicSememeConstant("LOINC_NUM", null, "LOINC Identifier", "Carries the LOINC_NUM native identifier", 
-                                new DynamicSememeColumnInfo[] 
-                                    {new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), 
-                                        DynamicSememeDataType.STRING, null, true, true)}), true);
+//                        createConcept(new MetadataDynamicSememeConstant("LOINC_NUM", null, "LOINC Identifier", "Carries the LOINC_NUM native identifier", 
+//                                new DynamicSememeColumnInfo[] 
+//                                    {new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), 
+//                                        DynamicSememeDataType.STRING, null, true, true)}), true);
                         createConcept("RXCUI", true).setPrimordialUuid("617761d2-80ef-5585-83a0-60851dd44158");//comes from the algorithm in the rxnorm econ loader
                         createConcept("VUID", "Vets Unique Identifier", true);
                         createConcept("OID", "HL7 Object Identifier", true);
