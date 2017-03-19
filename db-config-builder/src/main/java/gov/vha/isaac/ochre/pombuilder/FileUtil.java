@@ -115,6 +115,11 @@ public class FileUtil
 			LOG.error("Error writing", e);
 			throw new Exception("Error writing pom: " + e);
 		}
+		catch (Exception e)
+		{
+			LOG.error("Error writing", e);
+			throw e;
+		}
 	}
 	
 	public static String readFile(String fileName) throws IOException
