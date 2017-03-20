@@ -3,6 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/03/20 - 3.42
+	* More Fortify fixes
+	* Better loggin on DB creation failures
+	* Production build for Release 3
+
 * 2017/03/16 - 3.41
 	* Cleanup debug logging
 	* Close HL7 response listener

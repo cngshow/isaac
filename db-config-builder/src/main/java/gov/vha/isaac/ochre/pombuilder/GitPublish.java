@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.va.isaac.sync.git.SyncServiceGIT;
 import gov.va.isaac.sync.git.gitblit.GitBlitUtils;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
@@ -195,18 +197,17 @@ public class GitPublish
 	{
 		String correctedURL = constructChangesetRepositoryURL(gitRepository);
 		ReentrantLock lock = repoLock.get(correctedURL);
-		if (lock == null)
+		
+		synchronized (repoLock)
 		{
-			synchronized (repoLock)
+			lock = repoLock.get(correctedURL);
+			if (lock == null)
 			{
-				lock = repoLock.get(correctedURL);
-				if (lock == null)
-				{
-					lock = new ReentrantLock();
-					repoLock.put(correctedURL, lock);
-				}
+				lock = new ReentrantLock();
+				repoLock.put(correctedURL, lock);
 			}
 		}
+		
 		LOG.debug("Locking {}", correctedURL);
 		lock.lock();
 	}
