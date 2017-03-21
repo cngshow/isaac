@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+    * Fix a bug with Frills.getAllChildrenOfConcept where it didn't return the proper list of children in certain cases, which inadvertently led to 
+        the warnings "SememeAPIs.get(...) didn't filter properly..." being frequently logged by isaac-rest.  
+
 * 2017/03/?? - 3.42 - PENDING
 	*
 
