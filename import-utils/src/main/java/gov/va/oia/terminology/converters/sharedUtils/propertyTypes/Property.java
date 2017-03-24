@@ -235,4 +235,12 @@ public class Property
 		}
 		return dataColumnsForDynamicRefex_;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Property [FSN=" + sourcePropertyNameFSN_ + ", isIdentifier=" + isIdentifier_ + "]";
+	}
 }

@@ -197,6 +197,10 @@ public abstract class PropertyType
 		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, isIdentifier,
 				propertySubType, dataColumnForDynamicRefex));
 	}
+	
+	public Property addProperty(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, isIdentifier));
+	}
 
 	/**
 	 * Only adds the property if the version of the data file falls between min and max, inclusive.

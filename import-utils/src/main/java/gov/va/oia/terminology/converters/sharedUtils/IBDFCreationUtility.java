@@ -151,6 +151,8 @@ public class IBDFCreationUtility
 			throw new RuntimeException("Unknown description type UUID " + typeId);
 		}
 	};
+	
+	private final static UUID DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID = UUID.fromString(DynamicSememeConstants.DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING);
 
 	private final int authorSeq_;
 	private final int terminologyPathSeq_;
@@ -680,12 +682,13 @@ public class IBDFCreationUtility
 		ls_.addAnnotation("Description", getOriginStringForUuid(dialectRefset));
 		return sc;
 	}
-	
+
 	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
 			ComponentReference concept,
+			UUID newSememeUuid,
 			String stringValue,
-			UUID module, State state, Long time) {
-		return addStaticStringIdentifierSememe(concept, (UUID)null, stringValue, module, state, time);
+			State state) {
+		return addStaticStringIdentifierSememe(concept, newSememeUuid, stringValue, getModule().getPrimordialUuid(), state, (Long)null);
 	}
 	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
 			ComponentReference concept,
@@ -862,6 +865,21 @@ public class IBDFCreationUtility
 		return refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid);
 	}
 
+	private SememeChronology<?> addMembership(ComponentReference referencedComponent, int assemblageNid) {
+		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblageNid);
+
+		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
+		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
+
+		for (OchreExternalizable ochreObject : builtObjects)
+		{
+			writer_.put(ochreObject);
+		}
+
+		ls_.addRefsetMember(Get.conceptDescriptionText(referencedComponent.getNid()) + " member of " +  Get.conceptDescriptionText(assemblageNid));
+	
+		return sc;
+	}
 	/**
 	 * @param refexDynamicTypeUuid
 	 * @param values
@@ -1238,6 +1256,10 @@ public class IBDFCreationUtility
 				}
 				else
 				{
+					if (p.isIdentifier() && secondParent == null) {
+						secondParent = MetaData.IDENTIFIER_SOURCE.getPrimordialUuid();
+					}
+
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
@@ -1245,9 +1267,9 @@ public class IBDFCreationUtility
 							pt.getPropertyTypeUUID(), secondParent);
 
 					if (p.isIdentifier()) {
-						//
-						//Add this IDENTIFIER_ASSEMBLAGE annotation
-						//addStaticStringIdentifierSememe
+						//Add this IDENTIFIER_ASSEMBLAGE membership
+						final int identifierAssemblageNid = Get.conceptService().getConcept(DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID).getNid();
+						addMembership(ComponentReference.fromConcept(concept), identifierAssemblageNid);
 					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),

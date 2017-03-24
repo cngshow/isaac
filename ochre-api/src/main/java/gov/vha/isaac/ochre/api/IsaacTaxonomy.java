@@ -137,7 +137,15 @@ public class IsaacTaxonomy {
 	
         return builder;
     }
-    
+
+    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, String definition, boolean isIdentifier) {
+        ConceptBuilder cb = createConcept(name, nonPreferredSynonym, isIdentifier);
+	
+        addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
+	
+        return cb;
+    }
+
     /**
      * If parent is provided, it ignores the parent stack, and uses the provided parent instead.
      * If parent is not provided, it uses the parentStack (if populated), otherwise, it creates
