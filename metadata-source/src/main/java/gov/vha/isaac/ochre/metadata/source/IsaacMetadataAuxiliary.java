@@ -62,6 +62,7 @@ import static gov.vha.isaac.ochre.model.observable.ObservableFields.TIME_FOR_VER
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.UUID_FOR_TAXONOMY_COORDINATE;
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.UUID_LIST_FOR_CHRONICLE;
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.VERSION_LIST_FOR_CHRONICLE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -69,9 +70,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.inject.Singleton;
+
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.IsaacTaxonomy;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
@@ -124,6 +128,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("CVX modules");
                         createConcept("MVX modules");
                         createConcept("CPT modules");
+                        createConcept("SOPT modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
