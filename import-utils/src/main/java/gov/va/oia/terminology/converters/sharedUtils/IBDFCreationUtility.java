@@ -152,8 +152,6 @@ public class IBDFCreationUtility
 		}
 	};
 	
-	private final static UUID DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID = UUID.fromString(DynamicSememeConstants.DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING);
-
 	private final int authorSeq_;
 	private final int terminologyPathSeq_;
 	private final long defaultTime_;
@@ -266,12 +264,8 @@ public class IBDFCreationUtility
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getDynamicSememeColumns());
 		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getUUID(), 
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getDynamicSememeColumns());
-		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getUUID(), 
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME.getDynamicSememeColumns());
-		//TODO figure out how to get rid of this copy/paste mess too
-//		registerDynamicSememeColumnInfo(MetaData.LOINC_NUM.getPrimordialUuid(), new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(0,
-//				DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, true) });
-		
+
+		//TODO figure out how to get rid of this copy/paste mess too		
 		
 		conceptBuilderService_ = Get.conceptBuilderService();
 		conceptBuilderService_.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
@@ -683,24 +677,6 @@ public class IBDFCreationUtility
 		return sc;
 	}
 
-	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
-			ComponentReference concept,
-			UUID newSememeUuid,
-			String stringValue,
-			State state) {
-		return addStaticStringIdentifierSememe(concept, newSememeUuid, stringValue, getModule().getPrimordialUuid(), state, (Long)null);
-	}
-	public SememeChronology<StringSememe<?>> addStaticStringIdentifierSememe(
-			ComponentReference concept,
-			UUID newSememeUuid,
-			String stringValue,
-			UUID module, State state, Long time) {
-		if (newSememeUuid == null)
-		{
-			newSememeUuid = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), MetaData.IDENTIFIER_ASSEMBLAGE.getPrimordialUuid().toString(), "identifier static string sememe", stringValue);
-		}
-		return addStaticStringSememe(concept, newSememeUuid, stringValue, MetaData.IDENTIFIER_ASSEMBLAGE.getNid(), module, state, time);
-	}
 	@SuppressWarnings("unchecked")
 	public SememeChronology<StringSememe<?>> addStaticStringSememe(
 			ComponentReference concept,
@@ -1256,20 +1232,17 @@ public class IBDFCreationUtility
 				}
 				else
 				{
-					if (p.isIdentifier() && secondParent == null) {
-						secondParent = MetaData.IDENTIFIER_SOURCE.getPrimordialUuid();
-					}
-
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
+					UUID secondParentToUse = secondParent != null ? secondParent : (p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null);
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
-							pt.getPropertyTypeUUID(), secondParent);
+							pt.getPropertyTypeUUID(),
+							secondParentToUse);
 
 					if (p.isIdentifier()) {
-						//Add this IDENTIFIER_ASSEMBLAGE membership
-						final int identifierAssemblageNid = Get.conceptService().getConcept(DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID).getNid();
-						addMembership(ComponentReference.fromConcept(concept), identifierAssemblageNid);
+						// Add IDENTIFIER_ASSEMBLAGE membership
+						addMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_SOURCE.getNid());
 					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),

@@ -79,10 +79,6 @@ import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.IsaacTaxonomy;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
-import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 
 /**
@@ -95,6 +91,7 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 
     public static final String METADATA_SEMANTIC_TAG = "ISAAC";
+
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
@@ -142,19 +139,12 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("sufficient set").setPrimordialUuid(NodeSemantic.SUFFICIENT_SET.getSemanticUuid());
                         createConcept("necessary set").setPrimordialUuid(NodeSemantic.NECESSARY_SET.getSemanticUuid());
                     popParent();
-                    createConcept("identifier source");
+                    createConcept(TermAux.IDENTIFIER_SOURCE).addDescription("A parent concept and membership sememe used to group identifiers", TermAux.DEFINITION_DESCRIPTION_TYPE);
                     pushParent(current());
-                        createConcept("SCTID", true).mergeFromSpec(TermAux.SNOMED_IDENTIFIER);
-                        createConcept("generated UUID", true).setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66");
-//                      createConcept("LOINC_NUM", "LOINC Identifier", "Carries the LOINC_NUM native identifier", true);
-//                      createConcept(new MetadataDynamicSememeConstant("LOINC_NUM", null, "LOINC Identifier", "Carries the LOINC_NUM native identifier", 
-//                                new DynamicSememeColumnInfo[] 
-//                                    {new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), 
-//                                        DynamicSememeDataType.STRING, null, true, true)}), true);
-                        //createConcept("RXCUI", true).setPrimordialUuid("617761d2-80ef-5585-83a0-60851dd44158");//comes from the algorithm in the rxnorm econ loader
-                        createConcept("VUID", "Vets Unique Identifier", true);
-//                        createConcept("OID", "HL7 Object Identifier", true);
-                        createConcept("Code", true).setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
+                        createConcept("SCTID").mergeFromSpec(TermAux.SNOMED_IDENTIFIER).addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("VUID", "Vets Unique Identifier").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);// UUID comes from the algorithm in the VHAT econ loader
                     popParent();
                     createConcept("language");
                     pushParent(current());
@@ -176,7 +166,6 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     popParent();
                     createConcept(TermAux.ASSEMBLAGE);
                     pushParent(current());
-                        createConcept(DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME);
                         createConcept("description assemblage");
                         pushParent(current());
                             createConcept(TermAux.ENGLISH_DESCRIPTION_ASSEMBLAGE);

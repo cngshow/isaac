@@ -103,7 +103,7 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 				for (String value : identifierAttributes.getValue())
 				{
 					// TODO confirm parameters appropriate
-					ibdfCreationUtility.addStaticStringIdentifierSememe(ComponentReference.fromChronology(descriptions.get(i)), identifierAttributes.getKey(), value, State.ACTIVE);
+					ibdfCreationUtility.addStaticStringAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, identifierAttributes.getKey(), State.ACTIVE);
 				}
 			}
 		}

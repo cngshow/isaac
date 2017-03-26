@@ -32,6 +32,7 @@ import java.util.UUID;
 import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -67,7 +68,6 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
  */
 @Contract
 public class IsaacTaxonomy {
-
     private final TreeMap<String, ConceptBuilder> conceptBuilders = new TreeMap<>();
     private final List<SememeBuilder<?>> sememeBuilders = new ArrayList<>();
     private final List<ConceptBuilder> conceptBuildersInInsertionOrder = new ArrayList<>();
@@ -98,50 +98,25 @@ public class IsaacTaxonomy {
         return builder;
     }
 
-    // The DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID is hard-coded
-    // but should correspond to hard-coded value DynamicSememeConstants.get().DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME
-    private final static UUID DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID = UUID.fromString(DynamicSememeConstants.DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING);
-    private final static ConceptBuilder addIdentifierAssemblageMembership(ConceptBuilder builder) {
+    private final static <T extends CommittableComponent> IdentifiedComponentBuilder<T> addIdentifierAssemblageMembership(IdentifiedComponentBuilder<T> builder) {
         // add static member sememe
-        final int identifierAssemblageNid = Get.conceptService().getConcept(DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID).getNid();
-        SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(builder, identifierAssemblageNid);
-        builder.addSememe(sb);
-
-        return builder;
-    }
-    
-    protected final ConceptBuilder createConcept(String name, boolean isId) {
-        ConceptBuilder builder = createConcept(name, null, null);
-    	
-        if (isId) {
-            addIdentifierAssemblageMembership(builder);
-        }
-    		
-        return builder;
+        return builder.addSememe(Get.sememeBuilderService().getMembershipSememeBuilder(builder, TermAux.IDENTIFIER_SOURCE.getNid()));
     }
     
     protected final ConceptBuilder createConcept(String name) {
-        return createConcept(name, null, null);
+        return createConcept(name, (String)null, (String)null);
     }
-    
+
     protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym) {
-    	return createConcept(name, nonPreferredSynonym, false);
+        return createConcept(name, nonPreferredSynonym, (String)null);
     }
 
-    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, boolean isIdentifier) {
-        ConceptBuilder builder = createConcept(name, null, nonPreferredSynonym);
-	
-        if (isIdentifier) {
-            addIdentifierAssemblageMembership(builder);
+    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, String definition) {
+        ConceptBuilder cb = createConcept(name, (Integer)null, nonPreferredSynonym);
+
+        if (StringUtils.isNotBlank(definition)) {
+            addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
         }
-	
-        return builder;
-    }
-
-    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, String definition, boolean isIdentifier) {
-        ConceptBuilder cb = createConcept(name, nonPreferredSynonym, isIdentifier);
-	
-        addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
 	
         return cb;
     }
@@ -178,7 +153,7 @@ public class IsaacTaxonomy {
     }
     
     public ConceptBuilder createConcept(MetadataConceptConstant cc) throws Exception {
-    	return createConcept(cc, false);
+        return createConcept(cc, false);
     }
 
     public ConceptBuilder createConcept(MetadataConceptConstant cc, boolean isIdentifier) throws Exception {
@@ -399,14 +374,15 @@ public class IsaacTaxonomy {
         }
     }
 
-    private void buildAndWrite(IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
+    @SuppressWarnings("unchecked")
+	private void buildAndWrite(@SuppressWarnings("rawtypes") IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
         List<?> builtObjects = new ArrayList<>();
         builder.build(stampCoordinate, builtObjects);
         builtObjects.forEach((builtObject) -> {
             if (builtObject instanceof ConceptChronology) {
                 conceptService.writeConcept((ConceptChronology<? extends ConceptVersion<?>>) builtObject);
             } else if (builtObject instanceof SememeChronology) {
-                sememeService.writeSememe((SememeChronology) builtObject);
+                sememeService.writeSememe((SememeChronology<?>) builtObject);
             } else {
                 throw new UnsupportedOperationException("Can't handle: " + builtObject);
             }

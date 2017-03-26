@@ -228,6 +228,10 @@ public class TermAux {
     public static ConceptSpecification ROLE_GROUP
             = new ConceptProxy("role group",
                     UUID.fromString("a63f4bf2-a040-11e5-8994-feff819cdc9f"));
+    
+    public static ConceptSpecification IDENTIFIER_SOURCE
+            = new ConceptProxy("identifier source",
+                    UUID.fromString("5a87935c-d654-548f-82a2-0c06e3801162"));
 
     public static int getDescriptionAssemblageConceptSequence(int languageConceptSequence) {
         if (languageConceptSequence == ENGLISH_LANGUAGE.getConceptSequence()) {

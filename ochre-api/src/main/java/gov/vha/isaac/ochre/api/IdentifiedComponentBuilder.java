@@ -119,4 +119,16 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
      * @return this object
      */
     public IdentifiedComponentBuilder<T> addSememe(SememeBuilder<?> sememeBuilder);
+
+    /**
+     * Add a nested membership sememes that should be chained / built when build is called on this component
+     * @param assemblageConcepts
+     * @return this object
+     */
+    default public IdentifiedComponentBuilder<T> addAssemblageMembership(IdentifiedObject...assemblageConcepts) {
+        for (IdentifiedObject obj : assemblageConcepts) {
+            addSememe(Get.sememeBuilderService().getMembershipSememeBuilder(this, obj.getNid()));
+        }
+        return this;
+    }
 }
