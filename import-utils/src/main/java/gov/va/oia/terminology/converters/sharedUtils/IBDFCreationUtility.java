@@ -677,44 +677,6 @@ public class IBDFCreationUtility
 		return sc;
 	}
 
-	@SuppressWarnings("unchecked")
-	public SememeChronology<StringSememe<?>> addStaticStringSememe(
-			ComponentReference concept,
-			UUID newSememeUuid,
-			String stringValue,
-			int assemblageNid,
-			UUID module, State state, Long time)
-	{
-		if (stringValue == null)
-		{
-			throw new RuntimeException("String value is required for static string sememe on concept \"" + Get.conceptDescriptionText(concept.getNid()) + "\"");
-		}
-		if (newSememeUuid == null)
-		{
-			newSememeUuid = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "static string sememe", stringValue);
-		}
-		
-		@SuppressWarnings({ "rawtypes" }) 
-		SememeBuilder<? extends SememeChronology<? extends StringSememe>> stringSememeBuilder = (SememeBuilder<? extends SememeChronology<? extends StringSememe>>)sememeBuilderService_.getStringSememeBuilder(stringValue, concept.getNid(), assemblageNid);
-		stringSememeBuilder.setPrimordialUuid(newSememeUuid);
-
-		List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
-		
-		SememeChronology<StringSememe<?>> newStringSememe = (SememeChronology<StringSememe<?>>)
-				stringSememeBuilder.build(
-						createStamp(state, selectTime(time, concept), module), 
-						builtObjects);
-
-		for (OchreExternalizable ochreObject : builtObjects)
-		{
-			writer_.put(ochreObject);
-		}
-		
-		ls_.addAnnotation(Get.conceptDescriptionText(concept.getNid()), stringValue);
-		
-		return newStringSememe;
-	}
-
 	/**
 	 * Add an alternate ID to the concept.
 	 */
@@ -841,8 +803,8 @@ public class IBDFCreationUtility
 		return refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid);
 	}
 
-	private SememeChronology<?> addMembership(ComponentReference referencedComponent, int assemblageNid) {
-		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblageNid);
+	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
+		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
@@ -852,7 +814,7 @@ public class IBDFCreationUtility
 			writer_.put(ochreObject);
 		}
 
-		ls_.addRefsetMember(Get.conceptDescriptionText(referencedComponent.getNid()) + " member of " +  Get.conceptDescriptionText(assemblageNid));
+		ls_.addRefsetMember(assemblage.getConceptDescriptionText());
 	
 		return sc;
 	}
@@ -1242,7 +1204,7 @@ public class IBDFCreationUtility
 
 					if (p.isIdentifier()) {
 						// Add IDENTIFIER_ASSEMBLAGE membership
-						addMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_SOURCE.getNid());
+						addMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_SOURCE);
 					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),

@@ -313,17 +313,6 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_EDITOR_COMMENT_CONTEXT.getUUID(), DynamicSememeDataType.STRING, null, false, true)}) {
 	};  //Index the comments, and the columns
 
-//	/** 
-//	 * see {@link #DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME}
-//	 */
-//	public static final String DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING = "ef595362-ebdb-50b6-9fc5-fb39cde40a1a";
-//	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME = new MetadataDynamicSememeConstant("identifier assemblage",
-//			UUID.fromString(DYNAMIC_SEMEME_IDENTIFIER_ASSEMBLAGE_SEMEME_UUID_STRING),
-//			"A membership sememe used to annotate static String sememes which define identifiers.",
-//			new DynamicSememeColumnInfo[]{},
-//			null) {
-//	};
-
 	/** 
 	 * see {@link #DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT}
 	 */
