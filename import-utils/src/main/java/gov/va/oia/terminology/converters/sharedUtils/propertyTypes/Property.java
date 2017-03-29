@@ -111,6 +111,10 @@ public class Property
 		this(owner, cs, false);
 	}
 
+	public Property(ConceptSpecification cs, boolean isIdentifier) {
+		this((PropertyType)null, cs, isIdentifier);
+	}
+
 	public Property(PropertyType owner, ConceptSpecification cs, boolean isIdentifier)
 	{
 		this(owner, cs.getConceptDescriptionText(), null, null, false, Integer.MAX_VALUE, null);
