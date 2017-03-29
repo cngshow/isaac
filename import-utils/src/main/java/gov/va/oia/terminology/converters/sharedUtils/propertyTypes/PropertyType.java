@@ -178,7 +178,10 @@ public abstract class PropertyType
 	{
 		return addProperty(propertyNameFSN, null, null, false, isIdentifier, propertySubType, null);
 	}
-	
+
+	public Property addProperty(ConceptSpecification cs, boolean isIdentifier) {
+		return addProperty(new Property((PropertyType)null, cs, isIdentifier));
+	}
 	public Property addProperty(PropertyType owner, ConceptSpecification cs, boolean isIdentifier) {
 		return addProperty(new Property(owner, cs, isIdentifier));
 	}
