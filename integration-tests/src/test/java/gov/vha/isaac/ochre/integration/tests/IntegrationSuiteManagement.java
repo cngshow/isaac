@@ -36,7 +36,7 @@ import org.testng.annotations.BeforeGroups;
 public class IntegrationSuiteManagement {
         private static final Logger LOG = LogManager.getLogger();
 
-    @BeforeGroups(groups = {"db", "load", "wf"})
+    @BeforeGroups(groups = {"db", "load", "frills", "wf"})
     public void setUpSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement setup");
 
@@ -50,7 +50,7 @@ public class IntegrationSuiteManagement {
         HeapUseTicker.start(10);
     }
 
-    @AfterGroups(groups = {"db", "load", "wf"})
+    @AfterGroups(groups = {"db", "load", "frills", "wf"})
     public void tearDownSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement teardown");
         LookupService.shutdownSystem();
