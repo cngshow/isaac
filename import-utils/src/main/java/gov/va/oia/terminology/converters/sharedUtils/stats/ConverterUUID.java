@@ -61,6 +61,7 @@ public class ConverterUUID
 			MetaData.SOURCE_ARTIFACT_VERSION,
 			MetaData.SOURCE_RELEASE_DATE,
 			MetaData.SCTID,
+			MetaData.IDENTIFIER_SOURCE,
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION,
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION,
 			DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION,

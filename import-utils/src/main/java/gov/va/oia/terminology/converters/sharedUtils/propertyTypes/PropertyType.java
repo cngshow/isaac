@@ -198,7 +198,7 @@ public abstract class PropertyType
 				propertySubType, dataColumnForDynamicRefex));
 	}
 	
-	public Property addProperty(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+	public Property addProperty(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
 		return addProperty(new Property(this, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, isIdentifier));
 	}
 
