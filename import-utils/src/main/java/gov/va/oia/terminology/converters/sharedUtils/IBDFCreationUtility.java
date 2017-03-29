@@ -814,7 +814,7 @@ public class IBDFCreationUtility
 			writer_.put(ochreObject);
 		}
 
-		ls_.addRefsetMember(assemblage.getConceptDescriptionText());
+		ls_.addRefsetMember(getOriginStringForUuid(assemblage.getPrimordialUuid()));
 	
 		return sc;
 	}
@@ -1126,7 +1126,7 @@ public class IBDFCreationUtility
 		}
 		return "Unknown";
 	}
-	
+
 	public ComponentReference getModule()
 	{
 		return module_;
