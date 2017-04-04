@@ -98,7 +98,7 @@ public class LoadTermstore extends AbstractMojo
 		sememeTypesToSkip.addAll(types);
 	}
 	
-	private int conceptCount, sememeCount, stampAliasCount, stampCommentCount, itemCount, itemFailure;
+	private int conceptCount, sememeCount, stampAliasCount, stampCommentCount, itemCount, itemFailure, mergeCount;
 	private final HashSet<Integer> skippedItems = new HashSet<>();
 	private boolean skippedAny = false;
 	
@@ -228,16 +228,17 @@ public class LoadTermstore extends AbstractMojo
 										if (!sequences.isEmpty()) {
 											List<LogicalExpression> listToMerge = new ArrayList<>();
 											listToMerge.add(getLatestLogicalExpression(sc));
-											getLog().info("\nDuplicate: " + sc);
+											getLog().debug("\nDuplicate: " + sc);
 											sequences.stream().forEach((sememeSequence) ->  listToMerge.add(getLatestLogicalExpression(Get.sememeService().getSememe(sememeSequence))));
 											
-											getLog().info("Duplicates: " + listToMerge);
+											getLog().debug("Duplicates: " + listToMerge);
 											
 											if (listToMerge.size() > 2) {
 												throw new UnsupportedOperationException("Can't merge list of size: " + listToMerge.size() + "\n" + listToMerge);
 											}
 											IsomorphicResults isomorphicResults = listToMerge.get(0).findIsomorphisms(listToMerge.get(1));
-											getLog().info("Isomorphic results: " + isomorphicResults);
+											getLog().debug("Isomorphic results: " + isomorphicResults);
+											mergeCount++;
 											
 											SememeChronology existingChronology = Get.sememeService().getSememe(sequences.findFirst().getAsInt());
 											
@@ -322,7 +323,7 @@ public class LoadTermstore extends AbstractMojo
 				}
 				
 				getLog().info("Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, " + stampAliasCount + " stampAlias, " 
-						+ stampCommentCount + " stampComment"  + (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : "") 
+						+ stampCommentCount + " stampComments, " + mergeCount + " merged sememes" + (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : "") 
 						+ (itemFailure > 0 ? " Failures " + itemFailure : "") + " from file " + f.getName());
 				conceptCount = 0;
 				sememeCount = 0;
