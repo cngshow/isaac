@@ -126,6 +126,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("MVX modules");
                         createConcept("CPT modules");
                         createConcept("SOPT modules");
+                        createConcept("ICD10 modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
