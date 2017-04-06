@@ -161,6 +161,7 @@ public class IBDFCreationUtility
 	
 	private ComponentReference module_ = null;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
+	private HashSet<UUID> identifierTypes = new HashSet<>();
 	
 	private HashSet<UUID> conceptHasStatedGraph = new HashSet<>();
 	private HashSet<UUID> conceptHasInferredGraph = new HashSet<>();
@@ -697,12 +698,21 @@ public class IBDFCreationUtility
 	
 	/**
 	 * uses the concept time.
+	 * Note - this convenience method automatically chooses between creating a static string sememe, and a dynamic string sememe, depending on if the passed in 
+	 * refsetUuid is marked as an identifer type.
 	 */
-	public SememeChronology<DynamicSememe<?>> addStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
-		UUID refsetUuid, State status)
+	public SememeChronology<?> addStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
+		UUID refsetUuid, State state)
 	{
-		return addAnnotation(referencedComponent, uuidForCreatedAnnotation, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, 
-			refsetUuid, status, null, null);
+		if (identifierTypes.contains(refsetUuid))
+		{
+			return addStaticStringAnnotation(referencedComponent, uuidForCreatedAnnotation, annotationValue, refsetUuid, state);
+		}
+		else
+		{
+			return addAnnotation(referencedComponent, uuidForCreatedAnnotation, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, 
+					refsetUuid, state, null, null);
+		}
 	}
 	
 	public SememeChronology<DynamicSememe<?>> addRefsetMembership(ComponentReference referencedComponent, UUID refexDynamicTypeUuid, State state, Long time)
@@ -829,7 +839,8 @@ public class IBDFCreationUtility
 		
 		if (!refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid))
 		{
-			throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe");
+			throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe: " + refexDynamicTypeUuid + " values: " +
+					(values == null ? "" : Arrays.toString(values)));
 		}
 		
 		DynamicSememeColumnInfo[] colInfo = refexAllowedColumnTypes_.get(refexDynamicTypeUuid);
@@ -883,21 +894,37 @@ public class IBDFCreationUtility
 			}
 		}
 	}
+	
 	/**
 	 * uses the concept time, UUID is created from the component UUID, the annotation value and type.
 	 */
 	public SememeChronology<StringSememe<?>> addStaticStringAnnotation(ComponentReference referencedComponent, String annotationValue, UUID refsetUuid, 
 			State state)
 	{
+		return addStaticStringAnnotation(referencedComponent, null, annotationValue, refsetUuid, state);
+	}
+	/**
+	 * uses the concept time, UUID is created from the component UUID, the annotation value and type if the uuidForCreationAnnotation is null.
+	 */
+	public SememeChronology<StringSememe<?>> addStaticStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
+			UUID refsetUuid, State state)
+	{
 		@SuppressWarnings("rawtypes")
 		SememeBuilder sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refsetUuid));
 		
-		StringBuilder temp = new StringBuilder();
-		temp.append(annotationValue);
-		temp.append(refsetUuid.toString()); 
-		temp.append(referencedComponent.getPrimordialUuid().toString());
-		sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+		if (uuidForCreatedAnnotation == null)
+		{
+			StringBuilder temp = new StringBuilder();
+			temp.append(annotationValue);
+			temp.append(refsetUuid.toString()); 
+			temp.append(referencedComponent.getPrimordialUuid().toString());
+			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+		}
+		else
+		{
+			sb.setPrimordialUuid(uuidForCreatedAnnotation);
+		}
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
@@ -1191,6 +1218,10 @@ public class IBDFCreationUtility
 					//This came from a conceptSpecification (metadata in ISAAC), and we don't need to create it.
 					//Just need to add one relationship to the existing concept.
 					addParent(ComponentReference.fromConcept(p.getUUID()), pt.getPropertyTypeUUID());
+					if (p.isIdentifier()) 
+					{
+						identifierTypes.add(p.getUUID());
+					}
 				}
 				else
 				{
@@ -1205,6 +1236,7 @@ public class IBDFCreationUtility
 					if (p.isIdentifier()) {
 						// Add IDENTIFIER_ASSEMBLAGE membership
 						addMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_SOURCE);
+						identifierTypes.add(p.getUUID());
 					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),
