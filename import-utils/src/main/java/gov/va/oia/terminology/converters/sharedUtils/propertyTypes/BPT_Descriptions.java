@@ -18,7 +18,9 @@
  */
 package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
+import java.util.UUID;
 
+import gov.vha.isaac.MetaData;
 
 /**
  * Fields to treat as descriptions
@@ -26,7 +28,7 @@ package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
  * @author Daniel Armbrust
  *
  */
-public class BPT_Descriptions extends BPT_DualParentPropertyType
+public class BPT_Descriptions extends PropertyType implements BPT_HasAltMetaDataParent
 {
 	//These values can be used as the starting point for establishing the hierarchy of synonym types.
 	//Descriptions are typically sorted (ascending) by the propertySubType values.
@@ -41,6 +43,10 @@ public class BPT_Descriptions extends BPT_DualParentPropertyType
 
 	public BPT_Descriptions(String terminologyName)
 	{
-		super("Description Types", terminologyName + " Description Types", false, null);
+		super(terminologyName + " Description Types", false, null);
+	}
+	
+	public UUID getAltMetaDataParentUUID() {
+		return MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid();
 	}
 }

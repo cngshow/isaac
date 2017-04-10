@@ -31,15 +31,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.util.FileUtils;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Associations;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Descriptions;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_DualParentPropertyType;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Refsets;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Relations;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_HasAltMetaDataParent;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Skip;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.Property;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyAssociation;
@@ -87,6 +86,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
 import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.api.util.ChecksumGenerator;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
@@ -330,6 +330,27 @@ public class IBDFCreationUtility
 		ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(fsn, createSynonymFromFSN);
 		addParent(ComponentReference.fromConcept(concept), parentConceptPrimordial);
 		return concept;
+	}
+
+	public void addParents(ComponentReference concept, UUID...parentUuids) {
+		if (parentUuids != null && parentUuids.length > 0) {
+			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
+
+			Set<UUID> uuids = new HashSet<>();
+			for (UUID parentUuid : parentUuids) {
+				uuids.add(parentUuid);
+			}
+			
+			Assertion[] assertions = new Assertion[uuids.size()];
+			
+			int i = 0;
+			for (UUID parentUuid : uuids) {
+				assertions[i++] = ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(parentUuid), leb);
+			}
+			NecessarySet(And(assertions));
+		
+			addRelationshipGraph(concept, null, leb.build(), true, null, null);
+		}
 	}
 
 	/**
@@ -1192,23 +1213,17 @@ public class IBDFCreationUtility
 				continue;
 			}
 			
-			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true, parentPrimordial);
-			
-			UUID secondParent = null;
-			if (pt instanceof BPT_Refsets)
-			{
-				secondParent = setupWbPropertyMetadata(MetaData.SOLOR_REFSETS.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
-			}
-			else if (pt instanceof BPT_Descriptions)
-			{
-				//should only do this once, in case we see a BPT_Descriptions more than once
-				secondParent = setupWbPropertyMetadata(MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
-			}
-			
-			else if (pt instanceof BPT_Relations)
-			{
-				//should only do this once, in case we see a BPT_Relations more than once
-				secondParent = setupWbPropertyMetadata(MetaData.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
+			ConceptChronology<? extends ConceptVersion<?>> groupingConcept = createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true);
+			/*
+			 * add interface for getAltMetaDataParent()
+			 * 
+			 * Use common additional parent interface
+			 * to get additional parent
+			 */
+			if (pt instanceof BPT_HasAltMetaDataParent && ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID() != null) {
+				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial, ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID());
+			} else {
+				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial);
 			}
 			
 			for (Property p : pt.getProperties())
@@ -1226,7 +1241,7 @@ public class IBDFCreationUtility
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
-					UUID secondParentToUse = secondParent != null ? secondParent : (p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null);
+					UUID secondParentToUse = p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null;
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
@@ -1309,19 +1324,19 @@ public class IBDFCreationUtility
 		return "";
 	}
 	
-	private UUID setupWbPropertyMetadata(UUID refsetValueParent, BPT_DualParentPropertyType pt) throws Exception
-	{
-		if (pt.getSecondParentName() == null)
-		{
-			throw new RuntimeException("Unhandled case!");
-		}
-		//Create the terminology specific refset type as a child - this is just an organization concept
-		//under description type in source terminology or relationship type in source terminology
-		UUID temp =  createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getSecondParentName(), true), 
-				pt.getSecondParentName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
-		pt.setSecondParentId(temp);
-		return temp;
-	}
+//	private UUID setupWbPropertyMetadata(UUID refsetValueParent, BPT_DualParentPropertyType pt) throws Exception
+//	{
+//		if (pt.getSecondParentName() == null)
+//		{
+//			throw new RuntimeException("Unhandled case!");
+//		}
+//		//Create the terminology specific refset type as a child - this is just an organization concept
+//		//under description type in source terminology or relationship type in source terminology
+//		UUID temp =  createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getSecondParentName(), true), 
+//				pt.getSecondParentName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
+//		pt.setSecondParentId(temp);
+//		return temp;
+//	}
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
 	{

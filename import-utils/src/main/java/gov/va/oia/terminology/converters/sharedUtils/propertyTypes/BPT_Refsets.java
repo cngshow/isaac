@@ -18,16 +18,24 @@
  */
 package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
+import java.util.UUID;
+
+import gov.vha.isaac.MetaData;
+
 /**
  * Fields to treat as refsets
  * 
  * @author Daniel Armbrust
  * 
  */
-public class BPT_Refsets extends BPT_DualParentPropertyType
+public class BPT_Refsets extends PropertyType implements BPT_HasAltMetaDataParent
 {
 	public BPT_Refsets(String terminologyName)
 	{
-		super("Refsets", terminologyName + " Refsets", true, null);
+		super(terminologyName + " Refsets", true, null);
+	}
+	
+	public UUID getAltMetaDataParentUUID() {
+		return MetaData.SOLOR_REFSETS.getPrimordialUuid();
 	}
 }

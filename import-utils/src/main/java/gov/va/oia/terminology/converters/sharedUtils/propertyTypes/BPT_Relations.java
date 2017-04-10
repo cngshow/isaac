@@ -18,16 +18,24 @@
  */
 package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
+import java.util.UUID;
+
+import gov.vha.isaac.MetaData;
+
 /**
  * @author Daniel Armbrust
  * 
  * These get represented as native relationships within the OCHRE APIS (meaning the classifier 
  * pays attention, etc)
  */
-public class BPT_Relations extends BPT_DualParentPropertyType
+public class BPT_Relations extends PropertyType implements BPT_HasAltMetaDataParent
 {
 	public BPT_Relations(String terminologyName)
 	{
-		super("Relation Types", terminologyName + " Relation Types", false, null);
+		super(terminologyName + " Relation Types", false, null);
+	}
+	
+	public UUID getAltMetaDataParentUUID() {
+		return MetaData.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid();
 	}
 }

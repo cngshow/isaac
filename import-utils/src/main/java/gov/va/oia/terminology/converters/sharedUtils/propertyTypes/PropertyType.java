@@ -44,6 +44,7 @@ public abstract class PropertyType
 {
 	protected static int srcVersion_ = 1;
 	private UUID propertyTypeUUID = null;
+	//private Set<UUID> additionalParents = new HashSet<>();
 	private String propertyTypeDescription_;
 	private boolean createAsDynamicRefex_ = false;  //It could make sense to set this at the individual Property level... but in general, everything of the same type 
 	//will be handled in the same way - relationships are not dynamic sememes, assoications are, for example.
