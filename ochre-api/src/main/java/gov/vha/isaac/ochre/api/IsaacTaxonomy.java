@@ -32,6 +32,7 @@ import java.util.UUID;
 import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.commit.CommittableComponent;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptService;
@@ -67,7 +68,6 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
  */
 @Contract
 public class IsaacTaxonomy {
-
     private final TreeMap<String, ConceptBuilder> conceptBuilders = new TreeMap<>();
     private final List<SememeBuilder<?>> sememeBuilders = new ArrayList<>();
     private final List<ConceptBuilder> conceptBuildersInInsertionOrder = new ArrayList<>();
@@ -98,14 +98,29 @@ public class IsaacTaxonomy {
         return builder;
     }
 
+    private final static <T extends CommittableComponent> IdentifiedComponentBuilder<T> addIdentifierAssemblageMembership(IdentifiedComponentBuilder<T> builder) {
+        // add static member sememe
+        return builder.addSememe(Get.sememeBuilderService().getMembershipSememeBuilder(builder, TermAux.IDENTIFIER_SOURCE.getNid()));
+    }
+    
     protected final ConceptBuilder createConcept(String name) {
-        return createConcept(name, null, null);
+        return createConcept(name, (String)null, (String)null);
     }
-    
+
     protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym) {
-        return createConcept(name, null, nonPreferredSynonym);
+        return createConcept(name, nonPreferredSynonym, (String)null);
     }
-    
+
+    protected final ConceptBuilder createConcept(String name, String nonPreferredSynonym, String definition) {
+        ConceptBuilder cb = createConcept(name, (Integer)null, nonPreferredSynonym);
+
+        if (StringUtils.isNotBlank(definition)) {
+            addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
+        }
+	
+        return cb;
+    }
+
     /**
      * If parent is provided, it ignores the parent stack, and uses the provided parent instead.
      * If parent is not provided, it uses the parentStack (if populated), otherwise, it creates
@@ -138,6 +153,10 @@ public class IsaacTaxonomy {
     }
     
     public ConceptBuilder createConcept(MetadataConceptConstant cc) throws Exception {
+        return createConcept(cc, false);
+    }
+
+    public ConceptBuilder createConcept(MetadataConceptConstant cc, boolean isIdentifier) throws Exception {
         try {
             ConceptBuilder cb = createConcept(cc.getPrimaryName(), cc.getParent() != null ? cc.getParent().getConceptSequence() : null, null);
             cb.setPrimordialUuid(cc.getUUID());
@@ -198,6 +217,10 @@ public class IsaacTaxonomy {
                  }
             }
             
+            if (isIdentifier) {
+                addIdentifierAssemblageMembership(cb);
+        	}
+
             return cb;
         } catch (Exception e) {
             throw new Exception("Problem with '" + cc.getPrimaryName() + "'", e);
@@ -351,14 +374,15 @@ public class IsaacTaxonomy {
         }
     }
 
-    private void buildAndWrite(IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
+    @SuppressWarnings("unchecked")
+	private void buildAndWrite(@SuppressWarnings("rawtypes") IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
         List<?> builtObjects = new ArrayList<>();
         builder.build(stampCoordinate, builtObjects);
         builtObjects.forEach((builtObject) -> {
             if (builtObject instanceof ConceptChronology) {
                 conceptService.writeConcept((ConceptChronology<? extends ConceptVersion<?>>) builtObject);
             } else if (builtObject instanceof SememeChronology) {
-                sememeService.writeSememe((SememeChronology) builtObject);
+                sememeService.writeSememe((SememeChronology<?>) builtObject);
             } else {
                 throw new UnsupportedOperationException("Can't handle: " + builtObject);
             }

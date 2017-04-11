@@ -47,6 +47,7 @@ public class Property
 	private UUID propertyUUID = null;
 	private UUID useWBPropertyTypeInstead = null;  //see comments in setter
 	private DynamicSememeColumnInfo[] dataColumnsForDynamicRefex_ = null;
+	private boolean isIdentifier_;
 	
 	/**
 	 * @param dataTypesForDynamicRefex - if null - will use the default information for the parent {@link PropertyType} - otherwise, 
@@ -55,12 +56,25 @@ public class Property
 	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, 
 			String sourcePropertyDefinition, boolean disabled, int propertySubType, DynamicSememeColumnInfo[] columnInforForDynamicRefex)
 	{
+		this(owner, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, disabled, false, propertySubType, columnInforForDynamicRefex);
+	}
+	public Property(
+			PropertyType owner,
+			String sourcePropertyNameFSN,
+			String sourcePropertyAltName, 
+			String sourcePropertyDefinition,
+			boolean disabled,
+			boolean isIdentifier,
+			int propertySubType,
+			DynamicSememeColumnInfo[] columnInforForDynamicRefex)
+	{
 		this.owner_ = owner;
 		this.sourcePropertyNameFSN_ = sourcePropertyNameFSN;
 		this.sourcePropertyAltName_ = sourcePropertyAltName;
 		this.sourcePropertyDefinition_ = sourcePropertyDefinition;
 		this.isDisabled_ = disabled;
 		this.propertySubType_ = propertySubType;
+		this.isIdentifier_ = isIdentifier;
 		
 		//if owner is null, have to delay this until the setOwner call
 		//leave the assemblageConceptUUID null for now - it should be set to "getUUID()" but that isn't always ready
@@ -83,19 +97,39 @@ public class Property
 		}
 	}
 
+	public Property(PropertyType owner, String sourcePropertyNameFSN, boolean isIdentifier)
+	{
+		this(owner, sourcePropertyNameFSN, null, null, false, isIdentifier, Integer.MAX_VALUE, null);
+	}
+
 	public Property(PropertyType owner, String sourcePropertyNameFSN)
 	{
-		this(owner, sourcePropertyNameFSN, null, null, false, Integer.MAX_VALUE, null);
+		this(owner, sourcePropertyNameFSN, null, null, false, false, Integer.MAX_VALUE, null);
 	}
 	
-	public Property(PropertyType owner, ConceptSpecification cs)
+	public Property(PropertyType owner, ConceptSpecification cs) {
+		this(owner, cs, false);
+	}
+
+	public Property(ConceptSpecification cs, boolean isIdentifier) {
+		this((PropertyType)null, cs, isIdentifier);
+	}
+
+	public Property(PropertyType owner, ConceptSpecification cs, boolean isIdentifier)
 	{
 		this(owner, cs.getConceptDescriptionText(), null, null, false, Integer.MAX_VALUE, null);
 		propertyUUID = cs.getPrimordialUuid();
 		ConverterUUID.addMapping(cs.getConceptDescriptionText(), cs.getPrimordialUuid());
 		isFromConceptSpec_ = true;
+		this.isIdentifier_ = isIdentifier;
 	}
 	
+	public Property(PropertyType owner, String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+		this(owner, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, isIdentifier, Integer.MAX_VALUE, null);
+	}
+	public Property(String sourcePropertyNameFSN, String sourcePropertyAltName, String sourcePropertyDefinition, boolean isIdentifier) {
+		this(null, sourcePropertyNameFSN, sourcePropertyAltName, sourcePropertyDefinition, false, isIdentifier, Integer.MAX_VALUE, null);
+	}
 	/**
 	 * owner must be set via the set method after using this constructor!
 	 */
@@ -118,6 +152,11 @@ public class Property
 	public String getSourcePropertyDefinition()
 	{
 		return sourcePropertyDefinition_;
+	}
+
+	public boolean isIdentifier()
+	{
+		return isIdentifier_;
 	}
 
 	/**
@@ -152,6 +191,10 @@ public class Property
 			throw new RuntimeException("Tried to attach dynamic sememe data where it isn't allowed.");
 		}
 		
+	}
+
+	public void setIsIdentifier(boolean isIdentifier) {
+		this.isIdentifier_ = isIdentifier;
 	}
 
 	public UUID getUUID()
@@ -195,5 +238,13 @@ public class Property
 			dataColumnsForDynamicRefex_[0].setAssemblageConcept(getUUID());
 		}
 		return dataColumnsForDynamicRefex_;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Property [FSN=" + sourcePropertyNameFSN_ + ", isIdentifier=" + isIdentifier_ + "]";
 	}
 }

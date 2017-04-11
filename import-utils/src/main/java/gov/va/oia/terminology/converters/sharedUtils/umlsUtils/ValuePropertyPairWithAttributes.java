@@ -17,6 +17,7 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 {
 	protected HashMap<UUID, ArrayList<String>> stringAttributes = new HashMap<>();
 	protected HashMap<UUID, ArrayList<UUID>> uuidAttributes = new HashMap<>();
+	protected HashMap<UUID, ArrayList<String>> identifierAttributes = new HashMap<>();
 	protected ArrayList<UUID> refsetMembership = new ArrayList<>();
 	
 	public ValuePropertyPairWithAttributes(String value, Property property)
@@ -56,6 +57,21 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 		refsetMembership.add(refsetConcept);
 	}
 	
+	public void addIdentifierAttribute(UUID type, String value)
+	{
+		ArrayList<String> values = identifierAttributes.get(type);
+		if (values == null)
+		{
+			values = new ArrayList<>();
+			identifierAttributes.put(type, values);
+		}
+		values.add(value);
+	}
+	public ArrayList<String> getIdentifierAttribute(UUID type)
+	{
+		return identifierAttributes.get(type);
+	}
+
 	public static void processAttributes(IBDFCreationUtility ibdfCreationUtility, List<? extends ValuePropertyPairWithAttributes> descriptionSource, 
 		List<SememeChronology<DescriptionSememe<?>>> descriptions)
 	{
@@ -80,6 +96,15 @@ public class ValuePropertyPairWithAttributes extends ValuePropertyPair
 			for (UUID refsetConcept : descriptionSource.get(i).refsetMembership)
 			{
 				ibdfCreationUtility.addRefsetMembership(ComponentReference.fromChronology(descriptions.get(i)), refsetConcept, State.ACTIVE, null);
+			}
+
+			for (Entry<UUID, ArrayList<String>> identifierAttributes : descriptionSource.get(i).identifierAttributes.entrySet())
+			{
+				for (String value : identifierAttributes.getValue())
+				{
+					// TODO confirm parameters appropriate
+					ibdfCreationUtility.addStaticStringAnnotation(ComponentReference.fromChronology(descriptions.get(i)), value, identifierAttributes.getKey(), State.ACTIVE);
+				}
 			}
 		}
 	}

@@ -779,7 +779,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
-	 * Recursively get Is a children of a concept.  May inadvertenly return the requested starting sequence when leafOnly is true, and 
+	 * Recursively get Is a children of a concept.  May inadvertently return the requested starting sequence when leafOnly is true, and 
 	 * there are no children.
 	 */
 	private static Set<Integer> getAllChildrenOfConcept(Set<Integer> handledConceptSequenceIds, int conceptSequence, boolean recursive, boolean leafOnly)
@@ -797,13 +797,31 @@ public class Frills implements DynamicSememeColumnUtility {
 		children.forEach((conSequence) ->
 		{
 			count.getAndIncrement();
-			if (!leafOnly)
+			if (leafOnly)
+			{
+				Set<Integer> temp = getAllChildrenOfConcept(handledConceptSequenceIds, conSequence, recursive, leafOnly);
+				
+				if (recursive)
+				{
+					results.addAll(temp);
+				}
+				else
+				{
+					temp.remove(conSequence);  //remove itself
+					if (temp.size() == 0)
+					{
+						//This is a leaf node.  Add it to results.
+						results.add(conSequence);
+					}
+				}
+			}
+			else
 			{
 				results.add(conSequence);
-			}
-			if (recursive)
-			{
-				results.addAll(getAllChildrenOfConcept(handledConceptSequenceIds, conSequence, recursive, leafOnly));
+				if (recursive)
+				{
+					results.addAll(getAllChildrenOfConcept(handledConceptSequenceIds, conSequence, recursive, leafOnly));
+				}
 			}
 		});
 		

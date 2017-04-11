@@ -62,6 +62,7 @@ import static gov.vha.isaac.ochre.model.observable.ObservableFields.TIME_FOR_VER
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.UUID_FOR_TAXONOMY_COORDINATE;
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.UUID_LIST_FOR_CHRONICLE;
 import static gov.vha.isaac.ochre.model.observable.ObservableFields.VERSION_LIST_FOR_CHRONICLE;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -69,16 +70,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.inject.Singleton;
+
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.ochre.api.IsaacTaxonomy;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
-import gov.vha.isaac.ochre.api.constants.MetadataDynamicSememeConstant;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 
 /**
@@ -91,6 +91,7 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 
     public static final String METADATA_SEMANTIC_TAG = "ISAAC";
+
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
@@ -124,6 +125,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("CVX modules");
                         createConcept("MVX modules");
                         createConcept("CPT modules");
+                        createConcept("SOPT modules");
+                        createConcept("ICD10 modules");
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
@@ -137,21 +140,12 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         createConcept("sufficient set").setPrimordialUuid(NodeSemantic.SUFFICIENT_SET.getSemanticUuid());
                         createConcept("necessary set").setPrimordialUuid(NodeSemantic.NECESSARY_SET.getSemanticUuid());
                     popParent();
-                    createConcept("identifier source");
+                    createConcept(TermAux.IDENTIFIER_SOURCE).addDescription("A parent concept and membership sememe used to group identifiers", TermAux.DEFINITION_DESCRIPTION_TYPE);
                     pushParent(current());
-                        createConcept("SCTID").mergeFromSpec(TermAux.SNOMED_IDENTIFIER);
-                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66");
-                        createConcept(new MetadataDynamicSememeConstant("LOINC_NUM", null, "LOINC Identifier", "Carries the LOINC_NUM native identifier", 
-                                new DynamicSememeColumnInfo[] 
-                                    {new DynamicSememeColumnInfo(0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), 
-                                        DynamicSememeDataType.STRING, null, true, true)}));
-                        createConcept("RXCUI").setPrimordialUuid("617761d2-80ef-5585-83a0-60851dd44158");//comes from the algorithm in the rxnorm econ loader
-                        createConcept("VUID", "Vets Unique Identifier");
-                        createConcept("OID", "HL7 Object Identifier");
-                        createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17");//comes from the algorithm in the VHAT econ loader
-                        createConcept("CVXCode", "CVX Unique Identifier");
-                        createConcept("MVX_CODE", "MVX Unique Identifier");
-                        
+                        createConcept("SCTID").mergeFromSpec(TermAux.SNOMED_IDENTIFIER).addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("VUID", "Vets Unique Identifier").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);// UUID comes from the algorithm in the VHAT econ loader
                     popParent();
                     createConcept("language");
                     pushParent(current());

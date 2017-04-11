@@ -3,15 +3,21 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/04/11 - 3.43
+    * Fix a bug with Frills.getAllChildrenOfConcept where it didn't return the proper list of children in certain cases, which inadvertently led to 
+        the warnings "SememeAPIs.get(...) didn't filter properly..." being frequently logged by isaac-rest.  
+	* Added metadata entry for ICD10 modules for ICD10 terminology importer
+	* Updating libraries in master pom file to current
+
 * 2017/03/20 - 3.42
 	* More Fortify fixes
 	* Better loggin on DB creation failures
 	* Production build for Release 3
 
 * 2017/03/16 - 3.41
-	* Cleanup debug logging
-	* Close HL7 response listener
-	* Fortify fix
+    * Cleanup debug logging
+    * Close HL7 response listener
+    * Fortify fix
 
 * 2017/03/15 - 3.40
     * prevent duplicate tag push / push failure issue with source upload and content converter creator by locking on the repo.  Note, this simplistic 

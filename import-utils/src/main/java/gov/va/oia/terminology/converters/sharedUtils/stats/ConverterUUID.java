@@ -22,7 +22,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import gov.va.oia.terminology.converters.sharedUtils.ConsoleUtil;
@@ -48,24 +51,47 @@ public class ConverterUUID
 	private static Hashtable<UUID, String> masterUUIDMap_ = new Hashtable<UUID, String>();
 	private static UUID namespace_ = null;
 
-	private static ConceptSpecification[] constants = new ConceptSpecification[] {
-			MetaData.IS_A,
-			MetaData.SYNONYM,
-			MetaData.FULLY_SPECIFIED_NAME,
-			MetaData.DEFINITION_DESCRIPTION_TYPE,
-			MetaData.US_ENGLISH_DIALECT,
-			MetaData.GB_ENGLISH_DIALECT,
-			MetaData.CONVERTED_IBDF_ARTIFACT_CLASSIFIER,
-			MetaData.CONVERTED_IBDF_ARTIFACT_VERSION,
-			MetaData.CONVERTER_VERSION,
-			MetaData.SOURCE_ARTIFACT_VERSION,
-			MetaData.SOURCE_RELEASE_DATE,
-			MetaData.SCTID,
-			DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION,
-			DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION,
-			DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION,
-			DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION,
-			DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME};
+	private static ConceptSpecification[] constants;
+	static {
+		List<ConceptSpecification> constantsList = new ArrayList<>();
+		try {
+			// Add MetaData static class member concepts
+			for (Field field : MetaData.class.getDeclaredFields()) {
+				if (ConceptSpecification.class.isAssignableFrom(field.getType())) {
+					constantsList.add((ConceptSpecification)field.get(MetaData.class));
+				}
+			}
+			// Add DynamicSememeConstants instance member concepts
+			for (Field field : DynamicSememeConstants.class.getDeclaredFields()) {
+				if (ConceptSpecification.class.isAssignableFrom(field.getType())) {
+					constantsList.add((ConceptSpecification)field.get(DynamicSememeConstants.get()));
+				}
+			}
+			
+			constants = constantsList.toArray(new ConceptSpecification[constantsList.size()]);
+		} catch (Exception e) {
+			// This is just a fall back in case the initialization by reflection fails
+			constants = new ConceptSpecification[] {
+					MetaData.IS_A,
+					MetaData.SYNONYM,
+					MetaData.FULLY_SPECIFIED_NAME,
+					MetaData.DEFINITION_DESCRIPTION_TYPE,
+					MetaData.US_ENGLISH_DIALECT,
+					MetaData.GB_ENGLISH_DIALECT,
+					MetaData.CONVERTED_IBDF_ARTIFACT_CLASSIFIER,
+					MetaData.CONVERTED_IBDF_ARTIFACT_VERSION,
+					MetaData.CONVERTER_VERSION,
+					MetaData.SOURCE_ARTIFACT_VERSION,
+					MetaData.SOURCE_RELEASE_DATE,
+					MetaData.SCTID,
+					MetaData.IDENTIFIER_SOURCE,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENSION_DEFINITION,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_INDEX_CONFIGURATION,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_DEFINITION_DESCRIPTION,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_SEMEME};
+		}
+	}
 	
 	/**
 	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.

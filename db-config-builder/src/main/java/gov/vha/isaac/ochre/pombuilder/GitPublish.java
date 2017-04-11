@@ -196,7 +196,7 @@ public class GitPublish
 	public static void lock(String gitRepository) throws IOException
 	{
 		String correctedURL = constructChangesetRepositoryURL(gitRepository);
-		ReentrantLock lock = repoLock.get(correctedURL);
+		ReentrantLock lock;
 		
 		synchronized (repoLock)
 		{

@@ -16,26 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
+package test;
 
-import java.util.UUID;
-
-import gov.vha.isaac.MetaData;
+import org.junit.Assert;
+import org.junit.Test;
+import gov.vha.isaac.ochre.pombuilder.VersionFinder;
 
 /**
- * Fields to treat as refsets
- * 
- * @author Daniel Armbrust
- * 
+ * {@link VersionFinderTest}
+ *
+ * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
-public class BPT_Refsets extends PropertyType implements BPT_HasAltMetaDataParent
+public class VersionFinderTest
 {
-	public BPT_Refsets(String terminologyName)
+	@Test
+	public void testJson() throws Exception
 	{
-		super(terminologyName + " Refsets", true, null);
-	}
-	
-	public UUID getAltMetaDataParentUUID() {
-		return MetaData.SOLOR_REFSETS.getPrimordialUuid();
-	}
+		String temp = VersionFinder.findProjectVersion();
+		
+		Assert.assertFalse(temp.contains("SNAPSHOT"));
+	}	
 }

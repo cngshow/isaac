@@ -38,7 +38,12 @@ import org.w3c.dom.Node;
 public class VersionFinder
 {
 	private static final Logger LOG = LogManager.getLogger();
-			
+	
+	/**
+	 * Note that while this finds the project version from either the metadta embedded in the jar that contains this, 
+	 * or from the pom.xml file, if we are running in eclipse - it will not return SNAPSHOT versions, rather, it 
+	 * removes -SNAPSHOT and decrements the versions by 1, to simplify testing in AITC.
+	 */
 	public static String findProjectVersion()
 	{
 		try (InputStream is = VersionFinder.class.getResourceAsStream("/META-INF/maven/gov.vha.isaac.ochre.modules/db-config-builder/pom.xml");)
@@ -63,6 +68,38 @@ public class VersionFinder
 			XPath xPath = XPathFactory.newInstance().newXPath();
 			String temp = ((Node) xPath.evaluate("/project/parent/version", dDoc, XPathConstants.NODE)).getTextContent();
 			LOG.debug("VersionFinder finds {} (for the version of this release of the converter library)", temp);
+			
+			//Parse 3.42-SNAPSHOT and turn it into '3.41', so we don't write content converters or db builders with SNAPSHOT
+			//refs that won't be resolvable in AITC
+			
+			try
+			{
+				if (temp.endsWith("-SNAPSHOT"))
+				{
+					String subString = temp.substring(0, temp.indexOf("-SNAPSHOT"));
+					String[] parts = subString.split("\\.");
+					
+					int endDigit = Integer.parseInt(parts[parts.length - 1]);
+					if (endDigit >= 0)
+					{
+						endDigit--;
+					}
+					String replacement = "";
+					for (int i = 0; i < parts.length - 1; i++)
+					{
+						replacement += parts[i];
+						replacement += ".";
+					}
+					replacement += endDigit;
+					LOG.debug("VersionFinder returns {} (for the version of this release of the converter library) after removing SNAPSHOT", replacement);
+					return replacement;
+				}
+			}
+			catch (Exception e)
+			{
+				LOG.error("Unexpected error trying to remove -SNAPSHOT from detected version number - returning found version number", e);
+			}
+			
 			return temp;
 		}
 		catch (Exception e)

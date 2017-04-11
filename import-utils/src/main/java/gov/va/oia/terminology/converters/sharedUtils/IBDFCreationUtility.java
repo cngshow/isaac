@@ -31,15 +31,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.util.FileUtils;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Associations;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Descriptions;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_DualParentPropertyType;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Refsets;
-import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Relations;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_HasAltMetaDataParent;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Skip;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.Property;
 import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyAssociation;
@@ -87,6 +86,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
+import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
 import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
 import gov.vha.isaac.ochre.api.util.ChecksumGenerator;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
@@ -151,7 +151,7 @@ public class IBDFCreationUtility
 			throw new RuntimeException("Unknown description type UUID " + typeId);
 		}
 	};
-
+	
 	private final int authorSeq_;
 	private final int terminologyPathSeq_;
 	private final long defaultTime_;
@@ -161,6 +161,7 @@ public class IBDFCreationUtility
 	
 	private ComponentReference module_ = null;
 	private HashMap<UUID, DynamicSememeColumnInfo[]> refexAllowedColumnTypes_ = new HashMap<>();
+	private HashSet<UUID> identifierTypes = new HashSet<>();
 	
 	private HashSet<UUID> conceptHasStatedGraph = new HashSet<>();
 	private HashSet<UUID> conceptHasInferredGraph = new HashSet<>();
@@ -264,10 +265,8 @@ public class IBDFCreationUtility
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getDynamicSememeColumns());
 		registerDynamicSememeColumnInfo(DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getUUID(), 
 				DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getDynamicSememeColumns());
-		//TODO figure out how to get rid of this copy/paste mess too
-		registerDynamicSememeColumnInfo(MetaData.LOINC_NUM.getPrimordialUuid(), new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(0,
-				DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, true) });
-		
+
+		//TODO figure out how to get rid of this copy/paste mess too		
 		
 		conceptBuilderService_ = Get.conceptBuilderService();
 		conceptBuilderService_.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
@@ -331,6 +330,27 @@ public class IBDFCreationUtility
 		ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(fsn, createSynonymFromFSN);
 		addParent(ComponentReference.fromConcept(concept), parentConceptPrimordial);
 		return concept;
+	}
+
+	public void addParents(ComponentReference concept, UUID...parentUuids) {
+		if (parentUuids != null && parentUuids.length > 0) {
+			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
+
+			Set<UUID> uuids = new HashSet<>();
+			for (UUID parentUuid : parentUuids) {
+				uuids.add(parentUuid);
+			}
+			
+			Assertion[] assertions = new Assertion[uuids.size()];
+			
+			int i = 0;
+			for (UUID parentUuid : uuids) {
+				assertions[i++] = ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(parentUuid), leb);
+			}
+			NecessarySet(And(assertions));
+		
+			addRelationshipGraph(concept, null, leb.build(), true, null, null);
+		}
 	}
 
 	/**
@@ -678,7 +698,7 @@ public class IBDFCreationUtility
 		ls_.addAnnotation("Description", getOriginStringForUuid(dialectRefset));
 		return sc;
 	}
-	
+
 	/**
 	 * Add an alternate ID to the concept.
 	 */
@@ -699,12 +719,21 @@ public class IBDFCreationUtility
 	
 	/**
 	 * uses the concept time.
+	 * Note - this convenience method automatically chooses between creating a static string sememe, and a dynamic string sememe, depending on if the passed in 
+	 * refsetUuid is marked as an identifer type.
 	 */
-	public SememeChronology<DynamicSememe<?>> addStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
-		UUID refsetUuid, State status)
+	public SememeChronology<?> addStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
+		UUID refsetUuid, State state)
 	{
-		return addAnnotation(referencedComponent, uuidForCreatedAnnotation, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, 
-			refsetUuid, status, null, null);
+		if (identifierTypes.contains(refsetUuid))
+		{
+			return addStaticStringAnnotation(referencedComponent, uuidForCreatedAnnotation, annotationValue, refsetUuid, state);
+		}
+		else
+		{
+			return addAnnotation(referencedComponent, uuidForCreatedAnnotation, new DynamicSememeData[] {new DynamicSememeStringImpl(annotationValue)}, 
+					refsetUuid, state, null, null);
+		}
 	}
 	
 	public SememeChronology<DynamicSememe<?>> addRefsetMembership(ComponentReference referencedComponent, UUID refexDynamicTypeUuid, State state, Long time)
@@ -805,6 +834,21 @@ public class IBDFCreationUtility
 		return refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid);
 	}
 
+	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
+		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
+
+		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
+		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
+
+		for (OchreExternalizable ochreObject : builtObjects)
+		{
+			writer_.put(ochreObject);
+		}
+
+		ls_.addRefsetMember(getOriginStringForUuid(assemblage.getPrimordialUuid()));
+	
+		return sc;
+	}
 	/**
 	 * @param refexDynamicTypeUuid
 	 * @param values
@@ -816,7 +860,8 @@ public class IBDFCreationUtility
 		
 		if (!refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid))
 		{
-			throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe");
+			throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe: " + refexDynamicTypeUuid + " values: " +
+					(values == null ? "" : Arrays.toString(values)));
 		}
 		
 		DynamicSememeColumnInfo[] colInfo = refexAllowedColumnTypes_.get(refexDynamicTypeUuid);
@@ -870,21 +915,37 @@ public class IBDFCreationUtility
 			}
 		}
 	}
+	
 	/**
 	 * uses the concept time, UUID is created from the component UUID, the annotation value and type.
 	 */
 	public SememeChronology<StringSememe<?>> addStaticStringAnnotation(ComponentReference referencedComponent, String annotationValue, UUID refsetUuid, 
 			State state)
 	{
+		return addStaticStringAnnotation(referencedComponent, null, annotationValue, refsetUuid, state);
+	}
+	/**
+	 * uses the concept time, UUID is created from the component UUID, the annotation value and type if the uuidForCreationAnnotation is null.
+	 */
+	public SememeChronology<StringSememe<?>> addStaticStringAnnotation(ComponentReference referencedComponent, UUID uuidForCreatedAnnotation, String annotationValue, 
+			UUID refsetUuid, State state)
+	{
 		@SuppressWarnings("rawtypes")
 		SememeBuilder sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refsetUuid));
 		
-		StringBuilder temp = new StringBuilder();
-		temp.append(annotationValue);
-		temp.append(refsetUuid.toString()); 
-		temp.append(referencedComponent.getPrimordialUuid().toString());
-		sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+		if (uuidForCreatedAnnotation == null)
+		{
+			StringBuilder temp = new StringBuilder();
+			temp.append(annotationValue);
+			temp.append(refsetUuid.toString()); 
+			temp.append(referencedComponent.getPrimordialUuid().toString());
+			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+		}
+		else
+		{
+			sb.setPrimordialUuid(uuidForCreatedAnnotation);
+		}
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
@@ -1113,7 +1174,7 @@ public class IBDFCreationUtility
 		}
 		return "Unknown";
 	}
-	
+
 	public ComponentReference getModule()
 	{
 		return module_;
@@ -1152,23 +1213,17 @@ public class IBDFCreationUtility
 				continue;
 			}
 			
-			createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true, parentPrimordial);
-			
-			UUID secondParent = null;
-			if (pt instanceof BPT_Refsets)
-			{
-				secondParent = setupWbPropertyMetadata(MetaData.SOLOR_REFSETS.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
-			}
-			else if (pt instanceof BPT_Descriptions)
-			{
-				//should only do this once, in case we see a BPT_Descriptions more than once
-				secondParent = setupWbPropertyMetadata(MetaData.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
-			}
-			
-			else if (pt instanceof BPT_Relations)
-			{
-				//should only do this once, in case we see a BPT_Relations more than once
-				secondParent = setupWbPropertyMetadata(MetaData.RELATIONSHIP_TYPE_IN_SOURCE_TERMINOLOGY.getPrimordialUuid(), (BPT_DualParentPropertyType)pt);
+			ConceptChronology<? extends ConceptVersion<?>> groupingConcept = createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true);
+			/*
+			 * add interface for getAltMetaDataParent()
+			 * 
+			 * Use common additional parent interface
+			 * to get additional parent
+			 */
+			if (pt instanceof BPT_HasAltMetaDataParent && ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID() != null) {
+				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial, ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID());
+			} else {
+				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial);
 			}
 			
 			for (Property p : pt.getProperties())
@@ -1178,22 +1233,37 @@ public class IBDFCreationUtility
 					//This came from a conceptSpecification (metadata in ISAAC), and we don't need to create it.
 					//Just need to add one relationship to the existing concept.
 					addParent(ComponentReference.fromConcept(p.getUUID()), pt.getPropertyTypeUUID());
+					//TODO Dan has tracked down a bug to the above call - 
+//					java.lang.NullPointerException
+//			        at java.util.AbstractCollection.addAll(AbstractCollection.java:343)
+//			        at gov.vha.isaac.ochre.model.logic.IsomorphicResultsBottomUp.isomorphicAnalysis(IsomorphicResultsBottomUp.java:371)
+					//I've asked Keith a question about it, the root cause seems to be logic graphs not merging properly during db build. 
+
+					if (p.isIdentifier()) 
+					{
+						identifierTypes.add(p.getUUID());
+					}
 				}
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
+					UUID secondParentToUse = p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null;
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
-							pt.getPropertyTypeUUID(), secondParent);
-					
-					if (pt.createAsDynamicRefex())
-					{
+							pt.getPropertyTypeUUID(),
+							secondParentToUse);
+
+					if (p.isIdentifier()) {
+						// Add IDENTIFIER_ASSEMBLAGE membership
+						addMembership(ComponentReference.fromConcept(concept), MetaData.IDENTIFIER_SOURCE);
+						identifierTypes.add(p.getUUID());
+					} else if (pt.createAsDynamicRefex()) {
 						configureConceptAsDynamicRefex(ComponentReference.fromConcept(concept), 
 								findFirstNotEmptyString(p.getSourcePropertyDefinition(), p.getSourcePropertyAltName(), p.getSourcePropertyNameFSN()),
 								p.getDataColumnsForDynamicRefex(), null, null);
 					}
-					
+
 					else if (p instanceof PropertyAssociation)
 					{
 						//TODO need to migrate code from api-util (AssociationType, etc) down into the ISAAC packages... integrate here, at least at doc level
@@ -1258,20 +1328,6 @@ public class IBDFCreationUtility
 			}
 		}
 		return "";
-	}
-	
-	private UUID setupWbPropertyMetadata(UUID refsetValueParent, BPT_DualParentPropertyType pt) throws Exception
-	{
-		if (pt.getSecondParentName() == null)
-		{
-			throw new RuntimeException("Unhandled case!");
-		}
-		//Create the terminology specific refset type as a child - this is just an organization concept
-		//under description type in source terminology or relationship type in source terminology
-		UUID temp =  createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getSecondParentName(), true), 
-				pt.getSecondParentName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
-		pt.setSecondParentId(temp);
-		return temp;
 	}
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
