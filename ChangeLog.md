@@ -7,6 +7,7 @@ where provided, and the git commit history.
     * Fix a bug with Frills.getAllChildrenOfConcept where it didn't return the proper list of children in certain cases, which inadvertently led to 
         the warnings "SememeAPIs.get(...) didn't filter properly..." being frequently logged by isaac-rest.  
 	* Added metadata entry for ICD10 modules for ICD10 terminology importer
+	* Updating libraries in master pom file to current
 
 * 2017/03/20 - 3.42
 	* More Fortify fixes
