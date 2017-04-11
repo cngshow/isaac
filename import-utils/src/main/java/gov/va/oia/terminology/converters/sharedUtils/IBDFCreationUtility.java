@@ -1233,6 +1233,12 @@ public class IBDFCreationUtility
 					//This came from a conceptSpecification (metadata in ISAAC), and we don't need to create it.
 					//Just need to add one relationship to the existing concept.
 					addParent(ComponentReference.fromConcept(p.getUUID()), pt.getPropertyTypeUUID());
+					//TODO Dan has tracked down a bug to the above call - 
+//					java.lang.NullPointerException
+//			        at java.util.AbstractCollection.addAll(AbstractCollection.java:343)
+//			        at gov.vha.isaac.ochre.model.logic.IsomorphicResultsBottomUp.isomorphicAnalysis(IsomorphicResultsBottomUp.java:371)
+					//I've asked Keith a question about it, the root cause seems to be logic graphs not merging properly during db build. 
+
 					if (p.isIdentifier()) 
 					{
 						identifierTypes.add(p.getUUID());
