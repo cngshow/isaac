@@ -1324,20 +1324,6 @@ public class IBDFCreationUtility
 		return "";
 	}
 	
-//	private UUID setupWbPropertyMetadata(UUID refsetValueParent, BPT_DualParentPropertyType pt) throws Exception
-//	{
-//		if (pt.getSecondParentName() == null)
-//		{
-//			throw new RuntimeException("Unhandled case!");
-//		}
-//		//Create the terminology specific refset type as a child - this is just an organization concept
-//		//under description type in source terminology or relationship type in source terminology
-//		UUID temp =  createConcept(ConverterUUID.createNamespaceUUIDFromString(pt.getSecondParentName(), true), 
-//				pt.getSecondParentName() + metadataSemanticTag_, true, refsetValueParent).getPrimordialUuid();
-//		pt.setSecondParentId(temp);
-//		return temp;
-//	}
-	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
 	{
 		refexAllowedColumnTypes_.put(sememeUUID, columnInfo);
