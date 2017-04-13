@@ -332,27 +332,6 @@ public class IBDFCreationUtility
 		return concept;
 	}
 
-	public void addParents(ComponentReference concept, UUID...parentUuids) {
-		if (parentUuids != null && parentUuids.length > 0) {
-			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
-
-			Set<UUID> uuids = new HashSet<>();
-			for (UUID parentUuid : parentUuids) {
-				uuids.add(parentUuid);
-			}
-			
-			Assertion[] assertions = new Assertion[uuids.size()];
-			
-			int i = 0;
-			for (UUID parentUuid : uuids) {
-				assertions[i++] = ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(parentUuid), leb);
-			}
-			NecessarySet(And(assertions));
-		
-			addRelationshipGraph(concept, null, leb.build(), true, null, null);
-		}
-	}
-
 	/**
 	 * Create a concept, link it to a parent via is_a, setting as many fields as possible automatically.
 	 */
@@ -988,6 +967,61 @@ public class IBDFCreationUtility
 		return addAnnotation(concept, associationPrimordialUuid, 
 				new DynamicSememeData[]{new DynamicSememeUUIDImpl(targetUuid)}, 
 				associationTypeUuid, state, time, module);
+	}
+
+	/**
+	 * Add stated IS_A_REL relationships, with the time set to now.
+	 * Can only be called once per concept.
+	 * 
+	 * @param concept - ComponentReference for [child] concept to which to add parents
+	 * @param parentUuids - UUIDs of concepts to add as parents
+	 */
+	public void addParents(ComponentReference concept, UUID...parentUuids) {
+		addParents(concept, true, parentUuids);
+	}
+
+	/**
+	 * Add stated or inferred IS_A_REL relationships, with the time set to now.
+	 * Can only be called once per concept.
+	 * 
+	 * @param concept - ComponentReference for [child] concept to which to add parents
+	 * @param stated - boolean indicating that new graph should be stated
+	 * @param parentUuids - UUIDs of concepts to add as parents
+	 */
+	public void addParents(ComponentReference concept, boolean stated, UUID...parentUuids) {
+		// Ignore calls with empty arg lists
+		if (parentUuids != null && parentUuids.length > 0) {
+			// Check appropriate cache of concepts to which parents have been added
+			// to prevent adding parents twice
+			if ((stated ? conceptHasStatedGraph : conceptHasInferredGraph).contains(concept.getPrimordialUuid()))
+			{
+				throw new RuntimeException("Can only call an addParent() or addParents() method with stated=" + stated + " once!  Must utilize addRelationshipGraph for more complex objects." 
+						+ " Parents: " + Arrays.toString(parentUuids)
+						+ " Child: " + concept.getPrimordialUuid()); 
+			}
+
+			// Don't add child concept to appropriate cache of concepts to which parents have been added
+			// to prevent adding parents twice, because addRelationshipGraph() will do that,
+			// and will fail if it has already been done
+
+			final LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
+
+			// Eliminate duplicates
+			final Set<UUID> uuids = new HashSet<>();
+			for (UUID parentUuid : parentUuids) {
+				uuids.add(parentUuid);
+			}
+			
+			final Assertion[] assertions = new Assertion[uuids.size()];
+			
+			int i = 0;
+			for (UUID parentUuid : uuids) {
+				assertions[i++] = ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(parentUuid), leb);
+			}
+			NecessarySet(And(assertions));
+		
+			addRelationshipGraph(concept, null, leb.build(), stated, null, null);
+		}
 	}
 
 	/**
