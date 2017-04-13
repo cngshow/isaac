@@ -1326,8 +1326,22 @@ public class IBDFCreationUtility
 			}
 		}
 	}
-	
-	public void loadTerminologyMetadataAttributes(ComponentReference terminologyMetadataRootConcept, 
+	public void loadTerminologyMetadataAttributes(
+			String converterSourceArtifactVersion, 
+			Optional<String> converterSourceReleaseDate,
+			String converterOutputArtifactVersion,
+			Optional<String> converterOutputArtifactClassifier, 
+			String converterVersion)
+	{
+		loadTerminologyMetadataAttributes(
+				getModule(),
+				converterSourceArtifactVersion,
+				converterSourceReleaseDate,
+				converterOutputArtifactVersion,
+				converterOutputArtifactClassifier,
+				converterVersion);
+	}
+	private void loadTerminologyMetadataAttributes(ComponentReference terminologyMetadataRootConcept, 
 			String converterSourceArtifactVersion, 
 			Optional<String> converterSourceReleaseDate,
 			String converterOutputArtifactVersion,
