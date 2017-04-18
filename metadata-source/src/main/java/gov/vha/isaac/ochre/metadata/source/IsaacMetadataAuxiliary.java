@@ -91,19 +91,26 @@ import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 
     public static final String METADATA_SEMANTIC_TAG = "ISAAC";
+    
+	// METADATA_VERSION will be added to MetaData.java, IsaacMetadataAuxiliary.json, IsaacMetadataAuxiliary.yaml when built.
+	// First digit indicates a major change i.e. a string values changes in a concept which affect backwards compatibility
+	// Second digit indicates a minor change i.e. a new concept is created which does not affect backwards compatibility
+	// DO NOT update if no change to concepts this file.
+    // This version number is independent of release versioning. 
+	public static final String METADATA_VERSION = "1.00";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
     */
     public IsaacMetadataAuxiliary() throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG);
+        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG, METADATA_VERSION);
 
         try {
             createConcept(TermAux.ISAAC_ROOT);
             pushParent(current());
                 createConcept("health concept").setPrimordialUuid("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8");
-                createConcept("ISAAC metadata");
+                createConcept("ISAAC metadata").addDescription("version:" + METADATA_VERSION, TermAux.DEFINITION_DESCRIPTION_TYPE);
                 pushParent(current());
                     createConcept("module").mergeFromSpec(TermAux.UNSPECIFIED_MODULE);
                     pushParent(current());
