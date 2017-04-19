@@ -154,7 +154,29 @@ public enum SupportedConverterTypes
 					".*\\.zip$", true)
 	}, "cpt-mojo", "cpt-ibdf", "convert-CPT-to-ibdf", "gov.vha.isaac.terminology.source.cpt", "Current Procedural Terminology", 
 			new String[] {""}, //TODO
-			new String[] {""}) //TODO
+			new String[] {""}), //TODO
+	
+	ICD10_CM("icd10-src-data-cm", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
+					"2017-ICD10-Code-Descriptions.zip",
+					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-CM and GEMs'"
+					+ " section, have 'Code-Descriptions' in the file name and end with '.zip'.  This uploaded zip file"
+					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
+					".*_order_\\d{4}\\.txt$", true)
+	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
+			new String[] {""},  // TODO: Cannot find license text from cms.gov or documentation
+			new String[] {""}), // TODO: Cannot find copyright notice from cms.gov or documentation
+		
+	ICD10_PCS("icd10-src-data-pcs", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
+					"2017-PCS-Long-Abbrev-Titles.zip",
+					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-PCS and GEMs'"
+					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
+					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
+					".*_order_\\d{4}\\.txt$", true)
+	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
+			new String[] {""}, // TODO: Cannot find license text from cms.gov or documentation
+			new String[] {""}) // TODO: Cannot find copyright notice from cms.gov or documentation
 	;
 	
 	private String srcArtifactId_;
