@@ -8,9 +8,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
  */
 public class PT_Relationship_Metadata extends PropertyType
 {
-	public PT_Relationship_Metadata()
+	public PT_Relationship_Metadata(String termName)
 	{
-		super("Relationship Metadata", true, DynamicSememeDataType.UUID);
+		super(termName + " Relationship Metadata", true, DynamicSememeDataType.UUID);
 		indexByAltNames();
 		addProperty("General Rel Type");
 		addProperty("Inverse General Rel Type");
