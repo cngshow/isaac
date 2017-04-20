@@ -121,8 +121,8 @@ public enum SupportedConverterTypes
 					"The file name is ignored - it just needs to be a csv file which ends with .csv.", 
 					".*\\.csv$", true)
 	}, "nucc-mojo", "nucc-ibdf", "convert-NUCC-to-ibdf", "gov.vha.isaac.terminology.source.nucc", "National Uniform Claim Committee", 
-			new String[] {""}, //TODO
-			new String[] {""}), //TODO
+			new String[] {""}, //TODO: (NR) Cannot find explicit license statement at nucc.org (perhaps AMA?)
+			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
 
 	CVX("cvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
@@ -131,8 +131,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
-			new String[] {""}, //TODO
-			new String[] {""}), //TODO
+			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
 	
 	MVX("mvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=mvx",
@@ -141,8 +141,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "mvx-mojo", "mvx-ibdf", "convert-MVX-to-ibdf", "gov.vha.isaac.terminology.source.mvx", "Manufacturers of Vaccines", 
-			new String[] {""}, //TODO
-			new String[] {""}), //TODO
+			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
 	
 	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("CPT is licensed, and is only available to a licensed user.  The VA has a license, but in practice, has purchased a copy for ease of access.  "
@@ -153,8 +153,8 @@ public enum SupportedConverterTypes
 					+ "LONGULT.txt, MEDU.txt and SHORTU.txt", 
 					".*\\.zip$", true)
 	}, "cpt-mojo", "cpt-ibdf", "convert-CPT-to-ibdf", "gov.vha.isaac.terminology.source.cpt", "Current Procedural Terminology", 
-			new String[] {""}, //TODO
-			new String[] {""}), //TODO
+			new String[] {"shared/licenses/cpt.xml"},
+			new String[] {"shared/noticeAdditions/cpt-NOTICE-addition.txt"}),
 	
 	ICD10_CM("icd10-src-data-cm", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
