@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/04/?? - 3.45 - PENDING
+    *
+
 * 2017/04/20 - 3.44
     * ICD-10 CM/PCS PRISMe configurations added for source upload (Jazz: 501801, 501807)
     * Added CPT copyright and license files to PRISMe source uploader configuration
