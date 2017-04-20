@@ -4,12 +4,12 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>3.44</version>
+        <version>3.44-SNAPSHOT</version>
     </parent>
 
     <groupId>gov.vha.isaac.ochre.modules</groupId>
-    <artifactId>ochre-api</artifactId>
-    <name>OCHRE: API</name>
+    <artifactId>rest-utils</artifactId>
+    <name>REST: UTILS</name>
 
     <dependencies>
         <dependency>
