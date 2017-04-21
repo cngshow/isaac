@@ -81,16 +81,16 @@ public class IsaacTaxonomy {
     private final ConceptSpecification pathSpec;
     private final ConceptSpecification authorSpec;
     private final String semanticTag;
-    private final String metadataVersion;
+    private final String auxiliaryMetadataVersion;
 
     public IsaacTaxonomy(ConceptSpecification path, ConceptSpecification author, ConceptSpecification module,
-            ConceptSpecification isaType, String semanticTag, String metadataVersion) {
+            ConceptSpecification isaType, String semanticTag, String auxiliaryMetadataVersion) {
         this.pathSpec = path;
         this.authorSpec = author;
         this.moduleSpec = module;
         this.isaTypeSpec = isaType;
         this.semanticTag = semanticTag;
-        this.metadataVersion = metadataVersion;
+        this.auxiliaryMetadataVersion = auxiliaryMetadataVersion;
     }
 
     protected final ConceptBuilder createConcept(ConceptSpecification specification) {
@@ -287,7 +287,7 @@ public class IsaacTaxonomy {
         out.append("\n\nimport gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;\n");
         out.append("import gov.vha.isaac.ochre.api.ConceptProxy;\n");
         out.append("\n\npublic class " + className + " {\n");
-        out.append("\n\tpublic static final String METADATA_VERSION = \"" + metadataVersion + "\";\n");
+        out.append("\n\tpublic static final String AUXILIARY_METADATA_VERSION = \"" + auxiliaryMetadataVersion + "\";\n");
 
         for (ConceptBuilder concept : conceptBuildersInInsertionOrder) {
             String preferredName = concept.getConceptDescriptionText();
@@ -327,7 +327,7 @@ public class IsaacTaxonomy {
         out.append("#YAML Bindings for " + packageName + "." + className + "\n");
         //TODO use common code (when moved somewhere common) to extract the version number from the pom.xml
         out.append("#Generated " + new Date().toString() + "\n");
-        out.append("\nMETADATA_VERSION: " + metadataVersion + "\n");
+        out.append("\nAUXILIARY_METADATA_VERSION: " + auxiliaryMetadataVersion + "\n");
         
         for (ConceptBuilder concept : conceptBuildersInInsertionOrder) {
             String preferredName = concept.getConceptDescriptionText();
