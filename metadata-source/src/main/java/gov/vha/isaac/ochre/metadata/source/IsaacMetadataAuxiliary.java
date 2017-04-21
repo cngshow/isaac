@@ -103,6 +103,9 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 	 * 
 	 * DO NOT update if no change to concepts this file.
      * This version number is independent of release versioning.
+     * 
+     * If you change this value, let the KOMET developers know that the must also update the same in their module AuxililaryMetadata.
+     * 
     **/  
 	public static final String AUXILIARY_METADATA_VERSION = "1.0.0";
 
