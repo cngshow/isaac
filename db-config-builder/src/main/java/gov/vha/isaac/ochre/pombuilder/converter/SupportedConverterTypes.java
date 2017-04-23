@@ -121,8 +121,8 @@ public enum SupportedConverterTypes
 					"The file name is ignored - it just needs to be a csv file which ends with .csv.", 
 					".*\\.csv$", true)
 	}, "nucc-mojo", "nucc-ibdf", "convert-NUCC-to-ibdf", "gov.vha.isaac.terminology.source.nucc", "National Uniform Claim Committee", 
-			new String[] {""}, //TODO: (NR) Cannot find explicit license statement at nucc.org (perhaps AMA?)
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // Cannot find explicit license statement at nucc.org (perhaps AMA?)
+			new String[] {""}), // No explicit copyright notice text found to use
 
 	CVX("cvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
@@ -131,8 +131,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
-			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), // No explicit copyright notice text found to use
 	
 	MVX("mvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=mvx",
@@ -141,8 +141,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "mvx-mojo", "mvx-ibdf", "convert-MVX-to-ibdf", "gov.vha.isaac.terminology.source.mvx", "Manufacturers of Vaccines", 
-			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), // No explicit copyright notice text found to use
 	
 	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("CPT is licensed, and is only available to a licensed user.  The VA has a license, but in practice, has purchased a copy for ease of access.  "
@@ -164,8 +164,8 @@ public enum SupportedConverterTypes
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					"\\d{4}-ICD10-Code-Descriptions.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
-			new String[] {""},  // TODO: Cannot find license text from cms.gov or documentation
-			new String[] {""}), // TODO: Cannot find copyright notice from cms.gov or documentation
+			new String[] {""},  // Cannot find license text from cms.gov or documentation
+			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 		
 	ICD10_PCS("icd10-src-data-pcs", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
@@ -175,8 +175,8 @@ public enum SupportedConverterTypes
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					"\\d{4}-PCS-Long-Abbrev-Titles.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
-			new String[] {""}, // TODO: Cannot find license text from cms.gov or documentation
-			new String[] {""}) // TODO: Cannot find copyright notice from cms.gov or documentation
+			new String[] {""}, // Cannot find license text from cms.gov or documentation
+			new String[] {""}) // Cannot find copyright notice from cms.gov or documentation
 	;
 	
 	private String srcArtifactId_;
