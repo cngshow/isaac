@@ -162,7 +162,7 @@ public enum SupportedConverterTypes
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-CM and GEMs'"
 					+ " section, have 'Code-Descriptions' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
-					".*_order_\\d{4}\\.txt$", true)
+					"\\d{4}-ICD10-Code-Descriptions.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
 			new String[] {""},  // TODO: Cannot find license text from cms.gov or documentation
 			new String[] {""}), // TODO: Cannot find copyright notice from cms.gov or documentation
@@ -173,7 +173,7 @@ public enum SupportedConverterTypes
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-PCS and GEMs'"
 					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
-					".*_order_\\d{4}\\.txt$", true)
+					"\\d{4}-PCS-Long-Abbrev-Titles.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
 			new String[] {""}, // TODO: Cannot find license text from cms.gov or documentation
 			new String[] {""}) // TODO: Cannot find copyright notice from cms.gov or documentation
