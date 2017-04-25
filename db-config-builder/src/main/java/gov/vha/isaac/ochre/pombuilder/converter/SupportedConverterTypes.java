@@ -71,12 +71,13 @@ public enum SupportedConverterTypes
 	
 	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("Snomed Extensions come from a variety of sources.  Note that the NLM has choosen to stop advertising the download links to the "
-					+ " US Extension, but still publishes it.  The current download pattern is: "
-					+ "http://download.nlm.nih.gov/mlb/utsauth/USExt/SnomedCT_Release_US1000124_YYYYMMDD_Extension.zip",
+					+ " US Extension, but still publishes it.  The current download pattern is now: "
+					+ "https://download.nlm.nih.gov/mlb/utsauth/USExt/SnomedCT_USExtensionRF2_Production_YYYYMMDDTHHMMSS.zip",
 					"",
-					"SnomedCT_Release_US1000124_20160301_Extension.zip",
+					"SnomedCT_USExtensionRF2_Production_20170301T120000.zip",
 					"The expected file is the RF2 release zip file.  The filename must end with .zip, and must contain the release date in the Snomed standard"
-					+ " naming convention (4 digit year, 2 digit month, 2 digit day).",
+					+ " naming convention (4 digit year, 2 digit month, 2 digit day) - it also now also accepts the new naming convention with T and 2 digits each "
+					+ "of hour, minute and second.",
 					".*_\\d{8}.*\\.zip$", true)
 	}, "rf2-mojo", "rf2-ibdf-", "convert-RF2-to-ibdf", "gov.vha.isaac.terminology.source.rf2", "SnomedCT Extension", 
 			new String[] {"shared/licenses/sct.xml"},
@@ -176,7 +177,19 @@ public enum SupportedConverterTypes
 					".*\\d{4}.*\\.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
 			new String[] {""}, // Cannot find license text from cms.gov or documentation
-			new String[] {""}) // Cannot find copyright notice from cms.gov or documentation
+			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
+	
+	SOPT("sopt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591", 
+					"ValueSet_PHVS_SourceOfPaymentTypology_PHDSC_V4_20170425-004232.zip",
+					"The actual source is here, http://www.phdsc.org/standards/payer-typology.asp#archives, but the zipped xls format that we require"
+					+ " is found here: https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591 - the available zipped xls download "
+					+ " must contain the letters PHDSC and should contain a zip file with 1 or more xls files - where one of the xls files contains the letters "
+					+ " 'PHDSC' in the file name.", 
+					".*PHDSC.*\\.zip$", true)
+	}, "sopt-mojo", "sopt-ibdf", "convert-SOPT-to-ibdf", "gov.vha.isaac.terminology.source.sopt", "Source of Payment Typology", 
+			new String[] {"shared/licenses/sopt.xml"},
+			new String[] {"shared/noticeAdditions/sopt-NOTICE-addition.txt"}) // Cannot find copyright notice from cms.gov or documentation
 	;
 	
 	private String srcArtifactId_;
