@@ -185,11 +185,12 @@ public enum SupportedConverterTypes
 					"The actual source is here, http://www.phdsc.org/standards/payer-typology.asp#archives, but the zipped xls format that we require"
 					+ " is found here: https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591 - the available zipped xls download "
 					+ " must contain the letters PHDSC and should contain a zip file with 1 or more xls files - where one of the xls files contains the letters "
-					+ " 'PHDSC' in the file name.", 
+					+ " 'PHDSC' in the file name.  Also note that the versioning is very confusing, because while PHDSC is currently at version 7, the CDC "
+					+ "  releases it as version 4.  We recommend using the version naming pattern of 'cdc-v4-phdsc-v7' to help remove confusion.", 
 					".*PHDSC.*\\.zip$", true)
 	}, "sopt-mojo", "sopt-ibdf", "convert-SOPT-to-ibdf", "gov.vha.isaac.terminology.source.sopt", "Source of Payment Typology", 
 			new String[] {"shared/licenses/sopt.xml"},
-			new String[] {"shared/noticeAdditions/sopt-NOTICE-addition.txt"}) // Cannot find copyright notice from cms.gov or documentation
+			new String[] {"shared/noticeAdditions/sopt-NOTICE-addition.txt"})
 	;
 	
 	private String srcArtifactId_;
