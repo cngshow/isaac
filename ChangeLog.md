@@ -3,7 +3,7 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/04/?? - 3.45 - PENDING
+* 2017/04/27 - 3.45
     * Added SOPT as a supported converter for PRISME to pick up.
     * Fixed the documentation for the US Extension PRISME integration to point at the latest paths for download of the US Extension from the NLM. 
 
