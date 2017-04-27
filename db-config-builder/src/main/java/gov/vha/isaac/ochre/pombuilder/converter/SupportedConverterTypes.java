@@ -71,12 +71,13 @@ public enum SupportedConverterTypes
 	
 	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("Snomed Extensions come from a variety of sources.  Note that the NLM has choosen to stop advertising the download links to the "
-					+ " US Extension, but still publishes it.  The current download pattern is: "
-					+ "http://download.nlm.nih.gov/mlb/utsauth/USExt/SnomedCT_Release_US1000124_YYYYMMDD_Extension.zip",
+					+ " US Extension, but still publishes it.  The current download pattern is now: "
+					+ "https://download.nlm.nih.gov/mlb/utsauth/USExt/SnomedCT_USExtensionRF2_Production_YYYYMMDDTHHMMSS.zip",
 					"",
-					"SnomedCT_Release_US1000124_20160301_Extension.zip",
+					"SnomedCT_USExtensionRF2_Production_20170301T120000.zip",
 					"The expected file is the RF2 release zip file.  The filename must end with .zip, and must contain the release date in the Snomed standard"
-					+ " naming convention (4 digit year, 2 digit month, 2 digit day).",
+					+ " naming convention (4 digit year, 2 digit month, 2 digit day) - it also now also accepts the new naming convention with T and 2 digits each "
+					+ "of hour, minute and second.",
 					".*_\\d{8}.*\\.zip$", true)
 	}, "rf2-mojo", "rf2-ibdf-", "convert-RF2-to-ibdf", "gov.vha.isaac.terminology.source.rf2", "SnomedCT Extension", 
 			new String[] {"shared/licenses/sct.xml"},
@@ -121,8 +122,8 @@ public enum SupportedConverterTypes
 					"The file name is ignored - it just needs to be a csv file which ends with .csv.", 
 					".*\\.csv$", true)
 	}, "nucc-mojo", "nucc-ibdf", "convert-NUCC-to-ibdf", "gov.vha.isaac.terminology.source.nucc", "National Uniform Claim Committee", 
-			new String[] {""}, //TODO: (NR) Cannot find explicit license statement at nucc.org (perhaps AMA?)
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // Cannot find explicit license statement at nucc.org (perhaps AMA?)
+			new String[] {""}), // No explicit copyright notice text found to use
 
 	CVX("cvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
@@ -131,8 +132,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
-			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), // No explicit copyright notice text found to use
 	
 	MVX("mvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=mvx",
@@ -141,8 +142,8 @@ public enum SupportedConverterTypes
 					"and store it into a file with the extension .xml", 
 					".*\\.xml$", true)
 	}, "mvx-mojo", "mvx-ibdf", "convert-MVX-to-ibdf", "gov.vha.isaac.terminology.source.mvx", "Manufacturers of Vaccines", 
-			new String[] {""}, //TODO: (NR) No explicit license statement CDC, other than inter-governmental aggreements would be issued
-			new String[] {""}), //TODO: (NR) No explicit copyright notice text found to use
+			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
+			new String[] {""}), // No explicit copyright notice text found to use
 	
 	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("CPT is licensed, and is only available to a licensed user.  The VA has a license, but in practice, has purchased a copy for ease of access.  "
@@ -162,10 +163,10 @@ public enum SupportedConverterTypes
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-CM and GEMs'"
 					+ " section, have 'Code-Descriptions' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
-					".*_order_\\d{4}\\.txt$", true)
+					".*\\d{4}.*\\.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
-			new String[] {""},  // TODO: Cannot find license text from cms.gov or documentation
-			new String[] {""}), // TODO: Cannot find copyright notice from cms.gov or documentation
+			new String[] {""},  // Cannot find license text from cms.gov or documentation
+			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 		
 	ICD10_PCS("icd10-src-data-pcs", new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
@@ -173,10 +174,23 @@ public enum SupportedConverterTypes
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-PCS and GEMs'"
 					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
-					".*_order_\\d{4}\\.txt$", true)
+					".*\\d{4}.*\\.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
-			new String[] {""}, // TODO: Cannot find license text from cms.gov or documentation
-			new String[] {""}) // TODO: Cannot find copyright notice from cms.gov or documentation
+			new String[] {""}, // Cannot find license text from cms.gov or documentation
+			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
+	
+	SOPT("sopt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+			new UploadFileInfo("", "https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591", 
+					"ValueSet_PHVS_SourceOfPaymentTypology_PHDSC_V4_20170425-004232.zip",
+					"The actual source is here, http://www.phdsc.org/standards/payer-typology.asp#archives, but the zipped xls format that we require"
+					+ " is found here: https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591 - the available zipped xls download "
+					+ " must contain the letters PHDSC and should contain a zip file with 1 or more xls files - where one of the xls files contains the letters "
+					+ " 'PHDSC' in the file name.  Also note that the versioning is very confusing, because while PHDSC is currently at version 7, the CDC "
+					+ "  releases it as version 4.  We recommend using the version naming pattern of 'cdc-v4-phdsc-v7' to help remove confusion.", 
+					".*PHDSC.*\\.zip$", true)
+	}, "sopt-mojo", "sopt-ibdf", "convert-SOPT-to-ibdf", "gov.vha.isaac.terminology.source.sopt", "Source of Payment Typology", 
+			new String[] {"shared/licenses/sopt.xml"},
+			new String[] {"shared/noticeAdditions/sopt-NOTICE-addition.txt"})
 	;
 	
 	private String srcArtifactId_;

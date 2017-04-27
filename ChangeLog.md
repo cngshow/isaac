@@ -3,6 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/04/27 - 3.45
+    * Added SOPT as a supported converter for PRISME to pick up.
+    * Fixed the documentation for the US Extension PRISME integration to point at the latest paths for download of the US Extension from the NLM. 
+
 * 2017/04/20 - 3.44
     * ICD-10 CM/PCS PRISMe configurations added for source upload (Jazz: 501801, 501807)
     * Added CPT copyright and license files to PRISMe source uploader configuration
