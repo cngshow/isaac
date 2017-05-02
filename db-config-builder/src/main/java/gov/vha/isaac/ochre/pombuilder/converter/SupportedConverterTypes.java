@@ -164,7 +164,7 @@ public enum SupportedConverterTypes
 					+ " section, have 'Code-Descriptions' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					".*\\d{4}.*\\.zip$", true)
-	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
+	}, "icd10-mojo", "icd10-ibdf-cm", "convert-ICD10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
 			new String[] {""},  // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 		
@@ -175,7 +175,7 @@ public enum SupportedConverterTypes
 					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					".*\\d{4}.*\\.zip$", true)
-	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
+	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-ICD10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
 			new String[] {""}, // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 	
