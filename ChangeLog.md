@@ -5,6 +5,7 @@ where provided, and the git commit history.
 
 * 2017/??/?? - 4.0 - PENDING
     * Jazz - 509497 - fix mistake in icd10 converter integration
+    * Jazz 488177 and 488182 - minor wording changes to metadata equivalence type constants.
 
 * 2017/04/27 - 3.45
     * Added SOPT as a supported converter for PRISME to pick up.
