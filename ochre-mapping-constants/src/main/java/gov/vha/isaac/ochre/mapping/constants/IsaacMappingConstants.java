@@ -94,14 +94,14 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_BROAD_TO_NARROW = new MetadataConceptConstant("Broad to Narrow", 
 		UUID.fromString("c1068428-a986-5c12-9583-9b2d3a24fdc6"), "source is less specific than target") {};
 	
-	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_ONE_TO_ONE = new MetadataConceptConstant("One to One", 
-		UUID.fromString("8aa6421d-4966-5230-ae5f-aca96ee9c2c1"), "source and target are identical or synonyms") {};
+	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_EXACT = new MetadataConceptConstant("Exact", 
+		UUID.fromString("8aa6421d-4966-5230-ae5f-aca96ee9c2c1"), "source and target are semantic or exact lexical match") {};
 	
 	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_NARROW_TO_BROAD = new MetadataConceptConstant("Narrow to Broad", 
 		UUID.fromString("250d3a08-4f28-5127-8758-e8df4947f89c"), "source is more specific than target") {};
 
 	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_UNMAPPABLE = new MetadataConceptConstant("Unmappable", 
-		UUID.fromString("e5f7f98f-9607-55a7-bbc4-25f2e61df23d"), "source is less specific than target") {};
+		UUID.fromString("e5f7f98f-9607-55a7-bbc4-25f2e61df23d"), "source cannot be assigned to an appropriate target") {};
 
 	public static final MetadataConceptConstant MAPPING_EQUIVALENCE_TYPE_PARTIAL = new MetadataConceptConstant("Partial", 
 		UUID.fromString("a7f9574c-8e8b-515d-9c21-9896063cc3b8"), "partial overlap between source and target and reliability") {};
@@ -112,7 +112,7 @@ public class IsaacMappingConstants implements ModuleProvidedConstants
 		{
 			{
 				addChild(MAPPING_EQUIVALENCE_TYPE_BROAD_TO_NARROW);
-				addChild(MAPPING_EQUIVALENCE_TYPE_ONE_TO_ONE);
+				addChild(MAPPING_EQUIVALENCE_TYPE_EXACT);
 				addChild(MAPPING_EQUIVALENCE_TYPE_NARROW_TO_BROAD);
 				addChild(MAPPING_EQUIVALENCE_TYPE_UNMAPPABLE);
 				addChild(MAPPING_EQUIVALENCE_TYPE_PARTIAL);
