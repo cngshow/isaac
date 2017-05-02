@@ -92,22 +92,24 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
 
     public static final String METADATA_SEMANTIC_TAG = "ISAAC";
     
-	/** METADATA_VERSION will be added to MetaData.java, IsaacMetadataAuxiliary.json, IsaacMetadataAuxiliary.yaml when built.
-	 * 
-	 * Format of the version number is major.minor.release. 
-	 * First digit indicates a major change 
-	 * 		i.e. a string values changes in a concept which breaks backwards compatibility
-	 * Second digit indicates a minor change 
-	 * 		i.e. a new concept is created which does not affect backwards compatibility
+    /** METADATA_VERSION will be added to MetaData.java, IsaacMetadataAuxiliary.json, IsaacMetadataAuxiliary.yaml when built.
+     * 
+     * Format of the version number is major.minor.release. 
+     * First digit indicates a major change 
+     *         i.e. a string values changes in a concept which breaks backwards compatibility
+     * Second digit indicates a minor change 
+     *         i.e. a new concept is created which does not affect backwards compatibility
      * Third digit indicates a minor change that does not affect backwards compatibility
-	 * 
-	 * DO NOT update if no change to concepts this file.
+     * 
+     * DO NOT update if no change to concepts this file.
      * This version number is independent of release versioning.
      * 
      * If you change this value, let the KOMET developers know that they must also update the same in their module AuxililaryMetadata.
      * 
+     * 1.0.1 -  fixed description of a mapping constant, renamed another mapping constant from One to One to Exact (didn't change id)
+     * 
     **/  
-	public static final String AUXILIARY_METADATA_VERSION = "1.0.0";
+    public static final String AUXILIARY_METADATA_VERSION = "1.0.1";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
