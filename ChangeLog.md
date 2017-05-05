@@ -3,7 +3,8 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/??/?? - 4.01 - PENDING
+* 2017/05/05 - 4.01
+    * Moving User and UserCache service interface up from rest (refactoring for reuse)
 
 * 2017/05/02 - 4.00
     * Jazz - 509497 - fix mistake in icd10 converter integration
