@@ -37,6 +37,40 @@ public class PublishConceptDTO implements Serializable
 	private List<NameValueDTO> relationshipList;
 	private List<NameValueDTO> designationList;
 
+	public PublishConceptDTO() {
+		
+	}
+	
+	public PublishConceptDTO(String publishName, 
+			Long vuid, 
+			boolean active, 
+			DataChangeType changeType) {
+		
+		this.publishName = publishName;
+		this.vuid = vuid;
+		this.active = active;
+		this.changeType = changeType;
+	}
+	
+	public PublishConceptDTO(String publishName, 
+			Long vuid, 
+			boolean active, 
+			DataChangeType changeType,
+			List<NameValueDTO> propertyList, 
+			List<NameValueDTO> relationshipList, 
+			List<NameValueDTO> designationList) {
+		
+		this.publishName = publishName;
+		this.vuid = vuid;
+		this.active = active;
+		this.changeType = changeType;
+		this.propertyList = propertyList;
+		this.relationshipList = relationshipList;
+		this.designationList = designationList;
+	}
+	
+	
+	
 	/**
 	 * @return the active
 	 */

@@ -302,7 +302,7 @@ public class IBDFCreationUtility
 			module_ = ComponentReference.fromConcept(moduleUUID);
 			createConcept(moduleUUID, moduleToCreate.get(), true, 
 					preExistingModule.isPresent() ? preExistingModule.get().getPrimordialUuid() : MetaData.MODULE.getPrimordialUuid());
-			
+			ConsoleUtil.println("Creating module " + module_.getPrimordialUuid() + " with description '" +moduleToCreate.get() + "'");
 		}
 		else
 		{

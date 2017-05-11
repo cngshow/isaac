@@ -40,7 +40,7 @@ public interface ConfigOptionsDescriptor
 	public ConverterOptionParam[] getConfigOptions();
 	
 	/**
-	 * What converter is this converter describing.  Recommend returning the artifactId here of the containing project
+	 * What converter is this config option describing.  Recommend returning the artifactId here of the containing project
 	 */
 	public String getName();
 }
