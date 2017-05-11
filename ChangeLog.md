@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/05/?? - 4.03 - PENDING
-    *
+    * Lowercase extension names of things like snomed us extension when creating the artifact groups for consistency.
 
 * 2017/05/11 - 4.02
     * Improved debugging output during builds.

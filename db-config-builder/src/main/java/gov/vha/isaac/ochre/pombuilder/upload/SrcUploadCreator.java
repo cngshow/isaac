@@ -66,7 +66,7 @@ public class SrcUploadCreator
 	 * a specific repository, such as http://vadev.mantech.com:8081/nexus/content/repositories/releases/ or http://vadev.mantech.com:8081/nexus/content/repositories/termdata/
 	 * This should not point to a URL that represents a 'group' repository view.
 	 * @param repositoryUsername - The username to utilize to upload the artifact to the artifact server
-	 * @param repositoryPassword - The passwordto utilize to upload the artifact to the artifact server
+	 * @param repositoryPassword - The password to utilize to upload the artifact to the artifact server
 	 * @return - the task handle - which will return the tag that was created in the git repository upon completion.  Note that the task is NOT yet started, when 
 	 * it is returned.
 	 * @throws Throwable 
@@ -137,7 +137,7 @@ public class SrcUploadCreator
 					String temp = uploadType.getArtifactId();
 					if (temp.contains("*"))
 					{
-						temp = temp.replace("*", extensionName);
+						temp = temp.replace("*", extensionName.toLowerCase());
 					}
 					
 					pomSwaps.put("#ARTIFACTID#", temp);
