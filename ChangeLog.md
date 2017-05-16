@@ -3,8 +3,19 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/??/?? - 3.46 - PENDING
-    *
+* 2017/05/?? - 4.03 - PENDING
+    * Lowercase extension names of things like snomed us extension when creating the artifact groups for consistency.
+
+* 2017/05/11 - 4.02
+    * Improved debugging output during builds.
+    * Added HL7 domain/subset checksum calculator and terminology configs.
+
+* 2017/05/05 - 4.01
+    * Moving User and UserCache service interface up from rest (refactoring for reuse)
+
+* 2017/05/02 - 4.00
+    * Jazz - 509497 - fix mistake in icd10 converter integration
+    * Jazz 488177 and 488182 - minor wording changes to metadata equivalence type constants.
 
 * 2017/04/27 - 3.45
     * Added SOPT as a supported converter for PRISME to pick up.

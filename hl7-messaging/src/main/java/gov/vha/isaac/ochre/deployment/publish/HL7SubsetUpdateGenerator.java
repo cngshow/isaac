@@ -98,7 +98,7 @@ public class HL7SubsetUpdateGenerator extends HL7BaseGenerator
 
 					// Set the properties in the ZRT segments
 					List properties = publishConceptDTO.getPropertyList();
-					if (properties != null || properties.size() != 0) {
+					if (properties != null && properties.size() != 0) {
 						Iterator propertyIter = properties.iterator();
 						while (propertyIter.hasNext()) {
 							NameValueDTO property = (NameValueDTO) propertyIter.next();

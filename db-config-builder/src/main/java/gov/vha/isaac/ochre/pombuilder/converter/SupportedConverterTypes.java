@@ -129,7 +129,7 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
 					"cvx.xml",
 					"The file name is ignored - it just needs to be an xml file which ends with .xml.  Download the 'XML-new format' type, " + 
-					"and store it into a file with the extension .xml", 
+					"and store it into a file with the extension .xml.  The recommended version to use for the source upload is YYYY-MM-DD of the download.", 
 					".*\\.xml$", true)
 	}, "cvx-mojo", "cvx-ibdf", "convert-CVX-to-ibdf", "gov.vha.isaac.terminology.source.cvx", "Current Vaccines Administered", 
 			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
@@ -139,7 +139,7 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=mvx",
 					"mvx.xml",
 					"The file name is ignored - it just needs to be an xml file which ends with .xml.  Download the 'XML-new format' type, " + 
-					"and store it into a file with the extension .xml", 
+					"and store it into a file with the extension .xml.  The recommended version to use for the source upload is YYYY-MM-DD of the download.", 
 					".*\\.xml$", true)
 	}, "mvx-mojo", "mvx-ibdf", "convert-MVX-to-ibdf", "gov.vha.isaac.terminology.source.mvx", "Manufacturers of Vaccines", 
 			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
@@ -164,7 +164,7 @@ public enum SupportedConverterTypes
 					+ " section, have 'Code-Descriptions' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					".*\\d{4}.*\\.zip$", true)
-	}, "icd10-mojo", "icd10-ibdf-cm", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
+	}, "icd10-mojo", "icd10-ibdf-cm", "convert-ICD10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Clinical Modification ", 
 			new String[] {""},  // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 		
@@ -175,7 +175,7 @@ public enum SupportedConverterTypes
 					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					".*\\d{4}.*\\.zip$", true)
-	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-icd10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
+	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-ICD10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
 			new String[] {""}, // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 	

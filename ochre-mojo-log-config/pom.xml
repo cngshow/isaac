@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>3.46-SNAPSHOT</version>
+		<version>4.03-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>ochre-mojo-log-config</artifactId>
