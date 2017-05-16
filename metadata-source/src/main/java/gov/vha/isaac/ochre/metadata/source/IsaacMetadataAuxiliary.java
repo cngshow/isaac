@@ -107,6 +107,9 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      * If you change this value, let the KOMET developers know that they must also update the same in their module AuxililaryMetadata.
      * 
      * 1.0.1 -  fixed description of a mapping constant, renamed another mapping constant from One to One to Exact (didn't change id)
+     * 1.1.0 -  Renamed VHA_MODULES constant to VHAT_MODULES
+     *          Added more descriptions to all of the module constants.
+     *          Added a VHAT_EDIT module to serve as the new default module for edits.
      * 
     **/  
     public static final String AUXILIARY_METADATA_VERSION = "1.0.1";
@@ -126,26 +129,42 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                 pushParent(current());
                     createConcept("module").mergeFromSpec(TermAux.UNSPECIFIED_MODULE);
                     pushParent(current());
-                        createConcept(TermAux.ISAAC_MODULE);
-                        createConcept("SNOMED CT core modules").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
-                        createConcept("US Extension modules");
-                        createConcept("LOINC modules");
-                        createConcept("LOINC Solor modules");
-                        createConcept("RxNorm modules");
-                        createConcept("RxNorm Solor modules");
+                        createConcept(TermAux.ISAAC_MODULE).addDescription("ISAAC", TermAux.SYNONYM_DESCRIPTION_TYPE)
+                            .addDescription("InformaticS Architecture ACceleration", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("SNOMED CT core modules", "SNOMED CT core").setPrimordialUuid("1b4f1ba5-b725-390f-8c3b-33ec7096bdca");
+                        createConcept("US Extension modules", "US Extension");
+                        createConcept("LOINC modules", "LOINC")
+                            .addDescription("Logical Observation Identifiers Names and Codes", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("LOINC Solor modules", "LOINC Tech Preview");
+                        createConcept("RxNorm modules", "RxNorm");
+                        createConcept("RxNorm Solor modules", "RxNorm Solor");
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
-                        createConcept(TermAux.VHA_MODULES).addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
+                        createConcept(TermAux.VHAT_MODULES).addDescription("VHAT", TermAux.SYNONYM_DESCRIPTION_TYPE)
+                            .addDescription("VETS Terminology", TermAux.DEFINITION_DESCRIPTION_TYPE)
+                            .addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
+                            
+                        pushParent(current());
+                            createConcept(TermAux.VHAT_EDIT);
+                        popParent();
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
-                        createConcept(TermAux.SOLOR_OVERLAY_MODULE).addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
-                        createConcept("HL7v3 modules");
-                        createConcept("NUCC modules");
-                        createConcept("CVX modules");
-                        createConcept("MVX modules");
-                        createConcept("CPT modules");
-                        createConcept("SOPT modules");
-                        createConcept("ICD10 modules");
+                        createConcept(TermAux.SOLOR_OVERLAY_MODULE).addDescription("SOLOR overlay", TermAux.SYNONYM_DESCRIPTION_TYPE)
+                            .addUuids(UUID.fromString("1f2016a6-960e-11e5-8994-feff819cdc9f"));
+                        createConcept("HL7v3 modules", "HL7v3")
+                            .addDescription("Health Level 7 version 3", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("NUCC modules", "NUCC")
+                            .addDescription("National Uniform Claim Committee", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("CVX modules", "CVX")
+                            .addDescription("Vaccines Administered", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("MVX modules", "MVX")
+                            .addDescription("Manufacturers of Vaccines", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("CPT modules", "CPT")
+                            .addDescription("Current Procedural Terminology", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("SOPT modules", "SOPT")
+                            .addDescription("Source of Payment Typology", TermAux.DEFINITION_DESCRIPTION_TYPE);
+                        createConcept("ICD10 modules", "ICD10")
+                            .addDescription("Procedure Coding System Tenth Revision", TermAux.DEFINITION_DESCRIPTION_TYPE);
                     popParent();
                     createConcept(TermAux.USER);
                     createConcept(TermAux.PATH);
