@@ -3,7 +3,6 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -23,14 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import javax.inject.Singleton;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -113,8 +110,8 @@ public class Frills implements DynamicSememeColumnUtility {
 	private static Logger log = LogManager.getLogger(Frills.class);
 	
 	private static LruCache<Integer, Boolean> isAssociationCache = new LruCache<>(50);
-	private static LruCache<Integer, Boolean> isMappingCache= new LruCache<>(50);
-
+	private static LruCache<Integer, Boolean> isMappingCache = new LruCache<>(50);
+	private static LruCache<Integer, Integer> moduleToTermTypeCache = new LruCache<>(50);
 	/**
 	 * @param version StampedVersion from which to generate StampCoordinate
 	 * @return StampCoordinate corresponding to StampedVersion values
@@ -1679,5 +1676,61 @@ public class Frills implements DynamicSememeColumnUtility {
 			log.error("Unexpected error trying to find " + assemblageConceptId + " annotation sememe on component " + componentId, e);
 		}
 		return Optional.empty();
+	}
+	
+	/**
+	 * Returns the set of terminology types (which are concepts directly under {@link MetaData#MODULE} for any concept 
+	 * or sememe in the system
+	 */
+	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<?> oc)
+	{
+		HashSet<Integer> modules = new HashSet<>();
+		HashSet<Integer> terminologyTypes = new HashSet<>();
+		oc.getVersionStampSequences().forEach(stampSequence -> 
+		{
+			modules.add(Get.stampService().getModuleSequenceForStamp(stampSequence));
+		});
+		
+		for (int moduleSequence : modules)
+		{
+			if (moduleToTermTypeCache.containsKey(moduleSequence))
+			{
+				terminologyTypes.add(moduleToTermTypeCache.get(moduleSequence));
+			}
+			else
+			{
+				if (Get.taxonomyService().wasEverKindOf(moduleSequence, MetaData.MODULE.getConceptSequence()))
+				{
+					Integer termTypeConcept = findTermTypeConcept(moduleSequence);
+					if (termTypeConcept != null)
+					{
+						terminologyTypes.add(termTypeConcept);
+						moduleToTermTypeCache.put(moduleSequence, termTypeConcept);
+					}
+				}
+			}
+		}
+		return terminologyTypes;
+	}
+	
+	/**
+	 * Walk up the module tree, looking for the module directly under MetaData.MODULE - return it if found, otherwise, return null.
+	 */
+	private static Integer findTermTypeConcept(int conceptModuleSequence)
+	{
+		OfInt parents = Get.taxonomyService().getTaxonomyParentSequences(conceptModuleSequence).iterator();
+		while (parents.hasNext())
+		{
+			int current = parents.next();
+			if (current == MetaData.MODULE.getConceptSequence())
+			{
+				return conceptModuleSequence;
+			}
+			else
+			{
+				return findTermTypeConcept(current);
+			}
+		}
+		return null;
 	}
 }
