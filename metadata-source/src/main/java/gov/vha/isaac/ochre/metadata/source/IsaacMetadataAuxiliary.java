@@ -110,9 +110,10 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      * 1.1.0 -  Renamed VHA_MODULES constant to VHAT_MODULES
      *          Added more descriptions to all of the module constants.
      *          Added a VHAT_EDIT module to serve as the new default module for edits.
+     *          Fixed a bug in the definition of DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_TYPE
      * 
     **/  
-    public static final String AUXILIARY_METADATA_VERSION = "1.0.2";
+    public static final String AUXILIARY_METADATA_VERSION = "1.1.0";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
