@@ -1680,7 +1680,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	
 	/**
 	 * Returns the set of terminology types (which are concepts directly under {@link MetaData#MODULE} for any concept 
-	 * or sememe in the system
+	 * or sememe in the system as a set of concept sequences
 	 */
 	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<?> oc)
 	{
