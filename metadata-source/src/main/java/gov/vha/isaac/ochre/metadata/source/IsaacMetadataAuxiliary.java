@@ -109,7 +109,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      * 1.0.1 -  fixed description of a mapping constant, renamed another mapping constant from One to One to Exact (didn't change id)
      * 
     **/  
-    public static final String AUXILIARY_METADATA_VERSION = "1.0.1";
+    public static final String AUXILIARY_METADATA_VERSION = "1.0.2";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
