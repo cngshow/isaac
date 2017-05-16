@@ -220,7 +220,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 				new DynamicSememeColumnInfo(0, DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_TYPE.getUUID(), DynamicSememeDataType.STRING, null, true,
 						new DynamicSememeValidatorType[]{DynamicSememeValidatorType.REGEXP},
 						new DynamicSememeString[]{LookupService.getService(DynamicSememeUtility.class).createDynamicStringData(
-								ObjectChronologyType.CONCEPT.name() + "|" + ObjectChronologyType.SEMEME)}, false),
+								ObjectChronologyType.CONCEPT.name() + "|" + ObjectChronologyType.SEMEME.name())}, false),
 				new DynamicSememeColumnInfo(1, DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_SUBTYPE.getUUID(), DynamicSememeDataType.STRING, null, false,
 						new DynamicSememeValidatorType[]{DynamicSememeValidatorType.REGEXP},
 						new DynamicSememeString[]{LookupService.getService(DynamicSememeUtility.class).createDynamicStringData(

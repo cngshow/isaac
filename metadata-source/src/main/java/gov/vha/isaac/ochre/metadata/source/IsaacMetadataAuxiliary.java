@@ -112,7 +112,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      *          Added a VHAT_EDIT module to serve as the new default module for edits.
      * 
     **/  
-    public static final String AUXILIARY_METADATA_VERSION = "1.0.1";
+    public static final String AUXILIARY_METADATA_VERSION = "1.0.2";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
