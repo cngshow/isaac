@@ -201,9 +201,13 @@ public class TermAux {
             = new ConceptProxy("master path",
                     UUID.fromString("1f20134a-960e-11e5-8994-feff819cdc9f"));
     
-    public static ConceptSpecification VHA_MODULES
-            = new ConceptProxy("VHA modules",
+    public static ConceptSpecification VHAT_MODULES
+            = new ConceptProxy("VHAT modules",
                     UUID.fromString("8aa5fda8-33e9-5eaf-88e8-dd8a024d2489"));
+    
+    public static ConceptSpecification VHAT_EDIT 
+            = new ConceptProxy("VHAT Edit",
+                    UUID.fromString("afd3be8f-4a49-5e12-bc51-efed33aacd87"));
     
     public static ConceptSpecification SOLOR_OVERLAY_MODULE
             = new ConceptProxy("SOLOR overlay module",

@@ -29,5 +29,10 @@ import java.util.UUID;
  *
  */
 public interface BPT_HasAltMetaDataParent {
+
+	/**
+	 * This should return a constant like DescriptionTypeInSourceTerminology, where applicable - so that extended description types (and rel types)
+	 * all end up in a common place in the metadata tree.
+	 */
 	UUID getAltMetaDataParentUUID();
 }
