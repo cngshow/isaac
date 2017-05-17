@@ -45,14 +45,14 @@ public class RestVuidBlockData
 	 */
 	@XmlElement
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public int start;
+	public int startInclusive;
 
 	/**
 	 * VUID block boundary with absolute value >= start value
 	 */
 	@XmlElement
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public int end;
+	public int endInclusive;
 
 	protected RestVuidBlockData()
 	{
@@ -67,8 +67,8 @@ public class RestVuidBlockData
 			int end) {
 		super();
 
-		this.start = start;
-		this.end = end;
+		this.startInclusive = start;
+		this.endInclusive = end;
 	}
 
 	/* (non-Javadoc)
@@ -76,6 +76,6 @@ public class RestVuidBlockData
 	 */
 	@Override
 	public String toString() {
-		return "RestVuidAllocationData [start=" + start + ", end=" + end + "]";
+		return "RestVuidAllocationData [start=" + startInclusive + ", end=" + endInclusive + "]";
 	}
 }
