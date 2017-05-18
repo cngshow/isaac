@@ -44,7 +44,8 @@ public enum UserRole {
 	EDITOR(UserRoleConstants.EDITOR),
 	REVIEWER(UserRoleConstants.REVIEWER),
 	APPROVER(UserRoleConstants.APPROVER),
-	MANAGER(UserRoleConstants.MANAGER);
+	MANAGER(UserRoleConstants.MANAGER),
+	VUID_REQUESTOR(UserRoleConstants.VUID_REQUESTOR);
 	
 	private final String text;
 	private UserRole(String text) { this.text = text; }
