@@ -35,21 +35,20 @@ public interface BinaryDataDifferService {
 		NEW_COMPONENTS, RETIRED_COMPONENTS, MODIFIED_COMPONENTS;
 	}
 
-	public void initialize(String analysisFilesOutputDir, String ibdfFileOutputDir, String changesetFileName,
+	public void initialize(String comparisonAnalysisDir, String inputFilesDir, String deltaIbdfPath,
 			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
 			boolean diffOnModule, boolean diffOnPath, String importDate);
 
-	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processVersion(File versionFile)
+	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFil(File versionFile)
 			throws Exception;
 
-	public Map<ChangeType, List<OchreExternalizable>> identifyVersionChanges(
+	public Map<ChangeType, List<OchreExternalizable>> computeDelta(
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap);
 
-	public void writeFilesForAnalysis(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+	public void createAnalysisFiles(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
-			Map<ChangeType, List<OchreExternalizable>> changedComponents, String ibdfFileOutputDir,
-			String analysisFilesOutputDir);
+			Map<ChangeType, List<OchreExternalizable>> changedComponents);
 
-	public void generateDiffedIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws Exception;
+	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws Exception;
 }

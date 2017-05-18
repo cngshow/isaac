@@ -255,7 +255,7 @@ public class CoordinateFactoryProvider implements CoordinateFactory {
 
     @Override
     public EditCoordinate createDefaultUserVeteransAdministrationExtensionEditCoordinate() {
-        return EditCoordinates.getDefaultUserVeteransAdministrationExtension();
+        return EditCoordinates.getDefaultUserVHAT();
     }
 
     @Override

@@ -62,13 +62,13 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	 * {@code ibdf format} files to import.
 	 */
 	@Parameter(required = true)
-	private String analysisFilesOutputDir;
+	private String inputAnalysisDir;
 
 	/**
 	 * {@code ibdf format} files to import.
 	 */
 	@Parameter(required = true)
-	private String ibdfFileOutputDir;
+	private String comparisonAnalysisDir;
 
 	@Parameter
 	private Boolean diffOnStatus = false;
@@ -86,36 +86,38 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	private Boolean diffOnPath = false;
 
 	@Parameter
-	private Boolean createAnalysisFiles = false;
+	private Boolean createAnalysisFiles = true;
 
 	@Parameter
 	private String importDate;
 
 	@Parameter(required = true)
-	String changesetFileName;
+	private String deltaIbdfPath;
 
 	public void execute() throws MojoExecutionException {
 		BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
-		differService.initialize(analysisFilesOutputDir, ibdfFileOutputDir, changesetFileName, createAnalysisFiles,
+		differService.initialize(comparisonAnalysisDir, inputAnalysisDir, deltaIbdfPath, createAnalysisFiles,
 				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate);
 
+		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap = null;
+		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = null;
+		
 		try {
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap = differService
-					.processVersion(oldVersionFile);
-
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = differService
-					.processVersion(newVersionFile);
+			oldContentMap = differService.processInputIbdfFil(oldVersionFile);
+			newContentMap = differService.processInputIbdfFil(newVersionFile);
 
 			Map<ChangeType, List<OchreExternalizable>> changedComponents = differService
-					.identifyVersionChanges(oldContentMap, newContentMap);
+					.computeDelta(oldContentMap, newContentMap);
 
-			differService.generateDiffedIbdfFile(changedComponents);
+			differService.generateDeltaIbdfFile(changedComponents);
 
 			if (createAnalysisFiles) {
-				differService.writeFilesForAnalysis(oldContentMap, newContentMap, changedComponents, ibdfFileOutputDir,
-						analysisFilesOutputDir);
+				differService.createAnalysisFiles(oldContentMap, newContentMap, changedComponents);
 			}
 		} catch (Exception e) {
+			if (createAnalysisFiles) {
+				differService.createAnalysisFiles(oldContentMap, newContentMap, null);
+			}
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
 

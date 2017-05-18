@@ -49,7 +49,7 @@ public class MappingUtils
 		CODE_SYSTEM_CONCEPTS.put("SNOMED CT US Extension", MetaData.US_EXTENSION_MODULES);
 		CODE_SYSTEM_CONCEPTS.put("LOINC", MetaData.LOINC_MODULES);
 		CODE_SYSTEM_CONCEPTS.put("RxNorm", MetaData.RXNORM_MODULES);
-		CODE_SYSTEM_CONCEPTS.put("VHAT", MetaData.VHA_MODULES);
+		CODE_SYSTEM_CONCEPTS.put("VHAT", MetaData.VHAT_MODULES);
 	}
 	
 	public static List<SimpleDisplayConcept> getStatusConcepts() throws IOException

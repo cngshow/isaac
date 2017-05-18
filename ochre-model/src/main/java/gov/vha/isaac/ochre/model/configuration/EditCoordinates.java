@@ -35,11 +35,11 @@ public class EditCoordinates {
         return editCoordinate;
     }
 
-    public static EditCoordinate getDefaultUserVeteransAdministrationExtension() {
+    public static EditCoordinate getDefaultUserVHAT() {
 
         EditCoordinate editCoordinate = new EditCoordinateImpl(
                 getNid(TermAux.USER),
-                getNid(TermAux.VHA_MODULES),
+                getNid(TermAux.VHAT_EDIT),
                 getNid(TermAux.DEVELOPMENT_PATH));
 
         return editCoordinate;
