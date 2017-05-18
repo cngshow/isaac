@@ -1681,15 +1681,28 @@ public class Frills implements DynamicSememeColumnUtility {
 	/**
 	 * Returns the set of terminology types (which are concepts directly under {@link MetaData#MODULE} for any concept 
 	 * or sememe in the system as a set of concept sequences
+	 * @param oc - the object to read modules for
+	 * @param coord - if null, return the modules ignoring coordinates.  If not null, only return modules visible on the given coordinate
 	 */
-	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<?> oc)
+	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<? extends StampedVersion> oc, StampCoordinate coord)
 	{
 		HashSet<Integer> modules = new HashSet<>();
 		HashSet<Integer> terminologyTypes = new HashSet<>();
-		oc.getVersionStampSequences().forEach(stampSequence -> 
+		
+		if (coord == null)
 		{
-			modules.add(Get.stampService().getModuleSequenceForStamp(stampSequence));
-		});
+			oc.getVersionStampSequences().forEach(stampSequence -> 
+			{
+				modules.add(Get.stampService().getModuleSequenceForStamp(stampSequence));
+			});
+		}
+		else
+		{
+			for (StampedVersion sv :  oc.getVisibleOrderedVersionList(coord))
+			{
+				modules.add(sv.getModuleSequence());
+			}
+		}
 		
 		for (int moduleSequence : modules)
 		{
