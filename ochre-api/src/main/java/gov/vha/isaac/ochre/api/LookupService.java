@@ -15,24 +15,26 @@
  */
 package gov.vha.isaac.ochre.api;
 
-import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
-import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
-import gov.vha.isaac.ochre.api.constants.Constants;
-import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 import java.awt.GraphicsEnvironment;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.hk2.api.ServiceLocator;
-import org.glassfish.hk2.runlevel.RunLevelController;
-import com.sun.javafx.application.PlatformImpl;
-import java.io.IOException;
 import org.glassfish.hk2.api.MultiException;
+import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.runlevel.RunLevelController;
+import org.glassfish.hk2.runlevel.RunLevelFuture;
+import com.sun.javafx.application.PlatformImpl;
+import gov.va.oia.HK2Utilities.HK2RuntimeInitializer;
+import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
+import gov.vha.isaac.ochre.api.constants.Constants;
+import gov.vha.isaac.ochre.api.util.HeadlessToolkit;
 
 /**
  *
@@ -187,8 +189,22 @@ public class LookupService {
     }
 
     public static void setRunLevel(int runLevel) {
-        int current = getService(RunLevelController.class).getCurrentRunLevel();
+        RunLevelController rlc = getService(RunLevelController.class);
+        int current = rlc.getCurrentRunLevel();
         if (current > runLevel) {
+            //Make sure we aren't still proceeding somewhere, if so, we need to wait...
+            RunLevelFuture rlf = rlc.getCurrentProceeding();
+            if (rlf != null)
+            {
+                LOG.info("Attempting to cancel previous runlevel request");
+                rlf.cancel(true);
+                try {
+                    rlf.get();
+                }
+                catch (InterruptedException | ExecutionException e) {
+                    // noop
+                }
+            }
             get().getAllServiceHandles(OchreCache.class).forEach(handle ->
             {
                 if (handle.isActive()) {

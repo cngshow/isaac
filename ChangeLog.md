@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/05/?? - 4.04 - PENDING
-    *
+    * fix a bug in the setRunLevel method, so that it doesn't fail if you ask it to shut down while it is still in the process of coming up from a previous request.
 
 * 2017/05/18 - 4.03
     * Lowercase extension names of things like snomed us extension when creating the artifact groups for consistency.
