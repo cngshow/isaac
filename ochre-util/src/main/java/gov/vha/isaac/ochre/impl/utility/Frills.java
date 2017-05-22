@@ -1698,10 +1698,14 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 		else
 		{
-			for (StampedVersion sv :  oc.getVisibleOrderedVersionList(coord))
+			oc.getVersionList().stream().filter(version -> 
 			{
-				modules.add(sv.getModuleSequence());
-			}
+				return coord.getAllowedStates().contains(version.getState()) && 
+						(coord.getModuleSequences().size() == 0 ? true : coord.getModuleSequences().contains(version.getModuleSequence()));
+			}).forEach(version ->
+			{
+				modules.add(version.getModuleSequence());
+			});
 		}
 		
 		for (int moduleSequence : modules)

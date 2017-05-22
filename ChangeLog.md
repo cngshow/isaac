@@ -3,6 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/05/?? - 4.04 - PENDING
+    * fix a bug in the setRunLevel method, so that it doesn't fail if you ask it to shut down while it is still in the process of coming up from a previous request.
+    * fix bugs in utility code that helped identify terminology types.
+    * refactor more isaac-rest API code here for reuse.
+
 * 2017/05/18 - 4.03
     * Lowercase extension names of things like snomed us extension when creating the artifact groups for consistency.
     * Fix DYNAMIC_SEMEME_REFERENCED_COMPONENT_RESTRICTION validator
