@@ -311,7 +311,7 @@ public enum SupportedConverterTypes
      */
     public String getSourceVersionRegExpValidator()
     {
-        return "^cris.*";
+        return ".*";
     }
     
     /**
@@ -321,7 +321,7 @@ public enum SupportedConverterTypes
      */
     public String getSourceVersionDescription()
     {
-        return "Greg is the awesomest!";
+        return "Put anything you want in here!";
     }
     
     
