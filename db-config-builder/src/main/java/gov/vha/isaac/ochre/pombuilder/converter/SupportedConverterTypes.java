@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import gov.vha.isaac.ochre.api.util.StringUtils;
 import gov.vha.isaac.ochre.pombuilder.FileUtil;
+import gov.vha.isaac.ochre.pombuilder.upload.SrcUploadCreator;
 
 /**
  * {@link SupportedConverterTypes}
@@ -31,9 +32,10 @@ import gov.vha.isaac.ochre.pombuilder.FileUtil;
  */
 public enum SupportedConverterTypes
 {
-	LOINC("loinc-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
-			
-		//(?i) and (?-i) constructs are not supported in JavaScript (they are in Ruby)
+	//(?i) and (?-i) constructs are not supported in JavaScript (they are in Ruby)
+	LOINC("loinc-src-data", ".*$", 
+			"A typical LOINC version number is '2.59'.  The version numbers should be used directly from LOINC.  There are no enforced restrictions on the format.",
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://loinc.org/downloads/loinc", 
 					"LOINC_2.54_Text.zip",
 					"The primary LOINC file is the 'LOINC Table File' in the csv format'.  This should be a zip file that contains a file named 'loinc.csv'."
@@ -50,7 +52,10 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/loinc.xml"}, 
 			new String[] {"shared/noticeAdditions/loinc-NOTICE-addition.txt"}),
 	
-	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
+	LOINC_TECH_PREVIEW("loinc-src-data-tech-preview", ".*$", 
+			"A typical LOINC tech preview version number is '2015.08.01'.  The version numbers should be used directly from LOINC.  There are no enforced restrictions "
+			+ "on the format.", 
+			new String[] {"loinc-src-data"}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_LOINC_AlphaPhase3_INT_20160401.zip",
 					"  The expected file is the RF2 release (NOT the Human Readable release nor the OWL release). "
@@ -59,7 +64,10 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/loinc.xml", "shared/licenses/sct.xml"}, 
 			new String[] {"shared/noticeAdditions/loinc-tech-preview-NOTICE-addition.txt", "shared/noticeAdditions/loinc-NOTICE-addition.txt", "shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"}),
 	
-	SCT("rf2-src-data-sct", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	SCT("rf2-src-data-sct", "\\d{8}.*$", 
+			"A typical Snomed version number is '20170131' or '20170131T120000'.  The value here should be the same as the version number in the name of the uploaded "
+			+ "zip file.  This requires a 4 digit year, 2 digit month, 2 digit day.  Any values can be appended after the 8 digits.",
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/healthit/snomedct/international.html",
 					"SnomedCT_RF2Release_INT_20160131.zip",
 					"The expected file is the RF2 release zip file.  The filename must end with .zip, and must contain the release date in the Snomed standard"
@@ -69,7 +77,10 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/sct.xml"},
 			new String[] {"shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"}),
 	
-	SCT_EXTENSION("rf2-src-data-*-extension", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
+	SCT_EXTENSION("rf2-src-data-*-extension", "\\d{8}.*$", 
+			"A typical Snomed version number is '20170131' or '20170131T120000'.  The value here should be the same as the version number in the name of the uploaded "
+			+ "zip file.  This requires a 4 digit year, 2 digit month, 2 digit day.  Any values can be appended after the 8 digits.",
+			new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("Snomed Extensions come from a variety of sources.  Note that the NLM has choosen to stop advertising the download links to the "
 					+ " US Extension, but still publishes it.  The current download pattern is now: "
 					+ "https://download.nlm.nih.gov/mlb/utsauth/USExt/SnomedCT_USExtensionRF2_Production_YYYYMMDDTHHMMSS.zip",
@@ -83,7 +94,10 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/sct.xml"},
 			new String[] {"shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"}),
 	
-	VHAT("vhat-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	VHAT("vhat-src-data", ".*$", 
+			"A typical VHAT version number is '2017.05.04' - which by convention, is the date that the content was exported from VETs.  There are no enforced restrictions"
+			+ " on the format of this value.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("VHAT content is typically exported from a VETs system.  ", "",
 					"VHAT.xml",
 					"Any XML file that is valid per the VETs TerminologyData.xsd schema.  The file name is ignored", 
@@ -92,7 +106,10 @@ public enum SupportedConverterTypes
 			new String[] {""}, 
 			new String[] {""}),
 	
-	RXNORM("rxnorm-src-data", new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
+	RXNORM("rxnorm-src-data", ".*$", 
+			"A typical RxNorm version number is '2017.04.03'.  This value should come directly from the RxNorm release information, however, by convention, is"
+			+ " reformatted to yyyy.mm.dd for better sorting in the artifact storage system.  There are no enforced restrictions on the format of this value.", 
+			new String[] {}, new String[] {"rf2-ibdf-sct"}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html", 
 					"RxNorm_full_06062016.zip",
 					"The file must be a zip file, which starts with 'rxnorm_full' and ends with .zip", "rxnorm_full.*\\.zip$", true)
@@ -107,7 +124,10 @@ public enum SupportedConverterTypes
 //			new String[] {"shared/licenses/rxnorm.xml"}, 
 //			new String[] {"shared/noticeAdditions/rxnorm-NOTICE-addition.txt"}),
 	
-	HL7v3("hl7v3-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	HL7v3("hl7v3-src-data", ".*$", 
+			"A typical HL7v3 version number is '2.47.7'.  This value should come directly from the release information.  There are no enforced restrictions on the "
+			+ "format of this value", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 		new UploadFileInfo("", "http://gforge.hl7.org/gf/project/design-repos/frs/?action=FrsReleaseBrowse&frs_package_id=30", 
 				"hl7-rimRepos-2.47.7.zip",
 				"The file must be a zip file, which should have 'rimRepos' in the file name and end with '.zip'.  This uploaded zip file" +
@@ -116,7 +136,10 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/hl7v3.xml"}, 
 			new String[] {"shared/noticeAdditions/hl7v3-NOTICE-addition.txt"}),
 	
-	NUCC("nucc-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	NUCC("nucc-src-data", ".*$", 
+			"A typical NUCC version number is '17.0'.  This value should come directly from the release information.  There are no enforced restrictions on the format "
+			+ " of this value.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "http://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40/csv-mainmenu-57",
 					"nucc_taxonomy_170.csv",
 					"The file name is ignored - it just needs to be a csv file which ends with .csv.", 
@@ -125,7 +148,10 @@ public enum SupportedConverterTypes
 			new String[] {""}, // Cannot find explicit license statement at nucc.org (perhaps AMA?)
 			new String[] {""}), // No explicit copyright notice text found to use
 
-	CVX("cvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	CVX("cvx-src-data", ".*$", 
+			"A typical CVX version number is '2017-02-06'.  This value can either be the date the file is downloaded from the source website, or the newest "
+			+ "'Last Updated Date' from the downloaded content.  There are no enforced restrictions on the format of this value." , 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=cvx",
 					"cvx.xml",
 					"The file name is ignored - it just needs to be an xml file which ends with .xml.  Download the 'XML-new format' type, " + 
@@ -135,7 +161,10 @@ public enum SupportedConverterTypes
 			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
 			new String[] {""}), // No explicit copyright notice text found to use
 	
-	MVX("mvx-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	MVX("mvx-src-data", ".*$", 
+			"A typical MVX version number is '2017-02-06'.  This value can either be the date the file is downloaded from the source website, or the newest "
+			+ "'Last Updated Date' from the downloaded content.  There are no enforced restrictions on the format of this value." , 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www2a.cdc.gov/vaccines/iis/iisstandards/vaccines.asp?rpt=mvx",
 					"mvx.xml",
 					"The file name is ignored - it just needs to be an xml file which ends with .xml.  Download the 'XML-new format' type, " + 
@@ -145,7 +174,9 @@ public enum SupportedConverterTypes
 			new String[] {""}, // No explicit license statement CDC, other than inter-governmental aggreements would be issued
 			new String[] {""}), // No explicit copyright notice text found to use
 	
-	CPT("cpt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	CPT("cpt-src-data", "\\d{4}$", 
+			"A typical CPT version number is '2017'.  This value must be the 4 digit year of the release date of the content.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("CPT is licensed, and is only available to a licensed user.  The VA has a license, but in practice, has purchased a copy for ease of access.  "
 					+ "See Jazz 355069", 
 					"https://commerce.ama-assn.org/store/catalog/productDetail.jsp?product_id=prod2680002&navAction=push",
@@ -157,7 +188,9 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/cpt.xml"},
 			new String[] {"shared/noticeAdditions/cpt-NOTICE-addition.txt"}),
 	
-	ICD10_CM("icd10-src-data-cm", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	ICD10_CM("icd10-src-data-cm", "\\d{4}$", 
+			"A typical ICD10 CM version number is '2017'.  This value must be the 4 digit year of the release date of the content.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
 					"2017-ICD10-Code-Descriptions.zip",
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-CM and GEMs'"
@@ -168,7 +201,9 @@ public enum SupportedConverterTypes
 			new String[] {""},  // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 		
-	ICD10_PCS("icd10-src-data-pcs", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	ICD10_PCS("icd10-src-data-pcs", "\\d{4}$", 
+			"A typical ICD10 PCS version number is '2017'.  This value must be the 4 digit year of the release date of the content.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
 					"2017-PCS-Long-Abbrev-Titles.zip",
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-PCS and GEMs'"
@@ -179,7 +214,9 @@ public enum SupportedConverterTypes
 			new String[] {""}, // Cannot find license text from cms.gov or documentation
 			new String[] {""}), // Cannot find copyright notice from cms.gov or documentation
 	
-	SOPT("sopt-src-data", new String[] {}, new String[] {}, new UploadFileInfo[] {
+	SOPT("sopt-src-data", ".*$", 
+			"A typical SOPT version number is 'cdc-v4-phdsc-v7'.  There are no enforced restrictions on the format of this value.", 
+			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("", "https://phinvads.cdc.gov/vads/ViewValueSet.action?oid=2.16.840.1.114222.4.11.3591", 
 					"ValueSet_PHVS_SourceOfPaymentTypology_PHDSC_V4_20170425-004232.zip",
 					"The actual source is here, http://www.phdsc.org/standards/payer-typology.asp#archives, but the zipped xls format that we require"
@@ -194,6 +231,8 @@ public enum SupportedConverterTypes
 	;
 	
 	private String srcArtifactId_;
+	private String srcVersionRegExpValidator_;
+	private String srcVersionDescription_;
 	private List<String> artifactSrcDependencies_;
 	private List<String> artifactIBDFDependencies_;
 	private List<UploadFileInfo> uploadFileInfo_;  //If we were really clever, we would pull this from an options file published with the converter itself.
@@ -212,11 +251,14 @@ public enum SupportedConverterTypes
 	 * update these if the patterns change in the future.
 	 */
 	
-	private SupportedConverterTypes(String artifactId, String[] artifactSourceDependencies, String[] artifactIBDFDependencies, UploadFileInfo[] uploadFileInfo, 
+	private SupportedConverterTypes(String artifactId, String srcVersionRegExpValidator, String srcVersionDescription, String[] artifactSourceDependencies, 
+			String[] artifactIBDFDependencies, UploadFileInfo[] uploadFileInfo, 
 			String converterArtifactId, String converterOutputArtifactId, String converterMojoName, String sourceUploadGroupId, String niceName,
 			String[] licenseFilePaths, String[] noticeFilePaths)
 	{
 		srcArtifactId_ = artifactId;
+		srcVersionRegExpValidator_ = srcVersionRegExpValidator;
+		srcVersionDescription_ = srcVersionDescription;
 		artifactSrcDependencies_ = Arrays.asList(artifactSourceDependencies);
 		artifactIBDFDependencies_ = Arrays.asList(artifactIBDFDependencies);
 		uploadFileInfo_ = Arrays.asList(uploadFileInfo);
@@ -267,6 +309,28 @@ public enum SupportedConverterTypes
 	public String getArtifactId()
 	{
 		return srcArtifactId_;
+	}
+	
+	/**
+	 * The regular expression that should be satisfied for the version number given to the uploaded source artifact(s).  The value provided to 
+	 * the {@link SrcUploadCreator#createSrcUploadConfiguration(SupportedConverterTypes, String, String, List, String, String, char[], String, String, String)}
+	 * for the 'version' parameter should meet this regexp.
+	 * 
+	 * This is used during SOURCE UPLOAD
+	 */
+	public String getSourceVersionRegExpValidator()
+	{
+		return srcVersionRegExpValidator_;
+	}
+	
+	/**
+	 * The descriptive text to provide to the end user to meet the regexp requirements given by {@link #getSourceVersionRegExpValidator()}
+	 * 
+	 * This is used during SOURCE UPLOAD
+	 */
+	public String getSourceVersionDescription()
+	{
+		return srcVersionDescription_;
 	}
 
 	/**
