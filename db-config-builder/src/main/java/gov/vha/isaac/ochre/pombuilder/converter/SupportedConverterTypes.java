@@ -365,6 +365,30 @@ public enum SupportedConverterTypes
 		return uploadFileInfo_;
 	}
 
+	
+	/**
+     * The regular expression that should be satisfied for the version number given to the uploaded source artifact(s).  The value provided to 
+     * the {@link SrcUploadCreator#createSrcUploadConfiguration(SupportedConverterTypes, String, String, List, String, String, char[], String, String, String)}
+     * for the 'version' parameter should meet this regexp.
+     * 
+     * This is used during SOURCE UPLOAD
+     */
+    public String getSourceVersionRegExpValidator()
+    {
+        return ".*";
+    }
+    
+    /**
+     * The descriptive text to provide to the end user to meet the regexp requirements given by {@link #getSourceVersionRegExpValidator()}
+     * 
+     * This is used during SOURCE UPLOAD
+     */
+    public String getSourceVersionDescription()
+    {
+        return "Put anything you want in here!";
+    }
+    
+    
 	/**
 	 * Not for PRISME
 	 */
