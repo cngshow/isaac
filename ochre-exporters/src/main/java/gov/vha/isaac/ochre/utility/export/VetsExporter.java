@@ -267,7 +267,7 @@ public class VetsExporter {
 
 		xmlCodeSystem.setAction(ActionType.NONE);
 		xmlCodeSystem.setName(getPreferredNameDescriptionType(vhatConcept.getNid()));
-		xmlCodeSystem.setVUID(Frills.getVuId(vhatCodeSystemNid, null).orElse(null)); //FORNUNO
+		xmlCodeSystem.setVUID(Frills.getVuId(vhatCodeSystemNid).orElse(null));
 		xmlCodeSystem.setDescription("VHA Terminology");  //This is in an acceptable synonym, but easier to hard code at the moment...
 		xmlCodeSystem.setCopyright(Year.now().getValue() + "");
 		xmlCodeSystem.setCopyrightURL("");

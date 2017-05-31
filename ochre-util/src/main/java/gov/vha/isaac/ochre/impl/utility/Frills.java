@@ -504,6 +504,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		return Optional.empty();
 	}
 
+	
 	/**
 	 * Find the VUID for a component (if it has one)
 	 *
@@ -547,6 +548,17 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 		return Optional.empty();
 	}
+	
+	/**
+	 * Find the VUID for a component (if it has one)
+	 *
+	 * @param componentNid
+	 * @return the id, if found, or empty (will not return null)
+	 */
+	public static Optional<Long> getVuId(int componentNid) {
+		return getVuId(componentNid, null);
+	}
+	
 
 	/**
 	 * Determine if a particular description sememe is flagged as preferred IN
