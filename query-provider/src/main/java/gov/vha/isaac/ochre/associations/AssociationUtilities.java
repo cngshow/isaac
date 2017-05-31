@@ -106,7 +106,7 @@ public class AssociationUtilities
 	 * @param componentNid
 	 * @param stamp - optional - if not provided, uses the default from the config service
 	 */
-	//TODO should probabaly have a method here that takes in a target UUID, since that seems to be how I stored them?
+	//TODO should probably have a method here that takes in a target UUID, since that seems to be how I stored them?
 	public static List<AssociationInstance> getTargetAssociations(int componentNid, StampCoordinate stamp)
 	{
 		ArrayList<AssociationInstance> result = new ArrayList<>();
@@ -117,17 +117,20 @@ public class AssociationUtilities
 			throw new RuntimeException("Required index is not available");
 		}
 		
-		UUID uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);
+		UUID uuid;
 		ArrayList<Integer> associationTypes = new ArrayList<>();
 //		ArrayList<Integer> colIndex = new ArrayList<>();
-		for (Integer associationTypeSequenece : getAssociationConceptSequences())
-		{
-			associationTypes.add(associationTypeSequenece);
-//			colIndex.add(findTargetColumnIndex(associationTypeSequenece));
-		}
 		
 		try
 		{
+			uuid = Get.identifierService().getUuidPrimordialForNid(componentNid).orElse(null);	
+
+			for (Integer associationTypeSequenece : getAssociationConceptSequences())
+			{
+				associationTypes.add(associationTypeSequenece);
+//				colIndex.add(findTargetColumnIndex(associationTypeSequenece));
+			}
+			
 			//TODO when issue with colIndex restrictions is fixed, put it back.
 			List<SearchResult> refexes = indexer.query(new DynamicSememeStringImpl(componentNid + (uuid == null ? "" : " OR " + uuid)),
 					false, associationTypes.toArray(new Integer[associationTypes.size()]), null, Integer.MAX_VALUE, null);
