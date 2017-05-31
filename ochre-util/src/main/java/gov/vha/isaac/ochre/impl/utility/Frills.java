@@ -1364,8 +1364,12 @@ public class Frills implements DynamicSememeColumnUtility {
 					{
 						result = temp.get();
 					}
+					callback.taskComplete(result, submitTime, callId);
 				}
-				callback.taskComplete(result, submitTime, callId);
+				else {
+					callback.taskComplete(null, submitTime, callId);
+				}
+				
 			}
 		};
 		Get.workExecutors().getExecutor().execute(r);
@@ -1510,7 +1514,12 @@ public class Frills implements DynamicSememeColumnUtility {
 			public void run()
 			{
 				Optional<ConceptSnapshot> c = getConceptSnapshot(nid, stampCoord, langCoord);
-				callback.taskComplete(c.isPresent() ? c.get() : null, submitTime, callId);
+				if (c.isPresent()) {
+					callback.taskComplete(c.get(), submitTime, callId);
+				}
+				else {
+					callback.taskComplete(null, submitTime, callId);
+				}
 			}
 		};
 		Get.workExecutors().getExecutor().execute(r);
