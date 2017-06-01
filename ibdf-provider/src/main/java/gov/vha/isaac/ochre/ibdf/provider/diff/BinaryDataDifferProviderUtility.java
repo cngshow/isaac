@@ -218,7 +218,9 @@ public class BinaryDataDifferProviderUtility {
 					.setLanguageConceptSequence(((DescriptionSememe<?>) originalVersion).getLanguageConceptSequence());
 			return newVer;
 		case DYNAMIC:
-			((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
+			if (((DynamicSememe<?>) originalVersion).getData().length > 0) {
+				((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
+			} 
 			return newVer;
 		case LONG:
 			((MutableLongSememe<?>) newVer).setLongValue(((LongSememe<?>) originalVersion).getLongValue());

@@ -267,7 +267,7 @@ public class VetsExporter {
 
 		xmlCodeSystem.setAction(ActionType.NONE);
 		xmlCodeSystem.setName(getPreferredNameDescriptionType(vhatConcept.getNid()));
-		xmlCodeSystem.setVUID(Frills.getVuId(vhatCodeSystemNid, null).orElse(null));
+		xmlCodeSystem.setVUID(Frills.getVuId(vhatCodeSystemNid).orElse(null));
 		xmlCodeSystem.setDescription("VHA Terminology");  //This is in an acceptable synonym, but easier to hard code at the moment...
 		xmlCodeSystem.setCopyright(Year.now().getValue() + "");
 		xmlCodeSystem.setCopyrightURL("");
@@ -993,8 +993,12 @@ public class VetsExporter {
 				xmlRelationship.setAction(action);
 				xmlRelationship.setActive(ai.getData().getState() == State.ACTIVE);
 				xmlRelationship.setTypeName(ai.getAssociationType().getAssociationName());
-				xmlRelationship.setOldTargetCode(oldTargetCode);
-				xmlRelationship.setNewTargetCode(newTargetCode);
+				if (oldTargetCode != null) {
+					xmlRelationship.setOldTargetCode(oldTargetCode);
+				}
+				if (newTargetCode != null) {
+					xmlRelationship.setNewTargetCode(newTargetCode);
+				}
 				
 				if (action != ActionType.NONE)
 				{

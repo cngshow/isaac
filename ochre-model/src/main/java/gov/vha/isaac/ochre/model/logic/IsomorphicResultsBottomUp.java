@@ -72,9 +72,15 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         this.referenceExpression = (LogicalExpressionOchreImpl) referenceExpression;
         this.comparisonExpression = (LogicalExpressionOchreImpl) comparisonExpression;
         this.referenceVisitData = new TreeNodeVisitData(referenceExpression.getNodeCount());
-        this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
+        //should not be null since it was created above, but flagged by Fortify
+        if (this.referenceExpression != null) {
+        	this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
+        }
         this.comparisonVisitData = new TreeNodeVisitData(comparisonExpression.getNodeCount());
-        this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
+        //should not be null since it was created above, but flagged by Fortify
+        if (this.comparisonExpression != null) {
+        	this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
+        }
         this.referenceExpressionToMergedNodeIdMap = new int[referenceExpression.getNodeCount()];
         Arrays.fill(referenceExpressionToMergedNodeIdMap, -1);
         this.comparisonExpressionToReferenceNodeIdMap = new int[comparisonExpression.getNodeCount()];

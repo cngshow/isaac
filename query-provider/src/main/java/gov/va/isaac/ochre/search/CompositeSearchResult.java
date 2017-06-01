@@ -280,7 +280,12 @@ public class CompositeSearchResult {
 		builder.append(", getMatchingComponents()=");
 		List<String> matchingComponentDescs = new ArrayList<>();
 		for (ObjectChronology<?> matchingComponent : getMatchingComponents()) {
-			matchingComponentDescs.add(matchingComponent != null ? matchingComponent.toUserString() : null);
+			if (matchingComponent != null && matchingComponent.toUserString() != null) {
+				matchingComponentDescs.add(matchingComponent.toUserString());
+			}
+			else {
+				matchingComponentDescs.add(null);
+			}
 		}
 		builder.append(matchingComponentDescs);
 		

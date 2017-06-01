@@ -72,8 +72,20 @@ public class MappingItem extends MappingObject
 		sourceConceptNid = sememe.getReferencedComponentNid();
 		uuids = sememe.getUuidList();
 		data_ = sememe.getData();
-		setTargetConcept(((data_ != null && data_.length > 0 && data_[0] != null) ? ((DynamicSememeUUID) data_[0]).getDataUUID() : null));
-		setQualifierConcept(((data_ != null && data_.length > 1 && data_[1] != null) ? ((DynamicSememeUUID) data_[1]).getDataUUID() : null)); 
+
+		if (data_ != null && data_.length > 0 && data_[0] != null) {
+			setTargetConcept( ((DynamicSememeUUID) data_[0]).getDataUUID() );
+		}
+		else {
+			setTargetConcept(null);
+		}
+		
+		if (data_ != null && data_.length > 1 && data_[1] != null) {
+			setQualifierConcept( ((DynamicSememeUUID) data_[1]).getDataUUID() );
+		}
+		else {
+			setQualifierConcept(null);
+		}
 	}
 	
 	private void lazyLoad()
@@ -84,7 +96,12 @@ public class MappingItem extends MappingObject
 			setSourceConcept(Get.identifierService().getUuidPrimordialForNid(sourceConceptNid).get());
 	
 			//TODO remove this
-			setEditorStatusConcept(((data_ != null && data_.length > 2 && data_[2] != null) ? ((DynamicSememeUUID) data_[2]).getDataUUID() : null));
+			if (data_ != null && data_.length > 2 && data_[2] != null) {
+				setEditorStatusConcept( ((DynamicSememeUUID) data_[2]).getDataUUID() );
+			}
+			else {
+				setEditorStatusConcept(null);
+			}
 			
 			targetConceptNid    = getNidForUuidSafe(targetConcept);
 			qualifierConceptNid = getNidForUuidSafe(qualifierConcept);

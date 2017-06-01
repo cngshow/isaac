@@ -49,6 +49,7 @@ public class LookupService {
     public static final int DATABASE_SERVICES_STARTED_RUNLEVEL = 2;
     public static final int ISAAC_DEPENDENTS_RUNLEVEL = 5;
     public static final int ISAAC_STARTED_RUNLEVEL = 4;
+    public static final int VUID_SERVICE_PRISME_LOG_EVENT_LISTENER_RUNLEVEL = 0; 
     public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
     public static final int WORKERS_STARTED_RUNLEVEL = -2;
     public static final int SYSTEM_STOPPED_RUNLEVEL = -3;

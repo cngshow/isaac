@@ -89,7 +89,9 @@ public class ObservableConceptChronologyImpl extends
                 }
             }
             
-            return Optional.of(latest);
+            if (latest != null) {
+            	return Optional.of(latest);
+            }
         }
         return Optional.empty();
     }

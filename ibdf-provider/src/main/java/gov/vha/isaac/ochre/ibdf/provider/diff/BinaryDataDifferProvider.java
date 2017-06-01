@@ -69,14 +69,14 @@ import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
  * @author <a href="mailto:jefron@westcoastinformatics.com">Jesse Efron</a>
  */
 @Service(name = "binary data differ")
-@Singleton  
-//TODO there are some serious thread-safety issues in this class
+@Singleton
+// TODO there are some serious thread-safety issues in this class
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private final Logger log = LogManager.getLogger();
 	private BinaryDataDifferProviderUtility diffUtil;
 
 	// Stream hack
-	private int conceptCount, sememeCount, itemCount;
+	private int conceptCount, sememeCount, itemCount, aliasCount, commentCount;
 
 	// Analysis File Readers/Writers
 	private String inputAnalysisDir;
@@ -172,6 +172,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			// Add newCons not in newList
 			for (OchreExternalizable newComp : newContentMap.get(type)) {
 				if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+
 					OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp, activeStampSeq,
 							type);
 
@@ -194,8 +195,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
-			throws IOException {
+	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws IOException {
 		componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfPath).toPath());
 
 		for (ChangeType key : changedComponents.keySet()) {
@@ -228,11 +228,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			// Handle Comparison Files
 			if (changedComponents != null) {
 				generateComparisonAnalysisFile(changedComponents);
+				writeChangeSetForVerification();
 			} else {
 				log.info("changedComponents empty so not writing json/text Output files");
 			}
 
-			writeChangeSetForVerification();
 		} catch (IOException e) {
 			log.error(
 					"Failed in creating analysis files (not in processing the content written to the analysis files)");
@@ -241,21 +241,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	private void generateComparisonAnalysisFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
-		int counter = 1;
-		
 		try (FileWriter textComparisonWriter = new FileWriter(comparisonAnalysisDir + textFullComparisonFileName);
-		JsonDataWriterService comparisonAnalysisJsonWriter = new JsonDataWriterService(new File(comparisonAnalysisDir + jsonFullComparisonFileName));)
-		{
+				JsonDataWriterService comparisonAnalysisJsonWriter = new JsonDataWriterService(
+						new File(comparisonAnalysisDir + jsonFullComparisonFileName));) {
 
 			for (ChangeType key : changedComponents.keySet()) {
+				int counter = 1;
+
 				FileWriter ComparisonAnalysisTextWriter = new FileWriter(comparisonAnalysisDir + key + "_File.txt");
-	
+
 				try {
 					List<OchreExternalizable> components = changedComponents.get(key);
-	
+
 					comparisonAnalysisJsonWriter.put("\n\n\n\t\t\t**** " + key.toString() + " ****");
 					textComparisonWriter.write("\n\n\n\t\t\t**** " + key.toString() + " ****");
-	
+
 					for (OchreExternalizable c : components) {
 						String componentType;
 						if (c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
@@ -263,21 +263,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						} else {
 							componentType = "Sememe";
 						}
-	
-						String componentToWrite = "---- " + key.toString() + " " + componentType + " #"
-								+ counter++ + "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
-	
+
+						String componentToWrite = "---- " + key.toString() + " " + componentType + " #" + counter++
+								+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
+
 						comparisonAnalysisJsonWriter.put(componentToWrite);
-	
+
 						textComparisonWriter.write("\n\n\n\t\t\t" + componentToWrite);
 						comparisonAnalysisJsonWriter.put(c);
-						ComparisonAnalysisTextWriter.write(c.toString());
-						ComparisonAnalysisTextWriter.write("\n\n\n");
 						try {
+							ComparisonAnalysisTextWriter.write(c.toString());
+							ComparisonAnalysisTextWriter.write("\n\n\n");
 							String s = c.toString();
 							textComparisonWriter.write(s);
 						} catch (Exception e) {
-	
+							log.debug("Failure writing toString for: " + ((ObjectChronology<?>) c).getPrimordialUuid());
 						}
 					}
 				} catch (IOException e) {
@@ -308,10 +308,10 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						.getConceptSequenceForUuids(UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c")), // USER
 				LookupService.getService(IdentifierService.class)
 						.getConceptSequenceForUuids(UUID.fromString("8aa5fda8-33e9-5eaf-88e8-dd8a024d2489")), // VHA
-																											  // MODULE
+																												// MODULE
 				LookupService.getService(IdentifierService.class)
 						.getConceptSequenceForUuids(UUID.fromString("1f200ca6-960e-11e5-8994-feff819cdc9f"))); // DEV
-																											   // PATH
+																												// PATH
 	}
 
 	@Override
@@ -325,6 +325,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		this.inputAnalysisDir = inputAnalysisDir;
 		this.comparisonAnalysisDir = comparisonAnalysisDir;
 		this.deltaIbdfPath = deltaIbdfPathFile;
+		this.inputAnalysisDir = inputAnalysisDir;
 
 		if (generateAnalysisFiles) {
 			File f = new File(inputAnalysisDir);
@@ -344,10 +345,14 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		itemCount = 0;
 		conceptCount = 0;
 		sememeCount = 0;
+		aliasCount = 0;
+		commentCount = 0;
 
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new HashMap<>();
 		retMap.put(OchreExternalizableObjectType.CONCEPT, new HashSet<OchreExternalizable>());
 		retMap.put(OchreExternalizableObjectType.SEMEME, new HashSet<OchreExternalizable>());
+		retMap.put(OchreExternalizableObjectType.STAMP_ALIAS, new HashSet<OchreExternalizable>());
+		retMap.put(OchreExternalizableObjectType.STAMP_COMMENT, new HashSet<OchreExternalizable>());
 		try {
 			reader.getStream().forEach((object) -> {
 				if (object != null) {
@@ -361,9 +366,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 							sememeCount++;
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
-							throw new RuntimeException("Not setup to handle STAMP ALIASES yet");
+							aliasCount++;
+							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
-							throw new RuntimeException("Not setup to handle STAMP COMMENTS yet");
+							commentCount++;
+							retMap.get(object.getOchreObjectType()).add(object);
 						} else {
 							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
 						}
@@ -388,20 +395,22 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (itemCount % 100 == 0) {
-						log.info("Still processing ibdf file.  Status: " + itemCount + " entries, " + "Loaded " + conceptCount + " concepts, "
-								+ sememeCount + " sememes, ");
+					if (itemCount % 250 == 0) {
+						log.info("Still processing ibdf file.  Status: " + itemCount + " entries, " + "Loaded "
+								+ conceptCount + " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, "
+								+ commentCount + " comments");
 					}
 				}
 			});
 		} catch (Exception ex) {
-			log.info("Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, "
+			log.info("Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, "
+					+ commentCount + " comments"
 					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
 
-		log.info("Finished processing ibdf file.  Results: " + itemCount + " entries, " + "Loaded " + conceptCount + " concepts, "
-				+ sememeCount + " sememes, ");
+		log.info("Finished processing ibdf file.  Results: " + itemCount + " entries, " + "Loaded " + conceptCount
+				+ " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, " + commentCount + " comments");
 
 		return retMap;
 	}
@@ -411,18 +420,14 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		int cc = 0;
 		int sc = 0;
 
-		BinaryDataReaderQueueService reader = Get
-				.binaryDataQueueReader(new File(deltaIbdfPath).toPath());
+		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfPath).toPath());
 		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
 
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
-		
-		
 
-		try (FileOutputStream fos = new FileOutputStream(new File(comparisonAnalysisDir + "verificationChanges.json")); 
-			JsonWriter verificationWriter = new JsonWriter(fos, args);)
-		{
+		try (FileOutputStream fos = new FileOutputStream(new File(comparisonAnalysisDir + "verificationChanges.json"));
+				JsonWriter verificationWriter = new JsonWriter(fos, args);) {
 
 			while (!queue.isEmpty() || !reader.isFinished()) {
 				OchreExternalizable object = queue.poll(500, TimeUnit.MILLISECONDS);
@@ -459,7 +464,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (ic % 100 == 0) {
+					if (ic % 250 == 0) {
 						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, ");
 					}
 				}
@@ -477,19 +482,22 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	private void generateInputAnalysisFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
 			String version, String jsonInputFileName) throws IOException {
-		
+
 		int i = 1;
 
 		try (FileWriter inputAnalysisTextWriter = new FileWriter(inputAnalysisDir + textInputFileName, true);
-			JsonDataWriterService inputAnalysisJsonWriter = new JsonDataWriterService(new File(inputAnalysisDir + jsonInputFileName));) {
-			
+				JsonDataWriterService inputAnalysisJsonWriter = new JsonDataWriterService(
+						new File(inputAnalysisDir + jsonInputFileName));) {
+
 			inputAnalysisTextWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
 			inputAnalysisJsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
 				ConceptChronology<?> cc = (ConceptChronology<?>) component;
-				inputAnalysisJsonWriter.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
+				inputAnalysisJsonWriter
+						.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
 				inputAnalysisJsonWriter.put(cc);
-				inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----\n");
+				inputAnalysisTextWriter.write(
+						"\n\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----\n");
 				inputAnalysisTextWriter.write(cc.toString());
 				i++;
 			}
@@ -498,19 +506,26 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
 				SememeChronology<?> se = (SememeChronology<?>) component;
-				inputAnalysisJsonWriter.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
+				inputAnalysisJsonWriter
+						.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
 				inputAnalysisJsonWriter.put(se);
-				inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----\n");
+
 				try {
+					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   "
+							+ se.getPrimordialUuid() + " ----\n");
 					inputAnalysisTextWriter.write(se.toString());
 				} catch (Exception e) {
-					log.error("Failed on: " + se.getSememeType());
-					log.error("Failure on writing " + se.getSememeType() + " which is index: " + i + " in writing *" + version + "* content to text file for analysis (UUID: " + se.getPrimordialUuid() + ".");
+					log.error("Failure on TXT writing " + se.getSememeType() + " which is index: " + i + " in writing *"
+							+ version + "* content to text file for analysis (UUID: " + se.getPrimordialUuid() + ".");
+					inputAnalysisTextWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: "
+							+ i + " in writing *" + version + "* content to text file for analysis (UUID: "
+							+ se.getPrimordialUuid() + ".");
 				}
 				i++;
 			}
 		} catch (Exception e) {
-			log.error("Failure on writing index: " + i + " in writing *" + version + "* content to text file for analysis.");
+			log.error("Failure on writing index: " + i + " in writing *" + version
+					+ "* content to text file for analysis.");
 		}
 	}
 }

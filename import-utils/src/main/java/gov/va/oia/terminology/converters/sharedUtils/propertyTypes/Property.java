@@ -79,12 +79,13 @@ public class Property
 		//if owner is null, have to delay this until the setOwner call
 		//leave the assemblageConceptUUID null for now - it should be set to "getUUID()" but that isn't always ready
 		//at the time this code runs.  We make sure it is set down below, in the getter.
-		if (columnInforForDynamicRefex == null && owner != null && owner_.getDefaultColumnInfo() != null)
+		if (columnInforForDynamicRefex == null && owner_ != null && owner_.getDefaultColumnInfo() != null)
 		{
 			//Create a single required column, with the column name just set to 'value'
-			dataColumnsForDynamicRefex_ = new DynamicSememeColumnInfo[] { new DynamicSememeColumnInfo(null, 0, 
-					DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(),
-					owner_.getDefaultColumnInfo(), null, true, null, null, true)};
+			dataColumnsForDynamicRefex_ = new DynamicSememeColumnInfo[] {
+					new DynamicSememeColumnInfo(null, 0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(),
+					owner_.getDefaultColumnInfo(), null, true, null, null, true)
+			};
 		}
 		else
 		{
@@ -178,7 +179,7 @@ public class Property
 	{
 		this.owner_ = owner;
 		
-		if (dataColumnsForDynamicRefex_ == null && owner_.getDefaultColumnInfo() != null)
+		if (dataColumnsForDynamicRefex_ == null && owner_ != null && owner_.getDefaultColumnInfo() != null)
 		{
 			//Create a single required column, with the column name concept tied back to the assemblage concept itself.
 			//leave the assemblageConceptUUID null for now - it should be set to "getUUID()" but that isn't always ready

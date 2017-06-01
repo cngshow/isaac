@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.jvnet.hk2.annotations.Service;
@@ -86,13 +88,15 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	private Boolean diffOnPath = false;
 
 	@Parameter
-	private Boolean createAnalysisFiles = true;
-
-	@Parameter
 	private String importDate;
 
 	@Parameter(required = true)
 	private String deltaIbdfPath;
+
+	@Parameter
+	private Boolean createAnalysisFiles = false;
+
+	private static final Logger log = LogManager.getLogger();
 
 	public void execute() throws MojoExecutionException {
 		BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
@@ -101,22 +105,45 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap = null;
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = null;
-		
+		Map<ChangeType, List<OchreExternalizable>> changedComponents = null;
+
+		boolean ranInputAnalysis = false;
+		boolean ranOutputAnalysis = false;
+
 		try {
+			// Import Input IBDF Files
+			log.info("\n\nProcessing Old version IBDF File");
 			oldContentMap = differService.processInputIbdfFil(oldVersionFile);
+			log.info("\n\nProcessing New version IBDF File");
 			newContentMap = differService.processInputIbdfFil(newVersionFile);
 
-			Map<ChangeType, List<OchreExternalizable>> changedComponents = differService
-					.computeDelta(oldContentMap, newContentMap);
+			// Transform input old & new content into text & json files
+			log.info("\n\nCreating analysis files for input/output files");
+			if (createAnalysisFiles) {
+				ranInputAnalysis = true;
+				differService.createAnalysisFiles(oldContentMap, newContentMap, null);
+			}
 
+			// Execute diff process
+			log.info("\n\nRunning Compute Delta");
+			changedComponents = differService.computeDelta(oldContentMap, newContentMap);
+
+			// Create diff IBDF file
+			log.info("\n\nCreating the delta ibdf file");
 			differService.generateDeltaIbdfFile(changedComponents);
 
+			// Transform diff IBDF file into text & json files
+			log.info("\n\nCreating analysis files for diff file");
 			if (createAnalysisFiles) {
-				differService.createAnalysisFiles(oldContentMap, newContentMap, changedComponents);
+				ranOutputAnalysis = true;
+				differService.createAnalysisFiles(null, null, changedComponents);
 			}
 		} catch (Exception e) {
-			if (createAnalysisFiles) {
+			if (createAnalysisFiles && !ranInputAnalysis) {
 				differService.createAnalysisFiles(oldContentMap, newContentMap, null);
+			}
+			if (createAnalysisFiles && !ranOutputAnalysis) {
+				differService.createAnalysisFiles(null, null, changedComponents);
 			}
 			throw new MojoExecutionException(e.getMessage(), e);
 		}
