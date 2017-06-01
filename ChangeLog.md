@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/06/?? - 4.06 - PENDING
+	*
+
 * 2017/06/01 - 4.05
 	* Changes to address Fortify issues
 	* Commit latest changes to enable producing IBDF file of differences between two IBDF files to correctly obtain MetadataAuxiliaryVersion description.
