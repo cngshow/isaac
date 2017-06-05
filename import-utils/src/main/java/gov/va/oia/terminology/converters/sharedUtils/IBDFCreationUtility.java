@@ -817,7 +817,12 @@ public class IBDFCreationUtility
 		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
-		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
+		
+		SememeChronology<?> sc = null;
+		
+		if (sb != null) {
+			sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
+		}
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -928,7 +933,10 @@ public class IBDFCreationUtility
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
-		SememeChronology<StringSememe<?>> sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(null, referencedComponent)), builtObjects);
+		SememeChronology<StringSememe<?>> sc = null;
+		if (sb != null) {
+			sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(null, referencedComponent)), builtObjects);
+		}
 		
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -1488,8 +1496,9 @@ public class IBDFCreationUtility
 			UUID descriptionConcept = createConcept(colName, true, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMNS.getPrimordialUuid()).getPrimordialUuid();
 			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, type, null, false, true);
 		}
+		Property property = new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
 		
-		return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
+		return property;
 	}
 
 	public void shutdown() throws IOException	
