@@ -79,12 +79,12 @@ public class Property
 		//if owner is null, have to delay this until the setOwner call
 		//leave the assemblageConceptUUID null for now - it should be set to "getUUID()" but that isn't always ready
 		//at the time this code runs.  We make sure it is set down below, in the getter.
-		if (columnInforForDynamicRefex == null && owner_ != null && owner_.getDefaultColumnInfo() != null)
+		if (columnInforForDynamicRefex == null && owner != null && owner.getDefaultColumnInfo() != null)
 		{
 			//Create a single required column, with the column name just set to 'value'
 			dataColumnsForDynamicRefex_ = new DynamicSememeColumnInfo[] {
 					new DynamicSememeColumnInfo(null, 0, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_VALUE.getUUID(),
-					owner_.getDefaultColumnInfo(), null, true, null, null, true)
+					owner.getDefaultColumnInfo(), null, true, null, null, true)
 			};
 		}
 		else
@@ -92,7 +92,7 @@ public class Property
 			dataColumnsForDynamicRefex_ = columnInforForDynamicRefex;
 		}
 		
-		if (dataColumnsForDynamicRefex_ != null && owner_ != null && !owner_.createAsDynamicRefex()) 
+		if (dataColumnsForDynamicRefex_ != null && owner != null && !owner.createAsDynamicRefex()) 
 		{
 			throw new RuntimeException("Tried to attach dynamic sememe data where it isn't allowed.");
 		}
