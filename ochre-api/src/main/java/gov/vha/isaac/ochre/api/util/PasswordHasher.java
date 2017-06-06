@@ -190,12 +190,11 @@ public class PasswordHasher
 		}
 		if (decrypted.length >= 40)
 		{
-			Collator collator = Collator.getInstance(Locale.US);
 			//The last 40 bytes should be the SHA1 Sum
 			String checkSum = new String(Arrays.copyOfRange(decrypted, decrypted.length - 40, decrypted.length));
 			byte[] userData = Arrays.copyOf(decrypted, decrypted.length - 40);
 			String computed = ChecksumGenerator.calculateChecksum("SHA1", userData);
-			if (collator.compare(checkSum, computed) != 0)
+			if (!checkSum.equals(computed))
 			{
 				throw new Exception("Invalid decryption password, or truncated data");
 			}
