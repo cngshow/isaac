@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/06/?? - 4.06 - PENDING
-	*
+	* Correct Frills.getDescriptionExtendedTypeConcept to only look at active values.
 
 * 2017/06/01 - 4.05
 	* Changes to address Fortify issues
