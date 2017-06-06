@@ -24,6 +24,7 @@ import java.text.Collator;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -194,7 +195,8 @@ public class PasswordHasher
 			String checkSum = new String(Arrays.copyOfRange(decrypted, decrypted.length - 40, decrypted.length));
 			byte[] userData = Arrays.copyOf(decrypted, decrypted.length - 40);
 			String computed = ChecksumGenerator.calculateChecksum("SHA1", userData);
-			if (!checkSum.equals(computed))
+			//if (!checkSum.equals(computed))
+			if (!Objects.equals(checkSum, computed))
 			{
 				throw new Exception("Invalid decryption password, or truncated data");
 			}
