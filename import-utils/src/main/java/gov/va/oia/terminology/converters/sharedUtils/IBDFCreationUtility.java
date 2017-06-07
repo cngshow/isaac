@@ -599,7 +599,7 @@ public class IBDFCreationUtility
 		
 		SememeChronology<DescriptionSememe<?>> newDescription = (SememeChronology<DescriptionSememe<?>>)
 				descBuilder.build(
-						createStamp(state, selectTime(time, concept), module), 
+						createStamp(state, selectTime(concept, time), module), 
 						builtObjects);
 
 		if (preferred == null)
@@ -615,7 +615,7 @@ public class IBDFCreationUtility
 			UUID acceptabilityTypePrimordialUUID = ConverterUUID
 					.createNamespaceUUIDFromStrings(descriptionPrimordialUUID.toString(), dialect.toString());
 			acceptabilityTypeBuilder.setPrimordialUuid(acceptabilityTypePrimordialUUID);
-			acceptabilityTypeBuilder.build(createStamp(state, selectTime(time, concept), module), builtObjects);
+			acceptabilityTypeBuilder.build(createStamp(state, selectTime(concept, time), module), builtObjects);
 
 			ls_.addAnnotation("Description", getOriginStringForUuid(dialect));
 		}
@@ -668,7 +668,7 @@ public class IBDFCreationUtility
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
 		SememeChronology<ComponentNidSememe<?>> sc = (SememeChronology<ComponentNidSememe<?>>)sb.build(
-				createStamp(state, selectTime(time, description), module), builtObjects);
+				createStamp(state, selectTime(description, time), module), builtObjects);
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
@@ -782,7 +782,7 @@ public class IBDFCreationUtility
 		sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
-		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(time, referencedComponent), module), builtObjects);
+		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), builtObjects);
 		
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -817,7 +817,7 @@ public class IBDFCreationUtility
 		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
-		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime((Long)null, referencedComponent)), builtObjects);
+		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime(referencedComponent, (Long)null)), builtObjects);
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -928,7 +928,7 @@ public class IBDFCreationUtility
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
-		SememeChronology<StringSememe<?>> sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(null, referencedComponent)), builtObjects);
+		SememeChronology<StringSememe<?>> sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, null)), builtObjects);
 		
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -1090,7 +1090,7 @@ public class IBDFCreationUtility
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
-		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(createStamp(State.ACTIVE, selectTime(time, concept)), builtObjects);
+		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(createStamp(State.ACTIVE, selectTime(concept, time)), builtObjects);
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -1141,7 +1141,7 @@ public class IBDFCreationUtility
 
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(
-				createStamp(State.ACTIVE, selectTime(time, concept), module), builtObjects);
+				createStamp(State.ACTIVE, selectTime(concept, time), module), builtObjects);
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -1157,7 +1157,7 @@ public class IBDFCreationUtility
 	 * 
 	 * Note, this still may return null.
 	 */
-	public Long selectTime(Long providedTime, ComponentReference readTimeFrom)
+	public Long selectTime(ComponentReference readTimeFrom, Long providedTime)
 	{
 		if (providedTime != null)
 		{
@@ -1322,7 +1322,7 @@ public class IBDFCreationUtility
 									DescriptionType.SYNONYM, false, null, State.ACTIVE);
 							
 							addRefsetMembership(ComponentReference.fromChronology(inverseDesc), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getUUID(), 
-									State.ACTIVE, selectTime(null, ComponentReference.fromChronology(inverseDesc)));
+									State.ACTIVE, selectTime(ComponentReference.fromChronology(inverseDesc), null));
 						}
 					}
 				}
@@ -1408,7 +1408,7 @@ public class IBDFCreationUtility
 					DescriptionType.SYNONYM, false, null, State.ACTIVE);
 			
 			addRefsetMembership(ComponentReference.fromChronology(inverseDesc), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getUUID(), 
-					State.ACTIVE, selectTime(null, ComponentReference.fromChronology(inverseDesc)));
+					State.ACTIVE, selectTime(ComponentReference.fromChronology(inverseDesc), null));
 		}
 		BPT_Associations.registerAsAssociation(associationTypeConcept);
 	}
