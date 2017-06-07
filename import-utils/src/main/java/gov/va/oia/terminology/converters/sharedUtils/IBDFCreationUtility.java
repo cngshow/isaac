@@ -1492,7 +1492,8 @@ public class IBDFCreationUtility
 			cols[i] = new DynamicSememeColumnInfo(i, descriptionConcept, type, null, false, true);
 		}
 		
-		return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
+		//return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
+		return new Property(sememeName, false, Integer.MAX_VALUE, cols);
 	}
 
 	public void shutdown() throws IOException	

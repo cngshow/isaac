@@ -140,6 +140,12 @@ public class Property
 		setWBPropertyType(wbRelType);
 	}
 
+	public Property(String sourcePropertyNameFSN, boolean disabled, int propertySubType, 
+			DynamicSememeColumnInfo[] columnInforForDynamicRefex)
+	{
+		this(null, sourcePropertyNameFSN, null, null, disabled, false, propertySubType, columnInforForDynamicRefex);
+	}
+	
 	public String getSourcePropertyNameFSN()
 	{
 		return sourcePropertyNameFSN_;
