@@ -83,7 +83,7 @@ public enum DynamicSememeDataType {
 		{
 			return null;
 		}
-		String clean = nameOrTokenOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+		String clean = nameOrTokenOrEnumId.toLowerCase().trim();
 		if (StringUtils.isBlank(clean))
 		{
 			return null;
