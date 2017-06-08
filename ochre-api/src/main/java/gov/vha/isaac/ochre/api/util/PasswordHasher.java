@@ -20,9 +20,11 @@ package gov.vha.isaac.ochre.api.util;
 
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
+import java.text.Collator;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -189,12 +191,12 @@ public class PasswordHasher
 		}
 		if (decrypted.length >= 40)
 		{
-			Locale.setDefault(Locale.US); //ensure .equals below is using same Locale. (Fortify)
 			//The last 40 bytes should be the SHA1 Sum
 			String checkSum = new String(Arrays.copyOfRange(decrypted, decrypted.length - 40, decrypted.length));
 			byte[] userData = Arrays.copyOf(decrypted, decrypted.length - 40);
 			String computed = ChecksumGenerator.calculateChecksum("SHA1", userData);
-			if (!checkSum.equals(computed))
+			//if (!checkSum.equals(computed))
+			if (!Objects.equals(checkSum, computed))
 			{
 				throw new Exception("Invalid decryption password, or truncated data");
 			}

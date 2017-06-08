@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import org.apache.commons.lang3.StringUtils;
@@ -241,6 +242,10 @@ public class LookupService {
      */
     public static void startupIsaac() {
         try {
+        	//So Fortify does not complain about Locale dependent comparison
+        	//when the application uses .equals or 
+        	Locale.setDefault(Locale.US);
+        	
             // Set run level to startup database and associated services running on top of database
             setRunLevel(DATABASE_SERVICES_STARTED_RUNLEVEL);
 

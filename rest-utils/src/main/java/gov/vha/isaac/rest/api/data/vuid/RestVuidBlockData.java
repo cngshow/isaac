@@ -45,14 +45,14 @@ public class RestVuidBlockData
 	 */
 	@XmlElement
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public int startInclusive;
+	public long startInclusive;
 
 	/**
 	 * VUID block boundary with absolute value >= start value
 	 */
 	@XmlElement
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public int endInclusive;
+	public long endInclusive;
 
 	protected RestVuidBlockData()
 	{
@@ -63,8 +63,8 @@ public class RestVuidBlockData
 	 * @param blockSize
 	 */
 	public RestVuidBlockData(
-			int start,
-			int end) {
+			long start,
+			long end) {
 		super();
 
 		this.startInclusive = start;

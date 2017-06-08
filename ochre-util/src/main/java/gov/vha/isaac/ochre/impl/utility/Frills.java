@@ -1275,7 +1275,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	
 	/**
 	 * If this description is flagged as an extended description type, return the type concept of the extension.
-	 * @param sc - optional Stamp - pass null to use the default stamp.
+	 * @param sc - optional Stamp - pass null to use the default stamp.  In either case, this only looks for an active extended type - state is overridden.
 	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
 	 * @return
 	 */
@@ -1289,7 +1289,8 @@ public class Frills implements DynamicSememeColumnUtility {
 		{
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
-				.getLatestVersion(DynamicSememeImpl.class, stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate() : stampCoordinate);
+				.getLatestVersion(DynamicSememeImpl.class, stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ACTIVE) 
+						: stampCoordinate.makeAnalog(State.ACTIVE));
 			if (optionalLatestSememeVersion.get().contradictions().isPresent() && optionalLatestSememeVersion.get().contradictions().get().size() > 0) {
 				//TODO handle contradictions
 				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()

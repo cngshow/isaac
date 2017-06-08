@@ -127,7 +127,7 @@ public enum DynamicSememeValidatorType
 		{
 			return null;
 		}
-		String clean = nameOrEnumId.toLowerCase(Locale.ENGLISH).trim();
+		String clean = nameOrEnumId.toLowerCase().trim();
 		if (StringUtils.isBlank(clean))
 		{
 			return null;
