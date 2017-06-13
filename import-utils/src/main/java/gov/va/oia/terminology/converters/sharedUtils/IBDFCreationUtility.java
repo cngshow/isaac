@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.util.FileUtils;
@@ -94,6 +95,7 @@ import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.mojo.IndexTermstore;
@@ -172,6 +174,7 @@ public class IBDFCreationUtility
 	protected static StampCoordinate readBackStamp_;
 	
 	private DataWriterService writer_;
+	private boolean writeToDB = false;
 
 	private LoadStats ls_ = new LoadStats();
 	
@@ -279,7 +282,7 @@ public class IBDFCreationUtility
 		
 		defaultTime_ = defaultTime;
 		
-		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, MetaData.DEVELOPMENT_PATH.getConceptSequence());
+		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, terminologyPathSeq_);
 		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
 		UUID moduleUUID = moduleToCreate.isPresent() ? UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate.get()) : 
@@ -308,6 +311,47 @@ public class IBDFCreationUtility
 		{
 			module_ = ComponentReference.fromConcept(preExistingModule.get().getPrimordialUuid(), preExistingModule.get().getConceptSequence());
 		}
+		
+		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
+		
+	}
+	
+	
+	/**
+	 * This constructor is for use when we are using this utility code to process changes directly into a (already) running DB, rather than writing an IBDF file.
+	 *  @param author - which author to use for these changes
+	 *  @param module - which module to use while loading
+	 *  @param path - which path to use for these changes
+	 *  @param debugOutputDirectory - optional - if provided, json debug files will be written here
+	 */
+	public IBDFCreationUtility(UUID author, UUID module, UUID path, File debugOutputDirectory) throws Exception
+	{
+		authorSeq_ = Get.identifierService().getConceptSequenceForUuids(author);
+		terminologyPathSeq_ = Get.identifierService().getConceptSequenceForUuids(path);
+		module_ = ComponentReference.fromConcept(module);
+		writeToDB = true;
+		
+		refexAllowedColumnTypes_ = null;
+
+		conceptBuilderService_ = Get.conceptBuilderService();
+		conceptBuilderService_.setDefaultLanguageForDescriptions(MetaData.ENGLISH_LANGUAGE);
+		conceptBuilderService_.setDefaultDialectAssemblageForDescriptions(MetaData.US_ENGLISH_DIALECT);
+		conceptBuilderService_.setDefaultLogicCoordinate(LogicCoordinates.getStandardElProfile());
+
+		expressionBuilderService_ = Get.logicalExpressionBuilderService();
+		
+		sememeBuilderService_ = Get.sememeBuilderService();
+		
+		defaultTime_ = System.currentTimeMillis();
+		
+		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, terminologyPathSeq_);
+		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
+		
+		
+		//If both modules are specified, use the parent grouping module.  If not, use the module as determined above.
+		ConverterUUID.configureNamespace(module_.getPrimordialUuid());
+		
+		writer_ = new MultipleDataWriterService(Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
 		
 		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		
@@ -388,6 +432,7 @@ public class IBDFCreationUtility
 		ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(conceptPrimordialUuid);
 		conceptChronology.createMutableVersion(createStamp(status, time, module));
 		writer_.put(conceptChronology);
+		dbWrite(conceptChronology);
 		ls_.addConcept();
 		return conceptChronology;
 	}
@@ -623,6 +668,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 		
 		ls_.addDescription(wbDescriptionType.name() + (sourceDescriptionTypeUUID == null ? "" : ":" + getOriginStringForUuid(sourceDescriptionTypeUUID)));
@@ -672,6 +718,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 
 		ls_.addAnnotation("Description", getOriginStringForUuid(dialectRefset));
@@ -686,6 +733,7 @@ public class IBDFCreationUtility
 		ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(existingUUID);
 		conceptChronology.addAdditionalUuids(newUUID);
 		writer_.put(conceptChronology);
+		dbWrite(conceptChronology);
 	}
 	
 	/**
@@ -787,6 +835,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 		if (values == null || values.length == 0)
 		{
@@ -808,9 +857,52 @@ public class IBDFCreationUtility
 		return sc;
 	}
 	
+	/**
+	 * @param ochreObject
+	 */
+	private void dbWrite(OchreExternalizable ochreObject)
+	{
+		if (writeToDB)
+		{
+			try
+			{
+				if (ochreObject instanceof ConceptChronology)
+				{
+					Get.commitService().addUncommitted((ConceptChronology)ochreObject).get();
+				}
+				else if (ochreObject instanceof SememeChronology)
+				{
+					Get.commitService().addUncommitted((SememeChronology)ochreObject).get();
+				}
+				else
+				{
+					throw new RuntimeException("Unexpected type! " + ochreObject);
+				}
+			}
+			catch (Exception e)
+			{
+				if (e instanceof RuntimeException)
+				{
+					throw (RuntimeException)e;
+				}
+				else
+				{
+					throw new RuntimeException("Unexpected error doing add Uncommitted", e);
+				}
+			}
+		}
+	}
+
 	private boolean isConfiguredAsDynamicSememe(UUID refexDynamicTypeUuid)
 	{
-		return refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid);
+		if (refexAllowedColumnTypes_ == null)
+		{
+			return DynamicSememeUsageDescriptionImpl.isDynamicSememe(Get.identifierService().getConceptSequenceForUuids(refexDynamicTypeUuid));
+		}
+		else
+		{
+			return refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid);
+		}
 	}
 
 	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
@@ -822,6 +914,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 
 		ls_.addRefsetMember(getOriginStringForUuid(assemblage.getPrimordialUuid()));
@@ -837,13 +930,22 @@ public class IBDFCreationUtility
 		//TODO this should be a much better validator - checking all of the various things in RefexDynamicCAB.validateData - or in 
 		//generateMetadataEConcepts - need to enforce the restrictions defined in the columns in the validators
 		
-		if (!refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid))
-		{
-			throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe: " + refexDynamicTypeUuid + " values: " +
-					(values == null ? "" : Arrays.toString(values)));
-		}
+		DynamicSememeColumnInfo[] colInfo;
 		
-		DynamicSememeColumnInfo[] colInfo = refexAllowedColumnTypes_.get(refexDynamicTypeUuid);
+		if (refexAllowedColumnTypes_ == null)
+		{
+			colInfo = DynamicSememeUsageDescriptionImpl.read(Get.identifierService().getConceptSequenceForUuids(refexDynamicTypeUuid)).getColumnInfo();
+		}
+		else
+		{
+			if (!refexAllowedColumnTypes_.containsKey(refexDynamicTypeUuid))
+			{
+				throw new RuntimeException("Attempted to store data on a concept not configured as a dynamic sememe: " + refexDynamicTypeUuid + " values: " +
+						(values == null ? "" : Arrays.toString(values)));
+			}
+			
+			colInfo = refexAllowedColumnTypes_.get(refexDynamicTypeUuid);
+		}
 		
 		if (values != null && values.length > 0)
 		{
@@ -933,6 +1035,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 		ls_.addAnnotation(
 				referencedComponent.getTypeString().length() > 0 ? referencedComponent.getTypeString() : getOriginStringForUuid(referencedComponent.getPrimordialUuid()),
@@ -1095,6 +1198,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 
 		if (sourceRelTypeUUID != null)
@@ -1146,6 +1250,7 @@ public class IBDFCreationUtility
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
 			writer_.put(ochreObject);
+			dbWrite(ochreObject);
 		}
 
 		ls_.addGraph();
@@ -1499,7 +1604,10 @@ public class IBDFCreationUtility
 	public void shutdown() throws IOException	
 	{
 		writer_.close();
-		LookupService.shutdownSystem();
+		if (!writeToDB)
+		{
+			LookupService.shutdownSystem();
+		}
 		ConverterUUID.clearCache();
 		clearLoadStats();
 	}

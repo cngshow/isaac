@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/06/?? - 4.07 - PENDING
+	*
+
 * 2017/06/08 - 4.06
 	* Correct Frills.getDescriptionExtendedTypeConcept to only look at active values.
 	* Fortify fixes.
