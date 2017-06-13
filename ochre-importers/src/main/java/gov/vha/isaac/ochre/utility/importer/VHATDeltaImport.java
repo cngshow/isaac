@@ -87,7 +87,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 
 	private void schemaValidate(String xmlData) throws SAXException, IOException
 	{
-
+		LOG.info("Doing schema validation");
 		SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 		
 		URL url = VHATDeltaImport.class.getResource("/TerminologyData.xsd.hidden");
@@ -261,6 +261,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			switch (cc.getAction())
 			{
+				//TODO concepts
 				case ADD:
 					
 					loadDesignations(cc.getDesignations());
@@ -286,6 +287,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	 */
 	private void loadConceptProperties(gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties properties)
 	{
+		//TODO concept properties
 		if (properties != null)
 		{
 			for (Property p : properties.getProperty())
@@ -314,12 +316,13 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	 */
 	private void loadDesignations(Designations designations)
 	{
+		// TODO concept designations
 		for (Designation d : designations.getDesignation())
 		{
 			switch (d.getAction())
 			{
 				case ADD:
-					loadProperties(d.getProperties());
+					loadDesignationProperties(d.getProperties());
 					loadSubsetMembership(d.getSubsetMemberships());
 					break;
 				case NONE:
@@ -341,6 +344,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	 */
 	private void loadSubsetMembership(SubsetMemberships subsetMemberships)
 	{
+		//TODO subset memberships
 		if (subsetMemberships != null)
 		{
 			for(SubsetMembership sm : subsetMemberships.getSubsetMembership())
@@ -367,8 +371,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	/**
 	 * @param properties
 	 */
-	private void loadProperties(Properties properties)
+	private void loadDesignationProperties(Properties properties)
 	{
+		//TODO designation properties
 		for (PropertyType p : properties.getProperty())
 		{
 			switch(p.getAction())
@@ -397,6 +402,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				switch(r.getAction())
 				{
+					//TODO relationships
 					case ADD:
 						break;
 					case NONE:
@@ -522,8 +528,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 //			allVhatConceptsRefset = refsets_.getProperty("All VHAT Concepts").getUUID();
 //			loadedConcepts.put(allVhatConceptsRefset, "All VHAT Concepts");
 //
-//			//TODO Could get rid of this calculation now that things are structured better....
-//			
 //			Map<Long, Set<String>> subsetMembershipMap = new HashMap<>();
 //			// get the subset memberships to build the refset for each subset
 //			for (ConceptImportDTO item : terminology.getCodeSystem().getVersion().getConcepts())
