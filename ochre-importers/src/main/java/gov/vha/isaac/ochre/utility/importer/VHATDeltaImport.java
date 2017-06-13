@@ -3,6 +3,9 @@ package gov.vha.isaac.ochre.utility.importer;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -12,10 +15,24 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.xml.sax.SAXException;
+import gov.va.med.term.vhat.xml.model.ActionType;
+import gov.va.med.term.vhat.xml.model.PropertyType;
 import gov.va.med.term.vhat.xml.model.Terminology;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.Properties;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Designations.Designation.SubsetMemberships.SubsetMembership;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships;
+import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship;
 import gov.va.oia.terminology.converters.sharedUtils.ConverterBaseMojo;
 import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
 
@@ -25,6 +42,7 @@ import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
 public class VHATDeltaImport extends ConverterBaseMojo
 {
 	private IBDFCreationUtility importUtil_;
+	private Map<String, UUID> typeNameMap = new HashMap<>();
 	private static final Logger LOG = LogManager.getLogger();
 	
 	public VHATDeltaImport(String xmlData) throws IOException
@@ -54,15 +72,18 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		}
 		
 		LOG.info("XML Parsed");
+		
+		headerCheck(terminology);
 			
 		vuidCheck(terminology);
 			
 		propertyCheck(terminology);
 		
+		requiredChecks(terminology);
+		
+		loadConcepts(terminology.getCodeSystem().getVersion().getCodedConcepts());
 		
 	}
-	
-	
 
 	private void schemaValidate(String xmlData) throws SAXException, IOException
 	{
@@ -82,12 +103,315 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private void vuidCheck(Terminology terminology)
 	{
+		LOG.info("Checking for in use VUIDs");
 		//TODO implement - make sure any supplied VUID on a new item is not in use
 	}
 	
 	private void propertyCheck(Terminology terminology)
 	{
+		LOG.info("Checking for properties that need creation");
 		//TODO implement - make sure we have properties for all properties supplied and/or build any new properties (how are new ones denoted?))
+	}
+	
+	private void headerCheck(Terminology terminology) throws IOException
+	{
+		LOG.info("Checking the file header");
+		CodeSystem cs = terminology.getCodeSystem();
+		if (cs.getAction() != null && cs.getAction() != ActionType.NONE)
+		{
+			throw new IOException("Code System must be null or 'none' for this importer");
+		}
+		
+		if (StringUtils.isNotBlank(cs.getName()) && !cs.getName().equalsIgnoreCase("VHAT"))
+		{
+			throw new IOException("Code System Name should be blank or VHAT");
+		}
+		
+		if (cs.getVersion().isAppend() != null && !cs.getVersion().isAppend().booleanValue())
+		{
+			throw new IOException("Append must be true if provided");
+		}
+		
+		// TODO ever need to handle preferred designation type?
+		
+		
+	}
+	
+	/**
+	 * @param terminology
+	 * @throws IOException 
+	 */
+	private void requiredChecks(Terminology terminology) throws IOException
+	{
+		if (terminology.getCodeSystem() != null && terminology.getCodeSystem().getVersion() != null)
+		{
+			if (terminology.getCodeSystem().getVersion().getCodedConcepts() != null)
+			{
+				for (CodedConcept cc : terminology.getCodeSystem().getVersion().getCodedConcepts().getCodedConcept())
+				{
+					if (cc.getAction() == null)
+					{
+						throw new IOException("Action must be provided on every concept.  Missing on " + cc.getName());
+					}
+					if (cc.isActive() == null)
+					{
+						throw new IOException("Active must be provided on every concept.  Missing on " + cc.getName());
+					}
+					if (cc.getDesignations() != null)
+					{
+						for (Designation d : cc.getDesignations().getDesignation())
+						{
+							if (d.getAction() == null)
+							{
+								throw new IOException("Action must be provided on every designation.  Missing on " + cc.getName() + ":" + d.getCode());
+							}
+							if (d.isActive() == null)
+							{
+								throw new IOException("Active must be provided on every designation.  Missing on " + cc.getName() + ":" + d.getCode());
+							}
+							//TODO do I allow blank type names?
+							if (StringUtils.isNotBlank(d.getTypeName()))
+							{
+								if (typeNameMap.get(d.getTypeName()) == null)
+								{
+									throw new IOException("Unexpected TypeName on " + cc.getName() + ":" + d.getCode() + ": " + d.getTypeName());
+								}
+							}
+							if (d.getProperties() != null)
+							{
+								for ( PropertyType p : d.getProperties().getProperty())
+								{
+									if (p.getAction() == null)
+									{
+										throw new IOException("Action must be provided on every property.  Missing on " + cc.getName() + ":" 
+											+ d.getCode() + ":" + p.getTypeName());
+									}
+									if (p.isActive() == null)
+									{
+										throw new IOException("Active must be provided on every property.  Missing on " + cc.getName() + ":" 
+											+ d.getCode() + ":" + p.getTypeName());
+									}
+								}
+							}
+							
+							if (d.getSubsetMemberships() != null)
+							{
+								for (SubsetMembership sm : d.getSubsetMemberships().getSubsetMembership())
+								{
+									if (sm.getAction() == null)
+									{
+										throw new IOException("Action must be provided on every subset membership.  Missing on " + cc.getName() + ":" 
+											+ d.getCode() + ":" + sm.getVUID());
+									}
+									if (sm.isActive() == null)
+									{
+										throw new IOException("Active must be provided on every subset membership.  Missing on " + cc.getName() + ":" 
+											+ d.getCode() + ":" + sm.getVUID());
+									}
+								}
+							}
+						}
+					}
+					
+					if (cc.getProperties() != null)
+					{
+						for (Property p : cc.getProperties().getProperty())
+						{
+							if (p.getAction() == null)
+							{
+								throw new IOException("Action must be provided on every property.  Missing on " + cc.getName() + ":" 
+									+ p.getTypeName());
+							}
+							if (p.isActive() == null)
+							{
+								throw new IOException("Active must be provided on every property.  Missing on " + cc.getName() + ":" 
+									+ p.getTypeName());
+							}
+						}
+					}
+					
+					if (cc.getRelationships() != null)
+					{
+						for (Relationship r : cc.getRelationships().getRelationship())
+						{
+							if (r.getAction() == null)
+							{
+								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getName() + ":" 
+									+ r.getTypeName());
+							}
+							if (r.isActive() == null)
+							{
+								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getName() + ":" 
+									+ r.getTypeName());
+							}
+						}
+					}
+					
+				}
+			}
+		}
+	}
+	
+	private void loadConcepts(CodedConcepts codedConcepts) throws IOException
+	{
+		LOG.info("Loading "  + codedConcepts.getCodedConcept().size() + " Concepts");
+		
+		for (CodedConcept cc : codedConcepts.getCodedConcept())
+		{
+			
+			switch (cc.getAction())
+			{
+				case ADD:
+					
+					loadDesignations(cc.getDesignations());
+					break;
+				case NONE:
+					break;
+				case REMOVE:
+					break;
+				case UPDATE:
+					break;
+				default :
+					throw new RuntimeException("Unexpected error");
+				
+			}
+			loadConceptProperties(cc.getProperties());
+			loadRelationships(cc.getRelationships());
+		}
+	}
+
+
+	/**
+	 * @param properties
+	 */
+	private void loadConceptProperties(gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties properties)
+	{
+		if (properties != null)
+		{
+			for (Property p : properties.getProperty())
+			{
+				switch (p.getAction())
+				{
+					case ADD:
+						break;
+					case NONE:
+						break;
+					case REMOVE:
+						break;
+					case UPDATE:
+						break;
+					default :
+						throw new RuntimeException("Unexepected error");
+					
+				}
+			}
+		}
+		
+	}
+
+	/**
+	 * @param designations
+	 */
+	private void loadDesignations(Designations designations)
+	{
+		for (Designation d : designations.getDesignation())
+		{
+			switch (d.getAction())
+			{
+				case ADD:
+					loadProperties(d.getProperties());
+					loadSubsetMembership(d.getSubsetMemberships());
+					break;
+				case NONE:
+					break;
+				case REMOVE:
+					break;
+				case UPDATE:
+					break;
+				default :
+					throw new RuntimeException("Unexpected error");
+				
+			}
+		}
+		
+	}
+
+	/**
+	 * @param subsetMemberships
+	 */
+	private void loadSubsetMembership(SubsetMemberships subsetMemberships)
+	{
+		if (subsetMemberships != null)
+		{
+			for(SubsetMembership sm : subsetMemberships.getSubsetMembership())
+			{
+				switch (sm.getAction())
+				{
+					case ADD:
+						break;
+					case NONE:
+						break;
+					case REMOVE:
+						break;
+					case UPDATE:
+						break;
+					default :
+						throw new RuntimeException("Unexpected Error");
+					
+				}
+			}
+		}
+		
+	}
+
+	/**
+	 * @param properties
+	 */
+	private void loadProperties(Properties properties)
+	{
+		for (PropertyType p : properties.getProperty())
+		{
+			switch(p.getAction())
+			{
+				case ADD:
+					break;
+				case NONE:
+					break;
+				case REMOVE:
+					break;
+				case UPDATE:
+					break;
+				default :
+					throw new RuntimeException("Unexpected error");
+				
+			}
+		}
+	}
+	
+
+	private void loadRelationships(Relationships relationships)
+	{
+		if (relationships != null)
+		{
+			for (Relationship r : relationships.getRelationship())
+			{
+				switch(r.getAction())
+				{
+					case ADD:
+						break;
+					case NONE:
+						break;
+					case REMOVE:
+						break;
+					case UPDATE:
+						break;
+					default :
+						throw new RuntimeException("Unexpected error");
+					
+				}
+			}
+		}
+		
 	}
 	
 	
