@@ -18,10 +18,18 @@
  */
 package test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.SystemStreamLog;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.constants.Constants;
+import gov.vha.isaac.ochre.mojo.IndexTermstore;
+import gov.vha.isaac.ochre.mojo.LoadTermstore;
 import gov.vha.isaac.ochre.utility.importer.VHATDeltaImport;
 
 /**
@@ -33,6 +41,31 @@ public class SimpleTest
 {
 	public static void main(String[] args) throws MojoExecutionException, IOException
 	{
-		VHATDeltaImport i = new VHATDeltaImport(new String(Files.readAllBytes(Paths.get("src/test/resources/VHAT XML Update files/NTRT Allergies Sept 19, 2013.xml"))));
+		try
+		{
+			File db = new File("target/db");
+			FileUtils.deleteDirectory(db);
+			db.mkdirs();
+			System.setProperty(Constants.DATA_STORE_ROOT_LOCATION_PROPERTY, db.getCanonicalPath());
+			LookupService.startupIsaac();
+			LoadTermstore lt = new LoadTermstore();
+			lt.setLog(new SystemStreamLog());
+			lt.setibdfFilesFolder(new File("src/test/resources/ibdf/"));
+			lt.execute();
+			new IndexTermstore().execute();
+			VHATDeltaImport i = new VHATDeltaImport(
+				new String(Files.readAllBytes(Paths.get("src/test/resources/VHAT XML Update files/NTRT Allergies Sept 19, 2013.xml"))),
+				TermAux.USER.getPrimordialUuid(), TermAux.ISAAC_MODULE.getPrimordialUuid(), TermAux.DEVELOPMENT_PATH.getPrimordialUuid(), new File("target"));
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			LookupService.shutdownSystem();
+			System.exit(0);
+		}
+		
 	}
 }

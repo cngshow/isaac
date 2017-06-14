@@ -1,5 +1,6 @@
 package gov.vha.isaac.ochre.utility.importer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
@@ -33,6 +34,7 @@ import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcep
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property;
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships;
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship;
+import gov.va.med.term.vhat.xml.model.Terminology.Types.Type;
 import gov.va.oia.terminology.converters.sharedUtils.ConverterBaseMojo;
 import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
 
@@ -42,10 +44,12 @@ import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
 public class VHATDeltaImport extends ConverterBaseMojo
 {
 	private IBDFCreationUtility importUtil_;
-	private Map<String, UUID> typeNameMap = new HashMap<>();
+	private Map<String, UUID> extendedDescriptionTypeNameMap = new HashMap<>();
+	private Map<String, UUID> propertyTypeNameMap = new HashMap<>();
+	
 	private static final Logger LOG = LogManager.getLogger();
 	
-	public VHATDeltaImport(String xmlData) throws IOException
+	public VHATDeltaImport(String xmlData, UUID author, UUID module, UUID path, File debugOutputFolder) throws IOException
 	{
 		try
 		{
@@ -73,6 +77,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		
 		LOG.info("XML Parsed");
 		
+		extendedDescriptionTypeNameMap.put("abbreviation", UUID.fromString("630759bf-98e0-5548-ab51-4ac4b155802c"));
+		extendedDescriptionTypeNameMap.put("fully specified name", UUID.fromString("97f32713-bdd2-5885-bc88-0d5298ab4b52"));
+		extendedDescriptionTypeNameMap.put("preferred name", UUID.fromString("a20e5175-6257-516a-a97d-d7f9655916b8"));
+		extendedDescriptionTypeNameMap.put("synonym", UUID.fromString("11af6808-1ee9-5571-a169-0dac0c74c579"));
+		extendedDescriptionTypeNameMap.put("vista name", UUID.fromString("72518b09-d5dd-5af0-bd41-0c7e46dfe85e"));
+		
 		headerCheck(terminology);
 			
 		vuidCheck(terminology);
@@ -81,7 +91,18 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		
 		requiredChecks(terminology);
 		
+		try
+		{
+			importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
+		}
+		catch (Exception e)
+		{
+			throw new IOException("Unexpected error setting up", e);
+		}
+		
 		loadConcepts(terminology.getCodeSystem().getVersion().getCodedConcepts());
+		
+		System.out.println("Load complete!");
 		
 	}
 
@@ -111,6 +132,24 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	{
 		LOG.info("Checking for properties that need creation");
 		//TODO implement - make sure we have properties for all properties supplied and/or build any new properties (how are new ones denoted?))
+		if (terminology.getTypes() != null)
+		{
+			for (Type t : terminology.getTypes().getType())
+			{
+				switch (t.getKind())
+				{
+					case DESIGNATION_TYPE:
+						break;
+					case PROPERTY_TYPE:
+						break;
+					case RELATIONSHIP_TYPE:
+						break;
+					default :
+						throw new RuntimeException("Unexepected error");
+					
+				}
+			}
+		}
 	}
 	
 	private void headerCheck(Terminology terminology) throws IOException
@@ -151,11 +190,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				{
 					if (cc.getAction() == null)
 					{
-						throw new IOException("Action must be provided on every concept.  Missing on " + cc.getName());
+						throw new IOException("Action must be provided on every concept.  Missing on " + cc.getCode());
 					}
 					if (cc.isActive() == null)
 					{
-						throw new IOException("Active must be provided on every concept.  Missing on " + cc.getName());
+						throw new IOException("Active must be provided on every concept.  Missing on " + cc.getCode());
 					}
 					if (cc.getDesignations() != null)
 					{
@@ -163,18 +202,25 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						{
 							if (d.getAction() == null)
 							{
-								throw new IOException("Action must be provided on every designation.  Missing on " + cc.getName() + ":" + d.getCode());
+								throw new IOException("Action must be provided on every designation.  Missing on " + cc.getCode() + ":" + d.getCode());
 							}
 							if (d.isActive() == null)
 							{
-								throw new IOException("Active must be provided on every designation.  Missing on " + cc.getName() + ":" + d.getCode());
+								throw new IOException("Active must be provided on every designation.  Missing on " + cc.getCode() + ":" + d.getCode());
 							}
-							//TODO do I allow blank type names?
 							if (StringUtils.isNotBlank(d.getTypeName()))
 							{
-								if (typeNameMap.get(d.getTypeName()) == null)
+								if (extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()) == null)
 								{
-									throw new IOException("Unexpected TypeName on " + cc.getName() + ":" + d.getCode() + ": " + d.getTypeName());
+									throw new IOException("Unexpected TypeName on " + cc.getCode() + ":" + d.getCode() + ": " + d.getTypeName());
+								}
+							}
+							else
+							{
+								//type is required on add
+								if (d.getAction() == ActionType.ADD)
+								{
+									throw new IOException("Missing  TypeName on " + cc.getCode() + ":" + d.getCode());
 								}
 							}
 							if (d.getProperties() != null)
@@ -183,12 +229,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								{
 									if (p.getAction() == null)
 									{
-										throw new IOException("Action must be provided on every property.  Missing on " + cc.getName() + ":" 
+										throw new IOException("Action must be provided on every property.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + p.getTypeName());
 									}
 									if (p.isActive() == null)
 									{
-										throw new IOException("Active must be provided on every property.  Missing on " + cc.getName() + ":" 
+										throw new IOException("Active must be provided on every property.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + p.getTypeName());
 									}
 								}
@@ -200,12 +246,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								{
 									if (sm.getAction() == null)
 									{
-										throw new IOException("Action must be provided on every subset membership.  Missing on " + cc.getName() + ":" 
+										throw new IOException("Action must be provided on every subset membership.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + sm.getVUID());
 									}
 									if (sm.isActive() == null)
 									{
-										throw new IOException("Active must be provided on every subset membership.  Missing on " + cc.getName() + ":" 
+										throw new IOException("Active must be provided on every subset membership.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + sm.getVUID());
 									}
 								}
@@ -219,12 +265,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						{
 							if (p.getAction() == null)
 							{
-								throw new IOException("Action must be provided on every property.  Missing on " + cc.getName() + ":" 
+								throw new IOException("Action must be provided on every property.  Missing on " + cc.getCode() + ":" 
 									+ p.getTypeName());
 							}
 							if (p.isActive() == null)
 							{
-								throw new IOException("Active must be provided on every property.  Missing on " + cc.getName() + ":" 
+								throw new IOException("Active must be provided on every property.  Missing on " + cc.getCode() + ":" 
 									+ p.getTypeName());
 							}
 						}
@@ -236,12 +282,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						{
 							if (r.getAction() == null)
 							{
-								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getName() + ":" 
+								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
 									+ r.getTypeName());
 							}
 							if (r.isActive() == null)
 							{
-								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getName() + ":" 
+								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
 									+ r.getTypeName());
 							}
 						}
@@ -373,22 +419,25 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	 */
 	private void loadDesignationProperties(Properties properties)
 	{
-		//TODO designation properties
-		for (PropertyType p : properties.getProperty())
+		if (properties != null)
 		{
-			switch(p.getAction())
+			//TODO designation properties
+			for (PropertyType p : properties.getProperty())
 			{
-				case ADD:
-					break;
-				case NONE:
-					break;
-				case REMOVE:
-					break;
-				case UPDATE:
-					break;
-				default :
-					throw new RuntimeException("Unexpected error");
-				
+				switch(p.getAction())
+				{
+					case ADD:
+						break;
+					case NONE:
+						break;
+					case REMOVE:
+						break;
+					case UPDATE:
+						break;
+					default :
+						throw new RuntimeException("Unexpected error");
+					
+				}
 			}
 		}
 	}
