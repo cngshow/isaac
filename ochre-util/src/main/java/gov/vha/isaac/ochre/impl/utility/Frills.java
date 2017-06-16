@@ -1287,14 +1287,23 @@ public class Frills implements DynamicSememeColumnUtility {
 		
 		if (descriptionExtendedTypeAnnotationSememe.isPresent()) 
 		{
+			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
+					: stampCoordinate.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()]));
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
-				.getLatestVersion(DynamicSememeImpl.class, stampCoordinate == null ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ACTIVE) 
-						: stampCoordinate.makeAnalog(State.ACTIVE));
+				.getLatestVersion(DynamicSememeImpl.class, effectiveStampCoordinate);
+			if (! optionalLatestSememeVersion.isPresent()) {
+				log.warn("No latest version present for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+				return Optional.empty();
+			}
 			if (optionalLatestSememeVersion.get().contradictions().isPresent() && optionalLatestSememeVersion.get().contradictions().get().size() > 0) {
 				//TODO handle contradictions
 				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()
 					.contradictions().get().size() + " contradictions");
+			}
+			if (optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
+				log.warn("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+				return Optional.empty();	
 			}
 			
 			DynamicSememeData[] dataColumns = optionalLatestSememeVersion.get().value().getData();

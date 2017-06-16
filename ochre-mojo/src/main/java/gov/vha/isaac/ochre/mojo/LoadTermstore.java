@@ -72,6 +72,10 @@ public class LoadTermstore extends AbstractMojo
 	 */
 	@Parameter(required = false) 
 	private File ibdfFileFolder;
+	public void setibdfFilesFolder(File folder)
+	{
+		ibdfFileFolder = folder;
+	}
 	
 	/**
 	 * The optional (old) way to specify ibdf files - requires each file to be listed one by one.
@@ -177,6 +181,11 @@ public class LoadTermstore extends AbstractMojo
 				}
 			}
 		});
+		
+		if (temp.length == 1 && temp[0].getName().equals("IsaacMetadataAuxiliary.ibdf"))
+		{
+			hasMetadata.set(true);
+		}
 		
 		if (!hasMetadata.get())
 		{

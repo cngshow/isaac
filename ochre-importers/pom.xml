@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>gov.vha.isaac.ochre</groupId>
+        <artifactId>isaac-parent</artifactId>
+        <version>4.07</version>
+    </parent>
+    <groupId>gov.vha.isaac.ochre.modules</groupId>
+    <artifactId>ochre-importers</artifactId>
+    <packaging>jar</packaging>
+    <name>OCHRE: Importers</name>
+    <properties>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>import-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+     <build>
+         <plugins>
+            <plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-source-for-demoapp</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <schemaDirectory>src/main/resources/</schemaDirectory>
+                            <schemaIncludes>
+                                <include>TerminologyData.xsd.hidden</include>
+                            </schemaIncludes>
+                            <generatePackage>gov.va.med.term.vhat.xml.model</generatePackage>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
