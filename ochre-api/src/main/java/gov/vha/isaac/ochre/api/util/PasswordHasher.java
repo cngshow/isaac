@@ -20,12 +20,9 @@ package gov.vha.isaac.ochre.api.util;
 
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.text.Collator;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
