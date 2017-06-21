@@ -59,7 +59,7 @@ public class PasswordHashingTest
 	@Test
 	public void hashTestFour() throws Exception
 	{
-		String password = "$sentences_make_better_$$$passwords....";
+		String password = "$sentences_make_better_---passwords....";
 		String passwordHash = PasswordHasher.getSaltedHash(password);
 		Assert.assertTrue(PasswordHasher.check(password, passwordHash));
 		Assert.assertFalse(PasswordHasher.check("$", passwordHash));
