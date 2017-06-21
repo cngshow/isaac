@@ -18,6 +18,11 @@
             <artifactId>import-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>ochre-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
      <build>
          <plugins>
