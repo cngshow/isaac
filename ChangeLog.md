@@ -3,6 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/06/22 - 4.08
+	* Import cleanup.
+	* Added missing documentation, swap the use of $$$ in the returned strings to --- to make the return truely URL safe.
+
 * 2017/06/16 - 4.07
 	* Adding support for NTRT role.
 	* Initial stub out changes preparing for XML import work.
