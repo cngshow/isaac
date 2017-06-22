@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/06/?? - 4.09 - PENDING
-	*
+	* VHAT Delta import initial implementation
 
 * 2017/06/22 - 4.08
 	* Import cleanup.
