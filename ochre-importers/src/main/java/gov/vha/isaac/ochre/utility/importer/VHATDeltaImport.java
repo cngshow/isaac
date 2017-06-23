@@ -1082,8 +1082,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					
 					le = leb.build();
 					
-					@SuppressWarnings({ "rawtypes" })
-					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe>)logicGraph.get()).
+					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe<?>>)logicGraph.get()).
 						createMutableVersion(MutableLogicGraphSememe.class, State.ACTIVE, editCoordinate_);
 					
 					mlgs.setGraphData(le.getData(DataTarget.INTERNAL));
@@ -1091,8 +1090,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				else
 				{
 					//If we ended up with nothing active, just read the current, and set the entire thing to inactive.
-					@SuppressWarnings({ "rawtypes"})
-					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe>)logicGraph.get()).
+					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe<?>>)logicGraph.get()).
 						createMutableVersion(MutableLogicGraphSememe.class, State.INACTIVE, editCoordinate_);
 					mlgs.setGraphData(Frills.getLogicGraphVersion((SememeChronology<? extends LogicGraphSememe<?>>) logicGraph.get(), readCoordinate_)
 						.get().value().getGraphData());
