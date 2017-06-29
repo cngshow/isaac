@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.inject.Singleton;
@@ -76,6 +77,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -741,9 +743,67 @@ public class Frills implements DynamicSememeColumnUtility {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
 		} else {
-			log.warn("Sememe Index not available - can't lookup VUID");
+			final String msg = "Sememe Index not available - can't lookup VUID " + vuID;
+			log.error(msg);
+			throw new RuntimeException(msg);
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Returns the nids of all matching vuid sememes (if any found on view coordinate).
+	 * @param vuID
+	 * @param stampCoordinate
+	 * @return
+	 */
+	public static Set<Integer> getVuidSememeNidsForVUID(long vuID) {
+		final SememeIndexerBI si = LookupService.get().getService(SememeIndexerBI.class);
+		if (si == null) {
+			final String msg = "Sememe Index not available - can't lookup VUID " + vuID;
+			log.error(msg);
+			throw new RuntimeException(msg);
+		}
+
+		// StampCoordinate with LATEST ACTIVE_ONLY from all VHAT modules
+		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, 
+				TermAux.DEVELOPMENT_PATH.getConceptSequence());
+		final Set<Integer> vhatModules = Frills.getAllChildrenOfConcept(MetaData.VHAT_MODULES.getConceptSequence(), true, true);
+		final StampCoordinate stampCoordinate = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, 
+				ConceptSequenceSet.of(vhatModules), State.ACTIVE_ONLY_SET);
+
+		final Set<Integer> matchingVuidSememeNids = new HashSet<>();
+
+		final Predicate<Integer> filter = new Predicate<Integer>() {
+			@Override
+			public boolean test(Integer t) {
+				final Optional<SememeChronology<SememeVersion<?>>> sememeChronologyToCheck = (Optional<SememeChronology<SememeVersion<?>>>) Get.sememeService().getOptionalSememe(t);
+				if (sememeChronologyToCheck.isPresent()
+						&& sememeChronologyToCheck.get().getAssemblageSequence() == MetaData.VUID.getConceptSequence() // This check should be redundant
+						) {
+					final SememeChronology<StringSememeImpl> existingVuidSememe = (SememeChronology<StringSememeImpl>)((SememeChronology)sememeChronologyToCheck.get());
+					Optional<LatestVersion<StringSememeImpl>> latestVersionOptional = existingVuidSememe.getLatestVersion(StringSememeImpl.class, stampCoordinate);
+
+					if (latestVersionOptional.isPresent()) {
+						// TODO do we care about contradictions?
+						StringSememeImpl sememeVersion = latestVersionOptional.get().value();
+						if ((vuID + "").equals(sememeVersion.getString())) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		};
+		//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+		List<SearchResult> results = si.query(vuID + " ", true,
+				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MIN_VALUE, filter);
+		if (results.size() > 0) {
+			for (SearchResult result : results) {
+				matchingVuidSememeNids.add(result.getNid());
+			}
+		}
+
+		return Collections.unmodifiableSet(matchingVuidSememeNids);
 	}
 
 	/**
