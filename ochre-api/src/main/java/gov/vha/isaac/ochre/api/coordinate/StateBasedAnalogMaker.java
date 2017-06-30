@@ -15,6 +15,7 @@
  */
 package gov.vha.isaac.ochre.api.coordinate;
 
+import java.util.EnumSet;
 import gov.vha.isaac.ochre.api.State;
 
 /**
@@ -30,5 +31,7 @@ public interface StateBasedAnalogMaker<T> {
      * @return a new {@code <T>} with the specified allowed states.
      */
     T makeAnalog(State... state);
+    
+    T makeAnalog(EnumSet<State> states);
 
 }

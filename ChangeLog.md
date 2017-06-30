@@ -3,6 +3,12 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/06/30 - 4.09
+	* VHAT Delta import initial implementation
+	* Fortify finding - XML External Entity (XXE).
+	* Metadata changes for IBDF diff work.
+	*  Adding SememeIndexerBI to ochre-api and adding query methods accepting Predicate filter to be available in Frills for use by new getVuidSememeNidsForVUID() method.
+
 * 2017/06/22 - 4.08
 	* Import cleanup.
 	* Added missing documentation, swap the use of $$$ in the returned strings to --- to make the return truely URL safe.
@@ -14,7 +20,7 @@ where provided, and the git commit history.
 * 2017/06/08 - 4.06
 	* Correct Frills.getDescriptionExtendedTypeConcept to only look at active values.
 	* Fortify fixes.
-	*  Creating RestBoolean and modifying RestVuidBlockData to hold long
+	* Creating RestBoolean and modifying RestVuidBlockData to hold long
     instead of int.
 
 * 2017/06/01 - 4.05

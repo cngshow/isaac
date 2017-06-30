@@ -63,8 +63,17 @@ public class ObservableStampCoordinateImpl extends ObservableCoordinateImpl impl
         StampCoordinate analog = stampCoordinate.makeAnalog(state);
         return new ObservableStampCoordinateImpl(analog);
     }
+    
+    
 
     @Override
+	public StampCoordinate makeAnalog(EnumSet<State> states)
+	{
+        StampCoordinate analog = stampCoordinate.makeAnalog(states);
+        return new ObservableStampCoordinateImpl(analog);
+	}
+
+	@Override
     public SetProperty<State> allowedStatesProperty() {
         if (allowedStates == null) {
             allowedStates = new SimpleSetProperty<>(this,

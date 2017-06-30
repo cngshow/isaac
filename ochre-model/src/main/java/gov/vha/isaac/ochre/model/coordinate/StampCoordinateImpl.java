@@ -130,6 +130,14 @@ public class StampCoordinateImpl implements StampCoordinate {
 		newAllowedStates.addAll(Arrays.asList(states));
 		return new StampCoordinateImpl(stampPrecedence, stampPosition, moduleSequences, newAllowedStates);
 	}
+	
+	
+
+	@Override
+	public StampCoordinate makeAnalog(EnumSet<State> states)
+	{
+		return new StampCoordinateImpl(stampPrecedence, stampPosition, moduleSequences, states);
+	}
 
 	@Override
 	public EnumSet<State> getAllowedStates() {

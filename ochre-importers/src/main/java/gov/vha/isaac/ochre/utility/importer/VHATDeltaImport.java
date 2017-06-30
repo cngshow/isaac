@@ -1,17 +1,26 @@
 package gov.vha.isaac.ochre.utility.importer;
 
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
+import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -34,23 +43,88 @@ import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcep
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties.Property;
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships;
 import gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Relationships.Relationship;
+import gov.va.med.term.vhat.xml.model.Terminology.Subsets.Subset;
 import gov.va.med.term.vhat.xml.model.Terminology.Types.Type;
+import gov.va.oia.terminology.converters.sharedUtils.ComponentReference;
 import gov.va.oia.terminology.converters.sharedUtils.ConverterBaseMojo;
 import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility;
+import gov.va.oia.terminology.converters.sharedUtils.IBDFCreationUtility.DescriptionType;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Annotations;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Associations;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.BPT_Refsets;
+import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyAssociation;
+import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
+import gov.vha.isaac.MetaData;
+import gov.vha.isaac.ochre.api.DataTarget;
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
+import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
+import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableDynamicSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableLogicGraphSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.MutableStringSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.PremiseType;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
+import gov.vha.isaac.ochre.api.coordinate.StampPrecedence;
+import gov.vha.isaac.ochre.api.index.IndexServiceBI;
+import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.logic.LogicalExpression;
+import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
+import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
+import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
+import gov.vha.isaac.ochre.impl.utility.Frills;
+import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
+import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
+import gov.vha.isaac.ochre.model.coordinate.EditCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
+import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.coordinate.TaxonomyCoordinateImpl;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
+import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
+import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
 /**
  * Goal which converts VHAT data into the workbench jbin format
+ * 
+ * Note yet handled:
+ * 1) VUID validation
+ * 2) VUID auto assignment
+ * 3) moveFromConceptCode
+ * 
  */
 public class VHATDeltaImport extends ConverterBaseMojo
 {
 	private IBDFCreationUtility importUtil_;
 	private Map<String, UUID> extendedDescriptionTypeNameMap = new HashMap<>();
-	private Map<String, UUID> propertyTypeNameMap = new HashMap<>();
+	
+	gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyType associations_ = new BPT_Associations("VHAT");
+	gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyType annotations_ = new BPT_Annotations("VHAT");
+	gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyType subsets_ = new BPT_Refsets("VHAT");
+	Map<Long, UUID> vuidToSubsetMap_ = new HashMap<>();
+	StampCoordinate readCoordinate_;
+	LogicCoordinate logicReadCoordinate_;
+	EditCoordinate editCoordinate_;
 	
 	private static final Logger LOG = LogManager.getLogger();
 	
 	public VHATDeltaImport(String xmlData, UUID author, UUID module, UUID path, File debugOutputFolder) throws IOException
 	{
+		LOG.debug("Processing passed in XML data of length " + xmlData.length());
 		try
 		{
 			schemaValidate(xmlData);
@@ -60,22 +134,29 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			LOG.info("Submitted xml data failed schema validation", e);
 			throw new IOException("The provided XML data failed Schema Validation.  Details: " + e.toString());
 		}
+		
+		LOG.debug("Passed in VHAT XML data is schema Valid");
 		Terminology terminology;
 		
 		try
 		{
 			JAXBContext jaxbContext = JAXBContext.newInstance(Terminology.class);
 
+			XMLInputFactory xif = XMLInputFactory.newFactory();
+	        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+	        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
+	        
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			terminology = (Terminology) jaxbUnmarshaller.unmarshal(new StringReader(xmlData));
+			terminology = (Terminology) jaxbUnmarshaller.unmarshal(xsr);
 		}
-		catch (JAXBException e)
+		catch (JAXBException | XMLStreamException e)
 		{
 			LOG.error("Unexpected error parsing submitted VETs XML.", e);
 			throw new IOException("Unexpected error parsing the xml.  Details: " + e.toString());
 		}
 		
-		LOG.info("XML Parsed");
+		LOG.info("VHA XML Parsed");
 		
 		extendedDescriptionTypeNameMap.put("abbreviation", UUID.fromString("630759bf-98e0-5548-ab51-4ac4b155802c"));
 		extendedDescriptionTypeNameMap.put("fully specified name", UUID.fromString("97f32713-bdd2-5885-bc88-0d5298ab4b52"));
@@ -84,32 +165,51 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		extendedDescriptionTypeNameMap.put("vista name", UUID.fromString("72518b09-d5dd-5af0-bd41-0c7e46dfe85e"));
 		
 		headerCheck(terminology);
-			
 		vuidCheck(terminology);
-			
-		propertyCheck(terminology);
-		
 		requiredChecks(terminology);
 		
 		try
 		{
+			ConceptSequenceSet modulesToRead = new ConceptSequenceSet();
+			modulesToRead.add(MetaData.ISAAC_MODULE.getConceptSequence());
+			modulesToRead.add(MetaData.VHAT_MODULES.getConceptSequence());
+			Frills.getAllChildrenOfConcept(MetaData.VHAT_MODULES.getConceptSequence(), true, false).forEach(i -> modulesToRead.add(i));
+			
+			readCoordinate_ = new StampCoordinateImpl(StampPrecedence.PATH,  
+				new StampPositionImpl(Long.MAX_VALUE, TermAux.DEVELOPMENT_PATH.getConceptSequence()),
+				modulesToRead, State.ANY_STATE_SET);
+			editCoordinate_ = new EditCoordinateImpl(Get.identifierService().getConceptSequenceForUuids(author), 
+				Get.identifierService().getConceptSequenceForUuids(module), Get.identifierService().getConceptSequenceForUuids(path));
+			
+			logicReadCoordinate_ = LogicCoordinates.getStandardElProfile();
+			
 			importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
+			LOG.info("Import Util configured");
+			createNewProperties(terminology);
+			createNewSubsets(terminology);
+			
+			LOG.info("Processing changes");
+			loadConcepts(terminology.getCodeSystem().getVersion().getCodedConcepts());
+			
+			LOG.info("Committing Changes");
+			Get.commitService().commit("VHAT Delta file");
+			
+			System.out.println("Load complete!");
+		}
+		catch (RuntimeException e)
+		{
+			Get.commitService().cancel(editCoordinate_);
+			throw e;
 		}
 		catch (Exception e)
 		{
 			throw new IOException("Unexpected error setting up", e);
 		}
-		
-		loadConcepts(terminology.getCodeSystem().getVersion().getCodedConcepts());
-		
-		System.out.println("Load complete!");
-		
 	}
 
 	private void schemaValidate(String xmlData) throws SAXException, IOException
 	{
 		LOG.info("Doing schema validation");
-		SAXParserFactory parserFactory = SAXParserFactory.newInstance();
 		
 		URL url = VHATDeltaImport.class.getResource("/TerminologyData.xsd.hidden");
 		if (url == null)
@@ -128,10 +228,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		//TODO implement - make sure any supplied VUID on a new item is not in use
 	}
 	
-	private void propertyCheck(Terminology terminology)
+	private void createNewProperties(Terminology terminology) throws Exception
 	{
 		LOG.info("Checking for properties that need creation");
-		//TODO implement - make sure we have properties for all properties supplied and/or build any new properties (how are new ones denoted?))
+		
 		if (terminology.getTypes() != null)
 		{
 			for (Type t : terminology.getTypes().getType())
@@ -139,10 +239,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				switch (t.getKind())
 				{
 					case DESIGNATION_TYPE:
-						break;
+						throw new RuntimeException("New extended designations types aren't supported yet");
 					case PROPERTY_TYPE:
+						annotations_.addProperty(t.getName());
 						break;
 					case RELATIONSHIP_TYPE:
+						associations_.addProperty(new PropertyAssociation(associations_, t.getName(), t.getName(), null, t.getName(), false));	
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
@@ -150,7 +252,70 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				}
 			}
 		}
+		
+		importUtil_.loadMetaDataItems(associations_, null);
+		importUtil_.loadMetaDataItems(annotations_, null);
 	}
+	
+	private void createNewSubsets(Terminology terminology) throws IOException
+	{
+		LOG.info("Checking for properties that need creation");
+		if (terminology.getSubsets() != null)
+		{
+			for (Subset s : terminology.getSubsets().getSubset())
+			{
+				switch (s.getAction())
+				{
+					case ADD:
+						subsets_.addProperty(s.getName());
+						break;
+					case REMOVE: case NONE:
+						//process these in a second pass
+						break;
+					case UPDATE:
+						throw new IOException("Update of subset is not supported: " + s.getName());
+					default :
+						throw new RuntimeException("Unexepected error");
+				}
+			}
+			
+			//create the new ones
+			try
+			{
+				importUtil_.loadMetaDataItems(associations_, null);
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException("Unexpected error");
+			}
+			
+			for (Subset s : terminology.getSubsets().getSubset())
+			{
+				switch (s.getAction())
+				{
+					case ADD:
+						//add the vuid, now that the concept is there
+						if (s.getVUID() != null)
+						{
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), s.getVUID().toString(), 
+								MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
+							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+						}
+						break;
+					case REMOVE: 
+						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
+						//no break
+					case NONE:
+						// add it into the subset map (for both none and remove)
+						subsets_.addProperty(s.getName());
+						break;
+					default :
+						throw new RuntimeException("Unexepected error");
+				}
+			}
+		}
+	}
+	
 	
 	private void headerCheck(Terminology terminology) throws IOException
 	{
@@ -171,9 +336,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			throw new IOException("Append must be true if provided");
 		}
 		
-		// TODO ever need to handle preferred designation type?
-		
-		
+		// TODO ever need to handle preferred designation type?  I don't think you can change it during a delta update
 	}
 	
 	/**
@@ -188,13 +351,31 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				for (CodedConcept cc : terminology.getCodeSystem().getVersion().getCodedConcepts().getCodedConcept())
 				{
+					UUID conceptUUID = null;
 					if (cc.getAction() == null)
 					{
 						throw new IOException("Action must be provided on every concept.  Missing on " + cc.getCode());
 					}
+					if (cc.getAction() == ActionType.REMOVE && cc.isActive() == null)
+					{
+						cc.setActive(false);
+					}
 					if (cc.isActive() == null)
 					{
 						throw new IOException("Active must be provided on every concept.  Missing on " + cc.getCode());
+					}
+					if ((cc.getAction() == ActionType.UPDATE || cc.getAction() == ActionType.REMOVE || cc.getAction() == ActionType.NONE) 
+						&& StringUtils.isBlank(cc.getCode()))
+					{
+						throw new IOException("Concept code must be provided on every concept where action is update or remove or none.");
+					}
+					else
+					{
+						conceptUUID = findConcept(cc.getCode()).orElseThrow(() -> new RuntimeException("Cannot locate concept for code '" + cc.getCode() + "'"));
+					}
+					if (cc.getAction() == ActionType.ADD)
+					{
+						conceptUUID = createNewConceptUuid(cc.getCode());
 					}
 					if (cc.getDesignations() != null)
 					{
@@ -203,6 +384,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							if (d.getAction() == null)
 							{
 								throw new IOException("Action must be provided on every designation.  Missing on " + cc.getCode() + ":" + d.getCode());
+							}
+							if (d.getAction() == ActionType.REMOVE && d.isActive() == null)
+							{
+								d.setActive(false);
 							}
 							if (d.isActive() == null)
 							{
@@ -220,23 +405,71 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								//type is required on add
 								if (d.getAction() == ActionType.ADD)
 								{
-									throw new IOException("Missing  TypeName on " + cc.getCode() + ":" + d.getCode());
+									throw new IOException("Missing TypeName on " + cc.getCode() + ":" + d.getCode());
 								}
 							}
+							
+							if (d.getAction() == ActionType.REMOVE || d.getAction() == ActionType.UPDATE || d.getAction() == ActionType.NONE)
+							{
+								if (StringUtils.isBlank(d.getCode()))
+								{
+									throw new IOException("The designation '" + d.getTypeName() + "' doesn't have a code - from " + cc.getCode()+ ":" 
+										+ d.getCode());
+								}
+								if (findDescription(conceptUUID, d.getCode()) == null)
+								{
+									throw new IOException("The designation '" + d.getCode() + "' doesn't seem to exist on concept:" +  cc.getCode()+ ":" 
+											+ d.getCode());
+								}
+							}
+							
+							
 							if (d.getProperties() != null)
 							{
 								for ( PropertyType p : d.getProperties().getProperty())
 								{
+									if (annotations_.getProperty(p.getTypeName()) == null)
+									{
+										//add it, so we have the UUID mapping, but we don't need to create it, since it should already exist
+										annotations_.addProperty(p.getTypeName());
+										if (!Get.conceptService().hasConcept(Get.identifierService()
+												.getConceptSequenceForUuids(annotations_.getProperty(p.getTypeName()).getUUID())))
+										{
+											throw new IOException("The property '" + p.getTypeName() + "' isn't in the system - from " + cc.getCode() + ":" 
+												+ d.getCode() + " and it wasn't listed as a new property");
+										}
+									}
 									if (p.getAction() == null)
 									{
 										throw new IOException("Action must be provided on every property.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + p.getTypeName());
 									}
+									if (p.getAction() == ActionType.REMOVE && p.isActive() == null)
+									{
+										p.setActive(false);
+									}
+
 									if (p.isActive() == null)
 									{
 										throw new IOException("Active must be provided on every property.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + p.getTypeName());
 									}
+									
+									if (p.getAction() == ActionType.REMOVE || p.getAction() == ActionType.UPDATE)
+									{
+										if (StringUtils.isBlank(p.getValueOld()))
+										{
+											throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueOld - from " + cc.getCode()+ ":" 
+												+ d.getCode());
+										}
+										if (!findPropertySememe(conceptUUID, annotations_.getProperty(p.getTypeName()).getUUID(), p.getValueOld()).isPresent())
+										{
+											throw new IOException("The property '" + p.getTypeName() + "' with an old Value of ' " + p.getValueOld() 
+												+ "' doesn't seem to exist on concept:" +  cc.getCode()+ ":" 
+													+ d.getCode());
+										}
+									}
+									
 								}
 							}
 							
@@ -244,11 +477,30 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							{
 								for (SubsetMembership sm : d.getSubsetMemberships().getSubsetMembership())
 								{
+									if (vuidToSubsetMap_.get(sm.getVUID()) == null)
+									{
+										//add it, so we have the UUID mapping, but we don't need to create it, since it should already exist
+										Optional<Integer> subsetNid = Frills.getNidForVUID(sm.getVUID());
+										if (!subsetNid.isPresent())
+										{
+											throw new IOException("The subset '" + sm.getVUID() + "' isn't in the system - from " + cc.getCode() + ":" 
+												+ d.getCode() + " and it wasn't listed as a new subset");
+										}
+										else
+										{
+											vuidToSubsetMap_.put(sm.getVUID(), Get.identifierService().getUuidPrimordialFromConceptId(subsetNid.get()).get());
+										}
+									}
 									if (sm.getAction() == null)
 									{
 										throw new IOException("Action must be provided on every subset membership.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + sm.getVUID());
 									}
+									if (sm.getAction() == ActionType.REMOVE && sm.isActive() == null)
+									{
+										sm.setActive(false);
+									}
+
 									if (sm.isActive() == null)
 									{
 										throw new IOException("Active must be provided on every subset membership.  Missing on " + cc.getCode() + ":" 
@@ -263,15 +515,47 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						for (Property p : cc.getProperties().getProperty())
 						{
+							if (annotations_.getProperty(p.getTypeName()) == null)
+							{
+								annotations_.addProperty(p.getTypeName());
+								if (!Get.conceptService().hasConcept(Get.identifierService()
+										.getConceptSequenceForUuids(annotations_.getProperty(p.getTypeName()).getUUID())))
+								{
+									throw new IOException("The property '" + p.getTypeName() + "' isn't in the system - from " + cc.getCode() 
+										+ " and it wasn't listed as a new property");
+								}
+								
+							}
 							if (p.getAction() == null)
 							{
 								throw new IOException("Action must be provided on every property.  Missing on " + cc.getCode() + ":" 
 									+ p.getTypeName());
 							}
+							if (p.getAction() == ActionType.REMOVE && p.isActive() == null)
+							{
+								p.setActive(false);
+							}
+
 							if (p.isActive() == null)
 							{
 								throw new IOException("Active must be provided on every property.  Missing on " + cc.getCode() + ":" 
 									+ p.getTypeName());
+							}
+							if (StringUtils.isBlank(p.getValueNew()))
+							{
+								throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueNew - from " + cc.getCode());
+							}
+							if (p.getAction() == ActionType.REMOVE || p.getAction() == ActionType.UPDATE)
+							{
+								if (StringUtils.isBlank(p.getValueOld()))
+								{
+									throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueOld - from " + cc.getCode());
+								}
+								if (!findPropertySememe(conceptUUID, annotations_.getProperty(p.getTypeName()).getUUID(), p.getValueOld()).isPresent())
+								{
+									throw new IOException("The property '" + p.getTypeName() + "' with an old Value of ' " + p.getValueOld() 
+										+ "' doesn't seem to exist on concept:" +  cc.getCode());
+								}
 							}
 						}
 					}
@@ -285,112 +569,359 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
 									+ r.getTypeName());
 							}
+							if (r.getAction() == ActionType.REMOVE && r.isActive() == null)
+							{
+								r.setActive(false);
+							}
+
 							if (r.isActive() == null)
 							{
 								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
 									+ r.getTypeName());
 							}
+							
+							switch(r.getAction())
+							{
+								case ADD:
+									if (StringUtils.isBlank(r.getNewTargetCode()) || !findConcept(r.getNewTargetCode()).isPresent())
+									{
+										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + cc.getCode() + 
+											cc.getCode() + ":" + r.getTypeName());
+									}
+									break;
+								case NONE:
+									//noop
+									break;
+								case REMOVE:
+								case UPDATE:
+									Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
+									if (StringUtils.isBlank(r.getOldTargetCode()) || !oldTarget.isPresent())
+									{
+										throw new IOException("Old Target Code must be provided for existing relationships.  Missing on " + cc.getCode() + 
+											cc.getCode() + ":" + r.getTypeName());
+									}
+									if (!findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+										oldTarget.get()).isPresent())
+									{
+										throw new IOException("Can't locate existing association to update for .  Missing on " + cc.getCode() + 
+											cc.getCode() + ":" + r.getTypeName() + ":" + r.getOldTargetCode());
+									}
+									break;
+							}
 						}
 					}
-					
 				}
 			}
 		}
 	}
-	
+
 	private void loadConcepts(CodedConcepts codedConcepts) throws IOException
 	{
 		LOG.info("Loading "  + codedConcepts.getCodedConcept().size() + " Concepts");
 		
 		for (CodedConcept cc : codedConcepts.getCodedConcept())
 		{
-			
+			ComponentReference concept = null;
 			switch (cc.getAction())
 			{
-				//TODO concepts
 				case ADD:
-					
-					loadDesignations(cc.getDesignations());
+					concept = ComponentReference.fromConcept(importUtil_.createConcept(createNewConceptUuid(cc.getCode()), null, 
+						cc.isActive() ? State.ACTIVE : State.INACTIVE, null));
+					//TODO if vuid == null, autoassign
+					importUtil_.addStaticStringAnnotation(concept, cc.getVUID().toString(), annotations_.getProperty("VUID").getUUID(), State.ACTIVE);
+					importUtil_.addStaticStringAnnotation(concept, StringUtils.isBlank(cc.getCode()) ? cc.getVUID().toString() : cc.getCode(), 
+						annotations_.getProperty("Code").getUUID(), State.ACTIVE);
 					break;
 				case NONE:
+					//noop
 					break;
 				case REMOVE:
+					concept = ComponentReference.fromConcept(importUtil_.createConcept(findConcept(cc.getCode()).get(), null, State.INACTIVE, null));
 					break;
 				case UPDATE:
+					//We could, potentially support updating vuid, but the current system doesnt.
+					//so we only process activate / inactivate changes here.
+					concept = ComponentReference.fromConcept(importUtil_.createConcept(findConcept(cc.getCode()).get(), null, 
+						cc.isActive() ? State.ACTIVE : State.INACTIVE, null));
 					break;
 				default :
 					throw new RuntimeException("Unexpected error");
-				
 			}
-			loadConceptProperties(cc.getProperties());
-			loadRelationships(cc.getRelationships());
+			if (concept == null)
+			{
+				concept = ComponentReference.fromConcept(findConcept(cc.getCode()).get());
+			}
+			loadDesignations(concept, cc.getDesignations());
+			loadConceptProperties(concept, cc.getProperties());
+			loadRelationships(concept, cc.getRelationships());
 		}
 	}
 
+	private UUID createNewConceptUuid(String codeId)
+	{
+		return ConverterUUID.createNamespaceUUIDFromString("code:" + codeId, true);
+	}
+	
+	private UUID createNewDescriptionUuid(String descriptionId)
+	{
+		return ConverterUUID.createNamespaceUUIDFromString("description:" + descriptionId, true);
+	}
 
 	/**
 	 * @param properties
 	 */
-	private void loadConceptProperties(gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties properties)
+	private void loadConceptProperties(ComponentReference concept, 
+		gov.va.med.term.vhat.xml.model.Terminology.CodeSystem.Version.CodedConcepts.CodedConcept.Properties properties)
 	{
-		//TODO concept properties
 		if (properties != null)
 		{
 			for (Property p : properties.getProperty())
 			{
-				switch (p.getAction())
-				{
-					case ADD:
-						break;
-					case NONE:
-						break;
-					case REMOVE:
-						break;
-					case UPDATE:
-						break;
-					default :
-						throw new RuntimeException("Unexepected error");
-					
-				}
+				handleProperty(concept, p.getTypeName(),  p.getValueOld(),  p.getValueNew(),  p.isActive(),  p.getAction());
 			}
 		}
-		
+	}
+	
+	private void handleProperty(ComponentReference component, String propertyName, String oldValue, String newValue, boolean isActive, ActionType action)
+	{
+		switch (action)
+		{
+			case ADD:
+				importUtil_.addStringAnnotation(component, newValue, annotations_.getProperty(propertyName).getUUID(), 
+					isActive ? State.ACTIVE : State.INACTIVE);
+				break;
+			case NONE:
+				//noop
+				break;
+			case REMOVE:
+			case UPDATE:
+				//These cases are a bit tricky, because the UUID calculated for the sememe was based on the value.  If the value
+				//only changed once, you could use old value to find it, but, if it changes twice, you can no longer calculate back to the UUID.
+				//So, we will have to match the oldvalue text string directly to the value, to find the right property.
+				Optional<UUID> oldProperty = findPropertySememe(component.getPrimordialUuid(), annotations_.getProperty(propertyName).getUUID(), oldValue);
+				//we tested this lookup in an earlier error checking pass above, it shouldn't come back null.
+				if (!oldProperty.isPresent())
+				{
+					throw new RuntimeException("oops");
+				}
+				
+				SememeChronology<?> sc = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(oldProperty.get()));
+				if (sc.getSememeType() == SememeType.STRING)
+				{
+					//not allowing them to set the value to empty, just assume they only meant to change status in the case where new value is missing
+					@SuppressWarnings("unchecked")
+					MutableStringSememe<?> mss = ((SememeChronology<StringSememe<?>>)sc)
+						.createMutableVersion(MutableStringSememe.class, isActive ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+					mss.setString(StringUtils.isBlank(newValue) ? oldValue : newValue);
+				}
+				else if (sc.getSememeType() == SememeType.DYNAMIC)
+				{
+					@SuppressWarnings("unchecked")
+					MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc)
+						.createMutableVersion(MutableDynamicSememe.class, isActive ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+					if (mds.getDynamicSememeUsageDescription().getColumnInfo().length != 1 || 
+							mds.getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() != DynamicSememeDataType.STRING)
+					{
+						throw new RuntimeException("Unexpected dynamic sememe data config!");
+					}
+					else
+					{
+						mds.setData(new DynamicSememeData[] {new DynamicSememeStringImpl(StringUtils.isBlank(newValue) ? oldValue : newValue)});
+					}
+				}
+				else
+				{
+					throw new RuntimeException("Unexpected sememe type!");
+				}
+				importUtil_.storeManualUpdate(sc);
+				break;
+			default :
+				throw new RuntimeException("Unexepected error");
+		}
+	}
+	
+	private Optional<UUID> findPropertySememe(UUID referencedComponent, UUID propertyType, String propertyValue)
+	{
+		return Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getNidForUuids(referencedComponent), 
+			Get.identifierService().getConceptSequenceForUuids(propertyType)).filter(sememe ->
+			{
+				if (sememe.getSememeType() == SememeType.STRING)
+				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<StringSememe<?>>> sv = ((SememeChronology)sememe).getLatestVersion(StringSememeImpl.class, readCoordinate_);
+					if (sv.isPresent())
+					{
+						return propertyValue.equals(sv.get().value().getString());
+					}
+				}
+				else if (sememe.getSememeType() == SememeType.DYNAMIC)
+				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<DynamicSememe<?>>> sv = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, readCoordinate_);
+					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
+							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
+					{
+						return propertyValue.equals(sv.get().value().getData()[0].toString());
+					}
+				}
+				return false;
+			}).findFirst().<UUID>map(sememe -> 
+			{
+				return Get.identifierService().getUuidPrimordialForNid(sememe.getNid()).get();
+			});
+	}
+	
+	private Optional<UUID> findAssociationSememe(UUID sourceConcept, UUID associationType, UUID targetConcept)
+	{
+		return Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getNidForUuids(sourceConcept), 
+			Get.identifierService().getConceptSequenceForUuids(associationType)).filter(sememe ->
+			{
+				if (sememe.getSememeType() == SememeType.DYNAMIC)
+				{
+					@SuppressWarnings({ "unchecked", "rawtypes" })
+					Optional<LatestVersion<DynamicSememe<?>>> sv = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, readCoordinate_);
+					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
+							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
+					{
+						return  targetConcept.equals(((DynamicSememeUUID) sv.get().value().getData()[0]).getDataUUID());
+					}
+				}
+				return false;
+			}).findFirst().<UUID>map(sememe -> 
+			{
+				return Get.identifierService().getUuidPrimordialForNid(sememe.getNid()).get();
+			});
 	}
 
 	/**
 	 * @param designations
 	 */
-	private void loadDesignations(Designations designations)
+	private void loadDesignations(ComponentReference concept, Designations designations)
 	{
-		// TODO concept designations
 		for (Designation d : designations.getDesignation())
 		{
+			ComponentReference descRef = null;
+			
 			switch (d.getAction())
 			{
 				case ADD:
-					loadDesignationProperties(d.getProperties());
-					loadSubsetMembership(d.getSubsetMemberships());
+					//TODO handle moveFromConceptCode
+					d.getMoveFromConceptCode();
+					
+					//moveFromConceptCode is the VUID of the concept where this description currently exists.
+					//if populated, we need to find this description under the old concept, and retire it (and I assume, all nested values) - question out to Randy
+					
+					//TODO can't do UUID like this, if it is a moveFrom
+					descRef = ComponentReference.fromChronology(importUtil_.addDescription(concept, createNewDescriptionUuid(d.getCode()), 
+						d.getValueNew(), DescriptionType.SYNONYM, false, extendedDescriptionTypeNameMap.get(d.getTypeName()), 
+						d.isActive() ? State.ACTIVE : State.INACTIVE));
+					
+					//TODO if vuid == null, autoassign
+					importUtil_.addStaticStringAnnotation(descRef, d.getVUID().toString(), annotations_.getProperty("VUID").getUUID(), State.ACTIVE);
+					importUtil_.addStaticStringAnnotation(descRef, StringUtils.isBlank(d.getCode()) ? d.getVUID().toString() : d.getCode(), 
+						annotations_.getProperty("Code").getUUID(), State.ACTIVE);
+					
 					break;
 				case NONE:
+					//noop
 					break;
 				case REMOVE:
-					break;
 				case UPDATE:
+					Optional<UUID> oldDescription = findDescription(concept.getPrimordialUuid(), d.getCode());
+					//we tested this lookup in an earlier error checking pass above, it shouldn't come back null.
+					if (!oldDescription.isPresent())
+					{
+						throw new RuntimeException("oops");
+					}
+					
+					SememeChronology<?> sc = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(oldDescription.get()));
+					descRef = ComponentReference.fromChronology(sc);
+					if (sc.getSememeType() == SememeType.DESCRIPTION)
+					{
+						//not allowing them to set the value to empty, just assume they only meant to change status in the case where new value is missing
+						@SuppressWarnings("unchecked")
+						MutableDescriptionSememe<?> mss = ((SememeChronology<DescriptionSememe<?>>)sc)
+							.createMutableVersion(MutableDescriptionSememe.class, d.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+						mss.setText(StringUtils.isBlank(d.getValueNew()) ? d.getValueOld() : d.getValueNew());
+						
+						//No changing of type name, code, or vuid
+					}
+					else
+					{
+						throw new RuntimeException("Unexpected sememe type!");
+					}
+					importUtil_.storeManualUpdate(sc);
 					break;
 				default :
 					throw new RuntimeException("Unexpected error");
 				
 			}
+			
+			if (descRef == null)
+			{
+				descRef = ComponentReference.fromSememe(findDescription(concept.getPrimordialUuid(), d.getCode()).get());
+			}
+			loadDesignationProperties(descRef, d.getProperties());
+			loadSubsetMembership(descRef, d.getSubsetMemberships());
 		}
 		
 	}
 
 	/**
+	 * @param primordialUuid
+	 * @param code
+	 * @return
+	 */
+	private Optional<UUID> findDescription(UUID concept, String descriptionCode)
+	{
+		return Get.sememeService().getDescriptionsForComponent(Get.identifierService().getNidForUuids(concept)).filter(desc ->
+		{
+			return findPropertySememe(desc.getPrimordialUuid(),  annotations_.getProperty("Code").getUUID(), descriptionCode).isPresent();
+		}).findAny().<UUID>map(desc -> desc.getPrimordialUuid());
+	}
+	
+	private Optional<UUID> findConcept(String conceptCode)
+	{
+		IndexServiceBI si = LookupService.get().getService(IndexServiceBI.class, "sememe indexer");
+		if (si != null) {
+			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+			@SuppressWarnings("rawtypes")
+			ArrayList<SememeChronology> candidates = new ArrayList<>();
+			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MIN_VALUE);
+			result.forEach(sr -> 
+			{
+				@SuppressWarnings("rawtypes")
+				SememeChronology sc = Get.sememeService().getSememe(sr.getNid());
+				@SuppressWarnings("unchecked")
+				Optional<StringSememe<?>> ss = sc.getLatestVersion(StringSememe.class, readCoordinate_);
+				if (ss.isPresent() && ss.get().getState() == State.ACTIVE && ss.get().getString().equals(conceptCode))
+				{
+					candidates.add(sc);
+				}
+			});
+			if (candidates.size() == 0)
+			{
+				return Optional.empty();
+			}
+			else if (candidates.size() > 1)
+			{
+				throw new RuntimeException("There is more than one concept in the system with a 'Code' of '" + conceptCode + "'");
+			}
+			else
+			{
+				return Optional.of(candidates.get(0).getPrimordialUuid());
+			}
+		} else {
+			LOG.warn("Sememe Index not available - can't lookup VUID");
+		}
+		return Optional.empty();
+	}
+
+	/**
 	 * @param subsetMemberships
 	 */
-	private void loadSubsetMembership(SubsetMemberships subsetMemberships)
+	private void loadSubsetMembership(ComponentReference description, SubsetMemberships subsetMemberships)
 	{
-		//TODO subset memberships
 		if (subsetMemberships != null)
 		{
 			for(SubsetMembership sm : subsetMemberships.getSubsetMembership())
@@ -398,12 +929,28 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				switch (sm.getAction())
 				{
 					case ADD:
+						//subset lookups validated previously
+						importUtil_.addRefsetMembership(description, vuidToSubsetMap_.get(sm.getVUID()), sm.isActive() ? State.ACTIVE : State.INACTIVE, null);
 						break;
 					case NONE:
+						//noop
 						break;
 					case REMOVE:
-						break;
 					case UPDATE:
+						Get.sememeService().getSememesForComponentFromAssemblage(description.getNid(), Get.identifierService()
+							//There really shouldn't be more than one of these, but if there is, no harm in changing state on all of them.
+							.getConceptSequenceForUuids(vuidToSubsetMap_.get(sm.getVUID()))).forEach(sc -> 
+							{
+								@SuppressWarnings({ "rawtypes", "unchecked" })
+								Optional<DynamicSememe> ds = ((SememeChronology)sc).getLatestVersion(DynamicSememe.class, readCoordinate_);
+								if (ds.isPresent())
+								{
+									@SuppressWarnings({ "unchecked", "unused" })
+									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc).createMutableVersion(MutableDynamicSememe.class, 
+										sm.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+									importUtil_.storeManualUpdate(sc);
+								}
+							});
 						break;
 					default :
 						throw new RuntimeException("Unexpected Error");
@@ -411,681 +958,158 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				}
 			}
 		}
-		
 	}
 
 	/**
 	 * @param properties
 	 */
-	private void loadDesignationProperties(Properties properties)
+	private void loadDesignationProperties(ComponentReference designationSememe, Properties properties)
 	{
 		if (properties != null)
 		{
-			//TODO designation properties
 			for (PropertyType p : properties.getProperty())
 			{
-				switch(p.getAction())
-				{
-					case ADD:
-						break;
-					case NONE:
-						break;
-					case REMOVE:
-						break;
-					case UPDATE:
-						break;
-					default :
-						throw new RuntimeException("Unexpected error");
-					
-				}
+				handleProperty(designationSememe, p.getTypeName(),  p.getValueOld(),  p.getValueNew(),  p.isActive(),  p.getAction());
 			}
 		}
 	}
 	
-
-	private void loadRelationships(Relationships relationships)
+	@SuppressWarnings("unchecked")
+	private void loadRelationships(ComponentReference concept, Relationships relationships)
 	{
 		if (relationships != null)
 		{
+			HashSet<UUID> gatheredisA = new HashSet<>();
+			HashSet<UUID> retireIsA = new HashSet<>();
+			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
 			for (Relationship r : relationships.getRelationship())
 			{
+				Optional<UUID> newTarget = StringUtils.isBlank(r.getNewTargetCode()) ? Optional.empty() : findConcept(r.getNewTargetCode());
+				
 				switch(r.getAction())
 				{
-					//TODO relationships
 					case ADD:
+						importUtil_.addAssociation(concept, null, newTarget.get(), associations_.getProperty(r.getTypeName()).getUUID(), 
+							r.isActive() ? State.ACTIVE : State.INACTIVE, null, null);
+						if (r.getTypeName().equals("has_parent") && r.isActive())
+						{
+							gatheredisA.add(newTarget.get());
+						}
 						break;
 					case NONE:
+						//noop
 						break;
 					case REMOVE:
-						break;
 					case UPDATE:
+						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
+						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
+							oldTarget.get()).get();
+						
+						@SuppressWarnings("rawtypes")
+						SememeChronology sc = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(existingAssociation));
+						
+						@SuppressWarnings({ "rawtypes"})
+						Optional<DynamicSememe> ds = sc.getLatestVersion(DynamicSememe.class, readCoordinate_);
+						if (ds.isPresent())
+						{
+							MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc).createMutableVersion(MutableDynamicSememe.class, 
+								r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+							mds.setData(new DynamicSememeData[] {new DynamicSememeUUIDImpl(newTarget.isPresent() ? newTarget.get() : oldTarget.get())});
+							importUtil_.storeManualUpdate(sc);
+						}
+						else
+						{
+							throw new RuntimeException("Couldn't find existing association for " + r.getTypeName() + " " + r.getNewTargetCode());
+						}
+						
+						if (r.getTypeName().equals("has_parent"))
+						{
+							if (r.isActive())
+							{
+								gatheredisA.add(newTarget.get());
+							}
+							else
+							{
+								retireIsA.add(oldTarget.get());
+								if (newTarget.isPresent())
+								{
+									retireIsA.add(newTarget.get());
+								}
+							}
+						}
+						
 						break;
 					default :
 						throw new RuntimeException("Unexpected error");
-					
 				}
 			}
-		}
-		
+			
+			Optional<SememeChronology<? extends SememeVersion<?>>> logicGraph = Frills.getStatedDefinitionChronology(concept.getNid(), logicReadCoordinate_);
+			
+			LogicalExpression le = null;
+			if (gatheredisA.size() > 0)
+			{
+				ArrayList<ConceptAssertion> cas = new ArrayList<>(gatheredisA.size());
+				
+				for (UUID uuid : gatheredisA)
+				{
+					cas.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(uuid), leb));
+				}
+				
+				NecessarySet(And(cas.toArray(new Assertion[gatheredisA.size()])));
+				le = leb.build();
+			}
+			
+			if (logicGraph.isPresent())
+			{
+				ArrayList<ConceptAssertion> cas = new ArrayList<>(gatheredisA.size());
+				
+				if (gatheredisA.size() > 0)
+				{
+					for (UUID uuid : gatheredisA)
+					{
+						cas.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(uuid), leb));
+					}
+				}
+				
+				Get.taxonomyService().getTaxonomyParentSequences(concept.getNid(), new TaxonomyCoordinateImpl(PremiseType.STATED, readCoordinate_, 
+					LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate(), logicReadCoordinate_)).forEach(parent ->
+					{
+						UUID potential = Get.identifierService().getUuidPrimordialFromConceptId(parent).get();
+						
+						if (!gatheredisA.contains(potential) && !retireIsA.contains(potential))
+						{
+							//Nothing was said about this pre-existing parent, so keep it.
+							cas.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(potential), leb));
+						}
+					});
+				
+				if (cas.size() > 0)
+				{
+					NecessarySet(And(cas.toArray(new Assertion[gatheredisA.size()])));
+					
+					le = leb.build();
+					
+					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe<?>>)logicGraph.get()).
+						createMutableVersion(MutableLogicGraphSememe.class, State.ACTIVE, editCoordinate_);
+					
+					mlgs.setGraphData(le.getData(DataTarget.INTERNAL));
+				}
+				else
+				{
+					//If we ended up with nothing active, just read the current, and set the entire thing to inactive.
+					MutableLogicGraphSememe<?> mlgs = ((SememeChronology<LogicGraphSememe<?>>)logicGraph.get()).
+						createMutableVersion(MutableLogicGraphSememe.class, State.INACTIVE, editCoordinate_);
+					mlgs.setGraphData(Frills.getLogicGraphVersion((SememeChronology<? extends LogicGraphSememe<?>>) logicGraph.get(), readCoordinate_)
+						.get().value().getGraphData());
+				}
+				
+				importUtil_.storeManualUpdate(logicGraph.get());
+			}
+			else
+			{
+				importUtil_.addRelationshipGraph(concept, null, le, true, null,  null);
+			}
+		}	
 	}
-	
-	
-
-//	@Override
-//	public void execute() throws MojoExecutionException
-//	{
-//
-//		try
-//		{
-//			super.execute();
-//
-//			String temp = converterOutputArtifactVersion.substring(0, 11);
-//
-//			importUtil_ = new IBDFCreationUtility(Optional.of("VHAT " + converterSourceArtifactVersion), Optional.of(MetaData.VHAT_MODULES), outputDirectory, 
-//					converterOutputArtifactId, converterOutputArtifactVersion, converterOutputArtifactClassifier, false, new SimpleDateFormat("yyyy.MM.dd").parse(temp).getTime());
-//			
-//			attributes_ = new PT_Annotations();
-//			descriptions_ = new BPT_Descriptions(VHATConstants.TERMINOLOGY_NAME);
-//			associations_ = new BPT_Associations(VHATConstants.TERMINOLOGY_NAME);
-//			relationships_ = new BPT_Relations(VHATConstants.TERMINOLOGY_NAME);
-//			refsets_ = new BPT_Refsets(VHATConstants.TERMINOLOGY_NAME);
-//			refsets_.addProperty("All VHAT Concepts");
-//
-//			TerminologyDataReader importer = new TerminologyDataReader(inputFileLocation);
-//			TerminologyDTO terminology = importer.process();
-//
-//			List<TypeImportDTO> dto = terminology.getTypes();
-//
-//			ComponentReference vhatMetadata = ComponentReference.fromConcept(createType(MetaData.SOLOR_CONTENT_METADATA.getPrimordialUuid(), 
-//					"VHAT Metadata" + IBDFCreationUtility.metadataSemanticTag_));
-//			
-//			importUtil_.loadTerminologyMetadataAttributes(converterSourceArtifactVersion, 
-//					Optional.empty(), converterOutputArtifactVersion, Optional.ofNullable(converterOutputArtifactClassifier), converterVersion);
-//			
-//			//TODO would be nice to automate this
-//			importUtil_.registerDynamicSememeColumnInfo(IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_NID_EXTENSION.getUUID(), 
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_NID_EXTENSION.getDynamicSememeColumns());
-//			importUtil_.registerDynamicSememeColumnInfo(IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getUUID(), 
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getDynamicSememeColumns());
-//			importUtil_.registerDynamicSememeColumnInfo(IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getUUID(), 
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getDynamicSememeColumns());
-//
-//			// read in the dynamic types
-//			for (TypeImportDTO typeImportDTO : dto)
-//			{
-//				if (typeImportDTO.getKind().equals("DesignationType"))
-//				{
-//					Property p = descriptions_.addProperty(typeImportDTO.getName());
-//					//Add some rankings for FSN / synonym handling
-//					if (p.getSourcePropertyNameFSN().equals("Fully Specified Name"))
-//					{
-//						p.setPropertySubType(BPT_Descriptions.FSN);
-//					}
-//					else if (p.getSourcePropertyNameFSN().equals("Preferred Name"))
-//					{
-//						p.setPropertySubType(BPT_Descriptions.SYNONYM);
-//					}
-//					else if (p.getSourcePropertyNameFSN().equals("Synonym"))
-//					{
-//						p.setPropertySubType(BPT_Descriptions.SYNONYM + 1);
-//					}
-//				}
-//				else if (typeImportDTO.getKind().equals("RelationshipType"))
-//				{
-//					//currently loading isA as a graph rel, and an assoiation
-//					if (typeImportDTO.getName().equals("has_parent"))
-//					{
-//						Property p = relationships_.addProperty(typeImportDTO.getName());
-//						p.setWBPropertyType(MetaData.IS_A.getPrimordialUuid());
-//					}
-//					associations_.addProperty(new PropertyAssociation(associations_, typeImportDTO.getName(), typeImportDTO.getName(), null, 
-//							typeImportDTO.getName(), false));
-//				}
-//				else if (typeImportDTO.getKind().equals("PropertyType"))
-//				{
-//					if (typeImportDTO.getName().equals("GEM_Flags"))
-//					{
-//						//skip - GEM_Flags are loaded as a column on a mapset instead.
-//					}
-//					else
-//					{
-//						attributes_.addProperty(typeImportDTO.getName());
-//					}
-//				}
-//				else
-//				{
-//					System.err.println("Unexpected Type!");
-//				}
-//			}
-//			
-//			//get the refset names
-//			for (SubsetImportDTO subset : terminology.getSubsets())
-//			{
-//				refsets_.addProperty(subset.getSubsetName());
-//			}
-//			
-//			importUtil_.loadMetaDataItems(Arrays.asList(descriptions_, attributes_, associations_, relationships_, refsets_), vhatMetadata.getPrimordialUuid());
-//
-//			ConsoleUtil.println("Metadata load stats");
-//			for (String line : importUtil_.getLoadStats().getSummary())
-//			{
-//				ConsoleUtil.println(line);
-//			}
-//			
-//			importUtil_.clearLoadStats();
-//
-//			allVhatConceptsRefset = refsets_.getProperty("All VHAT Concepts").getUUID();
-//			loadedConcepts.put(allVhatConceptsRefset, "All VHAT Concepts");
-//
-//			Map<Long, Set<String>> subsetMembershipMap = new HashMap<>();
-//			// get the subset memberships to build the refset for each subset
-//			for (ConceptImportDTO item : terminology.getCodeSystem().getVersion().getConcepts())
-//			{
-//				for (DesignationExtendedImportDTO designation : item.getDesignations())
-//				{
-//					for (SubsetMembershipImportDTO subsetMembership : designation.getSubsets())
-//					{
-//						Set<String> codes = subsetMembershipMap.get(subsetMembership.getVuid());
-//						if (codes == null)
-//						{
-//							codes = new HashSet<>();
-//							subsetMembershipMap.put(subsetMembership.getVuid(), codes);
-//						}
-//						codes.add(designation.getCode());
-//					}
-//				}
-//			}
-//			
-//			for (SubsetImportDTO subset : terminology.getSubsets())
-//			{
-//				loadRefset(subset.getSubsetName(), subset.getVuid(), subsetMembershipMap.get(subset.getVuid()));
-//			}
-//
-//			//TODO use the codesystem version info?
-//			//TODO use the Version info?
-//			//
-//
-//			for (ConceptImportDTO item : terminology.getCodeSystem().getVersion().getConcepts())
-//			{
-//				conceptCount++;
-//				writeEConcept(item);
-//				if (conceptCount % 500 == 0)
-//				{
-//					ConsoleUtil.showProgress();
-//				}
-//				if (conceptCount % 10000 == 0)
-//				{
-//					ConsoleUtil.println("Processed " + conceptCount + " concepts");
-//				}
-//			}
-//			
-//			ConsoleUtil.println("Processed " + conceptCount + " concepts");
-//			ConsoleUtil.println("Starting mapsets");
-//			
-//
-//			for (MapSetImportDTO item : terminology.getCodeSystem().getVersion().getMapsets())
-//			{
-//				mapSetCount++;
-//				writeEConcept(item);
-//				if (mapEntryCount % 100 == 0)
-//				{
-//					ConsoleUtil.showProgress();
-//				}
-//				if (mapEntryCount % 500 == 0)
-//				{
-//					ConsoleUtil.println("Processed " + mapSetCount + " mapsets with " + mapEntryCount + " members");
-//				}
-//			}
-//			
-//			ConsoleUtil.println("Processed " + mapSetCount + " mapsets with " + mapEntryCount + " members");
-//
-//			ArrayList<UUID> missingConcepts = new ArrayList<>();
-//
-//			for (UUID refUUID : referencedConcepts.keySet())
-//			{
-//				if (loadedConcepts.get(refUUID) == null)
-//				{
-//					missingConcepts.add(refUUID);
-//					ConsoleUtil.printErrorln("Data error - The concept " + refUUID + " - " + referencedConcepts.get(refUUID)
-//							+ " was referenced, but not loaded - will be created as '-MISSING-'");
-//				}
-//			}
-//
-//			if (missingConcepts.size() > 0)
-//			{
-//				ConceptChronology<? extends ConceptVersion<?>> missingParent = importUtil_.createConcept("Missing Concepts", true);
-//				importUtil_.addParent(ComponentReference.fromChronology(missingParent), rootConceptUUID);
-//				for (UUID refUUID : missingConcepts)
-//				{
-//					ComponentReference c = ComponentReference.fromChronology(importUtil_.createConcept(refUUID, "-MISSING-", true));
-//					importUtil_.addParent(c, missingParent.getPrimordialUuid());
-//				}
-//			}
-//			
-//			//Handle missing association sources and targets
-//			ConsoleUtil.println("Creating placeholder concepts for " + associationOrphanConcepts.size() + " association orphans");
-//			//We currently don't have these association targets, so need to invent placeholder concepts.
-//			ComponentReference missingSDORefset = ComponentReference.fromConcept(importUtil_.createConcept(null, "Missing SDO Code System Concepts", 
-//					null, null, null, refsets_.getPropertyTypeUUID(), (UUID)null));
-//			importUtil_.configureConceptAsDynamicRefex(missingSDORefset, "A simple refset to store the missing concepts we have to create during import because"
-//					+ " we don't yet have the SDO code systems in place",
-//					null, ObjectChronologyType.CONCEPT, null);
-//			for (Entry<UUID, String> item : associationOrphanConcepts.entrySet())
-//			{
-//				if (loadedConcepts.get(item.getKey()) == null)
-//				{
-//					importUtil_.addRefsetMembership(ComponentReference.fromConcept(importUtil_.createConcept(item.getKey(), item.getValue(), true)), 
-//							missingSDORefset.getPrimordialUuid(), State.ACTIVE, null);
-//				}
-//			}
-//			
-//
-//			// Put in names instead of IDs so the load stats print nicer:
-//			Hashtable<String, String> stringsToSwap = new Hashtable<String, String>();
-//			for (SubsetImportDTO subset : terminology.getSubsets())
-//			{
-//				stringsToSwap.put(subset.getVuid() + "", subset.getSubsetName());
-//			}
-//			
-//			for (MapSetImportDTO mapSet : terminology.getCodeSystem().getVersion().getMapsets())
-//			{
-//				stringsToSwap.put(mapSet.getVuid() + "", mapSet.getName());
-//			}
-//			
-//
-//			ConsoleUtil.println("Load Statistics");
-//			// swap out vuids with names to make it more readable...
-//			for (String line : importUtil_.getLoadStats().getSummary())
-//			{
-//				Enumeration<String> e = stringsToSwap.keys();
-//				while (e.hasMoreElements())
-//				{
-//					String current = e.nextElement();
-//					line = line.replaceAll(current, stringsToSwap.get(current));
-//				}
-//				ConsoleUtil.println(line);
-//			}
-//
-//			// this could be removed from final release. Just added to help debug editor problems.
-//			ConsoleUtil.println("Dumping UUID Debug File");
-//			ConverterUUID.dump(outputDirectory, "vhatUuid");
-//
-//			if (conceptsWithNoDesignations.size() > 0)
-//			{
-//				ConsoleUtil.printErrorln(conceptsWithNoDesignations.size() + " concepts were found with no descriptions at all.  These were assigned '-MISSING-'");
-//				FileWriter fw = new FileWriter(new File(outputDirectory, "NoDesignations.txt"));
-//				for (String s : conceptsWithNoDesignations)
-//				{
-//					fw.write(s);
-//					fw.write(System.getProperty("line.separator"));
-//				}
-//				fw.close();
-//			}
-//			importUtil_.shutdown();
-//			ConsoleUtil.writeOutputToFile(new File(outputDirectory, "ConsoleOutput.txt").toPath());
-//		}
-//		catch (Exception ex)
-//		{
-//			throw new MojoExecutionException(ex.getLocalizedMessage(), ex);
-//		}
-//
-//	}
-//
-//	private void writeEConcept(NamedPropertiedItemImportDTO conceptOrMapSet) throws Exception
-//	{
-//		boolean isMapSet = false;
-//		if (conceptOrMapSet instanceof MapSetImportDTO)
-//		{
-//			isMapSet = true;
-//			mapSetCount++;
-//		}
-//
-//		ComponentReference concept = ComponentReference.fromConcept(importUtil_.createConcept(getConceptUuid(conceptOrMapSet.getCode()), null, 
-//				conceptOrMapSet.isActive() ? State.ACTIVE : State.INACTIVE, null));
-//		loadedConcepts.put(concept.getPrimordialUuid(), conceptOrMapSet.getCode());
-//		importUtil_.addStaticStringAnnotation(concept, conceptOrMapSet.getVuid().toString(), attributes_.getProperty("VUID").getUUID(), State.ACTIVE);
-//		importUtil_.addStaticStringAnnotation(concept, conceptOrMapSet.getCode(), attributes_.getProperty("Code").getUUID(), State.ACTIVE);
-//
-//		ArrayList<ValuePropertyPairExtended> descriptionHolder = new ArrayList<>();
-//		if (isMapSet)
-//		{
-//			for (DesignationImportDTO didto : ((MapSetImportDTO)conceptOrMapSet).getDesignations())
-//			{
-//				descriptionHolder.add(new ValuePropertyPairExtended(didto.getValueNew(), getDescriptionUuid(didto.getCode().toString()),
-//						descriptions_.getProperty(didto.getTypeName()), didto, !didto.isActive()));
-//			}
-//		}
-//		else
-//		{
-//			for (DesignationExtendedImportDTO didto : ((ConceptImportDTO)conceptOrMapSet).getDesignations())
-//			{
-//				descriptionHolder.add(new ValuePropertyPairExtended(didto.getValueNew(), getDescriptionUuid(didto.getCode().toString()),
-//						descriptions_.getProperty(didto.getTypeName()), didto, !didto.isActive()));
-//			}
-//		}
-//		
-//		for (PropertyImportDTO property : conceptOrMapSet.getProperties())
-//		{
-//			importUtil_.addStringAnnotation(concept, property.getValueNew(), attributes_.getProperty(property.getTypeName()).getUUID(), 
-//					property.isActive() ? State.ACTIVE : State.INACTIVE);
-//		}
-//
-//		List<SememeChronology<DescriptionSememe<?>>> wbDescriptions = importUtil_.addDescriptions(concept, descriptionHolder);
-//		
-//		//Descriptions have now all been added to the concepts - now we need to process the rest of the ugly bits of vhat
-//		//and place them on the descriptions.
-//		for (int i = 0; i < descriptionHolder.size(); i++)
-//		{
-//			ValuePropertyPairExtended vpp = descriptionHolder.get(i);
-//			SememeChronology<DescriptionSememe<?>> desc = wbDescriptions.get(i);
-//			
-//			if (vpp.getValue().equals(VHATConstants.TERMINOLOGY_NAME))
-//			{
-//				// On the root node, we need to add some extra attributes
-//				importUtil_.addDescription(concept, VHATConstants.TERMINOLOGY_NAME, DescriptionType.SYNONYM, true, null, State.ACTIVE);
-//				importUtil_.addDescription(concept, "VHA Terminology", DescriptionType.SYNONYM, false, null, State.ACTIVE);
-//				ConsoleUtil.println("Root concept FSN is 'VHAT' and the UUID is " + concept.getPrimordialUuid());
-//				importUtil_.addParent(concept, MetaData.ISAAC_ROOT.getPrimordialUuid());
-//				rootConceptUUID = concept.getPrimordialUuid();
-//			}
-//			importUtil_.addStaticStringAnnotation(ComponentReference.fromChronology(desc, () -> "Description"), vpp.getDesignationImportDTO().getVuid() + "", attributes_.getProperty("VUID").getUUID(), State.ACTIVE);
-//			importUtil_.addStaticStringAnnotation(ComponentReference.fromChronology(desc, () -> "Description"), vpp.getDesignationImportDTO().getCode(), attributes_.getProperty("Code").getUUID(), State.ACTIVE);
-//
-//			// VHAT is kind of odd, in that the attributes are attached to the description, rather than the concept.
-//			if (!isMapSet)
-//			{
-//				for (PropertyImportDTO property : ((DesignationExtendedImportDTO)vpp.getDesignationImportDTO()).getProperties())
-//				{
-//					importUtil_.addStringAnnotation(ComponentReference.fromChronology(desc, () -> "Description"), property.getValueNew(), 
-//							attributes_.getProperty(property.getTypeName()).getUUID(), property.isActive() ? State.ACTIVE : State.INACTIVE);
-//				}
-//			}
-//		}
-//		
-//		if (descriptionHolder.size() == 0)
-//		{
-//			// Seems like a data error - but it is happening... no descriptions at all.....
-//			conceptsWithNoDesignations.add(conceptOrMapSet.getCode());
-//			// The workbench implodes if you don't have a fully specified name....
-//			importUtil_.addDescription(concept, "-MISSING-", DescriptionType.FSN, true, null, State.ACTIVE);
-//		}
-//
-//		List<RelationshipImportDTO> relationshipImports = conceptOrMapSet.getRelationships();
-//		LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
-//		ArrayList<ConceptAssertion> assertions = new ArrayList<>();
-//		if (relationshipImports != null)
-//		{
-//			for (RelationshipImportDTO relationshipImportDTO : relationshipImports)
-//			{
-//				UUID sourceUuid = getConceptUuid(conceptOrMapSet.getCode());
-//				UUID targetUuid = getConceptUuid(relationshipImportDTO.getNewTargetCode());
-//
-//				referencedConcepts.put(targetUuid, relationshipImportDTO.getNewTargetCode());
-//
-//				if (!sourceUuid.equals(concept.getPrimordialUuid()))
-//				{
-//					throw new MojoExecutionException("Design failure!");
-//				}
-//
-//				importUtil_.addAssociation(concept, null, targetUuid, associations_.getProperty(relationshipImportDTO.getTypeName()).getUUID(),
-//						relationshipImportDTO.isActive() ? State.ACTIVE : State.INACTIVE, null, null);
-//				
-//				//If it is an isA rel, also create it as a rel.
-//				
-//				if (relationships_.getProperty(relationshipImportDTO.getTypeName()) != null)
-//				{
-//					if (relationships_.getProperty(relationshipImportDTO.getTypeName()).getWBTypeUUID().equals(MetaData.IS_A.getPrimordialUuid()))
-//					{
-//						assertions.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(targetUuid), leb));
-//					}
-//					else
-//					{
-//						throw new RuntimeException("Only is_a is handled so far as a relationship");
-//					}
-//				}
-//			}
-//			if (assertions.size() > 0)
-//			{
-//				NecessarySet(And(assertions.toArray(new Assertion[assertions.size()])));
-//				importUtil_.addRelationshipGraph(concept, null, leb.build(), true, null, null);  //TODO handle inactive
-//			}
-//		}
-//
-//		importUtil_.addRefsetMembership(concept, allVhatConceptsRefset, State.ACTIVE, null);
-//
-//		if (isMapSet)
-//		{
-//			//Add a relationship to the subsets metadata concept.
-//			if (relationshipImports != null && relationshipImports.size() > 0)
-//			{
-//				throw new RuntimeException("Didn't expect mapsets to have their own relationships!");
-//			}
-//			
-//			//add it as an association too
-//			importUtil_.addAssociation(concept, null, refsets_.getPropertyTypeUUID(), associations_.getProperty("has_parent").getUUID(),
-//					State.ACTIVE, null, null);
-//			
-//			//place it in three places - refsets under VHAT Metadata, vhat refsets under SOLOR Refsets, and the dynamic sememe mapping sememe type.
-//			NecessarySet(And(new Assertion[] {
-//					//ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(refsets_.getSecondParentUUID()), leb),
-//					ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(refsets_.getPropertyTypeUUID()), leb),
-//					ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getPrimordialUuid()), leb)}));
-//			importUtil_.addRelationshipGraph(concept, null, leb.build(), true, null, null);
-//
-//			MapSetImportDTO mapSet = ((MapSetImportDTO)conceptOrMapSet);
-//			
-//			//before defining the columns, we need to determine if this mapset makes use of gem flags
-//			boolean mapSetDefinitionHasGemFlag = false;
-//			for (MapEntryImportDTO mapItem : mapSet.getMapEntries())
-//			{
-//				if (mapSetDefinitionHasGemFlag)
-//				{
-//					break;
-//				}
-//				for (PropertyImportDTO mapItemProperty : mapItem.getProperties())
-//				{
-//					if (mapItemProperty.getTypeName().equals("GEM_Flags"))
-//					{
-//						mapSetDefinitionHasGemFlag = true;
-//						break;
-//					}
-//				}
-//			}
-//			
-//			
-//			DynamicSememeColumnInfo[] columns = new DynamicSememeColumnInfo[mapSetDefinitionHasGemFlag ? 6 : 5];
-//			int col = 0;
-//			columns[col] = new DynamicSememeColumnInfo(col++, DynamicSememeConstants.get().DYNAMIC_SEMEME_COLUMN_ASSOCIATION_TARGET_COMPONENT.getUUID(),
-//					DynamicSememeDataType.UUID, null, false, DynamicSememeValidatorType.COMPONENT_TYPE,
-//					new DynamicSememeArrayImpl<>(new DynamicSememeString[] { new DynamicSememeStringImpl(ObjectChronologyType.CONCEPT.name()) }), true);
-//			columns[col] = new DynamicSememeColumnInfo(col++, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EQUIVALENCE_TYPE.getUUID(), DynamicSememeDataType.UUID,
-//					null, false, DynamicSememeValidatorType.IS_KIND_OF, new DynamicSememeUUIDImpl(IsaacMappingConstants.get().MAPPING_EQUIVALENCE_TYPES.getUUID()), true);
-//			columns[col] = new DynamicSememeColumnInfo(col++, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_SEQUENCE.getUUID(), DynamicSememeDataType.INTEGER,
-//					null, false, true);
-//			columns[col] = new DynamicSememeColumnInfo(col++, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING.getUUID(), DynamicSememeDataType.LONG,
-//					null, false, true);
-//			columns[col] = new DynamicSememeColumnInfo(col++, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE.getUUID(),
-//					DynamicSememeDataType.LONG, null, false, true);
-//			//moved to end - make it more convenient for GUI where target and qualifier are extracted, and used elsewhere - its convenient not to have the order change.
-//			if (mapSetDefinitionHasGemFlag)
-//			{
-//				columns[col] = new DynamicSememeColumnInfo(col++, IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GEM_FLAGS.getUUID(),
-//						DynamicSememeDataType.STRING, null, false, true);
-//			}
-//			
-//			importUtil_.configureConceptAsDynamicRefex(concept, mapSet.getName(), columns, ObjectChronologyType.CONCEPT, null);
-//			
-//			//Annotate this concept as a mapset definition concept.
-//			importUtil_.addAnnotation(concept, null, null, IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getUUID(), State.ACTIVE, null);
-//			
-//			//Now that we have defined the map sememe, add the other annotations onto the map set definition.
-//			if (StringUtils.isNotBlank(mapSet.getSourceCodeSystemName()))
-//			{
-//				importUtil_.addAnnotation(concept, null, 
-//					new DynamicSememeData[] {
-//							new DynamicSememeNidImpl(IsaacMappingConstants.get().MAPPING_SOURCE_CODE_SYSTEM.getNid()),
-//							new DynamicSememeStringImpl(mapSet.getSourceCodeSystemName())},
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getPrimordialUuid(), State.ACTIVE, null, null);
-//			}
-//			
-//			if (StringUtils.isNotBlank(mapSet.getSourceVersionName()))
-//			{
-//				importUtil_.addAnnotation(concept, null, 
-//					new DynamicSememeData[] {
-//							new DynamicSememeNidImpl(IsaacMappingConstants.get().MAPPING_SOURCE_CODE_SYSTEM_VERSION.getNid()),
-//							new DynamicSememeStringImpl(mapSet.getSourceVersionName())},
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getPrimordialUuid(), State.ACTIVE, null, null);
-//			}
-//			
-//			if (StringUtils.isNotBlank(mapSet.getTargetCodeSystemName()))
-//			{
-//				importUtil_.addAnnotation(concept, null, 
-//					new DynamicSememeData[] {
-//							new DynamicSememeNidImpl(IsaacMappingConstants.get().MAPPING_TARGET_CODE_SYSTEM.getNid()),
-//							new DynamicSememeStringImpl(mapSet.getTargetCodeSystemName())},
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getPrimordialUuid(), State.ACTIVE, null, null);
-//			}
-//			
-//			if (StringUtils.isNotBlank(mapSet.getTargetVersionName()))
-//			{
-//				importUtil_.addAnnotation(concept, null, 
-//					new DynamicSememeData[] {
-//							new DynamicSememeNidImpl(IsaacMappingConstants.get().MAPPING_TARGET_CODE_SYSTEM_VERSION.getNid()),
-//							new DynamicSememeStringImpl(mapSet.getTargetVersionName())},
-//					IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_STRING_EXTENSION.getPrimordialUuid(), State.ACTIVE, null, null);
-//			}
-//			
-//			for (MapEntryImportDTO mapItem : mapSet.getMapEntries())
-//			{
-//				ComponentReference sourceConcept = ComponentReference.fromConcept(mapSet.getSourceCodeSystemName().equals(VHATConstants.TERMINOLOGY_NAME) ?
-//						getConceptUuid(mapItem.getSourceCode()) : getAssociationOrphanUuid(mapItem.getSourceCode()));
-//
-//				if (!loadedConcepts.containsKey(sourceConcept.getPrimordialUuid()))
-//				{
-//					if (mapSet.getSourceCodeSystemName().equals(VHATConstants.TERMINOLOGY_NAME))
-//					{
-//						ConsoleUtil.printErrorln("Missing VHAT association source concept! " + mapItem.getSourceCode());
-//					}
-//					associationOrphanConcepts.put(sourceConcept.getPrimordialUuid(), mapItem.getSourceCode());
-//				}
-//				
-//				UUID targetConcept =  mapSet.getTargetCodeSystemName().equals(VHATConstants.TERMINOLOGY_NAME) ?
-//						getConceptUuid(mapItem.getTargetCode()) : getAssociationOrphanUuid(mapItem.getTargetCode());
-//				
-//				if (!loadedConcepts.containsKey(targetConcept))
-//				{
-//					if (mapSet.getTargetCodeSystemName().equals(VHATConstants.TERMINOLOGY_NAME))
-//					{
-//						ConsoleUtil.printErrorln("Missing VHAT association target concept! " + mapItem.getTargetCode());
-//					}
-//					associationOrphanConcepts.put(targetConcept, mapItem.getTargetCode());
-//				}
-//				
-//				String gemFlag = null;
-//				if (mapItem.getProperties() != null)
-//				{
-//					for (PropertyImportDTO property : mapItem.getProperties())
-//					{
-//						if (property.getTypeName().equals("GEM_Flags"))
-//						{
-//							if (gemFlag != null)
-//							{
-//								throw new RuntimeException("Didn't expect multiple gem flags on a single mapItem!");
-//							}
-//							gemFlag = property.getValueNew();
-//						}
-//					}
-//				}
-//				
-//				DynamicSememeData[] columnData = new DynamicSememeData[mapSetDefinitionHasGemFlag ? 6 : 5];
-//				col = 0;
-//				columnData[col++] = new DynamicSememeUUIDImpl(targetConcept);
-//				columnData[col++] = null;  //qualifier column
-//				columnData[col++] = new DynamicSememeIntegerImpl(mapItem.getSequence()); //sequence column
-//				columnData[col++] = mapItem.getGrouping() != null ? new DynamicSememeLongImpl(mapItem.getGrouping()) : null; //grouping column
-//				columnData[col++] = mapItem.getEffectiveDate() != null ? new DynamicSememeLongImpl(mapItem.getEffectiveDate().getTime()) : null; //effectiveDate
-//				if (mapSetDefinitionHasGemFlag )
-//				{
-//					columnData[col++] = gemFlag == null ? null : new DynamicSememeStringImpl(gemFlag);
-//				}
-//				
-//				SememeChronology<DynamicSememe<?>> association = importUtil_.addAnnotation(sourceConcept, getMapItemUUID(mapSet.getVuid().toString(),
-//						mapItem.getVuid().toString()), columnData, concept.getPrimordialUuid(), mapItem.isActive() ? State.ACTIVE : State.INACTIVE, null, null);
-//				
-//				importUtil_.addStaticStringAnnotation(ComponentReference.fromChronology(association, () -> "Association"), mapItem.getVuid().toString(), attributes_.getProperty("VUID").getUUID(), State.ACTIVE);
-//
-//				if (mapItem.getProperties() != null)
-//				{
-//					for (PropertyImportDTO property : mapItem.getProperties())
-//					{
-//						if (property.getTypeName().equals("GEM_Flags"))
-//						{
-//							//already handled above
-//						}
-//						else 
-//						{
-//							throw new RuntimeException("Properties on map set items not yet handled"); 
-//							//This code is correct, but our gui doesn't expect this, so throw an error for now, so we know if any show up.
-//						}
-//					}
-//				}
-//				if (mapItem.getDesignations() != null && mapItem.getDesignations().size() > 0)
-//				{
-//					throw new RuntimeException("Designations on map set items not yet handled");
-//				}
-//				if (mapItem.getRelationships() != null && mapItem.getRelationships().size() > 0)
-//				{
-//					throw new RuntimeException("Relationships on map set items not yet handled");
-//				}
-//				mapEntryCount++;
-//			}
-//			
-//		}
-//	}
-//
-//	private ConceptChronology<? extends ConceptVersion<?>> createType(UUID parentUuid, String typeName) throws Exception
-//	{
-//		ConceptChronology<? extends ConceptVersion<?>> concept = importUtil_.createConcept(typeName, true);
-//		loadedConcepts.put(concept.getPrimordialUuid(), typeName);
-//		importUtil_.addParent(ComponentReference.fromConcept(concept), parentUuid);
-//		return concept;
-//	}
-//
-//	private void loadRefset(String typeName, Long vuid, Set<String> refsetMembership) throws Exception
-//	{
-//		UUID concept = refsets_.getProperty(typeName).getUUID();
-//		loadedConcepts.put(concept, typeName);
-//		if (vuid != null)
-//		{
-//			importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(concept), vuid.toString(), attributes_.getProperty("VUID").getUUID(), State.ACTIVE);
-//		}
-//
-//		if (refsetMembership != null)
-//		{
-//			for (String memberCode : refsetMembership)
-//			{
-//				importUtil_.addRefsetMembership(ComponentReference.fromSememe(getDescriptionUuid(memberCode)), concept, State.ACTIVE, null);
-//			}
-//		}
-//	}
-//	
-//	private UUID getAssociationOrphanUuid(String code)
-//	{
-//		return ConverterUUID.createNamespaceUUIDFromString("associationOrphan:" + code, true);
-//	}
-//	
-//	private UUID getMapItemUUID(String mapSetVuid, String vuid)
-//	{
-//		return ConverterUUID.createNamespaceUUIDFromString("mapSetVuid:" + mapSetVuid + "mapItemVuid:" + vuid, false);
-//	}
-//
-//	private UUID getConceptUuid(String codeId)
-//	{
-//		return ConverterUUID.createNamespaceUUIDFromString("code:" + codeId, true);
-//	}
-//
-//	private UUID getDescriptionUuid(String descriptionId)
-//	{
-//		return ConverterUUID.createNamespaceUUIDFromString("description:" + descriptionId, true);
-//	}
 }

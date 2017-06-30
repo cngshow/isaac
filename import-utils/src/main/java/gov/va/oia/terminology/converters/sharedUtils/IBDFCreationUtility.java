@@ -1229,17 +1229,22 @@ public class IBDFCreationUtility
 				stated ? conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence() : 
 					conceptBuilderService_.getDefaultLogicCoordinate().getInferredAssemblageSequence());
 
-		// Build a LogicGraph UUID seed based on concept & logicExpression.getData(EXTERNAL)
-		StringBuilder byteString = new StringBuilder();
-		byte[][] byteArray = logicalExpression.getData(DataTarget.EXTERNAL);
-		for (int i = 0; i < byteArray.length; i++) {
-			byteString.append(Arrays.toString(byteArray[i]));
+		if (graphPrimordialUuid == null)
+		{
+			// Build a LogicGraph UUID seed based on concept & logicExpression.getData(EXTERNAL)
+			StringBuilder byteString = new StringBuilder();
+			byte[][] byteArray = logicalExpression.getData(DataTarget.EXTERNAL);
+			for (int i = 0; i < byteArray.length; i++) {
+				byteString.append(Arrays.toString(byteArray[i]));
+			}
+	
+			// Create UUID from seed and assign SesemeBuilder the value
+			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "" +stated, byteString.toString()));
 		}
-
-		// Create UUID from seed and assign SesemeBuilder the value
-		UUID generatedGraphPrimordialUuid = ConverterUUID
-				.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "" +stated, byteString.toString());
-		sb.setPrimordialUuid(graphPrimordialUuid != null ? graphPrimordialUuid : generatedGraphPrimordialUuid);
+		else
+		{
+			sb.setPrimordialUuid(graphPrimordialUuid);
+		}		
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 
@@ -1355,21 +1360,29 @@ public class IBDFCreationUtility
 				continue;
 			}
 			
-			ConceptChronology<? extends ConceptVersion<?>> groupingConcept = createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true);
-			/*
-			 * add interface for getAltMetaDataParent()
-			 * 
-			 * Use common additional parent interface
-			 * to get additional parent
-			 */
-			if (pt instanceof BPT_HasAltMetaDataParent && ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID() != null) {
-				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial, ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID());
-			} else {
-				addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial);
+			ConceptChronology<? extends ConceptVersion<?>> groupingConcept;
+			
+			if (!writeToDB || !Get.conceptService().hasConcept(Get.identifierService().getConceptSequenceForUuids(pt.getPropertyTypeUUID())))
+			{
+				groupingConcept = createConcept(pt.getPropertyTypeUUID(), pt.getPropertyTypeDescription() + metadataSemanticTag_, true);
+				if (pt instanceof BPT_HasAltMetaDataParent && ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID() != null) {
+					addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial, ((BPT_HasAltMetaDataParent)pt).getAltMetaDataParentUUID());
+				} else {
+					addParents(ComponentReference.fromChronology(groupingConcept), parentPrimordial);
+				}
 			}
+			else
+			{
+				groupingConcept = Get.conceptService().getConcept(pt.getPropertyTypeUUID());
+			}
+
 			
 			for (Property p : pt.getProperties())
 			{
+				if (writeToDB && Get.conceptService().hasConcept(Get.identifierService().getConceptSequenceForUuids(p.getUUID())))
+				{
+					continue;
+				}
 				if (p.isFromConceptSpec())
 				{
 					//This came from a conceptSpecification (metadata in ISAAC), and we don't need to create it.
@@ -1599,6 +1612,17 @@ public class IBDFCreationUtility
 		
 		//return new Property(null, sememeName, null, null, false, Integer.MAX_VALUE, cols);
 		return new Property(sememeName, false, Integer.MAX_VALUE, cols);
+	}
+	
+	/**
+	 * In some use cases, like the vhat delta import, I have to process some of my own mutations, and its useful to route the addUncommitted and db adds
+	 * back here, for logging / consistency.
+	 * @param ochreObject
+	 */
+	public void storeManualUpdate(OchreExternalizable ochreObject)
+	{
+		writer_.put(ochreObject);
+		dbWrite(ochreObject);
 	}
 
 	public void shutdown() throws IOException	

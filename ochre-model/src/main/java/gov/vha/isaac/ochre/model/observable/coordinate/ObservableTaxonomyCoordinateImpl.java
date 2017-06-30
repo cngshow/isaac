@@ -25,6 +25,7 @@ import gov.vha.isaac.ochre.api.observable.coordinate.ObservableStampCoordinate;
 import gov.vha.isaac.ochre.api.observable.coordinate.ObservableTaxonomyCoordinate;
 import gov.vha.isaac.ochre.model.coordinate.TaxonomyCoordinateImpl;
 import gov.vha.isaac.ochre.model.observable.ObservableFields;
+import java.util.EnumSet;
 import java.util.UUID;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -130,8 +131,16 @@ public class ObservableTaxonomyCoordinateImpl extends ObservableCoordinateImpl i
     public ObservableTaxonomyCoordinate makeAnalog(State... state) {
         return new ObservableTaxonomyCoordinateImpl(taxonomyCoordinate.makeAnalog(state));
     }
+    
+    
 
     @Override
+	public TaxonomyCoordinate makeAnalog(EnumSet<State> states)
+	{
+        return new ObservableTaxonomyCoordinateImpl(taxonomyCoordinate.makeAnalog(states));
+	}
+
+	@Override
     public TaxonomyCoordinate makeAnalog(PremiseType taxonomyType) {
         return new ObservableTaxonomyCoordinateImpl(taxonomyCoordinate.makeAnalog(taxonomyType));
     }

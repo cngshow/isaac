@@ -23,6 +23,7 @@ import gov.vha.isaac.ochre.api.coordinate.PremiseType;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import java.beans.Transient;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.UUID;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -135,8 +136,17 @@ public class TaxonomyCoordinateImpl implements TaxonomyCoordinate {
         return new TaxonomyCoordinateImpl(taxonomyType, stampCoordinate.makeAnalog(state),
                                   languageCoordinate, logicCoordinate);
     }
+    
+    
 
     @Override
+    public TaxonomyCoordinate makeAnalog(EnumSet<State> states)
+    {
+        return new TaxonomyCoordinateImpl(taxonomyType, stampCoordinate.makeAnalog(states),
+            languageCoordinate, logicCoordinate);
+    }
+
+	@Override
     public TaxonomyCoordinateImpl makeAnalog(PremiseType taxonomyType) {
         return new TaxonomyCoordinateImpl(taxonomyType, stampCoordinate,
                                   languageCoordinate, logicCoordinate);
