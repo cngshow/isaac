@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/07/?? - 4.10 - PENDING
-	*
+	* In Frills.getTerminologyTypes, add metadata terminology type flag to any concept that is a child of ISAAC Metadata
 
 * 2017/06/30 - 4.09
 	* VHAT Delta import initial implementation
