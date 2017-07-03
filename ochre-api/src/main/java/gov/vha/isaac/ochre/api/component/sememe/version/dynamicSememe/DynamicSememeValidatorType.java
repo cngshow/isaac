@@ -142,7 +142,7 @@ public enum DynamicSememeValidatorType
 		{
 			for (DynamicSememeValidatorType x : DynamicSememeValidatorType.values())
 			{
-				if (x.displayName_.equalsIgnoreCase(clean) || x.name().toLowerCase().equals(clean))
+				if (x.displayName_.equalsIgnoreCase(clean) || x.name().toLowerCase(Locale.ENGLISH).equals(clean))
 				{
 					return x;
 				}
