@@ -4,32 +4,33 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/07/?? - 4.10 - PENDING
-	* In Frills.getTerminologyTypes, add metadata terminology type flag to any concept that is a child of ISAAC Metadata
+    * In Frills.getTerminologyTypes, add metadata terminology type flag to any concept that is a child of ISAAC Metadata
+    * Add a bit to the lucene index to mark which concepts are part of the metadata hierarchy - vastly improves the performance of metadata style searches.
 
 * 2017/06/30 - 4.09
-	* VHAT Delta import initial implementation
-	* Fortify finding - XML External Entity (XXE).
-	* Metadata changes for IBDF diff work.
-	*  Adding SememeIndexerBI to ochre-api and adding query methods accepting Predicate filter to be available in Frills for use by new getVuidSememeNidsForVUID() method.
+    * VHAT Delta import initial implementation
+    * Fortify finding - XML External Entity (XXE).
+    * Metadata changes for IBDF diff work.
+    *  Adding SememeIndexerBI to ochre-api and adding query methods accepting Predicate filter to be available in Frills for use by new getVuidSememeNidsForVUID() method.
 
 * 2017/06/22 - 4.08
-	* Import cleanup.
-	* Added missing documentation, swap the use of $$$ in the returned strings to --- to make the return truely URL safe.
+    * Import cleanup.
+    * Added missing documentation, swap the use of $$$ in the returned strings to --- to make the return truely URL safe.
 
 * 2017/06/16 - 4.07
-	* Adding support for NTRT role.
-	* Initial stub out changes preparing for XML import work.
+    * Adding support for NTRT role.
+    * Initial stub out changes preparing for XML import work.
 
 * 2017/06/08 - 4.06
-	* Correct Frills.getDescriptionExtendedTypeConcept to only look at active values.
-	* Fortify fixes.
-	* Creating RestBoolean and modifying RestVuidBlockData to hold long
+    * Correct Frills.getDescriptionExtendedTypeConcept to only look at active values.
+    * Fortify fixes.
+    * Creating RestBoolean and modifying RestVuidBlockData to hold long
     instead of int.
 
 * 2017/06/01 - 4.05
-	* Changes to address Fortify issues
-	* Commit latest changes to enable producing IBDF file of differences between two IBDF files to correctly obtain MetadataAuxiliaryVersion description.
-	* Prisme integration changes
+    * Changes to address Fortify issues
+    * Commit latest changes to enable producing IBDF file of differences between two IBDF files to correctly obtain MetadataAuxiliaryVersion description.
+    * Prisme integration changes
 
 * 2017/05/21 - 4.04
     * fix a bug in the setRunLevel method, so that it doesn't fail if you ask it to shut down while it is still in the process of coming up from a previous request.
@@ -61,19 +62,19 @@ where provided, and the git commit history.
     * Added CPT copyright and license files to PRISMe source uploader configuration
     * Changing to only expose loadTerminologyMetadataAttributes() that sets
 terminologyMetadataRootConcept to getModule()
-	* Adding to addParents() check of appropriate cache of concepts to which
+    * Adding to addParents() check of appropriate cache of concepts to which
 parents have been added to prevent adding parents twice
 
 * 2017/04/11 - 3.43
     * Fix a bug with Frills.getAllChildrenOfConcept where it didn't return the proper list of children in certain cases, which inadvertently led to 
         the warnings "SememeAPIs.get(...) didn't filter properly..." being frequently logged by isaac-rest.  
-	* Added metadata entry for ICD10 modules for ICD10 terminology importer
-	* Updating libraries in master pom file to current
+    * Added metadata entry for ICD10 modules for ICD10 terminology importer
+    * Updating libraries in master pom file to current
 
 * 2017/03/20 - 3.42
-	* More Fortify fixes
-	* Better loggin on DB creation failures
-	* Production build for Release 3
+    * More Fortify fixes
+    * Better loggin on DB creation failures
+    * Production build for Release 3
 
 * 2017/03/16 - 3.41
     * Cleanup debug logging

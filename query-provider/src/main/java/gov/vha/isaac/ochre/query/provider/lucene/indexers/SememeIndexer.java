@@ -411,7 +411,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 					}
 					queryString = queryString.replaceAll("\\s-", " \\\\-");
 					log.debug("Modified search string is: ''{}''", queryString);
-					return buildTokenizedStringQuery(queryString, columnName, prefixSearch);
+					return buildTokenizedStringQuery(queryString, columnName, prefixSearch, false);
 				}
 			}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		}

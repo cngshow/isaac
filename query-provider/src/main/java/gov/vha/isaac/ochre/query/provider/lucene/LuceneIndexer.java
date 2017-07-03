@@ -113,7 +113,11 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     
     //don't need to analyze this - and even though it is an integer, we index it as a string, as that is faster when we are only doing
     //exact matches.
-    protected static final String FIELD_SEMEME_ASSEMBLAGE_SEQUENCE = "_sememe_type_sequence_" + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER;  
+    protected static final String FIELD_SEMEME_ASSEMBLAGE_SEQUENCE = "_sememe_type_sequence_" + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER;
+    //don't need to analyze, we only ever put a single char here - "t" - when a description is on a concept that is a part of the metadata tree.
+    protected static final String FIELD_CONCEPT_IS_METADATA = "_concept_metadata_marker_" + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER;
+    protected static final String FIELD_CONCEPT_IS_METADATA_VALUE = "t";
+
     //this isn't indexed
     public static final String FIELD_COMPONENT_NID = "_component_nid_";
     
@@ -546,11 +550,16 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * Uses the Lucene Query Parser if prefixSearch is false, otherwise, uses a custom prefix algorithm.  
      * See {@link LuceneIndexer#query(String, boolean, Integer, int, Long)} for details on the prefix search algorithm. 
      */
-    protected Query buildTokenizedStringQuery(String query, String field, boolean prefixSearch)
+    protected Query buildTokenizedStringQuery(String query, String field, boolean prefixSearch, boolean metadataOnly)
     {
         try
         {
             BooleanQuery bq = new BooleanQuery();
+            
+            if (metadataOnly)
+            {
+                bq.add(new TermQuery(new Term(FIELD_CONCEPT_IS_METADATA, FIELD_CONCEPT_IS_METADATA_VALUE)), Occur.MUST);
+            }
             
             if (prefixSearch) 
             {
