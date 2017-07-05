@@ -33,7 +33,7 @@ import java.util.stream.IntStream;
  * Created by kec on 1/2/16.
  */
 @Service(name = "Stamp Provider")
-@RunLevel(value = 1)
+@RunLevel(value = LookupService.SL_L1)
 public class StampProvider implements StampService {
 
     private static final Logger LOG = LogManager.getLogger();

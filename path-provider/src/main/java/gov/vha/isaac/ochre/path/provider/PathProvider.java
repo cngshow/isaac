@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.path.provider;
 
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.PathService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
@@ -43,7 +44,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author kec
  */
 @Service(name = "Path Provider")
-@RunLevel(value = 2)
+@RunLevel(value = LookupService.SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL)
 
 public class PathProvider implements PathService {
 

@@ -87,7 +87,7 @@ public class WorkflowContentStoreTest {
 
 		// Add new entry
 		UUID key1 = availableActionStore.add(createdEntry1);
-		LookupService.setRunLevel(LookupService.WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
+		LookupService.setRunLevel(LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
 		LookupService.startupMetadataStore();
 
 		// Get entry with new store
@@ -162,7 +162,7 @@ public class WorkflowContentStoreTest {
 
 		// Add new entry
 		UUID key1 = historicalWorkflowStore.add(createdEntry1);
-		LookupService.setRunLevel(LookupService.WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
+		LookupService.setRunLevel(LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
 		LookupService.startupMetadataStore();
 
 		// Get entry with new store
@@ -243,7 +243,7 @@ public class WorkflowContentStoreTest {
 
 		// Add new entry
 		UUID key1 = processInstanceStore.add(createdEntry1);
-		LookupService.setRunLevel(LookupService.WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
+		LookupService.setRunLevel(LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
 		LookupService.startupMetadataStore();
 
 		// Get entry with new store
@@ -327,7 +327,7 @@ public class WorkflowContentStoreTest {
 
 		// Add new entry
 		UUID key1 = definitionDetailStore.add(createdEntry1);
-		LookupService.setRunLevel(LookupService.WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
+		LookupService.setRunLevel(LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL);  //bring down the metacontent store
 		LookupService.startupMetadataStore();
 
 		// Get entry with new store

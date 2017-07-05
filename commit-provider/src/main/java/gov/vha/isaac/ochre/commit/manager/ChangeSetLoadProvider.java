@@ -65,7 +65,7 @@ import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
  * @author <a href="mailto:nmarques@westcoastinformatics.com">Nuno Marques</a>
  */
 @Service
-@RunLevel(value = 3)
+@RunLevel(value = LookupService.SL_L3)
 public class ChangeSetLoadProvider implements ChangeSetLoadService
 {
 

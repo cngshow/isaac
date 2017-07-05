@@ -22,6 +22,7 @@ import gov.vha.isaac.ochre.logic.csiro.classify.ClassifierProvider;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.api.DataSource;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.classifier.ClassifierService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -66,7 +67,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author kec
  */
 @Service(name = "logic provider")
-@RunLevel(value = 2)
+@RunLevel(value = LookupService.SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL)
 public class LogicProvider implements LogicService {
 
     private static final Logger log = LogManager.getLogger();

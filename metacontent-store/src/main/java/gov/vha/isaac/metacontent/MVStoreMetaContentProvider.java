@@ -32,6 +32,7 @@ import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.metacontent.MetaContentService;
 import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
 
@@ -45,7 +46,7 @@ import gov.vha.isaac.ochre.api.metacontent.userPrefs.StorableUserPreferences;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service(name = "MVStoreMetaContent")
-@RunLevel(value = -1)
+@RunLevel(value = LookupService.SL_NEG_1_METADATA_STORE_STARTED_RUNLEVEL)
 public class MVStoreMetaContentProvider implements MetaContentService {
 	private final Logger LOG = LogManager.getLogger();
 
