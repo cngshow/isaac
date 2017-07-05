@@ -193,14 +193,6 @@ public class PasswordHasher
 	}
 	
 	/**
-	 * Calls {@link #decrypt(String, String)}, but returns the result as a string for convenience, instead of a byte[]
-	 */
-	public static String decryptToString(String password, String encryptedData) throws Exception
-	{
-		return new String(decrypt(password, encryptedData), "UTF-8");
-	}
-	
-	/**
 	 * Decrypt data encrypted with the {@link #encrypt(String, String)} method (which contains random salt)
 	 * 
 	 * @param password The password to use to decrypt the data
