@@ -45,8 +45,10 @@ public enum UserRole {
 	REVIEWER(UserRoleConstants.REVIEWER),
 	APPROVER(UserRoleConstants.APPROVER),
 	MANAGER(UserRoleConstants.MANAGER),
+	VUID_REQUESTOR(UserRoleConstants.VUID_REQUESTOR),
 	NTRT(UserRoleConstants.NTRT),
-	VUID_REQUESTOR(UserRoleConstants.VUID_REQUESTOR);
+	DEPLOYMENT_MANAGER(UserRoleConstants.DEPLOYMENT_MANAGER);
+	
 	
 	private final String text;
 	private UserRole(String text) { this.text = text; }
