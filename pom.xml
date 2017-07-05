@@ -622,7 +622,6 @@
         <module>metadata-source</module>
         <module>ochre-metadata</module>
         <module>ochre-util</module>
-        <module>observable-provider</module>
         <module>logic-provider</module>
         <module>query-provider</module>
         <module>ibdf-provider</module>

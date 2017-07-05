@@ -52,11 +52,11 @@ public class ObservableChronologyProvider
     private final UUID listenerUuid = UUID.randomUUID();
 
 
-    ConcurrentReferenceHashMap<Integer, ObservableConceptChronology<?>> observableConceptMap = new ConcurrentReferenceHashMap<>(
+    ConcurrentReferenceHashMap<Integer, ObservableConceptChronology> observableConceptMap = new ConcurrentReferenceHashMap<>(
             ConcurrentReferenceHashMap.ReferenceType.STRONG,
             ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
-    ConcurrentReferenceHashMap<Integer, ObservableSememeChronology<?>> observableSememeMap = new ConcurrentReferenceHashMap<>(
+    ConcurrentReferenceHashMap<Integer, ObservableSememeChronology> observableSememeMap = new ConcurrentReferenceHashMap<>(
             ConcurrentReferenceHashMap.ReferenceType.STRONG,
             ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
