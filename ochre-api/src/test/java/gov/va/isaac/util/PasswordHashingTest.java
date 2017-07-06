@@ -18,6 +18,8 @@
  */
 package gov.va.isaac.util;
 
+import java.util.Arrays;
+
 import org.junit.Assert;
 import org.junit.Test;
 import gov.vha.isaac.ochre.api.util.PasswordHasher;
@@ -71,10 +73,10 @@ public class PasswordHashingTest
 		String password = "$sentences_make_better_passwords....";
 		String data = "There was a man with a plan";
 		String encrypted = PasswordHasher.encrypt(password, data);
-		Assert.assertTrue(PasswordHasher.decryptToString(password, encrypted).equals(data));
+		Assert.assertTrue(Arrays.equals(PasswordHasher.decrypt(password, encrypted), data.getBytes()));
 		try
 		{
-			String decrypted = PasswordHasher.decryptToString("wrongPassword", encrypted);
+			String decrypted = new String(PasswordHasher.decrypt("wrongPassword", encrypted));
 			Assert.assertFalse(decrypted.equals(data));
 			Assert.fail("Expected an exception, but instead got decrypted data: '" + decrypted + "'");
 		}
@@ -90,10 +92,10 @@ public class PasswordHashingTest
 		String password = "simple";
 		String data = "There was a man with a plan that wasn't very good";
 		String encrypted = PasswordHasher.encrypt(password, data);
-		Assert.assertTrue(PasswordHasher.decryptToString(password, encrypted).equals(data));
+		Assert.assertTrue(Arrays.equals(PasswordHasher.decrypt(password, encrypted), data.getBytes()));
 		try
 		{
-			String decrypted = PasswordHasher.decryptToString("", encrypted);
+			String decrypted =  new String(PasswordHasher.decrypt("", encrypted));
 			Assert.assertFalse(decrypted.equals(data));
 			Assert.fail("Expected an exception, but instead got decrypted data: '" + decrypted + "'");
 		}
@@ -109,10 +111,10 @@ public class PasswordHashingTest
 		String password = "µJû5¥¨J«eÜäÅT5¼, BìRß¸jAf½çx.îüöìÍj(Çõïkêpùnðö7¾&Äÿ÷)ÆJgn,GÂá÷+¦òxÂÍ«`¯JXÁ%Ò*ÖtÝ]Ú%U~ÂÅ¿=Ü*º'X·íY(Ù0";
 		String data = "";
 		String encrypted = PasswordHasher.encrypt(password, data);
-		Assert.assertTrue(PasswordHasher.decryptToString(password, encrypted).equals(data));
+		Assert.assertTrue(Arrays.equals(PasswordHasher.decrypt(password, encrypted), data.getBytes()));
 		try
 		{
-			String decrypted = PasswordHasher.decryptToString("wrongPassword", encrypted);
+			String decrypted = new String(PasswordHasher.decrypt("wrongPassword", encrypted));
 			Assert.assertFalse(decrypted.equals(data));
 			Assert.fail("Expected an exception, but instead got decrypted data: '" + decrypted + "'");
 		}
@@ -128,10 +130,10 @@ public class PasswordHashingTest
 		String password = "";
 		String data = "some data";
 		String encrypted = PasswordHasher.encrypt(password, data);
-		Assert.assertTrue(PasswordHasher.decryptToString(password, encrypted).equals(data));
+		Assert.assertTrue(Arrays.equals(PasswordHasher.decrypt(password, encrypted), data.getBytes()));
 		try
 		{
-			String decrypted = PasswordHasher.decryptToString(password, "wrong encrypted string");
+			String decrypted =  new String(PasswordHasher.decrypt(password, "wrong encrypted string"));
 			Assert.assertFalse(decrypted.equals(data));
 			Assert.fail("Expected an exception, but instead got decrypted data: '" + decrypted + "'");
 		}

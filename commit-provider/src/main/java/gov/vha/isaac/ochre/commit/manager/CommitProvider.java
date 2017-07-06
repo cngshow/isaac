@@ -81,7 +81,7 @@ import javafx.concurrent.Task;
  * @author kec
  */
 @Service(name = "Commit Provider")
-@RunLevel(value = 1)
+@RunLevel(value = LookupService.SL_L1)
 public class CommitProvider implements CommitService {
 
 	private static final Logger LOG = LogManager.getLogger();

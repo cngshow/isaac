@@ -40,4 +40,6 @@ public class UserRoleConstants {
 	public final static String MANAGER = "manager";
 	public final static String VUID_REQUESTOR = "vuid_requestor";
 	public final static String NTRT = "ntrt";
+	public final static String DEPLOYMENT_MANAGER = "deployment_manager";
+
 }

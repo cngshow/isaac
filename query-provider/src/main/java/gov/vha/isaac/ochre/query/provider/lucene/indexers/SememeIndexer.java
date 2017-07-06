@@ -46,6 +46,7 @@ import org.apache.lucene.search.TermQuery;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -87,7 +88,7 @@ import gov.vha.isaac.ochre.query.provider.lucene.PerFieldAnalyzer;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service(name = "sememe indexer")
-@RunLevel(value = 2)
+@RunLevel(value = LookupService.SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL)
 public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 {
 	private static final Logger log = LogManager.getLogger();
@@ -411,7 +412,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 					}
 					queryString = queryString.replaceAll("\\s-", " \\\\-");
 					log.debug("Modified search string is: ''{}''", queryString);
-					return buildTokenizedStringQuery(queryString, columnName, prefixSearch);
+					return buildTokenizedStringQuery(queryString, columnName, prefixSearch, false);
 				}
 			}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		}

@@ -51,7 +51,7 @@ public class PasswordHasher
 	private static final int saltLen = 32;
 	private static final int desiredKeyLen = 256;
 	private static final String keyFactoryAlgorithm = "PBKDF2WithHmacSHA1";
-	private static final String cipherAlgorithm = "PBEWithSHA1AndDESede";
+	private static final String cipherAlgorithm = "PBEWithSHA1AndDESede/CBC/PKCS5Padding";
 
 	//private static final Random random = new Random();  //Note, it would be more secure to use SecureRandom... but the entropy issues on Linux are a nasty issue
 	//and it results in SecureRandom.getInstance(...).generateSeed(...) blocking for long periods of time.  A regular random is certainly good enough
@@ -147,7 +147,7 @@ public class PasswordHasher
 	 * 
 	 * See {@link #decrypt(String, String)} for a mechanism to reverse the encryption that handles the random salt.
 	 * 
-	 * See {@link #decrypt(String, String)} for a mechanism to decript the randomly salted data.
+	 * See {@link #decrypt(String, String)} for a mechanism to decrypt the randomly salted data.
 	 * @param password the password to encrypt with
 	 * @param data the data to be encrypted
 	 * @return The returned result will be URL safe per RFC 3986 with the embedded, encrypted data.
@@ -167,7 +167,7 @@ public class PasswordHasher
 	/**
 	 * This method is the same as {@link #encrypt(String, byte[])} except that it allows the user to specify the salt
 	 * 
-	 * This allows for consistent gneration of encrypted data, if the user desires.
+	 * This allows for consistent generation of encrypted data, if the user desires.
 	 * 
 	 * See {@link #decrypt(String, byte[], String)} for a mechanism to decrypt the initial data.
 	 * 
@@ -190,14 +190,6 @@ public class PasswordHasher
 		temp.put(data);
 		temp.put(dataCheckSum);
 		return Base64.getUrlEncoder().encodeToString(pbeCipher.doFinal(temp.array()));
-	}
-	
-	/**
-	 * Calls {@link #decrypt(String, String)}, but returns the result as a string for convenience, instead of a byte[]
-	 */
-	public static String decryptToString(String password, String encryptedData) throws Exception
-	{
-		return new String(decrypt(password, encryptedData), "UTF-8");
 	}
 	
 	/**

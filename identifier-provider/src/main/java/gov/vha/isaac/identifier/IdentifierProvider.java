@@ -62,7 +62,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
  * @author kec
  */
 @Service
-@RunLevel(value = 0)
+@RunLevel(value = LookupService.SL_L0)
 public class IdentifierProvider implements IdentifierService, IdentifiedObjectService {
 
     private static final Logger LOG = LogManager.getLogger();

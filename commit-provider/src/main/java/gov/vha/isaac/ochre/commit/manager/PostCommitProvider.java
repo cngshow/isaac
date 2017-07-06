@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.commit.ChangeSetListener;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -46,7 +47,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
  * @author Nuno Marques
  */
 @Service(name = "Post Commit Provider")
-@RunLevel(value = 1)
+@RunLevel(value = LookupService.SL_L1)
 public class PostCommitProvider implements PostCommitService, ChronologyChangeListener {
 
 	private static final Logger LOG = LogManager.getLogger();

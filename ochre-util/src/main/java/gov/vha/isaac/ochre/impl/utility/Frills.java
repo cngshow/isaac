@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,11 +25,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import javax.inject.Singleton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -91,6 +95,7 @@ import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
@@ -1789,11 +1794,16 @@ public class Frills implements DynamicSememeColumnUtility {
 	
 	/**
 	 * Returns the set of terminology types (which are concepts directly under {@link MetaData#MODULE} for any concept 
-	 * or sememe in the system as a set of concept sequences
+	 * or sememe in the system as a set of concept sequences.
+	 * 
+	 * Also, if the concept is a child of {@link MetaData#ISAAC_METADATA}, then it will also be marked with the terminology type 
+	 * of {@link MetaData#ISAAC_MODULE} - even if there is no concept version that exists using the ISAAC_MODULE module - this gives
+	 * an easy way to identify "metadata" concepts.
+	 * 
 	 * @param oc - the object to read modules for
 	 * @param coord - if null, return the modules ignoring coordinates.  If not null, only return modules visible on the given coordinate
 	 */
-	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<? extends StampedVersion> oc, StampCoordinate coord)
+	public static HashSet<Integer> getTerminologyTypes(ConceptChronology<? extends StampedVersion> oc, StampCoordinate coord)
 	{
 		HashSet<Integer> modules = new HashSet<>();
 		HashSet<Integer> terminologyTypes = new HashSet<>();
@@ -1804,6 +1814,10 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				modules.add(Get.stampService().getModuleSequenceForStamp(stampSequence));
 			});
+			if (Get.taxonomyService().wasEverKindOf(oc.getConceptSequence(), MetaData.ISAAC_METADATA.getConceptSequence()))
+			{
+				terminologyTypes.add(MetaData.ISAAC_MODULE.getConceptSequence());
+			}
 		}
 		else
 		{
@@ -1815,6 +1829,11 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				modules.add(version.getModuleSequence());
 			});
+			if (Get.taxonomyService().isKindOf(oc.getConceptSequence(), MetaData.ISAAC_METADATA.getConceptSequence(), 
+					TaxonomyCoordinates.getStatedTaxonomyCoordinate(coord, LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate())))  //lang doesn't matter for our use case.
+			{
+				terminologyTypes.add(MetaData.ISAAC_MODULE.getConceptSequence());
+			}
 		}
 		
 		for (int moduleSequence : modules)
@@ -1840,7 +1859,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
-	 * Walk up the module tree, looking for the module directly under MetaData.MODULE - return it if found, otherwise, return null.
+	 * Walk up the module tree, looking for the module concept sequence directly under MetaData.MODULE - return it if found, otherwise, return null.
 	 */
 	private static Integer findTermTypeConcept(int conceptModuleSequence)
 	{

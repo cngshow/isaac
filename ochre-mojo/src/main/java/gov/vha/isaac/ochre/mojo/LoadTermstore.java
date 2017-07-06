@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -142,7 +143,7 @@ public class LoadTermstore extends AbstractMojo
 					{
 						getLog().info("The file " + f.getAbsolutePath() + " is not a file - ignoring.");
 					}
-					else if (!f.getName().toLowerCase().endsWith(".ibdf"))
+					else if (!f.getName().toLowerCase(Locale.ENGLISH).endsWith(".ibdf"))
 					{
 						getLog().info("The file " + f.getAbsolutePath() + " does not match the expected type of ibdf - ignoring.");
 					}
