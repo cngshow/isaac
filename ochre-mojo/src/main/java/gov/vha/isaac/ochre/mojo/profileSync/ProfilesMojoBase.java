@@ -69,7 +69,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 	public static final String PROFILE_SYNC_USERNAME_PROPERTY = "profileSyncUsername";
 	
 	// Allow setting the password via a system property
-	public static final String PROFILE_SYNC_PWD_PROPERTY = "profileSyncAccessCode";
+	public static final String PROFILE_SYNC_ACCESS_CODE_PROPERTY = "profileSyncAccessCode";
 	
 	private boolean disableHintGiven = false;
 	
@@ -249,14 +249,14 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 		return username;
 	}
 	
-	protected char[] getPassword() throws MojoExecutionException //protected String getPassword() throws MojoExecutionException
+	protected char[] getPassword() throws MojoExecutionException
 	{
 		if (pwd == null)
 		{
-			pwd = System.getProperty(PROFILE_SYNC_PWD_PROPERTY).toCharArray();
+			pwd = System.getProperty(PROFILE_SYNC_ACCESS_CODE_PROPERTY).toCharArray();
 			
 			//still blank, try the passed in param
-			if (pwd.length == 0) //if (StringUtils.isBlank(pwd))
+			if (pwd.length == 0)
 			{
 				pwd = profileSyncAccessCode.toCharArray();
 			}
