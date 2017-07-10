@@ -26,6 +26,7 @@ import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopScoreDocCollector;
 import gov.vha.isaac.ochre.query.provider.lucene.LuceneIndexer;
@@ -50,7 +51,20 @@ public class TopDocsFilteredCollector extends Collector
 	 */
 	public TopDocsFilteredCollector(int numHits, Query query, IndexSearcher searcher, Predicate<Integer> filter) throws IOException
 	{
-		collector_ = TopScoreDocCollector.create(numHits, null, !searcher.createNormalizedWeight(query).scoresDocsOutOfOrder());
+		this(numHits, null, query, searcher, filter);
+	}
+
+	/**
+	 * @param numHits - how many results to return
+	 * @param after - the bottom document of the previous page to search after
+	 * @param query - needed to setup the TopScoreDocCollector properly
+	 * @param searcher - needed to read the nids out of the matching documents
+	 * @param filter - a predicate that should return true, if the given nid should be allowed in the results, false, if not.
+	 * @throws IOException 
+	 */
+	public TopDocsFilteredCollector(int numHits, ScoreDoc after, Query query, IndexSearcher searcher, Predicate<Integer> filter) throws IOException
+	{
+		collector_ = TopScoreDocCollector.create(numHits, after, !searcher.createNormalizedWeight(query).scoresDocsOutOfOrder());
 		searcher_ = searcher;
 		filter_ = filter;
 	}

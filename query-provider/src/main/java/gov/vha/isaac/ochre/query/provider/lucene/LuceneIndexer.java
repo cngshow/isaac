@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -145,6 +146,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private final String indexName_;
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+    
+    private ScoreDoc lastDoc_ = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -423,45 +426,59 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             {
                 log.debug("Running query: {}", q.toString());
                 
-                //Since the index carries some duplicates by design, which we will remove - get a few extra results up front.
-                //so we are more likely to come up with the requested number of results
-                long limitWithExtras = sizeLimit + (long)((double)sizeLimit * 0.25d);
-                
-                int adjustedLimit = (limitWithExtras > Integer.MAX_VALUE ? sizeLimit : (int)limitWithExtras);
-                
-                TopDocs topDocs;
-                if (filter != null)
-                {
-                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(adjustedLimit, q, searcher, filter);
-                    searcher.search(q, tdf);
-                    topDocs = tdf.getTopDocs();
-                }
-                else
-                {
-                    topDocs = searcher.search(q, adjustedLimit);
-                }
-                List<SearchResult> results = new ArrayList<>(topDocs.totalHits);
+                // We're only going to return up to what was requested
+                List<SearchResult> results = new ArrayList<>(sizeLimit);
                 HashSet<Integer> includedComponentNids = new HashSet<>();
+                ScoreDoc lastDoc = lastDoc_;
+                boolean complete = false;  //i.e., results.size() < sizeLimit
                 
-                for (ScoreDoc hit : topDocs.scoreDocs)
+                if (filter == null)
                 {
-                    log.debug("Hit: {} Score: {}", new Object[]{hit.doc, hit.score});
+                	// Matches all integer values => every NID/doc
+                	// I don't believe this would be a performance killer...
+                	filter = i -> i >= Integer.MIN_VALUE;
+                }
+                
+                // Keep going until the requested number of docs are found, or no more matches
+                while (!complete)
+                {
+	                // The filter is always applied, either from the search API or matching all ints
+	                TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(sizeLimit, lastDoc, q, searcher, filter);
+                    searcher.search(q, tdf);
+                    TopDocs topDocs = tdf.getTopDocs();
+                    // topDocs = searcher.search(q, sizeLimit);
+	                // topDocs = searcher.searchAfter(lastDoc, q, sizeLimit);
                     
-                    Document doc = searcher.doc(hit.doc);
-                    int componentNid = doc.getField(FIELD_COMPONENT_NID).numericValue().intValue();
-                    if (includedComponentNids.contains(componentNid))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        includedComponentNids.add(componentNid);
-                        results.add(new ComponentSearchResult(componentNid, hit.score));
-                        if (results.size() == sizeLimit)
-                        {
-                            break;
-                        }
-                    }
+	                if (topDocs.totalHits > 0)
+	                {
+	                	for (ScoreDoc hit : topDocs.scoreDocs)
+		                {
+		                    log.debug("Hit: {} Score: {}", new Object[]{hit.doc, hit.score});
+		                    
+		                    // Save the last doc to search 'after' later, if needed
+		                    lastDoc = hit;
+		                    Document doc = searcher.doc(hit.doc);
+		                    int componentNid = doc.getField(FIELD_COMPONENT_NID).numericValue().intValue();
+		                    if (includedComponentNids.contains(componentNid))
+		                    {
+		                        continue;
+		                    }
+		                    else
+		                    {
+		                        includedComponentNids.add(componentNid);
+		                        results.add(new ComponentSearchResult(componentNid, hit.score));
+		                        if (results.size() == sizeLimit)
+		                        {
+		                        	complete = true;
+		                            break;
+		                        }
+		                    }
+		                }
+	                }
+	                else
+	                {
+	                	complete = true;
+	                }
                 }
                 log.debug("Returning {} results from query", results.size());
                 return results;
@@ -810,5 +827,32 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public Path getDatabaseFolder() {
         return indexFolder_.toPath(); 
+    }
+    
+    /**
+    *
+    * Sets the last document fetched so future queries can start searching 'after' that one.
+    *
+    * @param doc - the document representing the bottom of the preview page/results
+    */
+   public void setLastDoc(ScoreDoc after)
+    {
+    	// We don't care if it's null
+    	lastDoc_ = after;
+    }
+    
+   /**
+   *
+   * Fetches the last doc found for the last-run query.
+   *
+   * @return an Optional ScoreDoc representing the bottom/last document returned from the query. 
+   */
+  public Optional<ScoreDoc> getLastDoc()
+    {
+    	if (lastDoc_ == null)
+    	{
+    		return Optional.empty();
+    	}
+    	return Optional.of(lastDoc_);
     }
 }
