@@ -18,12 +18,20 @@ package gov.vha.isaac.ochre.model.builder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.glassfish.hk2.api.ServiceHandle;
+import org.glassfish.hk2.api.ServiceLocator;
+
 import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
+import gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -49,7 +57,7 @@ import javafx.concurrent.Task;
  * @param <C>
  */
 public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersion<?>>> extends ComponentBuilder<C> implements SememeBuilder<C> {
-
+	private static final Logger LOG = LogManager.getLogger(SememeBuilderImpl.class);
     IdentifiedComponentBuilder referencedComponentBuilder;
     int referencedComponentNid = Integer.MAX_VALUE;
     
@@ -78,10 +86,23 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     public OptionalWaitTask<C> build(EditCoordinate editCoordinate, 
             ChangeCheckerMode changeCheckerMode,
             List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
+        
+        List<SememeBuildListenerI> sememeBuildListeners = LookupService.get().getAllServices(SememeBuildListenerI.class);
+        for (SememeBuildListenerI listener : sememeBuildListeners) {
+        	if (listener != null) {
+                if (listener.isEnabled()) {
+                    //LOG.info("Calling " + listener.getListenerName() + ".applyBefore(...)");
+                    listener.applyBefore(editCoordinate, changeCheckerMode, builtObjects);
+                } else {
+                    LOG.info("NOT calling " + listener.getListenerName() + ".applyBefore(...) because listener has been disabled");
+                }
+            }
+        }
+
         if (referencedComponentNid == Integer.MAX_VALUE) {
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
-        
+        SememeVersion<?> version;
         SememeChronologyImpl sememeChronicle;
         int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
         if (Get.sememeService().hasSememe(sememeNid)) {
@@ -108,25 +129,30 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 ComponentNidSememeImpl cnsi = (ComponentNidSememeImpl) 
                         sememeChronicle.createMutableVersion(ComponentNidSememeImpl.class, state, editCoordinate);
                 cnsi.setComponentNid((Integer) parameters[0]);
+                version = cnsi;
                 break;
             case LONG:
                 LongSememeImpl lsi = (LongSememeImpl) 
                         sememeChronicle.createMutableVersion(LongSememeImpl.class, state, editCoordinate);
                 lsi.setLongValue((Long) parameters[0]);
+                version = lsi;
                 break;
             case LOGIC_GRAPH:
                 LogicGraphSememeImpl lgsi = (LogicGraphSememeImpl) 
                         sememeChronicle.createMutableVersion(LogicGraphSememeImpl.class, state, editCoordinate);
                 lgsi.setGraphData(((LogicalExpression) parameters[0]).getData(DataTarget.INTERNAL));
+                version = lgsi;
                 break;
             case MEMBER:
                 SememeVersionImpl svi = (SememeVersionImpl)
                         sememeChronicle.createMutableVersion(SememeVersionImpl.class, state, editCoordinate);
+                version = svi;
                 break;
             case STRING:
                 StringSememeImpl ssi = (StringSememeImpl)
                     sememeChronicle.createMutableVersion(StringSememeImpl.class, state, editCoordinate);
                 ssi.setString((String) parameters[0]);
+                version = ssi;
                 break;
             case DESCRIPTION: {
                 DescriptionSememeImpl dsi = (DescriptionSememeImpl)
@@ -135,6 +161,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 dsi.setDescriptionTypeConceptSequence((Integer) parameters[1]);
                 dsi.setLanguageConceptSequence((Integer) parameters[2]);
                 dsi.setText((String) parameters[3]);
+                version = dsi;
                 break;
             }
             case DYNAMIC: {
@@ -143,6 +170,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                     //See notes in SememeBuilderProvider - this casting / wrapping nonesense it to work around Java being stupid.
                     dsi.setData(((AtomicReference<DynamicSememeData[]>)parameters[0]).get());
                 }
+                version = dsi;
                 //TODO DAN this needs to fire the validator!
                 break;
             }	
@@ -159,6 +187,16 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         ArrayList<OptionalWaitTask<?>> nested = new ArrayList<>();
         sememeBuilders.forEach((builder) -> nested.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         builtObjects.add(sememeChronicle);
+        for (SememeBuildListenerI listener : sememeBuildListeners) {
+            if (listener != null) {
+                if (listener.isEnabled()) {
+                    //LOG.info("Calling " + listener.getListenerName() + ".applyAfter(...)");
+                    listener.applyAfter(editCoordinate, changeCheckerMode, version, builtObjects);
+                } else {
+                    LOG.info("NOT calling " + listener.getListenerName() + ".applyAfter(...) because listener has been disabled");
+                }
+            }
+        }
         return new OptionalWaitTask<C>(primaryNested, (C)sememeChronicle, nested);
     }
 
@@ -169,6 +207,18 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             referencedComponentNid = Get.identifierService().getNidForUuids(referencedComponentBuilder.getUuids());
         }
         
+        List<SememeBuildListenerI> sememeBuildListeners = LookupService.get().getAllServices(SememeBuildListenerI.class);
+        for (SememeBuildListenerI listener : sememeBuildListeners) {
+        	if (listener != null) {
+                if (listener.isEnabled()) {
+                    //LOG.info("Calling " + listener.getListenerName() + ".applyBefore(...)");
+                    listener.applyBefore(stampSequence, builtObjects);
+                } else {
+                    LOG.info("NOT calling " + listener.getListenerName() + ".applyBefore(...) because listener has been disabled");
+                }
+            }
+        }
+        SememeVersion<?> version;
         SememeChronologyImpl sememeChronicle;
         int sememeNid = Get.identifierService().getNidForUuids(this.getUuids());
         if (Get.sememeService().hasSememe(sememeNid)) {
@@ -196,25 +246,30 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 ComponentNidSememeImpl cnsi = (ComponentNidSememeImpl) 
                         sememeChronicle.createMutableVersion(ComponentNidSememeImpl.class, stampSequence);
                 cnsi.setComponentNid((Integer) parameters[0]);
+                version = cnsi;
                 break;
             case LONG:
                 LongSememeImpl lsi = (LongSememeImpl) 
                         sememeChronicle.createMutableVersion(LongSememeImpl.class, stampSequence);
                 lsi.setLongValue((Long) parameters[0]);
+                version = lsi;
                 break;
             case LOGIC_GRAPH:
                 LogicGraphSememeImpl lgsi = (LogicGraphSememeImpl) 
                         sememeChronicle.createMutableVersion(LogicGraphSememeImpl.class, stampSequence);
                 lgsi.setGraphData(((LogicalExpression) parameters[0]).getData(DataTarget.INTERNAL));
+                version = lgsi;
                 break;
             case MEMBER:
                 SememeVersionImpl svi = (SememeVersionImpl)
                         sememeChronicle.createMutableVersion(SememeVersionImpl.class, stampSequence);
+                version = svi;
                 break;
             case STRING:
                 StringSememeImpl ssi = (StringSememeImpl)
                     sememeChronicle.createMutableVersion(StringSememeImpl.class, stampSequence);
                 ssi.setString((String) parameters[0]);
+                version = ssi;
                 break;
             case DESCRIPTION: {
                 DescriptionSememeImpl dsi = (DescriptionSememeImpl)
@@ -223,6 +278,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 dsi.setDescriptionTypeConceptSequence((Integer) parameters[1]);
                 dsi.setLanguageConceptSequence((Integer) parameters[2]);
                 dsi.setText((String) parameters[3]);
+                version = dsi;
                 break;
             }
             case DYNAMIC: {
@@ -232,6 +288,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                     dsi.setData(((AtomicReference<DynamicSememeData[]>)parameters[0]).get());
                 }
                 //TODO Dan this needs to fire the validator!
+                version = dsi;
                 break;
             }	
             default:
@@ -239,6 +296,16 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         }
         sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
         builtObjects.add(sememeChronicle);
+        for (SememeBuildListenerI listener : sememeBuildListeners) {
+            if (listener != null) {
+                if (listener.isEnabled()) {
+                    //LOG.info("Calling " + listener.getListenerName() + ".applyAfter(...)");
+                    listener.applyAfter(stampSequence, version, builtObjects);
+                } else {
+                    LOG.info("NOT calling " + listener.getListenerName() + ".applyAfter(...) because listener has been disabled");
+                }
+            }
+        }
         return (C) sememeChronicle;
     }
 }
