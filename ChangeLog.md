@@ -3,6 +3,9 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/07/13 - 4.11
+    * Changes for ISAAC-rest API
+
 * 2017/07/06 - 4.10
     * In Frills.getTerminologyTypes, add metadata terminology type flag to any concept that is a child of ISAAC Metadata
     * Add a bit to the lucene index to mark which concepts are part of the metadata hierarchy - vastly improves the performance of metadata style searches.
