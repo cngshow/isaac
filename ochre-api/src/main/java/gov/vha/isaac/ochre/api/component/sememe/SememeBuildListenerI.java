@@ -111,7 +111,7 @@ public interface SememeBuildListenerI
 	 * @return
 	 */
 	default public void applyBefore(
-			EditCoordinate editCoordinate, 
+			EditCoordinate editCoordinate,
 			ChangeCheckerMode changeCheckerMode,
 			List<ObjectChronology<? extends StampedVersion>> builtObjects) {}
 

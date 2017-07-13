@@ -92,7 +92,11 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         	if (listener != null) {
                 if (listener.isEnabled()) {
                     //LOG.info("Calling " + listener.getListenerName() + ".applyBefore(...)");
-                    listener.applyBefore(editCoordinate, changeCheckerMode, builtObjects);
+                    try {
+                        listener.applyBefore(editCoordinate, changeCheckerMode, builtObjects);
+                    } catch (RuntimeException e) {
+                        LOG.error("FAILED running " + listener.getListenerName() + ".applyBefore(...): ", e);
+                    }
                 } else {
                     LOG.info("NOT calling " + listener.getListenerName() + ".applyBefore(...) because listener has been disabled");
                 }
@@ -191,7 +195,11 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             if (listener != null) {
                 if (listener.isEnabled()) {
                     //LOG.info("Calling " + listener.getListenerName() + ".applyAfter(...)");
-                    listener.applyAfter(editCoordinate, changeCheckerMode, version, builtObjects);
+                    try {
+                        listener.applyAfter(editCoordinate, changeCheckerMode, version, builtObjects);
+                    } catch (RuntimeException e) {
+                        LOG.error("FAILED running " + listener.getListenerName() + ".applyAfter(...): ", e);
+                    }
                 } else {
                     LOG.info("NOT calling " + listener.getListenerName() + ".applyAfter(...) because listener has been disabled");
                 }
@@ -209,10 +217,14 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
         
         List<SememeBuildListenerI> sememeBuildListeners = LookupService.get().getAllServices(SememeBuildListenerI.class);
         for (SememeBuildListenerI listener : sememeBuildListeners) {
-        	if (listener != null) {
+            if (listener != null) {
                 if (listener.isEnabled()) {
                     //LOG.info("Calling " + listener.getListenerName() + ".applyBefore(...)");
-                    listener.applyBefore(stampSequence, builtObjects);
+                    try {
+                        listener.applyBefore(stampSequence, builtObjects);
+                    } catch (RuntimeException e) {
+                        LOG.error("FAILED running " + listener.getListenerName() + ".applyBefore(...): ", e);
+                    }
                 } else {
                     LOG.info("NOT calling " + listener.getListenerName() + ".applyBefore(...) because listener has been disabled");
                 }
@@ -300,7 +312,11 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             if (listener != null) {
                 if (listener.isEnabled()) {
                     //LOG.info("Calling " + listener.getListenerName() + ".applyAfter(...)");
-                    listener.applyAfter(stampSequence, version, builtObjects);
+                    try {
+                        listener.applyAfter(stampSequence, version, builtObjects);
+                    } catch (RuntimeException e) {
+                        LOG.error("FAILED running " + listener.getListenerName() + ".applyAfter(...): ", e);
+                    }
                 } else {
                     LOG.info("NOT calling " + listener.getListenerName() + ".applyAfter(...) because listener has been disabled");
                 }
