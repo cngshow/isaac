@@ -143,10 +143,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			JAXBContext jaxbContext = JAXBContext.newInstance(Terminology.class);
 
 			XMLInputFactory xif = XMLInputFactory.newFactory();
-	        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-	        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
-	        
+			xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+			xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+			XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
+			
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 			terminology = (Terminology) jaxbUnmarshaller.unmarshal(xsr);
 		}
@@ -213,6 +213,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		catch (Exception e)
 		{
 			throw new IOException("Unexpected error setting up", e);
+		}
+		finally
+		{
+			ConverterUUID.clearCache();
 		}
 	}
 
@@ -384,6 +388,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					}
 					if (cc.getAction() == ActionType.ADD)
 					{
+						//TODO add already-exists checks for other things - need to figure out why this isn't working
+						if (findConcept(cc.getCode()).isPresent())
+						{
+							throw new RuntimeException("Add was specified for the concept '" + cc.getCode() + "' but that concept already exists!");
+						}
 						conceptUUID = createNewConceptUuid(cc.getCode());
 					}
 					if (cc.getDesignations() != null)
