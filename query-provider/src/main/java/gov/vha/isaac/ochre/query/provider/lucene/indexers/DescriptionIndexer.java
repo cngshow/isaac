@@ -16,6 +16,7 @@ import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -51,7 +52,7 @@ import gov.vha.isaac.ochre.query.provider.lucene.PerFieldAnalyzer;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service(name = "description indexer")
-@RunLevel(value = 2)
+@RunLevel(value = LookupService.SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL)
 public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI {
 
     private static final Semaphore setupNidsSemaphore = new Semaphore(1);
@@ -135,7 +136,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     @Override
     public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration) {
         return search(
-                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch), sememeConceptSequence),
+                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, false), sememeConceptSequence),
                 sizeLimit, targetGeneration, null);
     }
     
@@ -170,13 +171,16 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
      * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
      * the nid should be allowed in the result, false otherwise.  Note that this may cause large performance slowdowns, depending
      * on the implementation of your filter
+     * @param metadataOnly - Only search descriptions on concepts which are part of the {@link MetaData#ISAAC_METADATA} tree when true, 
+     * otherwise, search all descriptions.
      *
      * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
      * to other matches.
      */
-    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter) {
+    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
+            boolean metadataOnly) {
         return search(
-                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch), sememeConceptSequence),
+                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, metadataOnly), sememeConceptSequence),
                 sizeLimit, targetGeneration, filter);
     }
 
@@ -205,7 +209,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         if (extendedDescriptionType == null) {
             return super.query(query, (Integer[])null, sizeLimit, targetGeneration);
         } else {
-            return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false),
+            return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false, false),
                     sizeLimit, targetGeneration, null);
         }
     }
@@ -231,7 +235,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         if (descriptionType == null) {
             return super.query(query, (Integer[])null, sizeLimit, targetGeneration);
         } else {
-            return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + descriptionType.name(), false),
+            return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + descriptionType.name(), false, false),
                     sizeLimit, targetGeneration, null);
         }
     }
@@ -258,6 +262,13 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         doc.add(new TextField(FIELD_SEMEME_ASSEMBLAGE_SEQUENCE, sememeChronology.getAssemblageSequence() + "", Field.Store.NO));
         String lastDescText = null;
         String lastDescType = null;
+        
+        //Add a metadata marker for concepts that are metadata, to vastly improve performance of various prefix / filtering searches we want to 
+        //support in the isaac-rest API
+        if (Get.taxonomyService().wasEverKindOf(sememeChronology.getReferencedComponentNid(), MetaData.ISAAC_METADATA.getConceptSequence()))
+        {
+            doc.add(new TextField(FIELD_CONCEPT_IS_METADATA, FIELD_CONCEPT_IS_METADATA_VALUE, Field.Store.NO));
+        }
 
         TreeMap<Long, String> uniqueTextValues = new TreeMap<>();
 

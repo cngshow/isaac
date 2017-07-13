@@ -50,7 +50,7 @@ import gov.vha.isaac.ochre.api.util.StringUtils;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service
-@RunLevel(value = 5)
+@RunLevel(value = LookupService.SL_L5_ISAAC_DEPENDENTS_RUNLEVEL)
 public class ChangesetSyncService {
 
 	private static final Logger LOG = LogManager.getLogger();

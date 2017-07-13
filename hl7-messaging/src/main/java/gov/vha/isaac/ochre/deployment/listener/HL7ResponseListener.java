@@ -64,7 +64,7 @@ import gov.vha.isaac.ochre.services.exception.STSException;
 import javafx.concurrent.Task;
 
 @Service
-@RunLevel(value = LookupService.WORKERS_STARTED_RUNLEVEL)
+@RunLevel(value = LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL)
 public class HL7ResponseListener
 {
 	/** A logger for messages produced by this class. */

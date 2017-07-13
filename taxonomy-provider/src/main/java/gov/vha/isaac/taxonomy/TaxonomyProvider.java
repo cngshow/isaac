@@ -82,7 +82,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author kec
  */
 @Service
-@RunLevel(value = 1)
+@RunLevel(value = LookupService.SL_L1)
 public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, ChronologyChangeListener {
 
     private static final Logger LOG = LogManager.getLogger();

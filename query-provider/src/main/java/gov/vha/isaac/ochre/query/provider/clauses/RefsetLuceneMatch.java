@@ -19,6 +19,7 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.coordinate.TaxonomyCoordinate;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.collections.NidSet;
 import java.util.EnumSet;
 import java.util.List;
@@ -76,7 +77,7 @@ public class RefsetLuceneMatch extends LeafClause {
 
         NidSet nids = new NidSet();
 
-        SememeIndexer si = LookupService.get().getService(SememeIndexer.class);
+        SememeIndexerBI si = LookupService.get().getService(SememeIndexer.class);
         if (si == null) {
             throw new IllegalStateException("sememeIndexer is null");
         }

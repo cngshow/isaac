@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>4.09-SNAPSHOT</version>
+    <version>4.11-SNAPSHOT</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -622,7 +622,6 @@
         <module>metadata-source</module>
         <module>ochre-metadata</module>
         <module>ochre-util</module>
-        <module>observable-provider</module>
         <module>logic-provider</module>
         <module>query-provider</module>
         <module>ibdf-provider</module>

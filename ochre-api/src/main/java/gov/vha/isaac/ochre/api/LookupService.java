@@ -47,13 +47,16 @@ public class LookupService {
     private static final Logger LOG = LogManager.getLogger();
     private static volatile ServiceLocator looker = null;
     private static volatile boolean fxPlatformUp = false;
-    public static final int DATABASE_SERVICES_STARTED_RUNLEVEL = 2;
-    public static final int ISAAC_DEPENDENTS_RUNLEVEL = 5;
-    public static final int ISAAC_STARTED_RUNLEVEL = 4;
-    public static final int VUID_SERVICE_PRISME_LOG_EVENT_LISTENER_RUNLEVEL = 0; 
-    public static final int METADATA_STORE_STARTED_RUNLEVEL = -1; 
-    public static final int WORKERS_STARTED_RUNLEVEL = -2;
-    public static final int SYSTEM_STOPPED_RUNLEVEL = -3;
+    public static final int SL_L5_ISAAC_DEPENDENTS_RUNLEVEL = 5;  //Anything that depends on issac as a whole to be started should be 5 - this is the fully-started state.
+    public static final int SL_L4_ISAAC_STARTED_RUNLEVEL = 4;  //at level 3 and 4, secondary isaac services start, such as changeset providers, etc.
+    public static final int SL_L3 = 3; 
+    public static final int SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL = 2;  //In general, ISAAC data-store services start between 0 and 2, in an isaac specific order.
+    //Below 0, we have utility stuff... no ISAAC services.
+    public static final int SL_L1 = 1; 
+    public static final int SL_L0 = 0; 
+    public static final int SL_NEG_1_METADATA_STORE_STARTED_RUNLEVEL = -1; 
+    public static final int SL_NEG_2_WORKERS_STARTED_RUNLEVEL = -2;
+    public static final int SL_NEG_3_SYSTEM_STOPPED_RUNLEVEL = -3;
     private static final Object STARTUP_LOCK = new Object();
     private static DatabaseValidity discoveredValidityValue = null;
 
@@ -223,8 +226,8 @@ public class LookupService {
      * Start the WorkExecutor services (without starting ISAAC core services), blocking until started (or failed). 
      */
     public static void startupWorkExecutors() {
-        if (getService(RunLevelController.class).getCurrentRunLevel() < WORKERS_STARTED_RUNLEVEL) {
-            setRunLevel(WORKERS_STARTED_RUNLEVEL);
+        if (getService(RunLevelController.class).getCurrentRunLevel() < SL_NEG_2_WORKERS_STARTED_RUNLEVEL) {
+            setRunLevel(SL_NEG_2_WORKERS_STARTED_RUNLEVEL);
         }
     }
     
@@ -232,8 +235,8 @@ public class LookupService {
      * Start the Metadata services (without starting ISAAC core services), blocking until started (or failed). 
      */
     public static void startupMetadataStore() {
-        if (getService(RunLevelController.class).getCurrentRunLevel() < METADATA_STORE_STARTED_RUNLEVEL) {
-            setRunLevel(METADATA_STORE_STARTED_RUNLEVEL);
+        if (getService(RunLevelController.class).getCurrentRunLevel() < SL_NEG_1_METADATA_STORE_STARTED_RUNLEVEL) {
+            setRunLevel(SL_NEG_1_METADATA_STORE_STARTED_RUNLEVEL);
         }
     }
     
@@ -247,15 +250,15 @@ public class LookupService {
         	Locale.setDefault(Locale.US);
         	
             // Set run level to startup database and associated services running on top of database
-            setRunLevel(DATABASE_SERVICES_STARTED_RUNLEVEL);
+            setRunLevel(SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL);
 
             // Validate that databases and associated services directories uniformly exist and are uniformly populated during startup 
             validateDatabaseFolderStatus();
 
             // If database is validated, startup remaining run levels
-            setRunLevel(ISAAC_STARTED_RUNLEVEL);
+            setRunLevel(SL_L4_ISAAC_STARTED_RUNLEVEL);
 
-            setRunLevel(ISAAC_DEPENDENTS_RUNLEVEL);
+            setRunLevel(SL_L5_ISAAC_DEPENDENTS_RUNLEVEL);
         } catch (Exception e) {
             // Will inform calling routines that database is corrupt
             throw e;
@@ -302,7 +305,7 @@ public class LookupService {
      * Stop all core isaac service, blocking until stopped (or failed)
      */
     public static void shutdownIsaac() {
-        setRunLevel(WORKERS_STARTED_RUNLEVEL);
+        setRunLevel(SL_NEG_2_WORKERS_STARTED_RUNLEVEL);
         // Fully release any system locks to database
         System.gc();
     }
@@ -312,7 +315,7 @@ public class LookupService {
      */
    public static void shutdownSystem () {
        if (isInitialized()) {
-           setRunLevel(SYSTEM_STOPPED_RUNLEVEL);
+           setRunLevel(SL_NEG_3_SYSTEM_STOPPED_RUNLEVEL);
            looker.shutdown();
            ServiceLocatorFactory.getInstance().destroy(looker);
            looker = null;
@@ -347,7 +350,7 @@ public class LookupService {
     }
     
     public static boolean isIsaacStarted() {
-        return isInitialized() ? getService(RunLevelController.class).getCurrentRunLevel() >= ISAAC_STARTED_RUNLEVEL : false;
+        return isInitialized() ? getService(RunLevelController.class).getCurrentRunLevel() >= SL_L4_ISAAC_STARTED_RUNLEVEL : false;
     }
     
     public static boolean isInitialized() {

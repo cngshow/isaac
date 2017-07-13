@@ -67,7 +67,7 @@ import gov.vha.isaac.ochre.model.waitfree.CasSequenceObjectMap;
  * @author kec
  */
 @Service
-@RunLevel(value = 0)
+@RunLevel(value = LookupService.SL_L0)
 @Rank(value = 10)
 public class SememeProvider implements SememeService {
 

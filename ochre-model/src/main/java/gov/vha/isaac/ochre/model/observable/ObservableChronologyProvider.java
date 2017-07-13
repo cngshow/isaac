@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.model.observable;
 
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -41,7 +42,7 @@ import org.jvnet.hk2.annotations.Service;
  * @author kec
  */
 @Service
-@RunLevel(value = 1)
+@RunLevel(value = LookupService.SL_L1)
 public class ObservableChronologyProvider
         implements ObservableChronologyService, ChronologyChangeListener {
 
@@ -51,11 +52,11 @@ public class ObservableChronologyProvider
     private final UUID listenerUuid = UUID.randomUUID();
 
 
-    ConcurrentReferenceHashMap<Integer, ObservableConceptChronology<?>> observableConceptMap = new ConcurrentReferenceHashMap<>(
+    ConcurrentReferenceHashMap<Integer, ObservableConceptChronology> observableConceptMap = new ConcurrentReferenceHashMap<>(
             ConcurrentReferenceHashMap.ReferenceType.STRONG,
             ConcurrentReferenceHashMap.ReferenceType.WEAK);
 
-    ConcurrentReferenceHashMap<Integer, ObservableSememeChronology<?>> observableSememeMap = new ConcurrentReferenceHashMap<>(
+    ConcurrentReferenceHashMap<Integer, ObservableSememeChronology> observableSememeMap = new ConcurrentReferenceHashMap<>(
             ConcurrentReferenceHashMap.ReferenceType.STRONG,
             ConcurrentReferenceHashMap.ReferenceType.WEAK);
 

@@ -3,6 +3,7 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,13 +22,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import javax.inject.Singleton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -76,6 +81,7 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -89,6 +95,7 @@ import gov.vha.isaac.ochre.model.configuration.EditCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
+import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
@@ -741,9 +748,67 @@ public class Frills implements DynamicSememeColumnUtility {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
 		} else {
-			log.warn("Sememe Index not available - can't lookup VUID");
+			final String msg = "Sememe Index not available - can't lookup VUID " + vuID;
+			log.error(msg);
+			throw new RuntimeException(msg);
 		}
 		return Optional.empty();
+	}
+
+	/**
+	 * Returns the nids of all matching vuid sememes (if any found on view coordinate).
+	 * @param vuID
+	 * @param stampCoordinate
+	 * @return
+	 */
+	public static Set<Integer> getVuidSememeNidsForVUID(long vuID) {
+		final SememeIndexerBI si = LookupService.get().getService(SememeIndexerBI.class);
+		if (si == null) {
+			final String msg = "Sememe Index not available - can't lookup VUID " + vuID;
+			log.error(msg);
+			throw new RuntimeException(msg);
+		}
+
+		// StampCoordinate with LATEST ACTIVE_ONLY from all VHAT modules
+		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, 
+				TermAux.DEVELOPMENT_PATH.getConceptSequence());
+		final Set<Integer> vhatModules = Frills.getAllChildrenOfConcept(MetaData.VHAT_MODULES.getConceptSequence(), true, true);
+		final StampCoordinate stampCoordinate = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, 
+				ConceptSequenceSet.of(vhatModules), State.ACTIVE_ONLY_SET);
+
+		final Set<Integer> matchingVuidSememeNids = new HashSet<>();
+
+		final Predicate<Integer> filter = new Predicate<Integer>() {
+			@Override
+			public boolean test(Integer t) {
+				final Optional<SememeChronology<SememeVersion<?>>> sememeChronologyToCheck = (Optional<SememeChronology<SememeVersion<?>>>) Get.sememeService().getOptionalSememe(t);
+				if (sememeChronologyToCheck.isPresent()
+						&& sememeChronologyToCheck.get().getAssemblageSequence() == MetaData.VUID.getConceptSequence() // This check should be redundant
+						) {
+					final SememeChronology<StringSememeImpl> existingVuidSememe = (SememeChronology<StringSememeImpl>)((SememeChronology)sememeChronologyToCheck.get());
+					Optional<LatestVersion<StringSememeImpl>> latestVersionOptional = existingVuidSememe.getLatestVersion(StringSememeImpl.class, stampCoordinate);
+
+					if (latestVersionOptional.isPresent()) {
+						// TODO do we care about contradictions?
+						StringSememeImpl sememeVersion = latestVersionOptional.get().value();
+						if ((vuID + "").equals(sememeVersion.getString())) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		};
+		//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
+		List<SearchResult> results = si.query(vuID + " ", true,
+				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MIN_VALUE, filter);
+		if (results.size() > 0) {
+			for (SearchResult result : results) {
+				matchingVuidSememeNids.add(result.getNid());
+			}
+		}
+
+		return Collections.unmodifiableSet(matchingVuidSememeNids);
 	}
 
 	/**
@@ -1729,11 +1794,16 @@ public class Frills implements DynamicSememeColumnUtility {
 	
 	/**
 	 * Returns the set of terminology types (which are concepts directly under {@link MetaData#MODULE} for any concept 
-	 * or sememe in the system as a set of concept sequences
+	 * or sememe in the system as a set of concept sequences.
+	 * 
+	 * Also, if the concept is a child of {@link MetaData#ISAAC_METADATA}, then it will also be marked with the terminology type 
+	 * of {@link MetaData#ISAAC_MODULE} - even if there is no concept version that exists using the ISAAC_MODULE module - this gives
+	 * an easy way to identify "metadata" concepts.
+	 * 
 	 * @param oc - the object to read modules for
 	 * @param coord - if null, return the modules ignoring coordinates.  If not null, only return modules visible on the given coordinate
 	 */
-	public static HashSet<Integer> getTerminologyTypes(ObjectChronology<? extends StampedVersion> oc, StampCoordinate coord)
+	public static HashSet<Integer> getTerminologyTypes(ConceptChronology<? extends StampedVersion> oc, StampCoordinate coord)
 	{
 		HashSet<Integer> modules = new HashSet<>();
 		HashSet<Integer> terminologyTypes = new HashSet<>();
@@ -1744,6 +1814,10 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				modules.add(Get.stampService().getModuleSequenceForStamp(stampSequence));
 			});
+			if (Get.taxonomyService().wasEverKindOf(oc.getConceptSequence(), MetaData.ISAAC_METADATA.getConceptSequence()))
+			{
+				terminologyTypes.add(MetaData.ISAAC_MODULE.getConceptSequence());
+			}
 		}
 		else
 		{
@@ -1755,6 +1829,11 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				modules.add(version.getModuleSequence());
 			});
+			if (Get.taxonomyService().isKindOf(oc.getConceptSequence(), MetaData.ISAAC_METADATA.getConceptSequence(), 
+					TaxonomyCoordinates.getStatedTaxonomyCoordinate(coord, LanguageCoordinates.getUsEnglishLanguagePreferredTermCoordinate())))  //lang doesn't matter for our use case.
+			{
+				terminologyTypes.add(MetaData.ISAAC_MODULE.getConceptSequence());
+			}
 		}
 		
 		for (int moduleSequence : modules)
@@ -1780,7 +1859,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
-	 * Walk up the module tree, looking for the module directly under MetaData.MODULE - return it if found, otherwise, return null.
+	 * Walk up the module tree, looking for the module concept sequence directly under MetaData.MODULE - return it if found, otherwise, return null.
 	 */
 	private static Integer findTermTypeConcept(int conceptModuleSequence)
 	{

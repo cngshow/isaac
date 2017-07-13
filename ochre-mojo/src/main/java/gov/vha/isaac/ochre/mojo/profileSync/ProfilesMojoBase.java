@@ -32,6 +32,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Parameter;
+
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.sync.SyncFiles;
 import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
@@ -45,7 +46,7 @@ import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
  * 
  * To prevent prompting during automated runs - set the system property 'profileSyncNoPrompt=true'
  * To set the username via system property - set 'profileSyncUsername=username'
- * To set the password via system property - set 'profileSyncPassword=password'
+ * To set the password via system property - set 'profileSyncAccessCode=password'
  * 
  * To enable authentication without prompts, using public keys - set both of the following 
  *   'profileSyncUsername=username'
@@ -68,7 +69,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 	public static final String PROFILE_SYNC_USERNAME_PROPERTY = "profileSyncUsername";
 	
 	// Allow setting the password via a system property
-	public static final String PROFILE_SYNC_PWD_PROPERTY = "profileSyncPassword";
+	public static final String PROFILE_SYNC_ACCESS_CODE_PROPERTY = "profileSyncAccessCode";
 	
 	private boolean disableHintGiven = false;
 	
@@ -100,7 +101,7 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 	 * The password to use for remote operations
 	 */
 	@Parameter (required = false)
-	private String profileSyncPassword = null;
+	private String profileSyncAccessCode = null;
 	
 	private static String username = null;
 	private static char[] pwd = null;
@@ -248,16 +249,16 @@ public abstract class ProfilesMojoBase extends QuasiMojo
 		return username;
 	}
 	
-	protected char[] getPassword() throws MojoExecutionException //protected String getPassword() throws MojoExecutionException
+	protected char[] getPassword() throws MojoExecutionException
 	{
 		if (pwd == null)
 		{
-			pwd = System.getProperty(PROFILE_SYNC_PWD_PROPERTY).toCharArray();
+			pwd = System.getProperty(PROFILE_SYNC_ACCESS_CODE_PROPERTY).toCharArray();
 			
 			//still blank, try the passed in param
-			if (pwd.length == 0) //if (StringUtils.isBlank(pwd))
+			if (pwd.length == 0)
 			{
-				pwd = profileSyncPassword.toCharArray();
+				pwd = profileSyncAccessCode.toCharArray();
 			}
 			
 			//still no password, prompt if allowed

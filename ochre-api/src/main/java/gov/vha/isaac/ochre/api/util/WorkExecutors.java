@@ -66,7 +66,7 @@ import gov.vha.isaac.ochre.api.LookupService;
  */
 
 @Service
-@RunLevel(value = -2)
+@RunLevel(value = LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL)
 public class WorkExecutors
 {
 	private ForkJoinPool forkJoinExecutor_;
@@ -243,7 +243,7 @@ public class WorkExecutors
 	public static WorkExecutors get()
 	{
 		log.debug("In WorkExectors.get()");
-		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.WORKERS_STARTED_RUNLEVEL)
+		if (LookupService.isInitialized() && LookupService.getCurrentRunLevel() >= LookupService.SL_NEG_2_WORKERS_STARTED_RUNLEVEL)
 		{
 			log.debug("Handing back the HK2 managed instance");
 			return Get.workExecutors();

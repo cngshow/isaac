@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
+
 import javax.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,8 +45,8 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -68,6 +70,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.api.tree.TreeNodeVisitData;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLongImpl;
@@ -85,8 +88,8 @@ import gov.vha.isaac.ochre.query.provider.lucene.PerFieldAnalyzer;
  * @author <a href="mailto:daniel.armbrust.list@gmail.com">Dan Armbrust</a>
  */
 @Service(name = "sememe indexer")
-@RunLevel(value = 2)
-public class SememeIndexer extends LuceneIndexer
+@RunLevel(value = LookupService.SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL)
+public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 {
 	private static final Logger log = LogManager.getLogger();
 
@@ -333,18 +336,10 @@ public class SememeIndexer extends LuceneIndexer
 		}
 	}
 
-	/**
-	 * @param queryDataLower
-	 * @param queryDataLowerInclusive
-	 * @param queryDataUpper
-	 * @param queryDataUpperInclusive
-	 * @param sememeConceptSequence (optional) limit the search to the specified assemblage
-	 * @param searchColumns (optional) limit the search to the specified columns of attached data.  May ONLY be provided if 
-	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
-	 * @param sizeLimit
-	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
-	 * @return
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#queryNumericRange(gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long)
 	 */
+	@Override
 	public final List<SearchResult> queryNumericRange(final DynamicSememeData queryDataLower, final boolean queryDataLowerInclusive,
 			final DynamicSememeData queryDataUpper, final boolean queryDataUpperInclusive, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
 			Long targetGeneration)
@@ -362,43 +357,39 @@ public class SememeIndexer extends LuceneIndexer
 		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
 	}
 
-	/**
-	 * A convenience method.
-	 * 
-	 * Search DynamicSememeData columns, treating them as text - and handling the search in the same mechanism as if this were a
-	 * call to the method {@link LuceneIndexer#query(String, boolean, Integer, int, long)}
-	 * 
-	 * Calls the method {@link #query(DynamicSememeDataBI, Integer, boolean, Integer[], int, long) with a null parameter for
-	 * the searchColumns, and wraps the queryString into a DynamicSememeString.
-	 * 
-	 * @param queryString
-	 * @param assemblageNid
-	 * @param prefixSearch
-	 * @param sizeLimit
-	 * @param targetGeneration
-	 * @return
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long)
 	 */
 	@Override
 	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration)
 	{
 		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration);
 	}
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
+	 */
+	@Override
+	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+	{
+		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration, filter);
+	}
 
-	/**
-	 * 
-	 * @param queryData - The query data object (string, int, etc)
-	 * @param sememeConceptSequence (optional) limit the search to the specified assemblage
-	 * @param searchColumns (optional) limit the search to the specified columns of attached data.  May ONLY be provided if 
-	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
-	 * @param prefixSearch see {@link LuceneIndexer#query(String, boolean, ComponentProperty, int, Long)} for a description.  Only applicable
-	 * when the queryData type is string.  Ignored for all other data types.
-	 * @param sizeLimit
-	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
-	 * @return
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long)
 	 */
 	//TODO fix this limitation on the column restriction...
+	@Override
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
 			Integer[] searchColumns, int sizeLimit, Long targetGeneration)
+	{
+		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration, (Predicate<Integer>)null);
+	}
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
+	 */
+	@Override
+	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
 	{
 		Query q = null;
 
@@ -421,7 +412,7 @@ public class SememeIndexer extends LuceneIndexer
 					}
 					queryString = queryString.replaceAll("\\s-", " \\\\-");
 					log.debug("Modified search string is: ''{}''", queryString);
-					return buildTokenizedStringQuery(queryString, columnName, prefixSearch);
+					return buildTokenizedStringQuery(queryString, columnName, prefixSearch, false);
 				}
 			}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		}
@@ -479,32 +470,13 @@ public class SememeIndexer extends LuceneIndexer
 				throw new RuntimeException("unexpected error, see logs");
 			}
 		}
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, filter);
 	}
-	
-	/**
-	 * Search for matches to the specified nid. Note that in the current implementation, you will only find matches to sememes
-	 * of type {@link SememeType#COMPONENT_NID} or {@link SememeType#LOGIC_GRAPH}.
-	 * 
-	 * This only supports nids, not sequences.
-	 * 
-	 * If searching a component nid sememe, this will only match on the attached component nid value.  It will not match 
-	 * on the assemblage concept, nor the referenced component nid.  Those can be found directly via standard sememe APIs.
-	 * If searching a logic graph sememe, it will find a match in any concept that is involved in the graph, except for the 
-	 * root concept.
-	 * 
-	 * @param nid the id reference to search for
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within. If null,
-	 * searches all indexed content. This would be set to the concept sequence like {@link MetaData#EL_PLUS_PLUS_STATED_FORM_ASSEMBLAGE}
-	 * @param searchColumns (optional) limit the search to the specified columns of attached data.  May ONLY be provided if 
-	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
-	 * @param sizeLimit The maximum size of the result list.
-	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need
-	 * to wait for a target generation. Long.MAX_VALUE can be passed in to force this query to wait until any in-progress
-	 * indexing operations are completed - and then use the latest index.
-	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
-	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
+
+	/* (non-Javadoc)
+	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(int, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long)
 	 */
+	@Override
 	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit, Long targetGeneration)
 	{
 		Query q = new QueryWrapperForColumnHandling()

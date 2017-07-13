@@ -35,6 +35,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.index.SearchResult;
+import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUtilityImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
@@ -111,7 +112,7 @@ public class AssociationUtilities
 	{
 		ArrayList<AssociationInstance> result = new ArrayList<>();
 
-		SememeIndexer indexer = LookupService.getService(SememeIndexer.class);
+		SememeIndexerBI indexer = LookupService.getService(SememeIndexer.class);
 		if (indexer == null)
 		{
 			throw new RuntimeException("Required index is not available");

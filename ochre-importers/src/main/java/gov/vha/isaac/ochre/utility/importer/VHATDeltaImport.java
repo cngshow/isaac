@@ -18,6 +18,9 @@ import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -139,10 +142,15 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			JAXBContext jaxbContext = JAXBContext.newInstance(Terminology.class);
 
+			XMLInputFactory xif = XMLInputFactory.newFactory();
+	        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+	        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
+	        
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			terminology = (Terminology) jaxbUnmarshaller.unmarshal(new StringReader(xmlData));
+			terminology = (Terminology) jaxbUnmarshaller.unmarshal(xsr);
 		}
-		catch (JAXBException e)
+		catch (JAXBException | XMLStreamException e)
 		{
 			LOG.error("Unexpected error parsing submitted VETs XML.", e);
 			throw new IOException("Unexpected error parsing the xml.  Details: " + e.toString());
