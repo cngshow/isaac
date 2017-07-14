@@ -22,7 +22,7 @@ package gov.vha.isaac.ochre.api;
 /**
  * This is the master role file.  Both Prisme and IsaacRest should refer to this file.
  * @author cshupp
- *
+ * git sucks
  */
 public enum PrismeRole {
 
