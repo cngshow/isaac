@@ -80,11 +80,6 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
 	private static final String FIELD_INDEXED_MODULE_STRING_VALUE = "_module_content_";
     private static final String FIELD_INDEXED_PATH_STRING_VALUE = "_path_content_";
     
-    protected enum StampType
-    {
-    	MODULE, PATH, ALL;
-    }
-
     // for HK2 only
     private StampIndexer() throws IOException {
         super("stamps");
@@ -218,17 +213,8 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
     public final List<SearchResult> query(String query, UUID stampUuid, int sizeLimit, Long targetGeneration)
     {
     	ConceptChronology<? extends ConceptVersion<?>> stampCC = Get.conceptService().getConcept(stampUuid);
-    	// TODO: defaults to 'module' until implementation details are discussed further
-    	String field = FIELD_INDEXED_MODULE_STRING_VALUE;
-    	if (Get.taxonomyService().wasEverKindOf(stampCC.getNid(), MetaData.PATH.getNid()))
-    	{
-    		field = FIELD_INDEXED_PATH_STRING_VALUE;
-    	}
-    	else if (Get.taxonomyService().wasEverKindOf(stampCC.getNid(), MetaData.MODULE.getNid()))
-    	{
-    		field = FIELD_INDEXED_MODULE_STRING_VALUE;
-    	}
-    	log.debug("Querying using {} for value {}", field, stampUuid);
+    	String field = getFieldName(stampCC.getConceptSequence());
+    	log.debug("Querying using {} for value {}", field, stampUuid.toString());
         return search(buildTokenizedStringQuery(query, field, false, false), sizeLimit, targetGeneration, null);
     }
 
@@ -238,11 +224,28 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
     @Override
 	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
 			Long targetGeneration) 
-   {
+    {
+    	List<SearchResult> = new ArrayList<>();
+    	String field = getFieldName(stampCC.getConceptSequence());
     	return new java.util.ArrayList<>();
     	/*return search(
                 restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, false), sememeConceptSequence),
                 sizeLimit, targetGeneration, null);*/
 	}
+    
+    private String getFieldName(int nidOrSeq)
+    {
+    	// TODO: Details to discussed further
+    	String field = "bogus";
+    	if (Get.taxonomyService().wasEverKindOf(nidOrSeq, MetaData.PATH.getNid()))
+    	{
+    		field = FIELD_INDEXED_PATH_STRING_VALUE;
+    	}
+    	else if (Get.taxonomyService().wasEverKindOf(nidOrSeq, MetaData.MODULE.getNid()))
+    	{
+    		field = FIELD_INDEXED_MODULE_STRING_VALUE;
+    	}
+    	return field;
+    }
 
 }
