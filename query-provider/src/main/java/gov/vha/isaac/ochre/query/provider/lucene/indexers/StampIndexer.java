@@ -1,6 +1,8 @@
 package gov.vha.isaac.ochre.query.provider.lucene.indexers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -213,30 +215,64 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
     public final List<SearchResult> query(String query, UUID stampUuid, int sizeLimit, Long targetGeneration)
     {
     	ConceptChronology<? extends ConceptVersion<?>> stampCC = Get.conceptService().getConcept(stampUuid);
-    	String field = getFieldName(stampCC.getConceptSequence());
-    	log.debug("Querying using {} for value {}", field, stampUuid.toString());
-        return search(buildTokenizedStringQuery(query, field, false, false), sizeLimit, targetGeneration, null);
+    	log.debug("Querying for {}.", stampUuid.toString());
+    	return query(query, false, new Integer[]{stampCC.getConceptSequence()}, sizeLimit, targetGeneration);
     }
 
 	/**
-	 * This shouldn't be used, added for interface
+	 * Iterate through the various STAMP field options based on the supplied sememe sequences.
+	 * 
+	 * @param query - The query to apply
+	 * @param prefixSearch - Not used, but normally if true, utilize a search algorithm that is optimized for prefix searching, such as the searching 
+     * that would be done to implement a type-ahead style search.  Does not use the Lucene Query parser.  Every term (or token) 
+     * that is part of the query string will be required to be found in the result. 
+     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within, such as
+     * {@link MetaData#MODULE} and {@link MetaData#PATH} for example. If null or empty searches all indexed content.
+     * @param sizeLimit - The maximum size of the result list.
+     * @param targetGeneration - The target generation that must be included in the
+     * search or Long.MIN_VALUE if there is no need to wait for a target
+     * generation. Long.MAX_VALUE can be passed in to force this query to wait
+     * until any in progress indexing operations are completed - and then use
+     * the latest index.
+     * @return A List of <code>SearchResult</codes> that contains the nid of the
+     * component that matched, and the score of that match relative to other
+     * matches.
 	 */
     @Override
 	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
 			Long targetGeneration) 
     {
-    	List<SearchResult> = new ArrayList<>();
-    	String field = getFieldName(stampCC.getConceptSequence());
-    	return new java.util.ArrayList<>();
-    	/*return search(
-                restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, false), sememeConceptSequence),
-                sizeLimit, targetGeneration, null);*/
+    	List<SearchResult> results = new ArrayList<>();
+    	List<String> fields = new ArrayList<>();
+    	
+    	// If not supplied, search all indexed content
+    	if (sememeConceptSequence == null || sememeConceptSequence.length < 1)
+    	{
+    		sememeConceptSequence = new Integer[]
+    				{ MetaData.MODULE.getConceptSequence(), MetaData.PATH.getConceptSequence() };
+    	}
+    	
+    	// Search all sememe types, in case both PATH and MODULE (etc.) are supplied
+    	for (Integer seq : sememeConceptSequence)
+    	{
+    		if (seq != null)
+    		{
+    			Optional<String> field = getFieldName(seq.intValue());
+        		if (field.isPresent() && !fields.contains(field.get()))
+        		{
+        			fields.add(field.get());
+        			log.debug("Querying using field {}.", field.get());
+        			results.addAll(search(buildTokenizedStringQuery(query, field.get(), prefixSearch, false), 
+        					sizeLimit, targetGeneration, null));
+        		}
+    		}
+    	}
+    	return results;
 	}
     
-    private String getFieldName(int nidOrSeq)
+    private Optional<String> getFieldName(int nidOrSeq)
     {
-    	// TODO: Details to discussed further
-    	String field = "bogus";
+    	String field = null;
     	if (Get.taxonomyService().wasEverKindOf(nidOrSeq, MetaData.PATH.getNid()))
     	{
     		field = FIELD_INDEXED_PATH_STRING_VALUE;
@@ -245,7 +281,11 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
     	{
     		field = FIELD_INDEXED_MODULE_STRING_VALUE;
     	}
-    	return field;
+    	else
+    	{
+    		log.warn("Nid or sequence {} is not valid to determine index field for stamp search.", nidOrSeq);
+    	}
+    	return Optional.ofNullable(field);
     }
 
 }
