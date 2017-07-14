@@ -47,6 +47,7 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 
 public class ConverterUUID
 {
+	//TODO this needs to be made non static / non global, now that is is being pulled into some runtime use cases...
 	public static boolean disableUUIDMap_ = false;  //Some loaders need to disable this due to memory constraints
 	private static Hashtable<UUID, String> masterUUIDMap_ = new Hashtable<UUID, String>();
 	private static UUID namespace_ = null;
