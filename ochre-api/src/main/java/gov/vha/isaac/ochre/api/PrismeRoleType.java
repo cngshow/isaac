@@ -21,7 +21,7 @@ package gov.vha.isaac.ochre.api;
 
 public enum PrismeRoleType {
 	/*
-	 * git sucks
+	 * 
 	 * General role type.  Catch all.  Use this in most cases.
 	 */
 	GENERAL,
