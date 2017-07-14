@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.api;
 
 /**
  * This is the master role file.  Both Prisme and IsaacRest should refer to this file.
+ * Note:  The string for myName should be unique relative to all Roles.
  * @author cshupp
  * 
  */
