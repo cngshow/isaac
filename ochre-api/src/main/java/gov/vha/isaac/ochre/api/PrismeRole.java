@@ -33,7 +33,6 @@ public enum PrismeRole {
 	EDITOR(PrismeRoleType.MODELING, "editor"),
 	REVIEWER(PrismeRoleType.MODELING, "reviewer"),
 	APPROVER(PrismeRoleType.MODELING, "approver"),
-	MANAGER(PrismeRoleType.GENERAL, "manager"),
 	VUID_REQUESTOR(PrismeRoleType.GENERAL, "vuid_requestor"),
 	NTRT(PrismeRoleType.GENERAL, "ntrt"),
 	DEPLOYMENT_MANAGER(PrismeRoleType.DEPLOYMENT, "deployment_manager");
