@@ -101,7 +101,7 @@ import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 /**
  * Goal which converts VHAT data into the workbench jbin format
  * 
- * Note yet handled:
+ * Not yet handled:
  * 1) VUID validation
  * 2) VUID auto assignment
  * 3) moveFromConceptCode
@@ -143,10 +143,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			JAXBContext jaxbContext = JAXBContext.newInstance(Terminology.class);
 
 			XMLInputFactory xif = XMLInputFactory.newFactory();
-	        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-	        XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
-	        
+			xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+			xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+			XMLStreamReader xsr = xif.createXMLStreamReader(new StringReader(xmlData));
+			
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 			terminology = (Terminology) jaxbUnmarshaller.unmarshal(xsr);
 		}
@@ -164,9 +164,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		extendedDescriptionTypeNameMap.put("synonym", UUID.fromString("11af6808-1ee9-5571-a169-0dac0c74c579"));
 		extendedDescriptionTypeNameMap.put("vista name", UUID.fromString("72518b09-d5dd-5af0-bd41-0c7e46dfe85e"));
 		
-		headerCheck(terminology);
-		vuidCheck(terminology);
-		requiredChecks(terminology);
+		ConverterUUID.configureNamespace(TermAux.VHAT_MODULES.getPrimordialUuid());
 		
 		try
 		{
@@ -182,7 +180,18 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				Get.identifierService().getConceptSequenceForUuids(module), Get.identifierService().getConceptSequenceForUuids(path));
 			
 			logicReadCoordinate_ = LogicCoordinates.getStandardElProfile();
-			
+		}
+		catch (Exception e)
+		{
+			throw new IOException("Unexpected error setting up", e);
+		}
+		
+		headerCheck(terminology);
+		vuidCheck(terminology);
+		requiredChecks(terminology);
+		
+		try
+		{
 			importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 			LOG.info("Import Util configured");
 			createNewProperties(terminology);
@@ -204,6 +213,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		catch (Exception e)
 		{
 			throw new IOException("Unexpected error setting up", e);
+		}
+		finally
+		{
+			ConverterUUID.clearCache();
 		}
 	}
 
@@ -369,12 +382,17 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new IOException("Concept code must be provided on every concept where action is update or remove or none.");
 					}
-					else
+					else if (cc.getAction() != ActionType.ADD)
 					{
 						conceptUUID = findConcept(cc.getCode()).orElseThrow(() -> new RuntimeException("Cannot locate concept for code '" + cc.getCode() + "'"));
 					}
 					if (cc.getAction() == ActionType.ADD)
 					{
+						//TODO add already-exists checks for other things - need to figure out why this isn't working
+						if (findConcept(cc.getCode()).isPresent())
+						{
+							throw new RuntimeException("Add was specified for the concept '" + cc.getCode() + "' but that concept already exists!");
+						}
 						conceptUUID = createNewConceptUuid(cc.getCode());
 					}
 					if (cc.getDesignations() != null)
@@ -522,9 +540,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 										.getConceptSequenceForUuids(annotations_.getProperty(p.getTypeName()).getUUID())))
 								{
 									throw new IOException("The property '" + p.getTypeName() + "' isn't in the system - from " + cc.getCode() 
-										+ " and it wasn't listed as a new property");
+										+ " and it wasn't listed as a new property.  Expected to find " + annotations_.getProperty(p.getTypeName()).getUUID());
 								}
-								
 							}
 							if (p.getAction() == null)
 							{
@@ -564,6 +581,16 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						for (Relationship r : cc.getRelationships().getRelationship())
 						{
+							if (associations_.getProperty(r.getTypeName()) == null)
+							{
+								associations_.addProperty(new PropertyAssociation(null, r.getTypeName(), null, null, "doesn't-matter", false));
+								if (!Get.conceptService().hasConcept(Get.identifierService()
+										.getConceptSequenceForUuids(associations_.getProperty(r.getTypeName()).getUUID())))
+								{
+									throw new IOException("The association '" + r.getTypeName() + "' isn't in the system - from " + cc.getCode() 
+										+ " and it wasn't listed as a new association.  Expected to find " + associations_.getProperty(r.getTypeName()).getUUID());
+								}
+							}
 							if (r.getAction() == null)
 							{
 								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
@@ -628,9 +655,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					concept = ComponentReference.fromConcept(importUtil_.createConcept(createNewConceptUuid(cc.getCode()), null, 
 						cc.isActive() ? State.ACTIVE : State.INACTIVE, null));
 					//TODO if vuid == null, autoassign
-					importUtil_.addStaticStringAnnotation(concept, cc.getVUID().toString(), annotations_.getProperty("VUID").getUUID(), State.ACTIVE);
+					importUtil_.addStaticStringAnnotation(concept, cc.getVUID().toString(), MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 					importUtil_.addStaticStringAnnotation(concept, StringUtils.isBlank(cc.getCode()) ? cc.getVUID().toString() : cc.getCode(), 
-						annotations_.getProperty("Code").getUUID(), State.ACTIVE);
+						MetaData.CODE.getPrimordialUuid(), State.ACTIVE);
 					break;
 				case NONE:
 					//noop
@@ -817,9 +844,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						d.isActive() ? State.ACTIVE : State.INACTIVE));
 					
 					//TODO if vuid == null, autoassign
-					importUtil_.addStaticStringAnnotation(descRef, d.getVUID().toString(), annotations_.getProperty("VUID").getUUID(), State.ACTIVE);
+					importUtil_.addStaticStringAnnotation(descRef, d.getVUID().toString(), MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 					importUtil_.addStaticStringAnnotation(descRef, StringUtils.isBlank(d.getCode()) ? d.getVUID().toString() : d.getCode(), 
-						annotations_.getProperty("Code").getUUID(), State.ACTIVE);
+						MetaData.CODE.getPrimordialUuid(), State.ACTIVE);
 					
 					break;
 				case NONE:
@@ -876,7 +903,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	{
 		return Get.sememeService().getDescriptionsForComponent(Get.identifierService().getNidForUuids(concept)).filter(desc ->
 		{
-			return findPropertySememe(desc.getPrimordialUuid(),  annotations_.getProperty("Code").getUUID(), descriptionCode).isPresent();
+			return findPropertySememe(desc.getPrimordialUuid(),  MetaData.CODE.getPrimordialUuid(), descriptionCode).isPresent();
 		}).findAny().<UUID>map(desc -> desc.getPrimordialUuid());
 	}
 	
@@ -893,8 +920,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				@SuppressWarnings("rawtypes")
 				SememeChronology sc = Get.sememeService().getSememe(sr.getNid());
 				@SuppressWarnings("unchecked")
-				Optional<StringSememe<?>> ss = sc.getLatestVersion(StringSememe.class, readCoordinate_);
-				if (ss.isPresent() && ss.get().getState() == State.ACTIVE && ss.get().getString().equals(conceptCode))
+				Optional<LatestVersion<StringSememe<?>>> ss = sc.getLatestVersion(StringSememe.class, readCoordinate_);
+				if (ss.isPresent() && ss.get().value().getState() == State.ACTIVE && ss.get().value().getString().equals(conceptCode))
 				{
 					candidates.add(sc);
 				}
@@ -1046,20 +1073,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			Optional<SememeChronology<? extends SememeVersion<?>>> logicGraph = Frills.getStatedDefinitionChronology(concept.getNid(), logicReadCoordinate_);
 			
-			LogicalExpression le = null;
-			if (gatheredisA.size() > 0)
-			{
-				ArrayList<ConceptAssertion> cas = new ArrayList<>(gatheredisA.size());
-				
-				for (UUID uuid : gatheredisA)
-				{
-					cas.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(uuid), leb));
-				}
-				
-				NecessarySet(And(cas.toArray(new Assertion[gatheredisA.size()])));
-				le = leb.build();
-			}
-			
+			LogicalExpression le = null;			
 			if (logicGraph.isPresent())
 			{
 				ArrayList<ConceptAssertion> cas = new ArrayList<>(gatheredisA.size());
@@ -1108,7 +1122,19 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			}
 			else
 			{
-				importUtil_.addRelationshipGraph(concept, null, le, true, null,  null);
+				if (gatheredisA.size() > 0)
+				{
+					ArrayList<ConceptAssertion> cas = new ArrayList<>(gatheredisA.size());
+					
+					for (UUID uuid : gatheredisA)
+					{
+						cas.add(ConceptAssertion(Get.identifierService().getConceptSequenceForUuids(uuid), leb));
+					}
+					
+					NecessarySet(And(cas.toArray(new Assertion[gatheredisA.size()])));
+					le = leb.build();
+					importUtil_.addRelationshipGraph(concept, null, le, true, null,  null);
+				}
 			}
 		}	
 	}
