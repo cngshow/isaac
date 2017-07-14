@@ -54,8 +54,9 @@ public class SimpleTest
 			lt.execute();
 			new IndexTermstore().execute();
 			VHATDeltaImport i = new VHATDeltaImport(
-				new String(Files.readAllBytes(Paths.get("src/test/resources/VHAT XML Update files/NTRT Allergies Sept 19, 2013.xml"))),
-				TermAux.USER.getPrimordialUuid(), TermAux.ISAAC_MODULE.getPrimordialUuid(), TermAux.DEVELOPMENT_PATH.getPrimordialUuid(), new File("target"));
+				//new String(Files.readAllBytes(Paths.get("src/test/resources/VHAT XML Update files/NTRT Allergies Sept 19, 2013.xml"))),
+				new String(Files.readAllBytes(Paths.get("src/test/resources/VHAT XML Update files/new domain.xml"))),
+				TermAux.USER.getPrimordialUuid(), TermAux.VHAT_EDIT.getPrimordialUuid(), TermAux.DEVELOPMENT_PATH.getPrimordialUuid(), new File("target"));
 		}
 		catch(Exception e)
 		{

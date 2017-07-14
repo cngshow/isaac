@@ -347,9 +347,10 @@ public class IBDFCreationUtility
 		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, terminologyPathSeq_);
 		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
 		
-		
-		//If both modules are specified, use the parent grouping module.  If not, use the module as determined above.
-		ConverterUUID.configureNamespace(module_.getPrimordialUuid());
+		if (ConverterUUID.getNamespace() == null)
+		{
+			throw new RuntimeException("Namespace not configured!");
+		}
 		
 		writer_ = new MultipleDataWriterService(Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
 		
@@ -1501,7 +1502,10 @@ public class IBDFCreationUtility
 	
 	public void registerDynamicSememeColumnInfo(UUID sememeUUID, DynamicSememeColumnInfo[] columnInfo)
 	{
-		refexAllowedColumnTypes_.put(sememeUUID, columnInfo);
+		if (refexAllowedColumnTypes_ != null)
+		{
+			refexAllowedColumnTypes_.put(sememeUUID, columnInfo);
+		}
 	}
 	
 	/**
