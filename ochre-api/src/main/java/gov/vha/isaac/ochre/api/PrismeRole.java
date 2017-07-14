@@ -31,7 +31,7 @@ public enum PrismeRole {
 	READ_ONLY(PrismeRoleType.MODELING, "read_only"),
 	EDITOR(PrismeRoleType.MODELING, "editor"),
 	REVIEWER(PrismeRoleType.MODELING, "reviewer"),
-	APRROVER(PrismeRoleType.MODELING, "approver"),
+	APPROVER(PrismeRoleType.MODELING, "approver"),
 	MANAGER(PrismeRoleType.GENERAL, "manager"),
 	VUID_REQUESTOR(PrismeRoleType.GENERAL, "vuid_requestor"),
 	NTRT(PrismeRoleType.GENERAL, "ntrt"),
