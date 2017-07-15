@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.TreeSet;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.inject.Singleton;
 
@@ -43,6 +45,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.collections.LruCache;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
@@ -1877,5 +1880,38 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Get all sememes for a specified component of specified assemblages restricted by SememeType
+	 * @param componentNid - referenced component nid of requested sememes
+	 * @param allowedAssemblageSequences - set of concept sequences of allowed assemblages
+	 * @param typesToExclude - set of SememeType restrictions 
+	 * @return
+	 */
+	public static Stream<SememeChronology<? extends SememeVersion<?>>> getSememesForComponentFromAssemblagesFilteredBySememeType(int componentNid, 
+			Set<Integer> allowedAssemblageSequences, Set<SememeType> typesToExclude) {
+		SememeSequenceSet sememeSequences = Get.sememeService().getSememeSequencesForComponentFromAssemblages(componentNid, allowedAssemblageSequences);
+		if (typesToExclude == null || typesToExclude.size() == 0) {
+			return sememeSequences.stream().mapToObj((int sememeSequence) -> Get.sememeService().getSememe(sememeSequence));
+		} else {
+			final ArrayList<SememeChronology<? extends SememeVersion<?>>> filteredList = new ArrayList<>();
+			for (PrimitiveIterator.OfInt it = sememeSequences.getIntIterator(); it.hasNext();) {
+				SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(it.nextInt());
+				boolean exclude = false;
+				for (SememeType type : typesToExclude) {
+					if (chronology.getSememeType() == type) {
+						exclude = true;
+						break;
+					}
+				}
+
+				if (! exclude) {
+					filteredList.add(chronology);
+				}
+			}
+
+			return filteredList.stream();
+		}
 	}
 }
