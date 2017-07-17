@@ -29,7 +29,7 @@ public enum PrismeRole {
 
 	SUPER_USER(PrismeRoleType.GENERAL, "super_user"),
 	ADMINISTRATOR(PrismeRoleType.GENERAL, "administrator"),
-	READ_ONLY(PrismeRoleType.MODELING, "read_only"),
+	READ_ONLY(PrismeRoleType.GENERAL, "read_only"),
 	EDITOR(PrismeRoleType.MODELING, "editor"),
 	REVIEWER(PrismeRoleType.MODELING, "reviewer"),
 	APPROVER(PrismeRoleType.MODELING, "approver"),
