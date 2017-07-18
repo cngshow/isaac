@@ -21,6 +21,7 @@ package gov.vha.isaac.ochre.api;
 
 /**
  * This is the master role file.  Both Prisme and IsaacRest should refer to this file.
+ * Note:  The string for myName should be unique relative to all Roles.
  * @author cshupp
  * 
  */
@@ -28,11 +29,10 @@ public enum PrismeRole {
 
 	SUPER_USER(PrismeRoleType.GENERAL, "super_user"),
 	ADMINISTRATOR(PrismeRoleType.GENERAL, "administrator"),
-	READ_ONLY(PrismeRoleType.MODELING, "read_only"),
+	READ_ONLY(PrismeRoleType.GENERAL, "read_only"),
 	EDITOR(PrismeRoleType.MODELING, "editor"),
 	REVIEWER(PrismeRoleType.MODELING, "reviewer"),
-	APRROVER(PrismeRoleType.MODELING, "approver"),
-	MANAGER(PrismeRoleType.GENERAL, "manager"),
+	APPROVER(PrismeRoleType.MODELING, "approver"),
 	VUID_REQUESTOR(PrismeRoleType.GENERAL, "vuid_requestor"),
 	NTRT(PrismeRoleType.GENERAL, "ntrt"),
 	DEPLOYMENT_MANAGER(PrismeRoleType.DEPLOYMENT, "deployment_manager");
@@ -53,5 +53,11 @@ public enum PrismeRole {
 	public PrismeRoleType getType() {
 		return myType;
 	}
+	
+    public static PrismeRole getEnum(String value) {
+        for(PrismeRole v : values())
+            if(v.toString().equalsIgnoreCase(value)) return v;
+        throw new IllegalArgumentException("No enum existst for " + value);
+    }
 
 }
