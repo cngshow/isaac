@@ -88,7 +88,7 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-@Service(name = "VHATIsAHasASynchronizingSememeBuildListener")
+@Service(name = "VHATIsAHasParentSynchronizingSememeBuildListener")
 @RunLevel(value = LookupService.SL_L3)
 public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuildListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingSememeBuildListener.class);

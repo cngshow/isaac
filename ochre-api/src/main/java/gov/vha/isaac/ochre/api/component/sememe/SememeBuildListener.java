@@ -29,6 +29,9 @@ package gov.vha.isaac.ochre.api.component.sememe;
 public abstract class SememeBuildListener implements SememeBuildListenerI {
 	private boolean enabled = true;
 
+	public SememeBuildListener() {
+	}
+
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI#getListenerName()
 	 */
