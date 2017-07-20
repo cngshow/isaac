@@ -4,7 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 where provided, and the git commit history.
 
 * 2017/07/?? - 4.12 - PENDING
-    *
+    * Implmenting vuid validation, vuid auto-generate, and moveFromConceptCode in the XML import.
 
 * 2017/07/13 - 4.11
     * Changes for ISAAC-rest API

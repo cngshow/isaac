@@ -99,7 +99,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      *         i.e. a string values changes in a concept which breaks backwards compatibility
      * Second digit indicates a minor change 
      *         i.e. a new concept is created which does not affect backwards compatibility
-     * Third digit indicates a minor change that does not affect backwards compatibility
+     * Third digit indicates a minor change that does not affect backwards compatibility - typically things like 
+     *         spelling corrections, etc.
      * 
      * DO NOT update if no change to concepts this file.
      * This version number is independent of release versioning.

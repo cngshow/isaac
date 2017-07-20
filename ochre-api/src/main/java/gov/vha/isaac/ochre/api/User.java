@@ -23,8 +23,11 @@ import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import gov.vha.isaac.ochre.api.util.StringUtils;
 
 /**
  * 
@@ -34,21 +37,26 @@ import java.util.UUID;
  *
  */
 public class User implements Principal {
+	private static final long ROLE_CHECK_INTERVAL = 5 * 60 * 1000;  //5 minutes
 	private final String name;
+	private final String ssoToken;
 	private final UUID id;
-	private final Set<UserRole> roles = new HashSet<>();
+	private Set<UserRole> roles = new HashSet<>();
+	private long rolesUpdatedAt;
 	
-	public User(String name, UUID id, Collection<UserRole> roles) {
-		this(name, id, roles != null ? roles.toArray(new UserRole[roles.size()]) : (UserRole[])null);
+	public User(String name, UUID id, String ssoToken, Collection<UserRole> roles) {
+		this(name, id, ssoToken, roles != null ? roles.toArray(new UserRole[roles.size()]) : (UserRole[])null);
 	}
-	public User(String name, UUID id, UserRole...roles) {
+	public User(String name, UUID id, String ssoToken, UserRole...roles) {
 		this.name = name;
 		this.id = id;
+		this.ssoToken = StringUtils.isBlank(ssoToken) ? null : ssoToken;
 		if (roles != null) {
 			for (UserRole role : roles) {
 				this.roles.add(role);
 			}
 		}
+		rolesUpdatedAt = System.currentTimeMillis();
 	}
 
 	/* (non-Javadoc)
@@ -64,6 +72,45 @@ public class User implements Principal {
 	public UUID getId() {
 		return id;
 	}
+	
+	/**
+	 * @return The SSOToken tied to this user.  May be not be present, when in non-prod mode and sso isn't on
+	 */
+	public Optional<String> getSSOToken()
+	{
+		return Optional.ofNullable(ssoToken);
+	}
+	
+	/**
+	 * Return true, if the roles are still good, or false, if a recheck against prisme is necessary.
+	 * @return
+	 */
+	public boolean rolesStillValid()
+	{
+		return (System.currentTimeMillis() - ROLE_CHECK_INTERVAL) > rolesUpdatedAt;
+	}
+	
+	public long rolesCheckedAt()
+	{
+		return rolesUpdatedAt;
+	}
+	
+	/**
+	 * Replace the existing roles with the provided roles
+	 * @param roles
+	 */
+	public void updateRoles(UserRole...roles)
+	{
+		HashSet<UserRole> newRoles = new HashSet<>();
+		if (roles != null) {
+			for (UserRole role : roles) {
+				newRoles.add(role);
+			}
+		}
+		this.roles = newRoles;
+		this.rolesUpdatedAt = System.currentTimeMillis();
+	}
+	
 	/**
 	 * @return
 	 */

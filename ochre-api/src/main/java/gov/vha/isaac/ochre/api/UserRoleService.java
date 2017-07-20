@@ -33,20 +33,20 @@ import org.jvnet.hk2.annotations.Contract;
 @Contract
 public interface UserRoleService {
 	/**
-	 * Return all user roles available for a given user
+	 * Return the user (which contains roles) for a given user id
 	 *
 	 * @param userId
 	 *            the user's id represented as a UUID
 	 * @return the user roles available to the user in question
 	 * 
-	 * This method should throw exception if the user has not already been cached
+	 * This method should throw exception if the user is not available
 	 */
-	Set<UserRole> getUserRoles(UUID userId);
+	User getUser(UUID userId);
 
 	/**
 	 * List out all user roles defined both in prism and in the UserRole enum
 	 *
 	 * @return all user roles defined in prism
 	 */
-	Set<UserRole> getAllUserRoles();
+	Set<UserRole> getAllPossibleUserRoles();
 }

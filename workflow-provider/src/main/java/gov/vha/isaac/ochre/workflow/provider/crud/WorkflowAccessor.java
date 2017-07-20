@@ -319,7 +319,7 @@ public class WorkflowAccessor {
 		Map<String, Set<AvailableAction>> applicableActions = new HashMap<>();
 
 		// Get User Roles
-		Set<UserRole> userRoles = workflowProvider_.getUserRoleStore().getUserRoles(userId);
+		Set<UserRole> userRoles = workflowProvider_.getUserRoleStore().getUser(userId).getRoles();
 
 		// Get Map of available actions (by initialState) that can be executed
 		// based on userRoles

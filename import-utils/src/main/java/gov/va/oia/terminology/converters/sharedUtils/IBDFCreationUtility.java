@@ -152,6 +152,23 @@ public class IBDFCreationUtility
 			}
 			throw new RuntimeException("Unknown description type UUID " + typeId);
 		}
+		
+		public static DescriptionType parse(int typeId)
+		{
+			if (MetaData.FULLY_SPECIFIED_NAME.getConceptSequence() == typeId || MetaData.FULLY_SPECIFIED_NAME.getNid() == typeId)
+			{
+				return FSN;
+			}
+			else if (MetaData.SYNONYM.getConceptSequence() == typeId || MetaData.SYNONYM.getNid() == typeId)
+			{
+				return SYNONYM;
+			}
+			if (MetaData.DEFINITION_DESCRIPTION_TYPE.getConceptSequence() == typeId || MetaData.DEFINITION_DESCRIPTION_TYPE.getNid() == typeId)
+			{
+				return DEFINITION;
+			}
+			throw new RuntimeException("Unknown description type " + typeId);
+		}
 	};
 	
 	private final int authorSeq_;
