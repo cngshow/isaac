@@ -27,12 +27,15 @@ import javax.inject.Singleton;
 import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
+import gov.vha.isaac.ochre.api.User;
 import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.UserRoleService;
 
 /**
  * A simple implementation of a role service that can be manually configured, for test (or any other) purpose.
  * It has no storage - must be manually configured with non-interface methods
+ * 
+ * This only exists in a non-test package, so it can also be used by integration-tests
  *
  * {@link SimpleUserRoleService}
  * 
@@ -44,7 +47,7 @@ import gov.vha.isaac.ochre.api.UserRoleService;
 public class SimpleUserRoleService implements UserRoleService {
 	
 	/**  The user role map  (for Unit Testing) */
-	private Map<UUID, Set<UserRole>> userRoleMap = new HashMap<>();
+	private Map<UUID, User> userMap = new HashMap<>();
 
 	/**  The definition roles. */
 	private Set<UserRole> definitionRoles = new HashSet<>();
@@ -58,19 +61,10 @@ public class SimpleUserRoleService implements UserRoleService {
 
 	/**
 	 * 
-	 * @see gov.vha.isaac.ochre.api.UserRoleService#getUserRoles(java.util.UUID)
+	 * @see gov.vha.isaac.ochre.api.UserRoleService#getAllPossibleUserRoles()
 	 */
 	@Override
-	public Set<UserRole> getUserRoles(UUID userId) {
-		return userRoleMap.get(userId);
-	}
-
-	/**
-	 * 
-	 * @see gov.vha.isaac.ochre.api.UserRoleService#getAllUserRoles()
-	 */
-	@Override
-	public Set<UserRole> getAllUserRoles() {
+	public Set<UserRole> getAllPossibleUserRoles() {
 		return definitionRoles;
 	}
 	
@@ -79,8 +73,13 @@ public class SimpleUserRoleService implements UserRoleService {
 		definitionRoles.add(roleName);
 	}
 	
-	public void addUser(UUID user, Set<UserRole> roles)
+	public void addUser(User user)
 	{
-		userRoleMap.put(user, roles);
+		userMap.put(user.getId(), user);
+	}
+
+	@Override
+	public User getUser(UUID userId) {
+		return userMap.get(userId);
 	}
 }

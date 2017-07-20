@@ -26,30 +26,37 @@ import org.jvnet.hk2.annotations.Contract;
 
 /**
  * 
- * {@link UserCache}
+ * {@link UserService}
  *
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
 @Contract
-public interface UserCache {
+public interface UserService {
+	
 	/**
-	 * 
-	 * This method caches a User object by its user concept UUID
-	 * 
-	 * @param value User object
-	 * @throws Exception
+	 * Add a user to the set of known users
 	 */
-	public void put(User value);
+	public void addUser(User user);
+	
 
 	/**
 	 * 
-	 * This method attempts to retrieve the User object
-	 * corresponding to the passed user conceptUUID key.
+	 * This method attempts to retrieve the User object corresponding to the passed user id.
 	 * 
-	 * @param user concept UUID key
+	 * @param userId The UUID of the concept that represents the user
 	 * @return User object
 	 * @throws Exception
 	 */
-	public Optional<User> get(UUID key);
+	public Optional<User> get(UUID userId);
+	
+	/**
+	 * 
+	 * This method attempts to retrieve the User object corresponding to the passed user id.
+	 * 
+	 * @param userId The nid or sequence of the concept that represents the user
+	 * @return User object
+	 * @throws Exception
+	 */
+	public Optional<User> get(int userId);
 }
