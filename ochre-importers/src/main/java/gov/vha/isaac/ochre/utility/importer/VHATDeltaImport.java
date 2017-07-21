@@ -131,6 +131,15 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private static final Logger LOG = LogManager.getLogger();
 	
+	/***
+	 * @param xmlData The data to import
+	 * @param author The user to attribute the changes to
+	 * @param module The module to put the changes on
+	 * @param path The path to put the changes on
+	 * @param vuidSupplier (optional) a supplier that provides vuids, or null, if no automated vuid assignment is desired
+	 * @param debugOutputFolder (optional) a path to write json debug to, if provided.
+	 * @throws IOException
+	 */
 	@SuppressWarnings("deprecation")
 	public VHATDeltaImport(String xmlData, UUID author, UUID module, UUID path, LongSupplier vuidSupplier, File debugOutputFolder) throws IOException
 	{
@@ -385,12 +394,16 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
-						//TODO (question) - should we autogenerate subset vuid if missing?
-						if (s.getVUID() != null)
+						
+						Long vuid = s.getVUID() == null ? 
+										(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
+										: s.getVUID();
+						
+						if (vuid != null)
 						{
-							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), s.getVUID().toString(), 
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
 								MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
-							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
 						}
 						break;
 					case REMOVE: 
@@ -512,6 +525,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								throw new IOException("Move From Concept Code should only be used with action type of UPDATE");
 							}
 							
+							UUID descriptionUUID = null;
+							
 							if (d.getAction() == ActionType.REMOVE || d.getAction() == ActionType.UPDATE || d.getAction() == ActionType.NONE)
 							{
 								if (StringUtils.isBlank(d.getCode()))
@@ -519,17 +534,41 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									throw new IOException("The designation '" + d.getTypeName() + "' doesn't have a code - from " + cc.getCode()+ ":" 
 										+ d.getCode());
 								}
-								if (d.getAction() == ActionType.UPDATE && StringUtils.isNotBlank(d.getMoveFromConceptCode()) 
-										&& !findConcept(d.getMoveFromConceptCode()).isPresent())
+								if (d.getAction() == ActionType.UPDATE && StringUtils.isNotBlank(d.getMoveFromConceptCode()))
 								{
-									throw new IOException("Cannot locate MoveFromConceptCode '" + d.getMoveFromConceptCode() + "' for designation '"
+									Optional<UUID> donerConcept = findConcept(d.getMoveFromConceptCode());
+									if (!donerConcept.isPresent())
+									{
+										throw new IOException("Cannot locate MoveFromConceptCode '" + d.getMoveFromConceptCode() + "' for designation '"
 											+ d.getCode() + "' on concept:" +  cc.getCode()+ ":" + d.getCode());
+									}
+									Optional<UUID> description = findDescription(donerConcept.get(), d.getCode());
+									if (!description.isPresent())
+									{
+										throw new IOException("The designation '" + d.getCode() + "' doesn't seem to exist on doner concept:" +  d.getMoveFromConceptCode() 
+											+ ":"+ d.getCode());
+									}
+									descriptionUUID = description.get();
 								}
-								else if (!findDescription(conceptUUID, d.getCode()).isPresent())
+								else 
 								{
-									throw new IOException("The designation '" + d.getCode() + "' doesn't seem to exist on concept:" +  cc.getCode()+ ":" 
-											+ d.getCode());
+									Optional<UUID> description = findDescription(conceptUUID, d.getCode());
+									if (!description.isPresent())
+    								{
+    									throw new IOException("The designation '" + d.getCode() + "' doesn't seem to exist on concept:" +  cc.getCode()+ ":" 
+    											+ d.getCode());
+    								}
+									descriptionUUID = description.get();
 								}
+							}
+							
+							if (d.getAction() == ActionType.ADD)
+							{
+								if (findDescription(conceptUUID, d.getCode()).isPresent())
+    							{
+    								throw new RuntimeException("Add was specified for the designation '" + d.getCode() + "' but that designation already exists!");
+    							}
+								descriptionUUID = createNewDescriptionUuid(conceptUUID, d.getCode());
 							}
 							
 							
@@ -571,12 +610,19 @@ public class VHATDeltaImport extends ConverterBaseMojo
 											throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueOld - from " + cc.getCode()+ ":" 
 												+ d.getCode());
 										}
-										if (!findPropertySememe(conceptUUID, annotations_.getProperty(p.getTypeName()).getUUID(), p.getValueOld()).isPresent())
+										if (!findPropertySememe(descriptionUUID, annotations_.getProperty(p.getTypeName()).getUUID(), p.getValueOld()).isPresent())
 										{
 											throw new IOException("The property '" + p.getTypeName() + "' with an old Value of ' " + p.getValueOld() 
 												+ "' doesn't seem to exist on concept:" +  cc.getCode()+ ":" 
 													+ d.getCode());
 										}
+									}
+									
+									if (p.getAction() == ActionType.ADD && findPropertySememe(descriptionUUID, annotations_.getProperty(p.getTypeName()).getUUID(),
+											p.getValueNew()).isPresent())
+									{
+										throw new RuntimeException("Add was specified for the property '" + p.getTypeName() + "' with an new Value of ' " + p.getValueNew() 
+											+ "' but that property already exists on :" +  cc.getCode()+ ":"+ d.getCode());
 									}
 									
 								}
@@ -614,6 +660,19 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									{
 										throw new IOException("Active must be provided on every subset membership.  Missing on " + cc.getCode() + ":" 
 											+ d.getCode() + ":" + sm.getVUID());
+									}
+									
+									boolean membershipExists = Get.sememeService().getSememesForComponentFromAssemblage(Get.identifierService().getNidForUuids(descriptionUUID), 
+											Get.identifierService().getConceptSequenceForUuids(vuidToSubsetMap_.get(sm.getVUID()))).findAny().isPresent();
+									if (sm.getAction() == ActionType.ADD && membershipExists)
+									{
+										throw new IOException("Add was specified for a subset membership, but it appears to already exist for " + cc.getCode() + ":" 
+												+ d.getCode() + ":" + sm.getVUID());
+									}
+									else if ((sm.getAction() == ActionType.UPDATE || sm.getAction() == ActionType.REMOVE) && !membershipExists)
+									{
+										throw new IOException("Remove or update was specified for a subset membership, but the membership doesn't currently exist for "
+												+ cc.getCode() + ":"+ d.getCode() + ":" + sm.getVUID());
 									}
 								}
 							}
@@ -665,6 +724,13 @@ public class VHATDeltaImport extends ConverterBaseMojo
 										+ "' doesn't seem to exist on concept:" +  cc.getCode());
 								}
 							}
+							
+							if (p.getAction() == ActionType.ADD && findPropertySememe(conceptUUID, annotations_.getProperty(p.getTypeName()).getUUID(),
+									p.getValueNew()).isPresent())
+							{
+								throw new RuntimeException("Add was specified for the property '" + p.getTypeName() + "' with an new Value of ' " + p.getValueNew() 
+									+ "' but that property already exists on :" +  cc.getCode());
+							}
 						}
 					}
 					
@@ -701,10 +767,17 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							switch(r.getAction())
 							{
 								case ADD:
-									if (StringUtils.isBlank(r.getNewTargetCode()) || !findConcept(r.getNewTargetCode()).isPresent())
+									Optional<UUID> targetConcept = findConcept(r.getNewTargetCode());
+									if (StringUtils.isBlank(r.getNewTargetCode()) || !targetConcept.isPresent())
 									{
 										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + cc.getCode() + 
 											cc.getCode() + ":" + r.getTypeName());
+									}
+									if (findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+											targetConcept.get()).isPresent())
+									{
+										throw new IOException("Add was specified for the association." + cc.getCode() + 
+											cc.getCode() + ":" + r.getTypeName() + ":" + r.getNewTargetCode() + " but is already seems to exist");
 									}
 									break;
 								case NONE:
@@ -1417,7 +1490,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	}
 	
 	private void loadMapSets(MapSets mapsets) {
-		//TODO implement
+		//TODO implement mapset
 		for (MapSet ms : mapsets.getMapSet())
 		{
 			switch (ms.getAction())
