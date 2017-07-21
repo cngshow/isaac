@@ -152,6 +152,23 @@ public class IBDFCreationUtility
 			}
 			throw new RuntimeException("Unknown description type UUID " + typeId);
 		}
+		
+		public static DescriptionType parse(int typeId)
+		{
+			if (MetaData.FULLY_SPECIFIED_NAME.getConceptSequence() == typeId || MetaData.FULLY_SPECIFIED_NAME.getNid() == typeId)
+			{
+				return FSN;
+			}
+			else if (MetaData.SYNONYM.getConceptSequence() == typeId || MetaData.SYNONYM.getNid() == typeId)
+			{
+				return SYNONYM;
+			}
+			if (MetaData.DEFINITION_DESCRIPTION_TYPE.getConceptSequence() == typeId || MetaData.DEFINITION_DESCRIPTION_TYPE.getNid() == typeId)
+			{
+				return DEFINITION;
+			}
+			throw new RuntimeException("Unknown description type " + typeId);
+		}
 	};
 	
 	private final int authorSeq_;
@@ -352,7 +369,8 @@ public class IBDFCreationUtility
 			throw new RuntimeException("Namespace not configured!");
 		}
 		
-		writer_ = new MultipleDataWriterService(Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
+		writer_ = new MultipleDataWriterService(debugOutputDirectory == null ? Optional.empty() : 
+			Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
 		
 		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		

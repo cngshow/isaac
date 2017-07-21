@@ -1,7 +1,6 @@
 package gov.vha.isaac.ochre.integration.tests;
 
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -17,6 +16,7 @@ import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.User;
 import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
@@ -96,12 +96,8 @@ public class WorkflowFrameworkTest {
 		rolesService.addRole(UserRole.REVIEWER);
 		rolesService.addRole(UserRole.APPROVER);
 		rolesService.addRole(UserRole.AUTOMATED);
-		
-		HashSet<UserRole> roles = new HashSet<>();
-		roles.add(UserRole.EDITOR);
-		roles.add(UserRole.APPROVER);
-		roles.add(UserRole.REVIEWER);
-		rolesService.addUser(userId, roles);
+
+		rolesService.addUser(new User("test", userId, null, UserRole.EDITOR, UserRole.APPROVER, UserRole.REVIEWER));
 	}
 
 	@Test(groups = { "wf" }, dependsOnGroups = { "load" })

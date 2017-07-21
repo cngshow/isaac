@@ -335,6 +335,7 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			SememeType.DESCRIPTION) {
 	};
 	
+	//TODO this should really be merged with TermAux.DESCRIPTION_TYPE_IN_SOURCE_TERMINOLOGY - or take the place of it.
 	public final MetadataDynamicSememeConstant DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE = new MetadataDynamicSememeConstant("extended description type",
 			UUID.fromString("5a2e7786-3e41-11dc-8314-0800200c9a66"),
 			"A Sememe used to store non-snomed description types when other terminologies are imported",
