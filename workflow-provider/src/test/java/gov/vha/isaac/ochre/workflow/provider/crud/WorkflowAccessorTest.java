@@ -186,14 +186,14 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetUserRoles() throws Exception {
-		Set<UserRole> roles = wp_.getUserRoleStore().getUserRoles(RoleConfigurator.getFirstTestUser());
+		Set<UserRole> roles = wp_.getUserRoleStore().getUser(RoleConfigurator.getFirstTestUser()).getRoles();
 		Assert.assertEquals(2, roles.size());
 
 		for (UserRole role : roles) {
 			Assert.assertTrue(role == UserRole.EDITOR || role == UserRole.APPROVER);
 		}
 
-		roles = wp_.getUserRoleStore().getUserRoles(RoleConfigurator.getSecondTestUser());
+		roles = wp_.getUserRoleStore().getUser(RoleConfigurator.getSecondTestUser()).getRoles();
 		Assert.assertEquals(1, roles.size());
 
 		UserRole role = roles.iterator().next();

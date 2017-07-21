@@ -18,9 +18,10 @@
  */
 package gov.vha.isaac.ochre.workflow.provider.user;
 
-import java.util.HashSet;
 import java.util.UUID;
+
 import gov.vha.isaac.ochre.api.LookupService;
+import gov.vha.isaac.ochre.api.User;
 import gov.vha.isaac.ochre.api.UserRole;
 import gov.vha.isaac.ochre.workflow.user.SimpleUserRoleService;
 
@@ -46,15 +47,8 @@ public class RoleConfigurator
 		rolesService.addRole(UserRole.APPROVER);
 		rolesService.addRole(UserRole.AUTOMATED);
 
-		// Setup User Role Maps
-		HashSet<UserRole> roles = new HashSet<>();
-		roles.add(UserRole.EDITOR);
-		roles.add(UserRole.APPROVER);
-		rolesService.addUser(firstUserId, roles);
-
-		roles = new HashSet<>();
-		roles.add(UserRole.REVIEWER);
-		rolesService.addUser(secondUserId, roles);
+		rolesService.addUser(new User("test", firstUserId, null, UserRole.EDITOR, UserRole.APPROVER));
+		rolesService.addUser(new User("test2", secondUserId, null, UserRole.REVIEWER));
 	}
 
 	/**

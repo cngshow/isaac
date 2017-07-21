@@ -109,7 +109,7 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
-//This is a service, simply to implement the DynamicSememeColumnUtility interface.  Everythign else is static, and may be used directly
+//This is a service, simply to implement the DynamicSememeColumnUtility interface.  Everything else is static, and may be used directly
 @Service  
 @Singleton
 public class Frills implements DynamicSememeColumnUtility {
@@ -527,7 +527,7 @@ public class Frills implements DynamicSememeColumnUtility {
 
 	
 	/**
-	 * Find the VUID for a component (if it has one)
+	 * Find the VUID for a component (if it has one) {@link MetaData#VUID}
 	 *
 	 * @param componentNid
 	 * @param stamp - optional - if not provided uses default from config
@@ -569,6 +569,44 @@ public class Frills implements DynamicSememeColumnUtility {
 			log.error("Unexpected error trying to find VUID for nid " + componentNid, e);
 		}
 		return Optional.empty();
+	}
+	
+	/**
+	 * Find the CODE(s) for a component (if it has one) {@link MetaData#CODE}
+	 *
+	 * @param componentNid
+	 * @param stamp - optional - if not provided uses default from config
+	 * service
+	 * @return the codes, if found, or empty (will not return null)
+	 */
+	@SuppressWarnings("rawtypes")
+	public static List<String> getCodes(int componentNid, StampCoordinate stamp) {
+		try 
+		{
+			ArrayList<String> codes = new ArrayList<>(1);
+			Get.sememeService().getSnapshot(SememeVersion.class,
+					stamp == null ? Get.configurationService().getDefaultStampCoordinate() : stamp)
+					.getLatestSememeVersionsForComponentFromAssemblage(componentNid,
+							MetaData.CODE.getConceptSequence()).forEach(latestSememe ->
+							{
+								//expected path
+								if (latestSememe.value().getChronology().getSememeType() == SememeType.STRING)
+								{
+									codes.add(((StringSememe)latestSememe.value()).getString());
+								}
+								//Data model bug path (can go away, after bug is fixed)
+								else if (latestSememe.value().getChronology().getSememeType() == SememeType.DYNAMIC)
+								{
+									codes.add(((DynamicSememe)latestSememe.value()).getData()[0].dataToString());
+								}
+							});
+			return codes;
+		}
+		catch (Exception e) 
+		{
+			log.error("Unexpected error trying to find CODE for nid " + componentNid, e);
+			throw new RuntimeException(e);
+		}
 	}
 	
 	/**
@@ -723,7 +761,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(sctID + " ", true,
-					new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MIN_VALUE);
+					new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MAX_VALUE);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -743,7 +781,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(vuID + " ", true,
-					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MIN_VALUE);
+					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MAX_VALUE);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -801,7 +839,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		};
 		//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 		List<SearchResult> results = si.query(vuID + " ", true,
-				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MIN_VALUE, filter);
+				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MAX_VALUE, filter);
 		if (results.size() > 0) {
 			for (SearchResult result : results) {
 				matchingVuidSememeNids.add(result.getNid());
@@ -1877,5 +1915,252 @@ public class Frills implements DynamicSememeColumnUtility {
 			}
 		}
 		return null;
+	}
+	
+
+	/**
+	 * Reset the state of an object to the new state, copying by creating a new version of the object with the same mutable values as the existing object.
+	 * 
+	 * This returns null (and does a NOOP) if the existing state is already the same as the desired state.
+	 * 
+	 * @param state - The desired new state
+	 * @param nid - the id of the object to change the state of
+	 * @param editCoordinate - where to write the new state.
+	 * @param readCoordinates - (optional) the read coordinates to read the current state from.  Defaults to the system default if not provided.  When more than
+	 * one is provided, it tries each in order, until is finds the first one that is present.
+	 * @return - null, if no change, or the uncommitted chronology of the object that was changed.
+	 * @throws Exception
+	 */
+	@SuppressWarnings("rawtypes")
+	public static ObjectChronology resetStateWithNoCommit(State state, int nid, EditCoordinate editCoordinate, StampCoordinate ... readCoordinates ) throws Exception {
+		
+		final ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(nid);
+
+		ObjectChronology objectToCommit = null;
+
+		State priorState = null;
+		
+		switch (type)
+		{
+			case CONCEPT:
+			{
+				ConceptChronology cc = Get.conceptService().getConcept(nid);
+
+				@SuppressWarnings("unchecked")
+				VersionUpdatePair<ConceptVersion> updatePair = resetConceptState(state, cc, editCoordinate, readCoordinates);
+				if (updatePair != null) {
+					priorState = updatePair.latest.getState();
+					objectToCommit = cc;
+				}
+				break;
+			}
+				
+			case SEMEME:
+			{
+				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeService().getSememe(nid);
+
+				switch (sememe.getSememeType()) 
+				{
+					case DESCRIPTION: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<DescriptionSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<DescriptionSememeImpl>)sememe, 
+								DescriptionSememeImpl.class, editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setCaseSignificanceConceptSequence(sememeUpdatePair.latest.getCaseSignificanceConceptSequence());
+							sememeUpdatePair.mutable.setDescriptionTypeConceptSequence(sememeUpdatePair.latest.getDescriptionTypeConceptSequence());
+							sememeUpdatePair.mutable.setLanguageConceptSequence(sememeUpdatePair.latest.getLanguageConceptSequence());
+							sememeUpdatePair.mutable.setText(sememeUpdatePair.latest.getText());
+							objectToCommit = sememe;
+						}
+						break;
+					}
+					case STRING: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<StringSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<StringSememeImpl>)sememe, StringSememeImpl.class,
+								editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setString(sememeUpdatePair.latest.getString());
+							objectToCommit = sememe;
+						} 
+	
+						break;
+					}
+					case DYNAMIC: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<DynamicSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<DynamicSememeImpl>)sememe, DynamicSememeImpl.class, 
+								editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setData(sememeUpdatePair.latest.getData());
+							objectToCommit = sememe;
+						}
+						break;
+					}
+					case COMPONENT_NID: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<ComponentNidSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<ComponentNidSememeImpl>)sememe, 
+								ComponentNidSememeImpl.class, editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setComponentNid(sememeUpdatePair.latest.getComponentNid());
+							objectToCommit = sememe;
+						} 
+						break;
+					}
+					case LOGIC_GRAPH: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<LogicGraphSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<LogicGraphSememeImpl>)sememe, 
+								LogicGraphSememeImpl.class, editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setGraphData(sememeUpdatePair.latest.getGraphData());
+							objectToCommit = sememe;
+						}
+						break;
+					}
+					case LONG: {
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<LongSememeImpl> sememeUpdatePair = resetState(state, (SememeChronology<LongSememeImpl>)sememe, LongSememeImpl.class, 
+								editCoordinate, readCoordinates);
+	
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							sememeUpdatePair.mutable.setLongValue(sememeUpdatePair.latest.getLongValue());
+							objectToCommit = sememe;
+						}
+						break;
+					}
+					case MEMBER:
+						// TODO figure out why compiling of generics failing on command line but not in eclipse, requiring this hack
+						@SuppressWarnings("unchecked")
+						VersionUpdatePair<SememeVersion> sememeUpdatePair = resetState(state, (SememeChronology)sememe, SememeVersion.class, 
+								editCoordinate, readCoordinates);
+						
+						if (sememeUpdatePair != null) {
+							priorState = sememeUpdatePair.latest.getState();
+							objectToCommit = sememe;
+						}
+						break;
+					case RELATIONSHIP_ADAPTOR:
+					case UNKNOWN:
+					default:
+						String detail = sememe.getSememeType() + " (UUID=" + sememe.getPrimordialUuid() + ", SEMEME SEQ=" + sememe.getSememeSequence() 
+						+ ", REF COMP NID=" + sememe.getReferencedComponentNid() + ")";
+
+						throw new Exception("Unsupported sememe of type " + detail + "from id " + nid);
+				}
+				break;
+			}
+
+			case UNKNOWN_NID:
+			default :
+				throw new Exception("Could not locate component '" + nid + "' of unexpected type " + type + " to change its state");
+		}
+		
+		if (objectToCommit != null) 
+		{
+			log.debug("Built updated version of " + type + " " + nid + " with state changed (from " + priorState + " to " + state + ")");
+		} 
+		else 
+		{
+			log.debug("No need to commit update of " + type + " " + nid + " with unchanged state (" + state + ")");
+		}
+
+		return objectToCommit;
+	}
+	
+	private static class VersionUpdatePair<T extends StampedVersion> {
+		T mutable;
+		T latest;
+		
+		public void set(T mutable, T latest) {
+			this.mutable = mutable;
+			this.latest = latest;
+		}
+	}
+	
+	/**
+	 * calls {@link Frills#resetStateWithNoCommit(State, int, EditCoordinate, StampCoordinate...)} with a null Class
+	 */
+	private static <T extends ConceptVersion<T>> VersionUpdatePair<T> resetConceptState(State state, ConceptChronology<T> chronology, 
+			EditCoordinate editCoordinate, StampCoordinate ... readCoordinates) throws Exception {	
+		return resetState(state, chronology, (Class<T>)null, editCoordinate, readCoordinates);
+	}
+	
+	/**
+	 * 
+	 * Reset the state of the chronology IFF an existing version corresponding to passed edit and/or stamp coordinates
+	 * either does not exist or differs in state.
+	 * 
+	 * @param state - state to which to set new version of chronology
+	 * @param chronology - the chronology of the object that we want to create a new version of with the specified state
+	 * @param clazz - Java Class of StampVersion implementation for which to create a new version of the specified state.  Required for sememes, not used for concepts.
+	 * @param editCoordinate - where to create the new version
+	 * @param readCoordinates -  (optional) the read coordinates to read the current state from.  Defaults to the system default if not provided.  When more than
+	 * one is provided, it tries each in order, until is finds the first one that is present.
+	 * @return - null, if no change was required, or, the mutable that will need to be committed.  Also returns the latestVersion that the state was read from for 
+	 * convenience.
+	 * @throws RestException
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private static <T extends StampedVersion> VersionUpdatePair<T> resetState(State state, ObjectChronology<T> chronology, Class<T> clazz, 
+			EditCoordinate editCoordinate, StampCoordinate ... readCoordinates)
+			throws Exception 
+	{
+		String detail = chronology.getOchreObjectType() + " " + chronology.getClass().getSimpleName() + " (UUID=" + chronology.getPrimordialUuid() + ")";
+		Optional<LatestVersion<T>> latestVersion = null;
+		
+		if (readCoordinates == null || readCoordinates.length == 0)
+		{
+			latestVersion = chronology.getLatestVersion(clazz, Get.configurationService().getDefaultStampCoordinate());
+		}
+		else
+		{
+			for (StampCoordinate rc : readCoordinates)
+			{
+				latestVersion = chronology.getLatestVersion(clazz, rc);
+				if (latestVersion.isPresent())
+				{
+					break;
+				}
+			}
+		}
+		
+		if (!latestVersion.isPresent())
+		{
+			throw new Exception("Failed getting latest version of " + detail + ". May require different stamp or edit coordinate parameters.");
+		}
+		
+		if (latestVersion.get().value().getState() == state) 
+		{
+			log.debug("Not resetting state of " + detail + "from " + latestVersion.get().value().getState() + " to " + state);
+			return null;
+		}
+		
+		StampedVersion rawMutableVersion = null;
+		if (chronology instanceof SememeChronology) 
+		{
+			rawMutableVersion = ((SememeChronology)chronology).createMutableVersion(clazz, state, editCoordinate);
+		} 
+		else if (chronology instanceof ConceptChronology) 
+		{
+			rawMutableVersion = ((ConceptChronology)chronology).createMutableVersion(state, editCoordinate);
+		} 
+		else 
+		{
+			throw new RuntimeException("Unsupported ObjectChronology type " + detail);
+		}
+
+		VersionUpdatePair<T> versionsHolder = new VersionUpdatePair<>();
+		versionsHolder.set((T)rawMutableVersion, latestVersion.get().value());
+
+		return versionsHolder;
 	}
 }

@@ -19,37 +19,20 @@
 
 package gov.vha.isaac.ochre.api;
 
-import java.util.Optional;
-import java.util.UUID;
-
-import org.jvnet.hk2.annotations.Contract;
-
-/**
- * 
- * {@link UserCache}
- *
- * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
- *
- */
-@Contract
-public interface UserCache {
-	/**
+public enum PrismeRoleType {
+	/*
 	 * 
-	 * This method caches a User object by its user concept UUID
-	 * 
-	 * @param value User object
-	 * @throws Exception
+	 * General role type.  Catch all.  Use this in most cases.
 	 */
-	public void put(User value);
-
-	/**
-	 * 
-	 * This method attempts to retrieve the User object
-	 * corresponding to the passed user conceptUUID key.
-	 * 
-	 * @param user concept UUID key
-	 * @return User object
-	 * @throws Exception
+	GENERAL,
+	/*
+	 * Modeling role types are dependent on the ISAAC DB deployed.  Prisme's granting of this role occurs
+	 * when the user has been granted modeling authority for that particular DB build.
 	 */
-	public Optional<User> get(UUID key);
+	MODELING,
+	/*
+	 *The requirements document specifies this as a role type too, but it currently carries the same 
+	 * connotation as GENERAL. 
+	 */
+	DEPLOYMENT;
 }

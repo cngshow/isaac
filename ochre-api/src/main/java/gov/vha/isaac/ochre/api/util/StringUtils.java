@@ -53,4 +53,13 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils
 		}
 		return rval;
 	}
+	
+	public static String stringForFortify(String convertString)
+	{
+		StringBuilder temp = new StringBuilder();
+		if (convertString != null) {
+			convertString.chars().forEach(c -> temp.append((char)c));
+		}
+		return temp.toString();
+	}
 }

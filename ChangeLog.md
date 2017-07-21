@@ -3,6 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
+* 2017/07/?? - 4.12 - PENDING
+    * Implementing vuid validation, vuid auto-generate, and moveFromConceptCode in the XML import.
+    * update SCTID and VUID ID search convenience methods in Frills to wait for any in-progress index updates
+
 * 2017/07/13 - 4.11
     * Changes for ISAAC-rest API
 
