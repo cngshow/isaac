@@ -45,7 +45,8 @@
                             <schemaIncludes>
                                 <include>TerminologyData.xsd.hidden</include>
                             </schemaIncludes>
-                            <generatePackage>gov.va.med.term.vhat.xml.model</generatePackage>
+                            <!-- Use a different package than the importer, so we don't shoot ourself in the head when tweaking the schema... -->
+                            <generatePackage>gov.va.med.term.vhat.xml.deltaIn.model</generatePackage>
                         </configuration>
                     </execution>
                 </executions>
