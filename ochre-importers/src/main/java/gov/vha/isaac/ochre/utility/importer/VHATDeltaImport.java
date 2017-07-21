@@ -500,7 +500,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					}
 					if (cc.getAction() == ActionType.ADD)
 					{
-						//TODO add already-exists checks for other things - need to figure out why this isn't working
+						//TODO need to figure out why this isn't working (is it working now?)
 						if (findConcept(cc.getCode()).isPresent())
 						{
 							throw new RuntimeException("Add was specified for the concept '" + cc.getCode() + "' but that concept already exists!");
@@ -1290,7 +1290,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			@SuppressWarnings("rawtypes")
 			ArrayList<SememeChronology> candidates = new ArrayList<>();
-			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MIN_VALUE);
+			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MAX_VALUE);
 			result.forEach(sr -> 
 			{
 				@SuppressWarnings("rawtypes")
