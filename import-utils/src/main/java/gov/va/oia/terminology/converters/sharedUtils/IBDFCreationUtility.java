@@ -369,7 +369,8 @@ public class IBDFCreationUtility
 			throw new RuntimeException("Namespace not configured!");
 		}
 		
-		writer_ = new MultipleDataWriterService(Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
+		writer_ = new MultipleDataWriterService(debugOutputDirectory == null ? Optional.empty() : 
+			Optional.of(new File(debugOutputDirectory, "xmlBatchLoad-" + defaultTime_ + ".json").toPath()), Optional.empty());
 		
 		ConsoleUtil.println("Loading with module '" + module_.getPrimordialUuid() + "' (" + module_.getNid() + ") on DEVELOPMENT path");
 		
