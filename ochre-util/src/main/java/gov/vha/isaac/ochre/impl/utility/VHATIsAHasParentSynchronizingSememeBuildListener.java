@@ -70,6 +70,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
+import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
 import gov.vha.isaac.ochre.model.logic.node.AbstractLogicNode;
@@ -110,8 +111,11 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(HAS_PARENT_VHAT_ASSOCIATION_TYPE));
 	}
 
+	private final ThreadLocal<Boolean> disabledToPreventRecursion = new ThreadLocal<>();
+	
 	VHATIsAHasParentSynchronizingSememeBuildListener() {
 		super();
+		disabledToPreventRecursion.set(false);
 	}
 
 	private static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
@@ -197,22 +201,22 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		// Fail if getHasParentVHATAssociationTypeObject() does not exist
 		if (!getHasParentVHATAssociationTypeObject().isPresent())
 		{
-			String msg = "No concept for VHAT has_parent UUID=" + HAS_PARENT_VHAT_ASSOCIATION_TYPE + ". Disabling listener " + this.getListenerName();
+			String msg = "Listener " + this.getListenerName() + " found no concept for VHAT has_parent UUID=" + HAS_PARENT_VHAT_ASSOCIATION_TYPE;
 			LOG.error(msg);
 			//this.disable();
 			throw new RuntimeException(msg);
 		}
 
-		final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
-				.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
-
-		if (!referencedComponent.isPresent()) {
-			String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
-			LOG.error(msg);
-			throw new RuntimeException(msg);
-		}
-
 		if (builtSememeVersion.getChronology().getSememeType() == SememeType.LOGIC_GRAPH) {
+			final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
+					.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
+
+			if (!referencedComponent.isPresent()) {
+				String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
+				LOG.error(msg);
+				throw new RuntimeException(msg);
+			}
+
 			// Handle changes to LOGIC_GRAPH
 			// In practice, this should only be for a new concept
 
@@ -231,85 +235,120 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 				LOG.error(msg);
 				throw new RuntimeException(msg);
 			}
-			
-			for (int parentConceptSequence : parentConceptSequences) {
-				final Optional<? extends ObjectChronology<? extends StampedVersion>> parentConcept = Get.identifiedObjectService()
-						.getIdentifiedObjectChronology(Get.identifierService().getConceptNid(parentConceptSequence));
-				if (!parentConcept.isPresent())
-				{
-					String msg = "No identified object for parentConcept UUID=" + parentConcept.get().getPrimordialUuid() + " for referenced component " + referencedComponent.get().getPrimordialUuid();
-					LOG.error(msg);
-					throw new RuntimeException(msg);
+
+			disabledToPreventRecursion.set(true);
+
+			try {
+				for (int parentConceptSequence : parentConceptSequences) {
+					final Optional<? extends ObjectChronology<? extends StampedVersion>> parentConcept = Get.identifiedObjectService()
+							.getIdentifiedObjectChronology(Get.identifierService().getConceptNid(parentConceptSequence));
+					if (!parentConcept.isPresent())
+					{
+						String msg = "No identified object for parentConcept UUID=" + parentConcept.get().getPrimordialUuid() + " for referenced component " + referencedComponent.get().getPrimordialUuid();
+						LOG.error(msg);
+						throw new RuntimeException(msg);
+					}
+
+					DynamicSememeData[] data = new DynamicSememeData[1];
+					data[0] = (parentConcept.isPresent() ?  new DynamicSememeUUIDImpl(parentConcept.get().getPrimordialUuid()) : null);
+
+					SememeBuilder<? extends SememeChronology<?>> associationSememeBuilder =  Get.sememeBuilderService().getDynamicSememeBuilder(
+							referencedComponent.get().getNid(), getHasParentVHATAssociationTypeObject().get().getConceptSequence(), data);
+
+					UUID associationItemUUID = UuidT5Generator.get(IsaacMappingConstants.get().MAPPING_NAMESPACE.getUUID(), 
+							referencedComponent.get().getPrimordialUuid().toString() + "|" 
+									+ getHasParentVHATAssociationTypeObject().get().getPrimordialUuid().toString() + "|"
+									+ (!(parentConcept.isPresent()) ? "" : parentConcept.get().getPrimordialUuid().toString()) + "|");
+
+					if (Get.identifierService().hasUuid(associationItemUUID))
+					{
+						String msg = "A has_parent association with the specified source (" + referencedComponent.get().getPrimordialUuid() + ") and target (" + parentConcept.get().getPrimordialUuid() + ") already exists";
+						LOG.error(msg);
+						throw new RuntimeException(msg);
+					}
+
+					associationSememeBuilder.setPrimordialUuid(associationItemUUID);
+
+					ObjectChronology<? extends StampedVersion> builtHasParentAssociation = associationSememeBuilder.build(editCoordinate, ChangeCheckerMode.ACTIVE).getNoThrow();	
+
+					builtObjects.add(builtHasParentAssociation);
 				}
-				
-				DynamicSememeData[] data = new DynamicSememeData[1];
-				data[0] = (parentConcept.isPresent() ?  new DynamicSememeUUIDImpl(parentConcept.get().getPrimordialUuid()) : null);
-				
-				SememeBuilder<? extends SememeChronology<?>> associationSememeBuilder =  Get.sememeBuilderService().getDynamicSememeBuilder(
-						referencedComponent.get().getNid(), getHasParentVHATAssociationTypeObject().get().getConceptSequence(), data);
-				
-				UUID associationItemUUID = UuidT5Generator.get(IsaacMappingConstants.get().MAPPING_NAMESPACE.getUUID(), 
-						referencedComponent.get().getPrimordialUuid().toString() + "|" 
-						+ getHasParentVHATAssociationTypeObject().get().getPrimordialUuid().toString() + "|"
-						+ (!(parentConcept.isPresent()) ? "" : parentConcept.get().getPrimordialUuid().toString()) + "|");
-				
-				if (Get.identifierService().hasUuid(associationItemUUID))
-				{
-					String msg = "A has_parent association with the specified source (" + referencedComponent.get().getPrimordialUuid() + ") and target (" + parentConcept.get().getPrimordialUuid() + ") already exists";
-					LOG.error(msg);
-					throw new RuntimeException(msg);
-				}
-				
-				associationSememeBuilder.setPrimordialUuid(associationItemUUID);
-				
-				ObjectChronology<? extends StampedVersion> builtHasParentAssociation = associationSememeBuilder.build(editCoordinate, ChangeCheckerMode.ACTIVE).getNoThrow();	
-			
-				builtObjects.add(builtHasParentAssociation);
+			} finally {
+				disabledToPreventRecursion.set(false);
 			}
-		} else if (builtSememeVersion.getChronology().getSememeType() == SememeType.DYNAMIC) {
+		} else if (builtSememeVersion.getChronology().getSememeType() == SememeType.DYNAMIC
+				&& builtSememeVersion.getAssemblageSequence() == getHasParentVHATAssociationTypeObject().get().getConceptSequence()) {
+
+			if (disabledToPreventRecursion.get()) {
+				UUID parentUuid = ((DynamicSememeUUIDImpl)((DynamicSememeImpl)builtSememeVersion).getData()[0]).getDataUUID();
+				LOG.debug("Not performing redundant logic graph update for has_parent VHAT association CHILD=" + builtSememeVersion.getReferencedComponentNid() + ", PARENT=" + parentUuid);
+				return;
+			}
+
 			// Handle changes to associations
+
+//			final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
+//					.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
+
+//			if (!referencedComponent.isPresent()) {
+//				String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
+//				LOG.error(msg);
+//				throw new RuntimeException(msg);
+//			}
 			
 			// Get active has_parent association dynamic sememes attached to component
-			Collection<DynamicSememeImpl> hasParentAssociationDynamicSememes = getActiveHasParentAssociationDynamicSememesAttachedToComponent(referencedComponent.get().getNid());
+			Collection<DynamicSememeImpl> hasParentAssociationDynamicSememes = getActiveHasParentAssociationDynamicSememesAttachedToComponent(builtSememeVersion.getReferencedComponentNid());
 
-			// Create set of parent concept sequences from active has_parent association dynamic sememes attached to component
-			Set<Integer> parentSequencesFromHasParentAssociationDynamicSememes = new HashSet<>();
-			for (DynamicSememeImpl hasParentAssociationDynamicSememe : hasParentAssociationDynamicSememes) {
-				UUID parentUuid = ((DynamicSememeUUIDImpl)hasParentAssociationDynamicSememe.getData()[0]).getDataUUID();
-				parentSequencesFromHasParentAssociationDynamicSememes.add(Get.identifierService().getConceptSequenceForUuids(parentUuid));
-			}
-			
-			// Get parent concept sequences from logic graph
-			Optional<SememeChronology<? extends LogicGraphSememe<?>>> conceptLogicGraphSememeChronology = Frills.getLogicGraphChronology(referencedComponent.get().getNid(), true);
-			if (! conceptLogicGraphSememeChronology.isPresent()) {
-				String msg = "No logic graph sememe found for concept (" + referencedComponent.get().getPrimordialUuid() + ")";
-				LOG.error(msg);
-				throw new RuntimeException(msg);
-			}
-			
-			// The below code is only necessary if comparing parents from has_parent association dynamic sememes to parents from logic graph
-//			Set<Integer> parentSequencesFromLogicGraph = getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)builtSememeVersion);
-//
-//			if (parentSequencesFromHasParentAssociationDynamicSememes.containsAll(parentSequencesFromLogicGraph)
-//					&& parentSequencesFromLogicGraph.containsAll(parentSequencesFromHasParentAssociationDynamicSememes)) {
-//				// This new builtSememeVersion has not resulted in added or retired or changed has_parent association
-//				// No need to rebuild logic graph
+			if (hasParentAssociationDynamicSememes.size() > 0) {
+				// Create set of parent concept sequences from active has_parent association dynamic sememes attached to component
+				Set<Integer> parentSequencesFromHasParentAssociationDynamicSememes = new HashSet<>();
+				for (DynamicSememeImpl hasParentAssociationDynamicSememe : hasParentAssociationDynamicSememes) {
+					UUID parentUuid = ((DynamicSememeUUIDImpl)hasParentAssociationDynamicSememe.getData()[0]).getDataUUID();
+					parentSequencesFromHasParentAssociationDynamicSememes.add(Get.identifierService().getConceptSequenceForUuids(parentUuid));
+				}
+
+//				//Get parent concept sequences from logic graph
+				Optional<SememeChronology<? extends LogicGraphSememe<?>>> conceptLogicGraphSememeChronology = Frills.getLogicGraphChronology(builtSememeVersion.getReferencedComponentNid(), true);
+				if (! conceptLogicGraphSememeChronology.isPresent()) {
+					String msg = "No logic graph sememe found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
+					LOG.error(msg);
+					throw new RuntimeException(msg);
+				}
 //				
-//				return;
-//			}
+//				Optional<LatestVersion<LogicGraphSememe>> latestLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememe>)(conceptLogicGraphSememeChronology.get())).getLatestVersion(LogicGraphSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+//				if (! latestLogicGraphSememeVersion.isPresent()) {
+//					String msg = "No latest logic graph sememe version found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
+//					LOG.error(msg);
+//					throw new RuntimeException(msg);
+//				}
+//
+//				// TODO handle LogicGraphSememe version contradictions
+//				
+//				// The below code is only necessary if comparing parents from has_parent association dynamic sememes to parents from logic graph
+//				Set<Integer> parentSequencesFromLogicGraph = getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)latestLogicGraphSememeVersion.get().value());
+//
+//				// Do not modify logic graph if all existing has_parent association dynamic sememes correspond to parents in logic graph
+//				// 
+//				if (parentSequencesFromLogicGraph.containsAll(parentSequencesFromHasParentAssociationDynamicSememes)) {
+//					// This new builtSememeVersion has not resulted in added or retired or changed has_parent association
+//					// No need to rebuild logic graph
+//
+//					return;
+//				}
 
-			// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
-			// Need to rebuild logic graph
-			
-			LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
-			for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
-				NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
+				// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
+				// Need to rebuild logic graph
+
+				LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
+				for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
+					NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
+				}
+				LogicalExpression parentDef = defBuilder.build();
+
+				@SuppressWarnings("unchecked")
+				LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
+				newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
 			}
-			LogicalExpression parentDef = defBuilder.build();
-			
-			@SuppressWarnings("unchecked")
-			LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
-			newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
 		}
 	}
 }
