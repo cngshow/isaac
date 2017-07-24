@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -111,11 +112,12 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(HAS_PARENT_VHAT_ASSOCIATION_TYPE));
 	}
 
-	private final ThreadLocal<Boolean> disabledToPreventRecursion = new ThreadLocal<>();
+	private final ThreadLocal<Boolean> disabledToPreventRecursion = ThreadLocal.withInitial(new Supplier<Boolean>() {
+		@Override public Boolean get() { return false; }
+	});
 	
 	VHATIsAHasParentSynchronizingSememeBuildListener() {
 		super();
-		disabledToPreventRecursion.set(false);
 	}
 
 	private static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
@@ -157,33 +159,7 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		return Collections.unmodifiableList(hasParentAssociationDynamicSememesToReturn);
 	}
 
-	private static Set<Integer> getParentConceptSequencesFromLogicGraph(LogicGraphSememeImpl logicGraph) {
-		Set<Integer> parentConceptSequences = new HashSet<>();
-		Stream<LogicNode> isAs = logicGraph.getLogicalExpression().getNodesOfType(NodeSemantic.NECESSARY_SET);
-		for (Iterator<LogicNode> necessarySetsIterator = isAs.distinct().iterator(); necessarySetsIterator.hasNext();) {
-			NecessarySetNode necessarySetNode = (NecessarySetNode)necessarySetsIterator.next();
-			for (AbstractLogicNode childOfNecessarySetNode : necessarySetNode.getChildren()) {
-				if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.AND) {
-					AndNode andNode = (AndNode)childOfNecessarySetNode;
-					for (AbstractLogicNode childOfAndNode : andNode.getChildren()) {
-						if (childOfAndNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
-							ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfAndNode;
-							parentConceptSequences.add(conceptNode.getConceptSequence());
-						}
-					}
-				} else if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
-					ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfNecessarySetNode;
-					parentConceptSequences.add(conceptNode.getConceptSequence());
-				} else {
-					String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of NecessarySet logic graph node of unexpected type \"" + childOfNecessarySetNode.getNodeSemantic() + "\". Expected AndNode or ConceptNode in " + logicGraph;
-					LOG.error(msg);
-					throw new RuntimeException(msg);
-				}
-			}
-		}
-		
-		return parentConceptSequences;
-	}
+
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI#applyAfter(gov.vha.isaac.ochre.api.coordinate.EditCoordinate, gov.vha.isaac.ochre.api.commit.ChangeCheckerMode, gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion, java.util.List)
 	 */
@@ -229,7 +205,7 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 			
 			// TODO check for and prohibit edits to logic graph, which are not supported
 			
-			Set<Integer> parentConceptSequences = getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)builtSememeVersion);
+			Set<Integer> parentConceptSequences = Frills.getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)builtSememeVersion);
 			if (parentConceptSequences.size() == 0) {
 				String msg = "Encountered logic graph for concept NID=" + referencedComponent.get().getNid() + ", UUID=" + referencedComponent.get().getPrimordialUuid() + " with no specified parents (concept nodes in necessary set nodes)";
 				LOG.error(msg);
@@ -307,14 +283,15 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 					parentSequencesFromHasParentAssociationDynamicSememes.add(Get.identifierService().getConceptSequenceForUuids(parentUuid));
 				}
 
-//				//Get parent concept sequences from logic graph
+				// Get logic graph sememe chronology in order to create new version
 				Optional<SememeChronology<? extends LogicGraphSememe<?>>> conceptLogicGraphSememeChronology = Frills.getLogicGraphChronology(builtSememeVersion.getReferencedComponentNid(), true);
 				if (! conceptLogicGraphSememeChronology.isPresent()) {
 					String msg = "No logic graph sememe found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
 					LOG.error(msg);
 					throw new RuntimeException(msg);
 				}
-//				
+				
+				// The following code is only necessary if comparing has_parent associations with latest logic graph version
 //				Optional<LatestVersion<LogicGraphSememe>> latestLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememe>)(conceptLogicGraphSememeChronology.get())).getLatestVersion(LogicGraphSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
 //				if (! latestLogicGraphSememeVersion.isPresent()) {
 //					String msg = "No latest logic graph sememe version found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
@@ -348,6 +325,10 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 				@SuppressWarnings("unchecked")
 				LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
 				newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
+				
+				Get.commitService().addUncommitted(conceptLogicGraphSememeChronology.get());
+
+				LOG.debug("Created new version of logic graph sememe " + newLogicGraphSememeVersion.getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + newLogicGraphSememeVersion.getReferencedComponentNid());
 			}
 		}
 	}

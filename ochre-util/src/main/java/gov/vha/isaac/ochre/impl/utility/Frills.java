@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -85,6 +86,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
+import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -101,6 +103,11 @@ import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.logic.node.AbstractLogicNode;
+import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.NecessarySetNode;
+import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
+import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
@@ -2198,5 +2205,59 @@ public class Frills implements DynamicSememeColumnUtility {
 		versionsHolder.set((T)rawMutableVersion, latestVersion.get().value());
 
 		return versionsHolder;
+	}
+	
+	/**
+	 * Retrieve the set of integer parent concept sequences stored in the logic graph necessary sets
+	 * 
+	 * @param logicGraph
+	 * @return
+	 */
+	public static Set<Integer> getParentConceptSequencesFromLogicGraph(LogicGraphSememe<?> logicGraph) {
+		Set<Integer> parentConceptSequences = new HashSet<>();
+		Stream<LogicNode> isAs = logicGraph.getLogicalExpression().getNodesOfType(NodeSemantic.NECESSARY_SET);
+		for (Iterator<LogicNode> necessarySetsIterator = isAs.distinct().iterator(); necessarySetsIterator.hasNext();) {
+			NecessarySetNode necessarySetNode = (NecessarySetNode)necessarySetsIterator.next();
+			for (AbstractLogicNode childOfNecessarySetNode : necessarySetNode.getChildren()) {
+				if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.AND) {
+					AndNode andNode = (AndNode)childOfNecessarySetNode;
+					for (AbstractLogicNode childOfAndNode : andNode.getChildren()) {
+						if (childOfAndNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
+							if (childOfAndNode instanceof ConceptNodeWithSequences) {
+								ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfAndNode;
+								parentConceptSequences.add(conceptNode.getConceptSequence());
+							} else if (childOfAndNode instanceof ConceptNodeWithUuids) {
+								ConceptNodeWithUuids conceptNode = (ConceptNodeWithUuids)childOfAndNode;
+								parentConceptSequences.add(Get.identifierService().getConceptSequenceForUuids(conceptNode.getConceptUuid()));
+							} else {
+								// Should never happen
+								String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of AndNode logic graph node of unexpected type \"" + childOfAndNode.getClass().getSimpleName() + "\". Expected ConceptNodeWithSequences or ConceptNodeWithUuids in " + logicGraph;
+								log.error(msg);
+								throw new RuntimeException(msg);
+							}
+						}
+					}
+				} else if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
+					if (childOfNecessarySetNode instanceof ConceptNodeWithSequences) {
+						ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfNecessarySetNode;
+						parentConceptSequences.add(conceptNode.getConceptSequence());
+					} else if (childOfNecessarySetNode instanceof ConceptNodeWithUuids) {
+						ConceptNodeWithUuids conceptNode = (ConceptNodeWithUuids)childOfNecessarySetNode;
+						parentConceptSequences.add(Get.identifierService().getConceptSequenceForUuids(conceptNode.getConceptUuid()));
+					} else {
+						// Should never happen
+						String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of NecessarySet logic graph node of unexpected type \"" + childOfNecessarySetNode.getClass().getSimpleName() + "\". Expected ConceptNodeWithSequences or ConceptNodeWithUuids in " + logicGraph;
+						log.error(msg);
+						throw new RuntimeException(msg);
+					}
+				} else {
+					String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of NecessarySet logic graph node of unexpected type \"" + childOfNecessarySetNode.getNodeSemantic() + "\". Expected AndNode or ConceptNode in " + logicGraph;
+					log.error(msg);
+					throw new RuntimeException(msg);
+				}
+			}
+		}
+		
+		return parentConceptSequences;
 	}
 }
