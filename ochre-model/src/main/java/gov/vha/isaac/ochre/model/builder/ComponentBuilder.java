@@ -16,11 +16,11 @@
 package gov.vha.isaac.ochre.model.builder;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import gov.vha.isaac.ochre.api.ConceptProxy;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
@@ -117,5 +117,10 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
     public ComponentBuilder<T> addSememe(SememeBuilder<?> sememeBuilder) {
         sememeBuilders.add(sememeBuilder);
         return this;
+    }
+    
+    @Override
+    public List<SememeBuilder<?>> getSememeBuilders() {
+        return sememeBuilders;
     }
 }

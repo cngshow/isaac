@@ -131,4 +131,15 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
         }
         return this;
     }
+
+    /**
+     * Gets the sememe builders stored by the builder.
+     * @return the sememe builders
+     */
+    List<SememeBuilder<?>> getSememeBuilders();
+
+    /**
+     * Sets the primordial UUID with a Type5 UUID.
+     */
+    public void setT5Uuid();
 }

@@ -238,6 +238,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
             descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
         }
         descriptionBuilders.forEach((builder) -> {
+            builder.setT5Uuid();
             builder.build(stampCoordinate, builtObjects);
         });
         if (defaultLogicCoordinate == null && (logicalExpressions.size() > 0 || logicalExpressionBuilders.size() > 0)) {
@@ -252,12 +253,25 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
             sememeBuilders.add(builderService.
                     getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
         }
-        sememeBuilders.forEach((builder) -> builder.build(stampCoordinate, builtObjects));
+        sememeBuilders.forEach((builder) -> { 
+            builder.setT5Uuid();
+            builder.build(stampCoordinate, builtObjects);
+        });
+
         return conceptChronology;
     }
 
     @Override
     public String getConceptDescriptionText() {
         return conceptName;
+    }
+    @Override
+    public List<DescriptionBuilder<?, ?>> getDescriptionBuilders() {
+        return descriptionBuilders;
+    }
+
+    @Override
+    public void setT5Uuid() {
+        throw new UnsupportedOperationException("Concept doesn't have a full T5 implementation defined yet");
     }
 }

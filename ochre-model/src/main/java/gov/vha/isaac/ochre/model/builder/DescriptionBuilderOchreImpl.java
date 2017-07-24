@@ -33,6 +33,8 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
+import gov.vha.isaac.ochre.api.util.UuidFactory;
+import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 import javafx.concurrent.Task;
@@ -146,19 +148,37 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
                 descBuilder.build(stampSequence, builtObjects);
         SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
         preferredInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
+            SememeBuilder<?> builder = sememeBuilderService.getComponentSememeBuilder(
                     TermAux.PREFERRED.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(stampSequence, builtObjects);
+                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy));
+            builder.setT5Uuid();
+            builder.build(stampSequence, builtObjects);
         });
         acceptableInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
+            SememeBuilder<?> builder = sememeBuilderService.getComponentSememeBuilder(
                     TermAux.ACCEPTABLE.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(stampSequence, builtObjects);
+                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy));
+            builder.setT5Uuid();
+            builder.build(stampSequence, builtObjects);
         });
         sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
         return (T) newDescription;
     }
     
+    @Override
+    public void setT5Uuid() {
+        if (getPrimordialUuid().version() == 4) {
+            int assemblageSeq = TermAux.getDescriptionAssemblageConceptSequence(languageForDescription.getConceptSequence());
+            int caseSigNid = Get.identifierService().getConceptNid(Get.languageCoordinateService().caseSignificanceToConceptSequence(false));
+            
+            setPrimordialUuid(
+                    UuidFactory.getUuidForDescriptionSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, 
+                            assemblageSeq,
+                            conceptBuilder.getPrimordialUuid(), 
+                            caseSigNid,
+                            descriptionType.getPrimordialUuid(),
+                            languageForDescription.getPrimordialUuid(), 
+                            descriptionText));
+        }
+    }
 }

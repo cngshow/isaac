@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.model.builder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +42,8 @@ import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
+import gov.vha.isaac.ochre.api.util.UuidFactory;
+import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
@@ -323,5 +326,35 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             }
         }
         return (C) sememeChronicle;
+    }
+
+    @Override
+    public void setT5Uuid() {
+        if (getPrimordialUuid().version() == 4) {
+            int assemblageNid = Get.identifierService().getConceptNid(assemblageConceptSequence);
+            UUID assemblageUuid = Get.identifierService().getUuidPrimordialForNid(assemblageNid).get();
+
+            UUID refCompUuid = null;
+            if (referencedComponentBuilder != null) {
+                refCompUuid = referencedComponentBuilder.getPrimordialUuid();
+            } else {
+                refCompUuid = Get.identifierService().getUuidPrimordialForNid(referencedComponentNid).get();
+            }
+
+            if (sememeType == SememeType.LOGIC_GRAPH) {
+                setPrimordialUuid(UuidFactory.getUuidForLogicGraphSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+            } else if (sememeType == SememeType.MEMBER) {
+                setPrimordialUuid(UuidFactory.getUuidForMemberSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid));
+            } else if (sememeType == SememeType.DYNAMIC) {
+                setPrimordialUuid(UuidFactory.getUuidForDynamicSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+            } else if (sememeType == SememeType.COMPONENT_NID) {
+                UUID componentUuid = Get.identifierService().getUuidPrimordialForNid((Integer)parameters[0]).get();
+                setPrimordialUuid(UuidFactory.getUuidForComponentNidSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, componentUuid));
+            } else if (sememeType == SememeType.DESCRIPTION) {
+                setPrimordialUuid(UuidFactory.getUuidForDescriptionSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+            } else if (sememeType == SememeType.STRING) {
+                setPrimordialUuid(UuidFactory.getUuidForStringSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+            }
+        }
     }
 }
