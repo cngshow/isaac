@@ -643,12 +643,6 @@ public class IBDFCreationUtility
 		{
 			languageCode = MetaData.ENGLISH_LANGUAGE.getPrimordialUuid();
 		}
-		if (descriptionPrimordialUUID == null)
-		{
-			descriptionPrimordialUUID = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), descriptionValue, 
-					wbDescriptionType.name(), dialect.toString(), languageCode.toString(), preferred == null ? "null" : preferred.toString());
-		}
-		
 		
 		@SuppressWarnings({ "rawtypes" }) 
 		SememeBuilder<? extends SememeChronology<? extends DescriptionSememe>> descBuilder = sememeBuilderService_.getDescriptionSememeBuilder(
@@ -657,8 +651,12 @@ public class IBDFCreationUtility
 						wbDescriptionType.getConceptSpec().getConceptSequence(), 
 						descriptionValue, 
 						concept.getNid());
-		descBuilder.setPrimordialUuid(descriptionPrimordialUUID);
-
+		if (descriptionPrimordialUUID == null) {
+			descBuilder.setT5Uuid();
+		} else {
+			descBuilder.setPrimordialUuid(descriptionPrimordialUUID);
+		}
+		
 		List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		
 		SememeChronology<DescriptionSememe<?>> newDescription = (SememeChronology<DescriptionSememe<?>>)
@@ -676,9 +674,7 @@ public class IBDFCreationUtility
 					preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(), newDescription.getNid(),
 					Get.identifierService().getConceptSequenceForUuids(dialect));
 
-			UUID acceptabilityTypePrimordialUUID = ConverterUUID
-					.createNamespaceUUIDFromStrings(descriptionPrimordialUUID.toString(), dialect.toString());
-			acceptabilityTypeBuilder.setPrimordialUuid(acceptabilityTypePrimordialUUID);
+			acceptabilityTypeBuilder.setT5Uuid();
 			acceptabilityTypeBuilder.build(createStamp(state, selectTime(concept, time), module), builtObjects);
 
 			ls_.addAnnotation("Description", getOriginStringForUuid(dialect));
@@ -721,14 +717,11 @@ public class IBDFCreationUtility
 		SememeBuilder sb = sememeBuilderService.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(),
 				description.getNid(), Get.identifierService().getConceptSequenceForUuids(dialectRefset));
 		
-		if (acceptabilityPrimordialUUID == null)
-		{
-			//TODO not sure if preferred should be part of UUID
-			acceptabilityPrimordialUUID = ConverterUUID.createNamespaceUUIDFromStrings(description.getPrimordialUuid().toString(), 
-					dialectRefset.toString(), preferred + "");
+		if (acceptabilityPrimordialUUID == null) {
+			sb.setT5Uuid();
+		} else {
+			sb.setPrimordialUuid(acceptabilityPrimordialUUID);
 		}
-		
-		sb.setPrimordialUuid(acceptabilityPrimordialUUID);
 		
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
@@ -823,30 +816,11 @@ public class IBDFCreationUtility
 		SememeBuilder sb = sememeBuilderService_.getDynamicSememeBuilder(referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refexDynamicTypeUuid), values);
 		
-		if (uuidForCreatedAnnotation == null)
-		{
-			StringBuilder temp = new StringBuilder();
-			temp.append(refexDynamicTypeUuid.toString()); 
-			temp.append(referencedComponent.getPrimordialUuid().toString());
-			if (values != null)
-			{
-				for (DynamicSememeData d : values)
-				{
-					if (d == null)
-					{
-						temp.append("null");
-					}
-					else
-					{
-						temp.append(d.getDynamicSememeDataType().getDisplayName());
-						temp.append(new String(ChecksumGenerator.calculateChecksum("SHA1", d.getData())));
-					}
-				}
-			}
-			uuidForCreatedAnnotation = ConverterUUID.createNamespaceUUIDFromString(temp.toString());
+		if (uuidForCreatedAnnotation == null) {
+			sb.setT5Uuid();
+		} else {
+			sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		}
-		
-		sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), builtObjects);
@@ -926,6 +900,7 @@ public class IBDFCreationUtility
 
 	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
 		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
+		sb.setT5Uuid();
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime(referencedComponent, (Long)null)), builtObjects);
@@ -1036,11 +1011,7 @@ public class IBDFCreationUtility
 		
 		if (uuidForCreatedAnnotation == null)
 		{
-			StringBuilder temp = new StringBuilder();
-			temp.append(annotationValue);
-			temp.append(refsetUuid.toString()); 
-			temp.append(referencedComponent.getPrimordialUuid().toString());
-			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+			sb.setT5Uuid();
 		}
 		else
 		{
@@ -1206,8 +1177,12 @@ public class IBDFCreationUtility
 		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence());
 
-		sb.setPrimordialUuid(relPrimordialUuid != null ? relPrimordialUuid
-				: ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), Arrays.toString(targetUuid), isARelUuid_.toString()));
+		
+		if (relPrimordialUuid != null) {
+			sb.setPrimordialUuid(relPrimordialUuid);
+		} else {
+			sb.setT5Uuid();
+		}
 
 		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
 
@@ -1250,15 +1225,7 @@ public class IBDFCreationUtility
 
 		if (graphPrimordialUuid == null)
 		{
-			// Build a LogicGraph UUID seed based on concept & logicExpression.getData(EXTERNAL)
-			StringBuilder byteString = new StringBuilder();
-			byte[][] byteArray = logicalExpression.getData(DataTarget.EXTERNAL);
-			for (int i = 0; i < byteArray.length; i++) {
-				byteString.append(Arrays.toString(byteArray[i]));
-			}
-	
-			// Create UUID from seed and assign SesemeBuilder the value
-			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "" +stated, byteString.toString()));
+			sb.setT5Uuid();
 		}
 		else
 		{
