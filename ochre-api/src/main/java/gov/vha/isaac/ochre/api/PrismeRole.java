@@ -22,6 +22,8 @@ package gov.vha.isaac.ochre.api;
 /**
  * This is the master role file.  Both Prisme and IsaacRest should refer to this file.
  * Note:  The string for myName should be unique relative to all Roles.
+ * Note:  There are Prisme unit tests that will break the build if new roles are added here and
+ * not properly referenced in Prisme, so let a prisme dev know if you need to add in a  role.
  * @author cshupp
  * 
  */
