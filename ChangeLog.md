@@ -3,7 +3,11 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
 where provided, and the git commit history.
 
-* 2017/07/?? - 4.12 - PENDING
+* 2017/07/20 - 4.13
+    * Adding isA / hasA relationship / association synchronization for commits to VHAT content.
+    * Experimental hack fix to IsomorphicResultsBottomUp to prevent null pointer when processing logic graphs with multiple parents.
+
+* 2017/07/20 - 4.12
     * Implementing vuid validation, vuid auto-generate, and moveFromConceptCode in the XML import.
     * update SCTID and VUID ID search convenience methods in Frills to wait for any in-progress index updates
 
