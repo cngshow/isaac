@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package gov.vha.isaac.ochre.impl.utility;
+package gov.vha.isaac.ochre.modules.vhat;
 
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
@@ -70,6 +70,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
+import gov.vha.isaac.ochre.impl.utility.Frills;
 import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;

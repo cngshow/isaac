@@ -18,12 +18,17 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-model</artifactId>
+            <artifactId>ochre-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>ochre-metadata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ochre-model</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
