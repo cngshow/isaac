@@ -11,9 +11,11 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.Set;
 import java.util.TreeSet;
@@ -25,6 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.inject.Singleton;
 
@@ -43,6 +46,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.collections.LruCache;
+import gov.vha.isaac.ochre.api.collections.SememeSequenceSet;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptBuilder;
@@ -82,6 +86,7 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
+import gov.vha.isaac.ochre.api.logic.LogicNode;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
@@ -98,6 +103,11 @@ import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.configuration.TaxonomyCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.model.logic.node.AbstractLogicNode;
+import gov.vha.isaac.ochre.model.logic.node.AndNode;
+import gov.vha.isaac.ochre.model.logic.node.NecessarySetNode;
+import gov.vha.isaac.ochre.model.logic.node.external.ConceptNodeWithUuids;
+import gov.vha.isaac.ochre.model.logic.node.internal.ConceptNodeWithSequences;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
 import gov.vha.isaac.ochre.model.sememe.DynamicSememeUsageDescriptionImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
@@ -1916,6 +1926,39 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 		return null;
 	}
+
+	/**
+	 * Get all sememes for a specified component of specified assemblages restricted by SememeType
+	 * @param componentNid - referenced component nid of requested sememes
+	 * @param allowedAssemblageSequences - set of concept sequences of allowed assemblages
+	 * @param typesToExclude - set of SememeType restrictions 
+	 * @return
+	 */
+	public static Stream<SememeChronology<? extends SememeVersion<?>>> getSememesForComponentFromAssemblagesFilteredBySememeType(int componentNid, 
+			Set<Integer> allowedAssemblageSequences, Set<SememeType> typesToExclude) {
+		SememeSequenceSet sememeSequences = Get.sememeService().getSememeSequencesForComponentFromAssemblages(componentNid, allowedAssemblageSequences);
+		if (typesToExclude == null || typesToExclude.size() == 0) {
+			return sememeSequences.stream().mapToObj((int sememeSequence) -> Get.sememeService().getSememe(sememeSequence));
+		} else {
+			final ArrayList<SememeChronology<? extends SememeVersion<?>>> filteredList = new ArrayList<>();
+			for (PrimitiveIterator.OfInt it = sememeSequences.getIntIterator(); it.hasNext();) {
+				SememeChronology<? extends SememeVersion<?>> chronology = Get.sememeService().getSememe(it.nextInt());
+				boolean exclude = false;
+				for (SememeType type : typesToExclude) {
+					if (chronology.getSememeType() == type) {
+						exclude = true;
+						break;
+					}
+				}
+
+				if (! exclude) {
+					filteredList.add(chronology);
+				}
+			}
+
+			return filteredList.stream();
+		}
+	}
 	
 
 	/**
@@ -2162,5 +2205,59 @@ public class Frills implements DynamicSememeColumnUtility {
 		versionsHolder.set((T)rawMutableVersion, latestVersion.get().value());
 
 		return versionsHolder;
+	}
+	
+	/**
+	 * Retrieve the set of integer parent concept sequences stored in the logic graph necessary sets
+	 * 
+	 * @param logicGraph
+	 * @return
+	 */
+	public static Set<Integer> getParentConceptSequencesFromLogicGraph(LogicGraphSememe<?> logicGraph) {
+		Set<Integer> parentConceptSequences = new HashSet<>();
+		Stream<LogicNode> isAs = logicGraph.getLogicalExpression().getNodesOfType(NodeSemantic.NECESSARY_SET);
+		for (Iterator<LogicNode> necessarySetsIterator = isAs.distinct().iterator(); necessarySetsIterator.hasNext();) {
+			NecessarySetNode necessarySetNode = (NecessarySetNode)necessarySetsIterator.next();
+			for (AbstractLogicNode childOfNecessarySetNode : necessarySetNode.getChildren()) {
+				if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.AND) {
+					AndNode andNode = (AndNode)childOfNecessarySetNode;
+					for (AbstractLogicNode childOfAndNode : andNode.getChildren()) {
+						if (childOfAndNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
+							if (childOfAndNode instanceof ConceptNodeWithSequences) {
+								ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfAndNode;
+								parentConceptSequences.add(conceptNode.getConceptSequence());
+							} else if (childOfAndNode instanceof ConceptNodeWithUuids) {
+								ConceptNodeWithUuids conceptNode = (ConceptNodeWithUuids)childOfAndNode;
+								parentConceptSequences.add(Get.identifierService().getConceptSequenceForUuids(conceptNode.getConceptUuid()));
+							} else {
+								// Should never happen
+								String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of AndNode logic graph node of unexpected type \"" + childOfAndNode.getClass().getSimpleName() + "\". Expected ConceptNodeWithSequences or ConceptNodeWithUuids in " + logicGraph;
+								log.error(msg);
+								throw new RuntimeException(msg);
+							}
+						}
+					}
+				} else if (childOfNecessarySetNode.getNodeSemantic() == NodeSemantic.CONCEPT) {
+					if (childOfNecessarySetNode instanceof ConceptNodeWithSequences) {
+						ConceptNodeWithSequences conceptNode = (ConceptNodeWithSequences)childOfNecessarySetNode;
+						parentConceptSequences.add(conceptNode.getConceptSequence());
+					} else if (childOfNecessarySetNode instanceof ConceptNodeWithUuids) {
+						ConceptNodeWithUuids conceptNode = (ConceptNodeWithUuids)childOfNecessarySetNode;
+						parentConceptSequences.add(Get.identifierService().getConceptSequenceForUuids(conceptNode.getConceptUuid()));
+					} else {
+						// Should never happen
+						String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of NecessarySet logic graph node of unexpected type \"" + childOfNecessarySetNode.getClass().getSimpleName() + "\". Expected ConceptNodeWithSequences or ConceptNodeWithUuids in " + logicGraph;
+						log.error(msg);
+						throw new RuntimeException(msg);
+					}
+				} else {
+					String msg = "Logic graph for concept NID=" + logicGraph.getReferencedComponentNid() + " has child of NecessarySet logic graph node of unexpected type \"" + childOfNecessarySetNode.getNodeSemantic() + "\". Expected AndNode or ConceptNode in " + logicGraph;
+					log.error(msg);
+					throw new RuntimeException(msg);
+				}
+			}
+		}
+		
+		return parentConceptSequences;
 	}
 }

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.vha.isaac.ochre</groupId>
     <artifactId>isaac-parent</artifactId>
-    <version>4.12</version>
+    <version>4.13</version>
     
     <name>ISAAC: (MMP) InformaticS Architecture ACceleration</name>
     
@@ -646,6 +646,7 @@
         
         <module>hl7-messaging</module>
         <module>rest-utils</module>
+        <module>vhat-util</module>
     </modules>
     
     <profiles>

@@ -7,14 +7,30 @@
         <version>4.13</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
-    <artifactId>metadata-source</artifactId>
+    <artifactId>vhat-util</artifactId>
     <packaging>jar</packaging>
-    <name>OCHRE: Metadata source</name>
+    <name>VHAT: Util</name>
+    
+    <description>
+        Code built on top of the low-level ISAAC APIs that is useful for those using the VHAT module
+    </description>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>ochre-model</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ochre-metadata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ochre-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
+
 </project>
