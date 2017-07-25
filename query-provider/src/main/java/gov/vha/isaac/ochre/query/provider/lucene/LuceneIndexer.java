@@ -830,24 +830,22 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     }
     
     /**
-    *
-    * Sets the last document fetched so future queries can start searching 'after' that one.
-    *
-    * @param doc - the document representing the bottom of the preview page/results
-    */
-   public void setLastDoc(ScoreDoc after)
+     * Sets the last document fetched so future queries can start searching 'after' that one.
+     * 
+     * @param after The Lucene document representing the bottom of the preview page/results
+     */
+    public void setLastDoc(ScoreDoc after)
     {
     	// We don't care if it's null
     	lastDoc_ = after;
     }
     
-   /**
-   *
-   * Fetches the last doc found for the last-run query.
-   *
-   * @return an Optional ScoreDoc representing the bottom/last document returned from the query. 
-   */
-  public Optional<ScoreDoc> getLastDoc()
+    /**
+     * Fetches the last doc found for the last-run query.
+     * 
+     * @return An <code>Optional<ScoreDoc></code> representing the bottom/last document returned from the query.
+     */
+    public Optional<ScoreDoc> getLastDoc()
     {
     	if (lastDoc_ == null)
     	{

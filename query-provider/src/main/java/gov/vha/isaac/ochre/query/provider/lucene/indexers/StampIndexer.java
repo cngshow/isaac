@@ -2,19 +2,11 @@ package gov.vha.isaac.ochre.query.provider.lucene.indexers;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.Document;
@@ -27,28 +19,13 @@ import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
-import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
-import gov.vha.isaac.ochre.api.component.sememe.version.ComponentNidSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.LogicGraphSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.LongSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
-import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
-import gov.vha.isaac.ochre.api.logic.LogicNode;
-import gov.vha.isaac.ochre.api.tree.TreeNodeVisitData;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLongImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
-import gov.vha.isaac.ochre.query.provider.lucene.LuceneDescriptionType;
 import gov.vha.isaac.ochre.query.provider.lucene.LuceneIndexer;
 import gov.vha.isaac.ochre.query.provider.lucene.PerFieldAnalyzer;
 
@@ -110,14 +87,14 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
 	protected void addFields(ObjectChronology<?> chronicle, Document doc)
 	{
 		SememeChronology<?> sememeChronology = (SememeChronology<?>) chronicle;
-		doc.add(new TextField(FIELD_SEMEME_ASSEMBLAGE_SEQUENCE, sememeChronology.getAssemblageSequence() + "", Field.Store.NO));
-
+		
 		if (indexChronicle(chronicle))
 		{
 			for (SememeVersion<?> sv : sememeChronology.getVersionList())
 			{
 				indexModule(doc, sv.getModuleSequence());
 				indexPath(doc, sv.getPathSequence());
+				doc.add(new TextField(FIELD_SEMEME_ASSEMBLAGE_SEQUENCE, sv.getChronology().getAssemblageSequence() + "", Field.Store.NO));
 			}
 		}
 		else
@@ -287,5 +264,4 @@ public class StampIndexer extends LuceneIndexer implements IndexServiceBI {
     	}
     	return Optional.ofNullable(field);
     }
-
 }
