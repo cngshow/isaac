@@ -29,5 +29,8 @@ import java.util.UUID;
  *
  */
 public class VHATConstants {
-	public final static UUID VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID = UUID.fromString("4ab30955-f50a-5f5f-8397-3fe473b22ed1");
+	/**
+	 * VHAT has_parent assemblage type concept UUID
+	 */
+	public final static UUID VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID = UUID.fromString("551f4a6d-9c3f-5bfb-829c-4b6e51feb80d");
 }
