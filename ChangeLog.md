@@ -2,6 +2,9 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/08/?? - 4.15 - PENDING
+    *
+
 * 2017/07/25 - 4.14
     * Changes for has_parent code found during testing.
 
