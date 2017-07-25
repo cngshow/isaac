@@ -95,9 +95,6 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuildListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingSememeBuildListener.class);
 
-	// TODO better tie this String literal UUID to the imported value
-	private final static UUID HAS_PARENT_VHAT_ASSOCIATION_TYPE = UUID.fromString("4ab30955-f50a-5f5f-8397-3fe473b22ed1");
-
 	// Cached VHAT module sequences
 	private static Set<Integer> VHAT_MODULES = null;
 	private static Set<Integer> getVHATModules() {
@@ -110,7 +107,7 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 	
 	private static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getHasParentVHATAssociationTypeObject() {
 		// Lazily initialize HAS_PARENT_VHAT_ASSOCIATION_TYPE_OBJECT
-		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(HAS_PARENT_VHAT_ASSOCIATION_TYPE));
+		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID));
 	}
 
 	private final ThreadLocal<Boolean> disabledToPreventRecursion = ThreadLocal.withInitial(new Supplier<Boolean>() {
@@ -125,7 +122,7 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		final Set<Integer> selectedAssemblages = new HashSet<>();
 		if (!getHasParentVHATAssociationTypeObject().isPresent())
 		{
-			String msg = "No concept for VHAT has_parent UUID=" + HAS_PARENT_VHAT_ASSOCIATION_TYPE + ". Disabling listener " + VHATIsAHasParentSynchronizingSememeBuildListener.class.getSimpleName();
+			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID + ". Disabling listener " + VHATIsAHasParentSynchronizingSememeBuildListener.class.getSimpleName();
 			LOG.error(msg);
 			throw new RuntimeException(msg);
 		}
@@ -178,7 +175,7 @@ public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuil
 		// Fail if getHasParentVHATAssociationTypeObject() does not exist
 		if (!getHasParentVHATAssociationTypeObject().isPresent())
 		{
-			String msg = "Listener " + this.getListenerName() + " found no concept for VHAT has_parent UUID=" + HAS_PARENT_VHAT_ASSOCIATION_TYPE;
+			String msg = "Listener " + this.getListenerName() + " found no concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID;
 			LOG.error(msg);
 			//this.disable();
 			throw new RuntimeException(msg);
