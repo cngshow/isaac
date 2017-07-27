@@ -41,8 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -50,29 +52,32 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.index.IndexFormatTooOldException;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TrackingIndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BooleanQuery.Builder;
 import org.apache.lucene.search.ControlledRealTimeReopenThread;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ReferenceManager;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
-import org.apache.lucene.util.Version;
+
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
@@ -87,10 +92,12 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.ComponentSearchResult;
 import gov.vha.isaac.ochre.api.index.ConceptSearchResult;
+import gov.vha.isaac.ochre.api.index.GenerateIndexes;
 import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
+import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.impl.utility.Frills;
@@ -105,7 +112,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     public static final String DEFAULT_LUCENE_FOLDER = "lucene";
     private static final Logger log = LogManager.getLogger();
-    public static final Version luceneVersion = Version.LUCENE_4_10_3;
     private static final UnindexedFuture unindexedFuture = new UnindexedFuture();
     
     private File indexFolder_ = null;
@@ -125,8 +131,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     static {
         FIELD_TYPE_INT_STORED_NOT_INDEXED = new FieldType();
-        FIELD_TYPE_INT_STORED_NOT_INDEXED.setNumericType(FieldType.NumericType.INT);
-        FIELD_TYPE_INT_STORED_NOT_INDEXED.setIndexed(false);
+        FIELD_TYPE_INT_STORED_NOT_INDEXED.setNumericType(FieldType.LegacyNumericType.INT);
+        FIELD_TYPE_INT_STORED_NOT_INDEXED.setIndexOptions(IndexOptions.NONE);
         FIELD_TYPE_INT_STORED_NOT_INDEXED.setStored(true);
         FIELD_TYPE_INT_STORED_NOT_INDEXED.setTokenized(false);
         FIELD_TYPE_INT_STORED_NOT_INDEXED.freeze();
@@ -140,11 +146,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     protected final ExecutorService luceneWriterService;
     protected ExecutorService luceneWriterFutureCheckerService;
     private final ControlledRealTimeReopenThread<IndexSearcher> reopenThread;
-    private final TrackingIndexWriter trackingIndexWriter;
-    private final ReferenceManager<IndexSearcher> searcherManager;
+    private IndexWriter indexWriter;
+    private final ReferenceManager<IndexSearcher> referenceManager;
     private final String indexName_;
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
+    boolean reindexRequired = false;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -167,33 +174,34 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             indexFolder_.mkdirs();
 
             log.info("Index: " + indexFolder_.getAbsolutePath());
-            Directory indexDirectory = new MMapDirectory(indexFolder_); //switch over to MMapDirectory - in theory - this gives us back some 
+            
+            Directory indexDirectory = new MMapDirectory(indexFolder_.toPath()); //switch over to MMapDirectory - in theory - this gives us back some 
             //room on the JDK stack, letting the OS directly manage the caching of the index files - and more importantly, gives us a huge 
             //performance boost during any operation that tries to do multi-threaded reads of the index (like the SOLOR rules processing) because
             //the default value of SimpleFSDirectory is a huge bottleneck.
 
-            indexDirectory.clearLock("write.lock");
+            try
+            {
+                indexWriter = new IndexWriter(indexDirectory, getIndexWriterConfig());
+            }
+            catch (IndexFormatTooOldException e)
+            {
+                log.warn("Lucene index format was too old in'" + getIndexerName() + "'.  Reindexing!");
+                RecursiveDelete.delete(indexFolder_);
+                indexFolder_.mkdirs();
+                indexWriter = new IndexWriter(indexDirectory, getIndexWriterConfig());
+                reindexRequired = true;
+            }
+            //In the case of a blank index, we need to kick it to disk, otherwise, the search manager constructor fails.
+            indexWriter.commit();
 
-            IndexWriterConfig config = new IndexWriterConfig(luceneVersion, new PerFieldAnalyzer());
-            config.setRAMBufferSizeMB(256);
-            MergePolicy mergePolicy = new LogByteSizeMergePolicy();
-
-            config.setMergePolicy(mergePolicy);
-            config.setSimilarity(new ShortTextSimilarity());
-
-            IndexWriter indexWriter = new IndexWriter(indexDirectory, config);
-
-            trackingIndexWriter = new TrackingIndexWriter(indexWriter);
-
-            boolean applyAllDeletes = false;
-
-            searcherManager = new SearcherManager(indexWriter, applyAllDeletes, null);
             // [3]: Create the ControlledRealTimeReopenThread that reopens the index periodically taking into 
             //      account the changes made to the index and tracked by the TrackingIndexWriter instance
             //      The index is refreshed every 60sc when nobody is waiting 
             //      and every 100 millis whenever is someone waiting (see search method)
             //      (see http://lucene.apache.org/core/4_3_0/core/org/apache/lucene/search/NRTManagerReopenThread.html)
-            reopenThread = new ControlledRealTimeReopenThread<>(trackingIndexWriter, searcherManager, 60.00, 0.1);
+            referenceManager = new SearcherManager(indexDirectory, new SearcherFactory());
+            reopenThread = new ControlledRealTimeReopenThread<IndexSearcher>(indexWriter, referenceManager, 60.00, 0.1);
    
             this.startThread();
             
@@ -224,11 +232,25 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                     {
                         log.info("submitting " + size + " sememes to indexer " + getIndexerName() + " due to commit");
                     }
+                    ArrayList<Future<Long>> futures = new ArrayList<>();
                     commitRecord.getSememesInCommit().stream().forEach(sememeId -> 
                     {
                         SememeChronology<?> sc = Get.sememeService().getSememe(sememeId);
-                        index(sc);
+                        futures.add(index(sc));
                     });
+                    //wait for all indexing operations to complete
+                    for (Future<Long> f : futures)
+                    {
+                        try 
+                        {
+                            f.get();
+                        } 
+                        catch (InterruptedException | ExecutionException e) 
+                        {
+                            log.error("Unexpected error waiting for index update",  e);
+                        }
+                    }
+                    commitWriter();
                 }
                 
                 @Override
@@ -249,6 +271,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                     return UuidT5Generator.get(getIndexerName());
                 }
             };
+            
             Get.commitService().addChangeListener(changeListenerRef_);
             
         }
@@ -256,6 +279,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure(indexName, e);
             throw e;
         }
+    }
+    
+    private IndexWriterConfig getIndexWriterConfig()
+    {
+        IndexWriterConfig config = new IndexWriterConfig(new PerFieldAnalyzer());
+        config.setRAMBufferSizeMB(256);
+        MergePolicy mergePolicy = new LogByteSizeMergePolicy();
+
+        config.setMergePolicy(mergePolicy);
+        config.setSimilarity(new ShortTextSimilarity());
+        return config;
     }
 
     private void startThread() {
@@ -344,7 +378,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public final void clearIndex() {
         try {
-            trackingIndexWriter.deleteAll();
+            indexWriter.deleteAll();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -353,8 +387,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public void forceMerge() {
         try {
-            trackingIndexWriter.getIndexWriter().forceMerge(1);
-            searcherManager.maybeRefreshBlocking();
+            indexWriter.forceMerge(1);
+            referenceManager.maybeRefreshBlocking();
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
@@ -368,7 +402,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             //waiting for the future checker service is sufficient to ensure that all write operations are complete.
             luceneWriterFutureCheckerService.shutdown();
             luceneWriterFutureCheckerService.awaitTermination(15, TimeUnit.MINUTES);
-            trackingIndexWriter.getIndexWriter().close();
+            indexWriter.close();
         } catch (IOException | InterruptedException ex) {
             throw new RuntimeException(ex);
         }
@@ -377,8 +411,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public final void commitWriter() {
         try {
-            trackingIndexWriter.getIndexWriter().commit();
-            searcherManager.maybeRefreshBlocking();
+            indexWriter.commit();
+            referenceManager.maybeRefreshBlocking();
          } catch (IOException ex) {
                 throw new RuntimeException(ex);
          }
@@ -402,7 +436,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             if (targetGeneration != null && targetGeneration != Long.MIN_VALUE) {
                 if (targetGeneration == Long.MAX_VALUE)
                 {
-                    searcherManager.maybeRefreshBlocking();
+                    referenceManager.maybeRefreshBlocking();
                 }
                 else
                 {
@@ -417,7 +451,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 }
             }
             
-            IndexSearcher searcher = searcherManager.acquire();
+            IndexSearcher searcher = referenceManager.acquire();
             
             try 
             {
@@ -432,9 +466,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 TopDocs topDocs;
                 if (filter != null)
                 {
-                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(adjustedLimit, q, searcher, filter);
+                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(adjustedLimit, searcher, filter);
                     searcher.search(q, tdf);
-                    topDocs = tdf.getTopDocs();
+                    topDocs = tdf.topDocs();
                 }
                 else
                 {
@@ -466,7 +500,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 log.debug("Returning {} results from query", results.size());
                 return results;
             } finally {
-                searcherManager.release(searcher);
+                referenceManager.release(searcher);
             }
         }   catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -527,17 +561,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             }
         }
         if (nullSafe.size() > 0) {
-            BooleanQuery outerWrap = new BooleanQuery();
+            Builder outerWrap = new BooleanQuery.Builder();
             outerWrap.add(query, Occur.MUST);
-            BooleanQuery wrap = new BooleanQuery();
+            Builder wrap = new BooleanQuery.Builder();
 
             //or together the sememeConceptSequences, but require at least one of them to match.
             for (int i : nullSafe) {
                 wrap.add(new TermQuery(new Term(FIELD_SEMEME_ASSEMBLAGE_SEQUENCE, i + "")), Occur.SHOULD);
             }
-            outerWrap.add(wrap, Occur.MUST);
+            outerWrap.add(wrap.build(), Occur.MUST);
             
-            return outerWrap;
+            return outerWrap.build();
         }
         else
         {
@@ -554,7 +588,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     {
         try
         {
-            BooleanQuery bq = new BooleanQuery();
+            Builder bq = new BooleanQuery.Builder();
             
             if (metadataOnly)
             {
@@ -574,9 +608,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 qp2.setAllowLeadingWildcard(true);
                 bq.add(qp2.parse(query), Occur.SHOULD);
             }
-            BooleanQuery wrap = new BooleanQuery();
-            wrap.add(bq, Occur.MUST);
-            return wrap;
+            return new BooleanQuery.Builder().add(bq.build(), Occur.MUST).build();
         }
         catch (IOException|ParseException e)
         {
@@ -600,7 +632,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         tokenStream.close();
         analyzer.close();
         
-        BooleanQuery bq = new BooleanQuery();
+        Builder bq = new BooleanQuery.Builder();
         if (terms.size() > 0 && !searchString.endsWith(" "))
         {
             String last = terms.remove(terms.size() - 1);
@@ -610,7 +642,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             bq.add(new TermQuery(new Term(field, s)), Occur.MUST);
         });
         
-        return bq;
+        return bq.build();
     }
     
     @Override
@@ -703,7 +735,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         @Override
         public Long call() throws Exception {
             Document doc = new Document();
-            doc.add(new IntField(FIELD_COMPONENT_NID, chronicle.getNid(), LuceneIndexer.FIELD_TYPE_INT_STORED_NOT_INDEXED));
+            doc.add(new LegacyIntField(FIELD_COMPONENT_NID, chronicle.getNid(), LuceneIndexer.FIELD_TYPE_INT_STORED_NOT_INDEXED));
 
             addFields(chronicle, doc);
 
@@ -717,7 +749,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             // because the new versions are additive (we don't allow deletion of content)
             // so the search results will be the same. Duplicates can be removed
             // by regenerating the index.
-            long indexGeneration = trackingIndexWriter.addDocument(doc);
+            long indexGeneration = indexWriter.addDocument(doc);
 
             releaseLatch(getNid(), indexGeneration);
 
@@ -791,6 +823,22 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @PostConstruct
     private void startMe() {
         log.info("Starting " + getIndexerName() + " post-construct");
+        if (reindexRequired)
+        {
+            try
+            {
+                log.info("Starting reindex of '" + getIndexerName() + "' due to out-of-date index");
+                GenerateIndexes gi = new GenerateIndexes(this);
+                LookupService.getService(WorkExecutors.class).getExecutor().execute(gi);
+                gi.get();
+            } 
+            catch (Exception e) 
+            {
+                log.fatal("bah!", e);
+                throw new RuntimeException(e.getMessage());
+            }
+         }
+         log.info("Reindex complete");
     }
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);
@@ -804,7 +852,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     @Override
     public DatabaseValidity getDatabaseValidityStatus() {
-    	return databaseValidity;
+        return databaseValidity;
     }
 
     @Override
