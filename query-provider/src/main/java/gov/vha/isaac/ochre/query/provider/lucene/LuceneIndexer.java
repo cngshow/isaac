@@ -50,8 +50,10 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LogByteSizeMergePolicy;
@@ -121,6 +123,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     //this isn't indexed
     public static final String FIELD_COMPONENT_NID = "_component_nid_";
+    private static final String FIELD_INDEXED_MODULE_STRING_VALUE = "_module_content_";
+    private static final String FIELD_INDEXED_PATH_STRING_VALUE = "_path_content_";
     
     protected static final FieldType FIELD_TYPE_INT_STORED_NOT_INDEXED;
 
@@ -147,7 +151,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     
-    private ScoreDoc lastDoc_ = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -429,7 +432,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 // We're only going to return up to what was requested
                 List<SearchResult> results = new ArrayList<>(sizeLimit);
                 HashSet<Integer> includedComponentNids = new HashSet<>();
-                ScoreDoc lastDoc = lastDoc_;
+                ScoreDoc lastDoc = null;
                 boolean complete = false;  //i.e., results.size() < sizeLimit
                 
                 if (filter == null)
@@ -829,28 +832,57 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         return indexFolder_.toPath(); 
     }
     
-    /**
-     * Sets the last document fetched so future queries can start searching 'after' that one.
-     * 
-     * @param after The Lucene document representing the bottom of the preview page/results
-     */
-    public void setLastDoc(ScoreDoc after)
-    {
-    	// We don't care if it's null
-    	lastDoc_ = after;
+    protected void addField(Document doc, String fieldName, String value, boolean tokenize) {
+        //index twice per field - once with the standard analyzer, once with the whitespace analyzer.
+        if (tokenize) {
+            doc.add(new TextField(fieldName, value, Field.Store.NO));
+        }
+        doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
     }
     
     /**
-     * Fetches the last doc found for the last-run query.
+     * Indexing the UUID of the ISAAC modules for each sememe.
      * 
-     * @return An <code>Optional<ScoreDoc></code> representing the bottom/last document returned from the query.
+     * Note: there will be 1 or more modules/version.
+     * 
+     * @param doc - The Lucene document/record to index
+     * @param moduleSeq - The ISAAC module sequence identifier
      */
-    public Optional<ScoreDoc> getLastDoc()
+    protected void indexModule(Document doc, int moduleSeq)
     {
-    	if (lastDoc_ == null)
-    	{
-    		return Optional.empty();
-    	}
-    	return Optional.of(lastDoc_);
+    	System.out.println("indexModule()");
+    	Get.sememeService().getSememesForComponentFromAssemblage(moduleSeq, 
+    			MetaData.MODULE.getConceptSequence()).forEach((s) -> {
+			Optional<UUID> uuid = Get.identifierService().getUuidPrimordialFromConceptId(s.getNid()); 
+			if (uuid.isPresent())
+			{
+				addField(doc, FIELD_INDEXED_MODULE_STRING_VALUE, uuid.get().toString(), true);
+				incrementIndexedItemCount("Module - " + s.getSememeType().toString());
+				System.out.println("Adding module field - " + FIELD_INDEXED_MODULE_STRING_VALUE + " " + uuid.get().toString());
+			}
+    	});    	
+    }
+    
+    /**
+     * Indexing the UUID of the ISAAC paths for each sememe.
+     * 
+     * Note: there will be 1 or more paths/version.
+     * 
+     * @param doc - The Lucene document/record to index
+     * @param moduleSeq - The ISAAC module sequence identifier
+     */
+    protected void indexPath(Document doc, int pathSeq)
+    {
+    	System.out.println("indexPath()");
+    	Get.sememeService().getSememesForComponentFromAssemblage(pathSeq, 
+    			MetaData.PATH.getConceptSequence()).forEach((s) -> {
+			Optional<UUID> uuid = Get.identifierService().getUuidPrimordialFromConceptId(s.getNid()); 
+			if (uuid.isPresent())
+			{
+				addField(doc, FIELD_INDEXED_PATH_STRING_VALUE, uuid.get().toString(), true);
+				incrementIndexedItemCount("Path - " + s.getSememeType().toString());
+				System.out.println("Adding module field - " + FIELD_INDEXED_MODULE_STRING_VALUE + " " + uuid.get().toString());
+			}
+    	});
     }
 }

@@ -93,13 +93,13 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         }
     }
 
-    private void addField(Document doc, String fieldName, String value, boolean tokenize) {
-        //index twice per field - once with the standard analyzer, once with the whitespace analyzer.
-        if (tokenize) {
-            doc.add(new TextField(fieldName, value, Field.Store.NO));
-        }
-        doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
-    }
+//    private void addField(Document doc, String fieldName, String value, boolean tokenize) {
+//        //index twice per field - once with the standard analyzer, once with the whitespace analyzer.
+//        if (tokenize) {
+//            doc.add(new TextField(fieldName, value, Field.Store.NO));
+//        }
+//        doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
+//    }
     
     /**
      * A generic query API that handles most common cases.  The cases handled for various component property types
