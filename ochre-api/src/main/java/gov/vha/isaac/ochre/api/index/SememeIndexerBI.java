@@ -35,7 +35,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSem
  *
  */
 @Contract
-public interface SememeIndexerBI {
+public interface SememeIndexerBI extends IndexServiceBI {
 
 	/**
 	 * @param queryDataLower

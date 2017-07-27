@@ -15,13 +15,13 @@
  */
 package gov.vha.isaac.ochre.query.provider.lucene;
 
-import org.apache.lucene.search.similarities.DefaultSimilarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 
 /**
  *
  * @author kec
  */
-class ShortTextSimilarity extends DefaultSimilarity {
+class ShortTextSimilarity extends ClassicSimilarity {
 
     public ShortTextSimilarity() {
     }
