@@ -30,13 +30,17 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
+
 import com.cedarsoftware.util.io.JsonWriter;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -130,8 +134,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 			// Search for modified components
 			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+				ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
 				for (OchreExternalizable newComp : newContentMap.get(type)) {
-					ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
 					ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
 
 					if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
@@ -157,7 +161,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				}
 			}
 
-			// Add newCons not in newList
+			// Add oldComps not in matchedSet
 			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
 				if (!matchedSet.contains(((ObjectChronology<?>) oldComp).getPrimordialUuid())) {
 					OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(oldComp,
@@ -169,7 +173,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				}
 			}
 
-			// Add newCons not in newList
+			// Add newComps not in matchedSet
 			for (OchreExternalizable newComp : newContentMap.get(type)) {
 				if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
 
@@ -267,15 +271,16 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						String componentToWrite = "---- " + key.toString() + " " + componentType + " #" + counter++
 								+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
 
+						// Print Header
 						comparisonAnalysisJsonWriter.put(componentToWrite);
-
+						ComparisonAnalysisTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
 						textComparisonWriter.write("\n\n\n\t\t\t" + componentToWrite);
-						comparisonAnalysisJsonWriter.put(c);
+
 						try {
-							ComparisonAnalysisTextWriter.write(c.toString());
-							ComparisonAnalysisTextWriter.write("\n\n\n");
-							String s = c.toString();
-							textComparisonWriter.write(s);
+							// Print Value (JSON Working TXT has issues)
+						comparisonAnalysisJsonWriter.put(c);
+							ComparisonAnalysisTextWriter.write(c.toString() + "\n\n\n");
+							textComparisonWriter.write(c.toString());
 						} catch (Exception e) {
 							log.debug("Failure writing toString for: " + ((ObjectChronology<?>) c).getPrimordialUuid());
 						}
@@ -403,8 +408,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				}
 			});
 		} catch (Exception ex) {
-			log.info("Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, "
-					+ commentCount + " comments"
+			log.info("Exception during load: Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, "
+					+ aliasCount + " aliases, " + commentCount + " comments"
 					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
