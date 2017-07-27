@@ -2,13 +2,10 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
-* 2017/08/?? - 4.15 - PENDING
-    * DATABASE COMPATIBILITY ISSUE - Updating Lucene version to current.  Upon start with an old database, the indexes will be deleted, 
-        and new indexes will be built.  This will take much longer than a normal startup.  The automatic reindex feature is a new feature.
-    * Bug fixed in lucene index design, where queries with sememe filters did not find appropriate results on edits that had occurred 
-        after the initial index.
-    * Bugs fixed relating to timing issues on when an item was committed, vs when it is available in the index.  Commit now does not complete 
-        until the index is also up to date.
+* 2017/07/27 - 4.15
+    * DATABASE COMPATIBILITY ISSUE - Updating Lucene version to current.  Upon start with an old database, the indexes will be deleted, and new indexes will be built.  This will take much longer than a normal startup.  The automatic reindex feature is a new feature.
+    * Bug fixed in lucene index design, where queries with sememe filters did not find appropriate results on edits that had occurred after the initial index.
+    * Bugs fixed relating to timing issues on when an item was committed, vs when it is available in the index.  Commit now does not complete until the index is also up to date.
 
 * 2017/07/25 - 4.14
     * Changes for has_parent code found during testing.
