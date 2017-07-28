@@ -28,7 +28,7 @@ import org.glassfish.hk2.api.Rank;
 import org.jvnet.hk2.annotations.Service;
 
 import gov.vha.isaac.ochre.api.User;
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.UserRoleService;
 
 /**
@@ -50,7 +50,7 @@ public class SimpleUserRoleService implements UserRoleService {
 	private Map<UUID, User> userMap = new HashMap<>();
 
 	/**  The definition roles. */
-	private Set<UserRole> definitionRoles = new HashSet<>();
+	private Set<PrismeRole> definitionRoles = new HashSet<>();
 
 	/**
 	 * Defines the user roles for the Mock case 
@@ -64,11 +64,11 @@ public class SimpleUserRoleService implements UserRoleService {
 	 * @see gov.vha.isaac.ochre.api.UserRoleService#getAllPossibleUserRoles()
 	 */
 	@Override
-	public Set<UserRole> getAllPossibleUserRoles() {
+	public Set<PrismeRole> getAllPossibleUserRoles() {
 		return definitionRoles;
 	}
 	
-	public void addRole(UserRole roleName)
+	public void addRole(PrismeRole roleName)
 	{
 		definitionRoles.add(roleName);
 	}

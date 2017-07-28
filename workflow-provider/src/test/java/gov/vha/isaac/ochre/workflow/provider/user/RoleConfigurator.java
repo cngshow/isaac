@@ -22,7 +22,7 @@ import java.util.UUID;
 
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.User;
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.workflow.user.SimpleUserRoleService;
 
 /**
@@ -42,13 +42,13 @@ public class RoleConfigurator
 	public static void configureForTest()
 	{
 		SimpleUserRoleService rolesService = LookupService.get().getService(SimpleUserRoleService.class);
-		rolesService.addRole(UserRole.EDITOR);
-		rolesService.addRole(UserRole.REVIEWER);
-		rolesService.addRole(UserRole.APPROVER);
-		rolesService.addRole(UserRole.AUTOMATED);
+		rolesService.addRole(PrismeRole.EDITOR);
+		rolesService.addRole(PrismeRole.REVIEWER);
+		rolesService.addRole(PrismeRole.APPROVER);
+		rolesService.addRole(PrismeRole.AUTOMATED);
 
-		rolesService.addUser(new User("test", firstUserId, null, UserRole.EDITOR, UserRole.APPROVER));
-		rolesService.addUser(new User("test2", secondUserId, null, UserRole.REVIEWER));
+		rolesService.addUser(new User("test", firstUserId, null, PrismeRole.EDITOR, PrismeRole.APPROVER));
+		rolesService.addUser(new User("test2", secondUserId, null, PrismeRole.REVIEWER));
 	}
 
 	/**

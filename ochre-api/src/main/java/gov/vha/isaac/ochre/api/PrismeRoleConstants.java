@@ -20,26 +20,22 @@
 package gov.vha.isaac.ochre.api;
 
 /**
+ * String constants for use in both PrismeRole and REST API annotations
  * 
- * {@link UserRoleConstants}
+ * {@link PrismeRoleConstants}
  *
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-public class UserRoleConstants {
-	private UserRoleConstants() {}
-	
-	public final static String AUTOMATED = "automated";
-
+public class PrismeRoleConstants {
 	public final static String SUPER_USER = "super_user";
 	public final static String ADMINISTRATOR = "administrator";
 	public final static String READ_ONLY = "read_only";
 	public final static String EDITOR = "editor";
 	public final static String REVIEWER = "reviewer";
 	public final static String APPROVER = "approver";
-	public final static String MANAGER = "manager";
 	public final static String VUID_REQUESTOR = "vuid_requestor";
 	public final static String NTRT = "ntrt";
 	public final static String DEPLOYMENT_MANAGER = "deployment_manager";
-
+	public final static String AUTOMATED = "automated";
 }
