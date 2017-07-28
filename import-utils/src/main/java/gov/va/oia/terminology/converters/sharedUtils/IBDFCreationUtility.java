@@ -173,7 +173,7 @@ public class IBDFCreationUtility
 	
 	private final int authorSeq_;
 	private final int terminologyPathSeq_;
-	private final long defaultTime_;
+	private long defaultTime_;
 	
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
 	public final static String metadataSemanticTag_ = " (ISAAC)";
@@ -1656,5 +1656,24 @@ public class IBDFCreationUtility
 		}
 		ConverterUUID.clearCache();
 		clearLoadStats();
+	}
+	
+	/**
+	 * Allows to set the module and associated time, helpful for versioning.
+	 * 
+	 * @param module The module UUID, setting as the default module
+	 * @param time The module time, if applicable, setting as the defaul time
+	 */
+	public void setModule(UUID module, Long time)
+	{
+		if (module != null)
+		{
+			module_ = ComponentReference.fromConcept(module);
+		}
+
+		if (time != null && time.longValue() > 0)
+		{
+			defaultTime_ = time.longValue();
+		}
 	}
 }
