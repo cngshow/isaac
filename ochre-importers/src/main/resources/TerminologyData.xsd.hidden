@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Modified from the version created for VETs to correct the missing data type on MoveFromConceptCode -->
+<!-- Modified from the version created for VETs to correct the missing data type on MoveFromConceptCode.
+Also added a missing data type on the mapset item grouping field -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:complexType name="MapSetType">
 		<xs:complexContent>
@@ -61,7 +62,7 @@
 					</xs:restriction>
 				</xs:simpleType>
 			</xs:element>
-			<xs:element name="Grouping" minOccurs="0"/>
+			<xs:element name="Grouping" type="xs:long" minOccurs="0"/>
 			<xs:element name="Sequence" type="xs:int"/>
 			<xs:element name="EffectiveDate" type="xs:date" minOccurs="0"/>
 			<xs:element name="Active" type="xs:boolean"/>

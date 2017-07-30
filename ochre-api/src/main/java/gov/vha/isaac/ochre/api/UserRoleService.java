@@ -48,5 +48,5 @@ public interface UserRoleService {
 	 *
 	 * @return all user roles defined in prism
 	 */
-	Set<UserRole> getAllPossibleUserRoles();
+	Set<PrismeRole> getAllPossibleUserRoles();
 }
