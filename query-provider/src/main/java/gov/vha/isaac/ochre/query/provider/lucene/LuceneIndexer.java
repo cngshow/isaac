@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,8 +52,10 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriter;
@@ -98,6 +101,7 @@ import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
+import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.impl.utility.Frills;
@@ -126,6 +130,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     //this isn't indexed
     public static final String FIELD_COMPONENT_NID = "_component_nid_";
+    private static final String FIELD_INDEXED_MODULE_STRING_VALUE = "_module_content_";
+    private static final String FIELD_INDEXED_PATH_STRING_VALUE = "_path_content_";
     
     protected static final FieldType FIELD_TYPE_INT_STORED_NOT_INDEXED;
 
@@ -858,5 +864,41 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     @Override
     public Path getDatabaseFolder() {
         return indexFolder_.toPath(); 
-    }
+	}
+
+	protected void addField(Document doc, String fieldName, String value, boolean tokenize) {
+		// index twice per field - once with the standard analyzer, once with
+		// the whitespace analyzer.
+		if (tokenize) 
+		{
+			doc.add(new TextField(fieldName, value, Field.Store.NO));
+		}
+		doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
+	}
+
+	/**
+	 * Indexing the UUID of the ISAAC modules for each sememe.
+	 * 
+	 * @param doc - The Lucene document/record to index
+	 * @param moduleSeq - The ISAAC module sequence identifier
+	 */
+	protected void indexModule(Document doc, int moduleSeq) 
+	{
+		UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
+		addField(doc, FIELD_INDEXED_MODULE_STRING_VALUE, moduleUuid.toString(), false);
+		incrementIndexedItemCount("Module"); // - " + moduleUuid
+	}
+
+	/**
+	 * Indexing the UUID of the ISAAC paths for each sememe.
+	 * 
+	 * @param doc - The Lucene document/record to index
+	 * @param pathSeq - The ISAAC module sequence identifier
+	 */
+	protected void indexPath(Document doc, int pathSeq) 
+	{
+		UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
+		addField(doc, FIELD_INDEXED_PATH_STRING_VALUE, pathUuid.toString(), false);
+		incrementIndexedItemCount("Path"); // - " + pathUuid
+	}
 }
