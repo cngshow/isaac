@@ -17,29 +17,20 @@
  * limitations under the License.
  */
 
-package gov.vha.isaac.ochre.api;
+package gov.vha.isaac.rest.services;
+
+import javax.ws.rs.client.Client;
+
+import org.jvnet.hk2.annotations.Contract;
 
 /**
  * 
- * {@link UserRoleConstants}
+ * {@link ClientService}
  *
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-public class UserRoleConstants {
-	private UserRoleConstants() {}
-	
-	public final static String AUTOMATED = "automated";
-
-	public final static String SUPER_USER = "super_user";
-	public final static String ADMINISTRATOR = "administrator";
-	public final static String READ_ONLY = "read_only";
-	public final static String EDITOR = "editor";
-	public final static String REVIEWER = "reviewer";
-	public final static String APPROVER = "approver";
-	public final static String MANAGER = "manager";
-	public final static String VUID_REQUESTOR = "vuid_requestor";
-	public final static String NTRT = "ntrt";
-	public final static String DEPLOYMENT_MANAGER = "deployment_manager";
-
+@Contract
+public interface ClientService {
+	Client getClient();
 }

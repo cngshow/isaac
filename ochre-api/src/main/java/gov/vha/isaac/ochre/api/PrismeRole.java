@@ -19,6 +19,8 @@
 
 package gov.vha.isaac.ochre.api;
 
+import java.util.Optional;
+
 /**
  * This is the master role file.  Both Prisme and IsaacRest should refer to this file.
  * Note:  The string for myName should be unique relative to all Roles.
@@ -28,17 +30,16 @@ package gov.vha.isaac.ochre.api;
  * 
  */
 public enum PrismeRole {
-
-	SUPER_USER(PrismeRoleType.GENERAL, "super_user"),
-	ADMINISTRATOR(PrismeRoleType.GENERAL, "administrator"),
-	READ_ONLY(PrismeRoleType.GENERAL, "read_only"),
-	EDITOR(PrismeRoleType.MODELING, "editor"),
-	REVIEWER(PrismeRoleType.MODELING, "reviewer"),
-	APPROVER(PrismeRoleType.MODELING, "approver"),
-	VUID_REQUESTOR(PrismeRoleType.GENERAL, "vuid_requestor"),
-	NTRT(PrismeRoleType.GENERAL, "ntrt"),
-	DEPLOYMENT_MANAGER(PrismeRoleType.DEPLOYMENT, "deployment_manager");
-
+	SUPER_USER(PrismeRoleType.GENERAL, PrismeRoleConstants.SUPER_USER),
+	ADMINISTRATOR(PrismeRoleType.GENERAL, PrismeRoleConstants.ADMINISTRATOR),
+	READ_ONLY(PrismeRoleType.GENERAL, PrismeRoleConstants.READ_ONLY),
+	EDITOR(PrismeRoleType.MODELING, PrismeRoleConstants.EDITOR),
+	REVIEWER(PrismeRoleType.MODELING, PrismeRoleConstants.REVIEWER),
+	APPROVER(PrismeRoleType.MODELING, PrismeRoleConstants.APPROVER),
+	VUID_REQUESTOR(PrismeRoleType.GENERAL, PrismeRoleConstants.VUID_REQUESTOR),
+	NTRT(PrismeRoleType.GENERAL, PrismeRoleConstants.NTRT),
+	DEPLOYMENT_MANAGER(PrismeRoleType.DEPLOYMENT, PrismeRoleConstants.DEPLOYMENT_MANAGER),
+	AUTOMATED(PrismeRoleType.NON_USER, PrismeRoleConstants.AUTOMATED);
 
 	private String myName;
 	private PrismeRoleType myType;
@@ -62,4 +63,22 @@ public enum PrismeRole {
         throw new IllegalArgumentException("No enum existst for " + value);
     }
 
+	public static Optional<PrismeRole> safeValueOf(String str) {
+		for (PrismeRole role : PrismeRole.values()) {
+			if (role.myName.equalsIgnoreCase(str)) {
+				return Optional.of(role);
+			}
+		}
+		
+		return Optional.empty();
+	}
+	public static Optional<PrismeRole> safeValueOf(int ord) {
+		for (PrismeRole role : PrismeRole.values()) {
+			if (role.ordinal() == ord) {
+				return Optional.of(role);
+			}
+		}
+		
+		return Optional.empty();
+	}
 }

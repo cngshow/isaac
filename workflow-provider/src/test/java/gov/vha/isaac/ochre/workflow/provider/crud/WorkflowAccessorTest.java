@@ -36,7 +36,7 @@ import org.junit.Test;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
@@ -89,11 +89,11 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	public void testGetDefinitionDetails() throws Exception {
 		DefinitionDetail entry = wp_.getWorkflowAccessor().getDefinitionDetails(mainDefinitionId);
 
-		Set<UserRole> expectedRoles = new HashSet<>();
-		expectedRoles.add(UserRole.EDITOR);
-		expectedRoles.add(UserRole.REVIEWER);
-		expectedRoles.add(UserRole.APPROVER);
-		expectedRoles.add(UserRole.AUTOMATED);
+		Set<PrismeRole> expectedRoles = new HashSet<>();
+		expectedRoles.add(PrismeRole.EDITOR);
+		expectedRoles.add(PrismeRole.REVIEWER);
+		expectedRoles.add(PrismeRole.APPROVER);
+		expectedRoles.add(PrismeRole.AUTOMATED);
 
 		Assert.assertEquals(entry.getBpmn2Id(), "VetzWorkflow");
 		Assert.assertEquals(entry.getName(), "VetzWorkflow");
@@ -186,18 +186,18 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 	 */
 	@Test
 	public void testGetUserRoles() throws Exception {
-		Set<UserRole> roles = wp_.getUserRoleStore().getUser(RoleConfigurator.getFirstTestUser()).getRoles();
+		Set<PrismeRole> roles = wp_.getUserRoleStore().getUser(RoleConfigurator.getFirstTestUser()).getRoles();
 		Assert.assertEquals(2, roles.size());
 
-		for (UserRole role : roles) {
-			Assert.assertTrue(role == UserRole.EDITOR || role == UserRole.APPROVER);
+		for (PrismeRole role : roles) {
+			Assert.assertTrue(role == PrismeRole.EDITOR || role == PrismeRole.APPROVER);
 		}
 
 		roles = wp_.getUserRoleStore().getUser(RoleConfigurator.getSecondTestUser()).getRoles();
 		Assert.assertEquals(1, roles.size());
 
-		UserRole role = roles.iterator().next();
-		Assert.assertEquals(UserRole.REVIEWER, role);
+		PrismeRole role = roles.iterator().next();
+		Assert.assertEquals(PrismeRole.REVIEWER, role);
 	}
 
 	/**
@@ -330,7 +330,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		for (AvailableAction act : firstProcessFirstUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Edit", act.getInitialState());
-			Assert.assertEquals(UserRole.EDITOR, act.getRole());
+			Assert.assertEquals(PrismeRole.EDITOR, act.getRole());
 
 			if (act.getAction().equals("Edit")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Review"));
@@ -354,7 +354,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		for (AvailableAction act : firstProcessSecondUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Review", act.getInitialState());
-			Assert.assertEquals(UserRole.REVIEWER, act.getRole());
+			Assert.assertEquals(PrismeRole.REVIEWER, act.getRole());
 
 			if (act.getAction().equals("QA Passes")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Approve"));
@@ -375,7 +375,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		for (AvailableAction act : secondProcessFirstUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Edit", act.getInitialState());
-			Assert.assertEquals(UserRole.EDITOR, act.getRole());
+			Assert.assertEquals(PrismeRole.EDITOR, act.getRole());
 
 			if (act.getAction().equals("Edit")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Review"));
@@ -407,7 +407,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		for (AvailableAction act : secondProcessSecondUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Review", act.getInitialState());
-			Assert.assertEquals(UserRole.REVIEWER, act.getRole());
+			Assert.assertEquals(PrismeRole.REVIEWER, act.getRole());
 
 			if (act.getAction().equals("QA Passes")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Approve"));
@@ -436,7 +436,7 @@ public class WorkflowAccessorTest extends AbstractWorkflowProviderTestPackage {
 		for (AvailableAction act : secondProcessFirstUserActions) {
 			Assert.assertEquals(mainDefinitionId, act.getDefinitionId());
 			Assert.assertEquals("Ready for Approve", act.getInitialState());
-			Assert.assertEquals(UserRole.APPROVER, act.getRole());
+			Assert.assertEquals(PrismeRole.APPROVER, act.getRole());
 
 			if (act.getAction().equals("Reject Review")) {
 				Assert.assertTrue(act.getOutcomeState().equals("Ready for Review"));

@@ -20,7 +20,7 @@ package gov.vha.isaac.ochre.workflow.model.contents;
 
 import java.util.UUID;
 
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 
 /**
@@ -51,7 +51,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	private String outcomeState;
 
 	/** The workflow role which may perform the action on the initial state. */
-	private UserRole role;
+	private PrismeRole role;
 
     /**
      * Definition uuid most significant bits for this component
@@ -72,7 +72,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 * @param outcomeState
 	 * @param role
 	 */
-	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, UserRole role) {
+	public AvailableAction(UUID definitionId, String initialState, String action, String outcomeState, PrismeRole role) {
 		this.definitionId = definitionId;
         this.definitionIdMsb = definitionId.getMostSignificantBits();
         this.definitionIdLsb = definitionId.getLeastSignificantBits();
@@ -134,7 +134,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 	 *
 	 * @return the role
 	 */
-	public UserRole getRole() {
+	public PrismeRole getRole() {
 		return role;
 	}
 
@@ -155,7 +155,7 @@ public class AvailableAction extends AbstractStorableWorkflowContents {
 		initialState = new String(in.getByteArrayField());
 		action = new String(in.getByteArrayField());
 		outcomeState = new String(in.getByteArrayField());
-		role = UserRole.safeValueOf(in.getInt()).get();
+		role = PrismeRole.safeValueOf(in.getInt()).get();
 
 		definitionId = new UUID(definitionIdMsb, definitionIdLsb);
 	}

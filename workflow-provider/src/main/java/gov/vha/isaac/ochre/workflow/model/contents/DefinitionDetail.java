@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.workflow.provider.BPMNInfo;
 
@@ -48,7 +48,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	private String version;
 
 	/** The workflow roles available defined via the definition . */
-	private Set<UserRole> roles;
+	private Set<PrismeRole> roles;
 
 	/** A description of the purpose of the Definition pulled by BPMN2. */
 	private String description;
@@ -66,7 +66,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * @param roles
 	 * @param description
 	 */
-	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<UserRole> roles,
+	public DefinitionDetail(String bpmn2Id, String name, String namespace, String version, Set<PrismeRole> roles,
 			String description) {
 		this.bpmn2Id = bpmn2Id;
 		this.name = name;
@@ -137,7 +137,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	 * 
 	 * @return the workflow roles available
 	 */
-	public Set<UserRole> getRoles() {
+	public Set<PrismeRole> getRoles() {
 		return roles;
 	}
 
@@ -159,7 +159,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		out.putByteArrayField(version.getBytes());
 
 		out.putInt(roles.size());
-		for (UserRole s : roles) {
+		for (PrismeRole s : roles) {
 			out.putInt(s.ordinal());
 		}
 		
@@ -177,7 +177,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 		int colCount = in.getInt();
 		roles = new HashSet<>();
 		for (int i = 0; i < colCount; i++) {
-			roles.add(UserRole.safeValueOf(in.getInt()).get());
+			roles.add(PrismeRole.safeValueOf(in.getInt()).get());
 		}
 		
 		description = new String(in.getByteArrayField());
@@ -194,7 +194,7 @@ public class DefinitionDetail extends AbstractStorableWorkflowContents {
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
 
-		for (UserRole r : roles) {
+		for (PrismeRole r : roles) {
 			buf.append(r + ", ");
 		}
 

@@ -93,241 +93,245 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
 @Service(name = "VHATIsAHasParentSynchronizingSememeBuildListener")
 @RunLevel(value = LookupService.SL_L3)
 public class VHATIsAHasParentSynchronizingSememeBuildListener extends SememeBuildListener {
-	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingSememeBuildListener.class);
-
-	// Cached VHAT module sequences
-	private static Set<Integer> VHAT_MODULES = null;
-	private static Set<Integer> getVHATModules() {
-		// Initialize VHAT module sequences cache
-		if (VHAT_MODULES == null || VHAT_MODULES.size() == 0) { // Should be unnecessary
-			VHAT_MODULES = Frills.getAllChildrenOfConcept(MetaData.VHAT_MODULES.getConceptSequence(), true, true);
-		}
-		return VHAT_MODULES;
-	}
-	
-	private static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getHasParentVHATAssociationTypeObject() {
-		// Lazily initialize HAS_PARENT_VHAT_ASSOCIATION_TYPE_OBJECT
-		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID));
-	}
-
-	private final ThreadLocal<Boolean> disabledToPreventRecursion = ThreadLocal.withInitial(new Supplier<Boolean>() {
-		@Override public Boolean get() { return false; }
-	});
-	
-	VHATIsAHasParentSynchronizingSememeBuildListener() {
-		super();
-	}
-
-	private static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
-		final Set<Integer> selectedAssemblages = new HashSet<>();
-		if (!getHasParentVHATAssociationTypeObject().isPresent())
-		{
-			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID + ". Disabling listener " + VHATIsAHasParentSynchronizingSememeBuildListener.class.getSimpleName();
-			LOG.error(msg);
-			throw new RuntimeException(msg);
-		}
-		selectedAssemblages.add(getHasParentVHATAssociationTypeObject().get().getConceptSequence());
-		
-		final Set<SememeType> sememeTypesToExclude = new HashSet<>();
-		for (SememeType type : SememeType.values()) {
-			if (type != SememeType.DYNAMIC) {
-				sememeTypesToExclude.add(type);
-			}
-		}
-
-		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, TermAux.DEVELOPMENT_PATH.getConceptSequence());
-		final StampCoordinate activeVhatStampCoordinate = 
-				new StampCoordinateImpl(StampPrecedence.PATH,
-						stampPosition, 
-						ConceptSequenceSet.of(getVHATModules()),
-						State.ACTIVE_ONLY_SET);
-		final Iterator<SememeChronology<? extends SememeVersion<?>>> it = Frills.getSememesForComponentFromAssemblagesFilteredBySememeType(nid, selectedAssemblages, sememeTypesToExclude).iterator();
-		final List<DynamicSememeImpl> hasParentAssociationDynamicSememesToReturn = new ArrayList<>();
-		while (it.hasNext()) {
-			SememeChronology<DynamicSememeImpl> hasParentAssociationDynamicSememe = (SememeChronology<DynamicSememeImpl>)it.next();
-			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, activeVhatStampCoordinate);
-			if (optionalLatestVersion.isPresent()) {
-				if (optionalLatestVersion.get().contradictions().isPresent()) {
-					// TODO handle contradictions
-				}
-				hasParentAssociationDynamicSememesToReturn.add(optionalLatestVersion.get().value());
-			}
-		}
-		
-		return Collections.unmodifiableList(hasParentAssociationDynamicSememesToReturn);
-	}
-
-
-	/* (non-Javadoc)
-	 * @see gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI#applyAfter(gov.vha.isaac.ochre.api.coordinate.EditCoordinate, gov.vha.isaac.ochre.api.commit.ChangeCheckerMode, gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion, java.util.List)
-	 */
-	@Override
-	public void applyAfter(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
-			SememeVersion<?> builtSememeVersion, List<ObjectChronology<? extends StampedVersion>> builtObjects) {
-
-		// Only apply to edits to cached VHAT modules
-		if (! getVHATModules().contains(editCoordinate.getModuleSequence())) {
-			return;
-		}
-		
-		LOG.debug("Running " + getListenerName() + " applyAfter()...");
-		
-		// Fail if getHasParentVHATAssociationTypeObject() does not exist
-		if (!getHasParentVHATAssociationTypeObject().isPresent())
-		{
-			String msg = "Listener " + this.getListenerName() + " found no concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID;
-			LOG.error(msg);
-			//this.disable();
-			throw new RuntimeException(msg);
-		}
-
-		if (builtSememeVersion.getChronology().getSememeType() == SememeType.LOGIC_GRAPH) {
-			final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
-					.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
-
-			if (!referencedComponent.isPresent()) {
-				String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
-				LOG.error(msg);
-				throw new RuntimeException(msg);
-			}
-
-			// Handle changes to LOGIC_GRAPH
-			// In practice, this should only be for a new concept
-
-			// Do not support retirement of a logic graph
-			if (builtSememeVersion.getState() != State.ACTIVE) {
-				String msg = "NON ACTIVE (" + builtSememeVersion.getState() + " ) LOGIC_GRAPH sememes NOT supported: " + builtSememeVersion;
-				LOG.error(msg);
-				throw new RuntimeException(msg);
-			}
-			
-			// TODO check for and prohibit edits to logic graph, which are not supported
-			
-			Set<Integer> parentConceptSequences = Frills.getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)builtSememeVersion);
-			if (parentConceptSequences.size() == 0) {
-				String msg = "Encountered logic graph for concept NID=" + referencedComponent.get().getNid() + ", UUID=" + referencedComponent.get().getPrimordialUuid() + " with no specified parents (concept nodes in necessary set nodes)";
-				LOG.error(msg);
-				throw new RuntimeException(msg);
-			}
-
-			disabledToPreventRecursion.set(true);
-
-			try {
-				for (int parentConceptSequence : parentConceptSequences) {
-					final Optional<? extends ObjectChronology<? extends StampedVersion>> parentConcept = Get.identifiedObjectService()
-							.getIdentifiedObjectChronology(Get.identifierService().getConceptNid(parentConceptSequence));
-					if (!parentConcept.isPresent())
-					{
-						String msg = "No identified object for parentConcept UUID=" + parentConcept.get().getPrimordialUuid() + " for referenced component " + referencedComponent.get().getPrimordialUuid();
-						LOG.error(msg);
-						throw new RuntimeException(msg);
-					}
-
-					DynamicSememeData[] data = new DynamicSememeData[1];
-					data[0] = (parentConcept.isPresent() ?  new DynamicSememeUUIDImpl(parentConcept.get().getPrimordialUuid()) : null);
-
-					SememeBuilder<? extends SememeChronology<?>> associationSememeBuilder =  Get.sememeBuilderService().getDynamicSememeBuilder(
-							referencedComponent.get().getNid(), getHasParentVHATAssociationTypeObject().get().getConceptSequence(), data);
-
-					UUID associationItemUUID = UuidT5Generator.get(IsaacMappingConstants.get().MAPPING_NAMESPACE.getUUID(), 
-							referencedComponent.get().getPrimordialUuid().toString() + "|" 
-									+ getHasParentVHATAssociationTypeObject().get().getPrimordialUuid().toString() + "|"
-									+ (!(parentConcept.isPresent()) ? "" : parentConcept.get().getPrimordialUuid().toString()) + "|");
-
-					if (Get.identifierService().hasUuid(associationItemUUID))
-					{
-						String msg = "A has_parent association with the specified source (" + referencedComponent.get().getPrimordialUuid() + ") and target (" + parentConcept.get().getPrimordialUuid() + ") already exists";
-						LOG.error(msg);
-						throw new RuntimeException(msg);
-					}
-
-					associationSememeBuilder.setPrimordialUuid(associationItemUUID);
-
-					ObjectChronology<? extends StampedVersion> builtHasParentAssociation = associationSememeBuilder.build(editCoordinate, ChangeCheckerMode.ACTIVE).getNoThrow();	
-
-					builtObjects.add(builtHasParentAssociation);
-				}
-			} finally {
-				disabledToPreventRecursion.set(false);
-			}
-		} else if (builtSememeVersion.getChronology().getSememeType() == SememeType.DYNAMIC
-				&& builtSememeVersion.getAssemblageSequence() == getHasParentVHATAssociationTypeObject().get().getConceptSequence()) {
-
-			if (disabledToPreventRecursion.get()) {
-				UUID parentUuid = ((DynamicSememeUUIDImpl)((DynamicSememeImpl)builtSememeVersion).getData()[0]).getDataUUID();
-				LOG.debug("Not performing redundant logic graph update for has_parent VHAT association CHILD=" + builtSememeVersion.getReferencedComponentNid() + ", PARENT=" + parentUuid);
-				return;
-			}
-
-			// Handle changes to associations
-
+	// TODO eliminate this, entirely, once ChronologyChangeListener implemented
+//	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingSememeBuildListener.class);
+//
+//	// Cached VHAT module sequences
+//	private static Set<Integer> VHAT_MODULES = null;
+//	private static Set<Integer> getVHATModules() {
+//		// Initialize VHAT module sequences cache
+//		if (VHAT_MODULES == null || VHAT_MODULES.size() == 0) { // Should be unnecessary
+//			VHAT_MODULES = Frills.getAllChildrenOfConcept(MetaData.VHAT_MODULES.getConceptSequence(), true, true);
+//		}
+//		return VHAT_MODULES;
+//	}
+//	
+//	private static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getHasParentVHATAssociationTypeObject() {
+//		// Lazily initialize HAS_PARENT_VHAT_ASSOCIATION_TYPE_OBJECT
+//		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID));
+//	}
+//
+//	private final ThreadLocal<Boolean> disabledToPreventRecursion = ThreadLocal.withInitial(new Supplier<Boolean>() {
+//		@Override public Boolean get() { return false; }
+//	});
+//	
+//	VHATIsAHasParentSynchronizingSememeBuildListener() {
+//		super();
+//	}
+//
+//	private static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
+//		final Set<Integer> selectedAssemblages = new HashSet<>();
+//		if (!getHasParentVHATAssociationTypeObject().isPresent())
+//		{
+//			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID + ". Disabling listener " + VHATIsAHasParentSynchronizingSememeBuildListener.class.getSimpleName();
+//			LOG.error(msg);
+//			throw new RuntimeException(msg);
+//		}
+//		selectedAssemblages.add(getHasParentVHATAssociationTypeObject().get().getConceptSequence());
+//		
+//		final Set<SememeType> sememeTypesToExclude = new HashSet<>();
+//		for (SememeType type : SememeType.values()) {
+//			if (type != SememeType.DYNAMIC) {
+//				sememeTypesToExclude.add(type);
+//			}
+//		}
+//
+//		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, TermAux.DEVELOPMENT_PATH.getConceptSequence());
+//		final StampCoordinate activeVhatStampCoordinate = 
+//				new StampCoordinateImpl(StampPrecedence.PATH,
+//						stampPosition, 
+//						ConceptSequenceSet.of(getVHATModules()),
+//						State.ACTIVE_ONLY_SET);
+//		final Iterator<SememeChronology<? extends SememeVersion<?>>> it = Frills.getSememesForComponentFromAssemblagesFilteredBySememeType(nid, selectedAssemblages, sememeTypesToExclude).iterator();
+//		final List<DynamicSememeImpl> hasParentAssociationDynamicSememesToReturn = new ArrayList<>();
+//		while (it.hasNext()) {
+//			SememeChronology<DynamicSememeImpl> hasParentAssociationDynamicSememe = (SememeChronology<DynamicSememeImpl>)it.next();
+//			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, activeVhatStampCoordinate);
+//			if (optionalLatestVersion.isPresent()) {
+//				if (optionalLatestVersion.get().contradictions().isPresent()) {
+//					// TODO handle contradictions
+//				}
+//				hasParentAssociationDynamicSememesToReturn.add(optionalLatestVersion.get().value());
+//			}
+//		}
+//		
+//		return Collections.unmodifiableList(hasParentAssociationDynamicSememesToReturn);
+//	}
+//
+//
+//	/* (non-Javadoc)
+//	 * @see gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI#applyAfter(gov.vha.isaac.ochre.api.coordinate.EditCoordinate, gov.vha.isaac.ochre.api.commit.ChangeCheckerMode, gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion, java.util.List)
+//	 */
+//	@Override
+//	public void applyAfter(EditCoordinate editCoordinate, ChangeCheckerMode changeCheckerMode,
+//			SememeVersion<?> builtSememeVersion, List<ObjectChronology<? extends StampedVersion>> builtObjects) {
+//
+//		// Only apply to edits to cached VHAT modules
+//		if (! getVHATModules().contains(editCoordinate.getModuleSequence())) {
+//			return;
+//		}
+//		
+//		LOG.debug("Running " + getListenerName() + " applyAfter()...");
+//		
+//		// Fail if getHasParentVHATAssociationTypeObject() does not exist
+//		if (!getHasParentVHATAssociationTypeObject().isPresent())
+//		{
+//			String msg = "Listener " + this.getListenerName() + " found no concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID;
+//			LOG.error(msg);
+//			//this.disable();
+//			throw new RuntimeException(msg);
+//		}
+//
+//		// If this is not done, retrievals will not find mutable versions as most recent
+//		Get.commitService().addUncommitted(builtSememeVersion.getChronology());
+//
+//		if (builtSememeVersion.getChronology().getSememeType() == SememeType.LOGIC_GRAPH) {
 //			final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
 //					.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
-
+//
 //			if (!referencedComponent.isPresent()) {
 //				String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
 //				LOG.error(msg);
 //				throw new RuntimeException(msg);
 //			}
-			
-			// Get active has_parent association dynamic sememes attached to component
-			Collection<DynamicSememeImpl> hasParentAssociationDynamicSememes = getActiveHasParentAssociationDynamicSememesAttachedToComponent(builtSememeVersion.getReferencedComponentNid());
-
-			if (hasParentAssociationDynamicSememes.size() > 0) {
-				// Create set of parent concept sequences from active has_parent association dynamic sememes attached to component
-				Set<Integer> parentSequencesFromHasParentAssociationDynamicSememes = new HashSet<>();
-				for (DynamicSememeImpl hasParentAssociationDynamicSememe : hasParentAssociationDynamicSememes) {
-					UUID parentUuid = ((DynamicSememeUUIDImpl)hasParentAssociationDynamicSememe.getData()[0]).getDataUUID();
-					parentSequencesFromHasParentAssociationDynamicSememes.add(Get.identifierService().getConceptSequenceForUuids(parentUuid));
-				}
-
-				// Get logic graph sememe chronology in order to create new version
-				Optional<SememeChronology<? extends LogicGraphSememe<?>>> conceptLogicGraphSememeChronology = Frills.getLogicGraphChronology(builtSememeVersion.getReferencedComponentNid(), true);
-				if (! conceptLogicGraphSememeChronology.isPresent()) {
-					String msg = "No logic graph sememe found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
-					LOG.error(msg);
-					throw new RuntimeException(msg);
-				}
-				
-				// The following code is only necessary if comparing has_parent associations with latest logic graph version
-//				Optional<LatestVersion<LogicGraphSememe>> latestLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememe>)(conceptLogicGraphSememeChronology.get())).getLatestVersion(LogicGraphSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
-//				if (! latestLogicGraphSememeVersion.isPresent()) {
-//					String msg = "No latest logic graph sememe version found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
+//
+//			// Handle changes to LOGIC_GRAPH
+//			// In practice, this should only be for a new concept
+//
+//			// Do not support retirement of a logic graph
+//			if (builtSememeVersion.getState() != State.ACTIVE) {
+//				String msg = "NON ACTIVE (" + builtSememeVersion.getState() + " ) LOGIC_GRAPH sememes NOT supported: " + builtSememeVersion;
+//				LOG.error(msg);
+//				throw new RuntimeException(msg);
+//			}
+//			
+//			// TODO check for and prohibit edits to logic graph, which are not supported
+//			
+//			Set<Integer> parentConceptSequences = Frills.getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)builtSememeVersion);
+//			if (parentConceptSequences.size() == 0) {
+//				String msg = "Encountered logic graph for concept NID=" + referencedComponent.get().getNid() + ", UUID=" + referencedComponent.get().getPrimordialUuid() + " with no specified parents (concept nodes in necessary set nodes)";
+//				LOG.error(msg);
+//				throw new RuntimeException(msg);
+//			}
+//
+//			disabledToPreventRecursion.set(true);
+//
+//			try {
+//				for (int parentConceptSequence : parentConceptSequences) {
+//					final Optional<? extends ObjectChronology<? extends StampedVersion>> parentConcept = Get.identifiedObjectService()
+//							.getIdentifiedObjectChronology(Get.identifierService().getConceptNid(parentConceptSequence));
+//					if (!parentConcept.isPresent())
+//					{
+//						String msg = "No identified object for parentConcept UUID=" + parentConcept.get().getPrimordialUuid() + " for referenced component " + referencedComponent.get().getPrimordialUuid();
+//						LOG.error(msg);
+//						throw new RuntimeException(msg);
+//					}
+//
+//					DynamicSememeData[] data = new DynamicSememeData[1];
+//					data[0] = (parentConcept.isPresent() ?  new DynamicSememeUUIDImpl(parentConcept.get().getPrimordialUuid()) : null);
+//
+//					SememeBuilder<? extends SememeChronology<?>> associationSememeBuilder =  Get.sememeBuilderService().getDynamicSememeBuilder(
+//							referencedComponent.get().getNid(), getHasParentVHATAssociationTypeObject().get().getConceptSequence(), data);
+//
+//					UUID associationItemUUID = UuidT5Generator.get(IsaacMappingConstants.get().MAPPING_NAMESPACE.getUUID(), 
+//							referencedComponent.get().getPrimordialUuid().toString() + "|" 
+//									+ getHasParentVHATAssociationTypeObject().get().getPrimordialUuid().toString() + "|"
+//									+ (!(parentConcept.isPresent()) ? "" : parentConcept.get().getPrimordialUuid().toString()) + "|");
+//
+//					if (Get.identifierService().hasUuid(associationItemUUID))
+//					{
+//						String msg = "A has_parent association with the specified source (" + referencedComponent.get().getPrimordialUuid() + ") and target (" + parentConcept.get().getPrimordialUuid() + ") already exists";
+//						LOG.error(msg);
+//						throw new RuntimeException(msg);
+//					}
+//
+//					associationSememeBuilder.setPrimordialUuid(associationItemUUID);
+//
+//					ObjectChronology<? extends StampedVersion> builtHasParentAssociation = associationSememeBuilder.build(editCoordinate, ChangeCheckerMode.ACTIVE).getNoThrow();	
+//
+//					builtObjects.add(builtHasParentAssociation);
+//				}
+//			} finally {
+//				disabledToPreventRecursion.set(false);
+//			}
+//		} else if (builtSememeVersion.getChronology().getSememeType() == SememeType.DYNAMIC
+//				&& builtSememeVersion.getAssemblageSequence() == getHasParentVHATAssociationTypeObject().get().getConceptSequence()) {
+//
+//			if (disabledToPreventRecursion.get()) {
+//				UUID parentUuid = ((DynamicSememeUUIDImpl)((DynamicSememeImpl)builtSememeVersion).getData()[0]).getDataUUID();
+//				LOG.debug("Not performing redundant logic graph update for has_parent VHAT association CHILD=" + builtSememeVersion.getReferencedComponentNid() + ", PARENT=" + parentUuid);
+//				return;
+//			}
+//
+//			// Handle changes to associations
+//
+////			final Optional<? extends ObjectChronology<? extends StampedVersion>> referencedComponent = Get.identifiedObjectService()
+////					.getIdentifiedObjectChronology(builtSememeVersion.getReferencedComponentNid());
+//
+////			if (!referencedComponent.isPresent()) {
+////				String msg = "No identified object for referenced component NID=" + builtSememeVersion.getReferencedComponentNid() + " for sememe " + builtSememeVersion;
+////				LOG.error(msg);
+////				throw new RuntimeException(msg);
+////			}
+//			
+//			// Get active has_parent association dynamic sememes attached to component
+//			Collection<DynamicSememeImpl> hasParentAssociationDynamicSememes = getActiveHasParentAssociationDynamicSememesAttachedToComponent(builtSememeVersion.getReferencedComponentNid());
+//
+//			if (hasParentAssociationDynamicSememes.size() > 0) {
+//				// Create set of parent concept sequences from active has_parent association dynamic sememes attached to component
+//				Set<Integer> parentSequencesFromHasParentAssociationDynamicSememes = new HashSet<>();
+//				for (DynamicSememeImpl hasParentAssociationDynamicSememe : hasParentAssociationDynamicSememes) {
+//					UUID parentUuid = ((DynamicSememeUUIDImpl)hasParentAssociationDynamicSememe.getData()[0]).getDataUUID();
+//					parentSequencesFromHasParentAssociationDynamicSememes.add(Get.identifierService().getConceptSequenceForUuids(parentUuid));
+//				}
+//
+//				// Get logic graph sememe chronology in order to create new version
+//				Optional<SememeChronology<? extends LogicGraphSememe<?>>> conceptLogicGraphSememeChronology = Frills.getLogicGraphChronology(builtSememeVersion.getReferencedComponentNid(), true);
+//				if (! conceptLogicGraphSememeChronology.isPresent()) {
+//					String msg = "No logic graph sememe found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
 //					LOG.error(msg);
 //					throw new RuntimeException(msg);
 //				}
-//
-//				// TODO handle LogicGraphSememe version contradictions
 //				
-//				// The below code is only necessary if comparing parents from has_parent association dynamic sememes to parents from logic graph
-//				Set<Integer> parentSequencesFromLogicGraph = getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)latestLogicGraphSememeVersion.get().value());
+//				// The following code is only necessary if comparing has_parent associations with latest logic graph version
+////				Optional<LatestVersion<LogicGraphSememe>> latestLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememe>)(conceptLogicGraphSememeChronology.get())).getLatestVersion(LogicGraphSememe.class, StampCoordinates.getDevelopmentLatestActiveOnly());
+////				if (! latestLogicGraphSememeVersion.isPresent()) {
+////					String msg = "No latest logic graph sememe version found for concept (" + builtSememeVersion.getReferencedComponentNid() + ")";
+////					LOG.error(msg);
+////					throw new RuntimeException(msg);
+////				}
+////
+////				// TODO handle LogicGraphSememe version contradictions
+////				
+////				// The below code is only necessary if comparing parents from has_parent association dynamic sememes to parents from logic graph
+////				Set<Integer> parentSequencesFromLogicGraph = getParentConceptSequencesFromLogicGraph((LogicGraphSememeImpl)latestLogicGraphSememeVersion.get().value());
+////
+////				// Do not modify logic graph if all existing has_parent association dynamic sememes correspond to parents in logic graph
+////				// 
+////				if (parentSequencesFromLogicGraph.containsAll(parentSequencesFromHasParentAssociationDynamicSememes)) {
+////					// This new builtSememeVersion has not resulted in added or retired or changed has_parent association
+////					// No need to rebuild logic graph
+////
+////					return;
+////				}
 //
-//				// Do not modify logic graph if all existing has_parent association dynamic sememes correspond to parents in logic graph
-//				// 
-//				if (parentSequencesFromLogicGraph.containsAll(parentSequencesFromHasParentAssociationDynamicSememes)) {
-//					// This new builtSememeVersion has not resulted in added or retired or changed has_parent association
-//					// No need to rebuild logic graph
+//				// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
+//				// Need to rebuild logic graph
 //
-//					return;
+//				LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
+//				for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
+//					NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
 //				}
-
-				// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
-				// Need to rebuild logic graph
-
-				LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
-				for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
-					NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
-				}
-				LogicalExpression parentDef = defBuilder.build();
-
-				@SuppressWarnings("unchecked")
-				LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
-				newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
-				
-				Get.commitService().addUncommitted(conceptLogicGraphSememeChronology.get());
-
-				LOG.debug("Created new version of logic graph sememe " + newLogicGraphSememeVersion.getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + newLogicGraphSememeVersion.getReferencedComponentNid());
-			}
-		}
-	}
+//				LogicalExpression parentDef = defBuilder.build();
+//
+//				@SuppressWarnings("unchecked")
+//				LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.ACTIVE, editCoordinate);
+//				newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
+//				
+//				Get.commitService().addUncommitted(conceptLogicGraphSememeChronology.get());
+//
+//				LOG.debug("Created new version of logic graph sememe " + newLogicGraphSememeVersion.getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + newLogicGraphSememeVersion.getReferencedComponentNid());
+//			}
+//		}
+//	}
 }
