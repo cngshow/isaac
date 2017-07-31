@@ -463,46 +463,63 @@ public abstract class LuceneIndexer implements IndexServiceBI {
             {
                 log.debug("Running query: {}", q.toString());
                 
-                //Since the index carries some duplicates by design, which we will remove - get a few extra results up front.
-                //so we are more likely to come up with the requested number of results
-                long limitWithExtras = sizeLimit + (long)((double)sizeLimit * 0.25d);
-                
-                int adjustedLimit = (limitWithExtras > Integer.MAX_VALUE ? sizeLimit : (int)limitWithExtras);
-                
-                TopDocs topDocs;
-                if (filter != null)
-                {
-                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(adjustedLimit, searcher, filter);
-                    searcher.search(q, tdf);
-                    topDocs = tdf.topDocs();
-                }
-                else
-                {
-                    topDocs = searcher.search(q, adjustedLimit);
-                }
-                List<SearchResult> results = new ArrayList<>(topDocs.totalHits);
+                // We're only going to return up to what was requested
+                List<SearchResult> results = new ArrayList<>(sizeLimit);
                 HashSet<Integer> includedComponentNids = new HashSet<>();
+                ScoreDoc lastDoc = null;
+                boolean complete = false;  //i.e., results.size() < sizeLimit
                 
-                for (ScoreDoc hit : topDocs.scoreDocs)
-                {
-                    log.debug("Hit: {} Score: {}", new Object[]{hit.doc, hit.score});
-                    
-                    Document doc = searcher.doc(hit.doc);
-                    int componentNid = doc.getField(FIELD_COMPONENT_NID).numericValue().intValue();
-                    if (includedComponentNids.contains(componentNid))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        includedComponentNids.add(componentNid);
-                        results.add(new ComponentSearchResult(componentNid, hit.score));
-                        if (results.size() == sizeLimit)
-                        {
-                            break;
-                        }
-                    }
-                }
+				// Keep going until the requested number of docs are found, or no more matches/results
+				while (!complete)
+				{
+					TopDocs topDocs;
+	                if (filter != null && lastDoc != null)
+	                {
+	                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(sizeLimit, lastDoc, searcher, filter);
+	                    searcher.search(q, tdf);
+	                    topDocs = tdf.topDocs();
+	                }
+	                else if (lastDoc != null)
+	                {
+	                	topDocs = searcher.searchAfter(lastDoc, q, sizeLimit);
+	                }
+	                else
+	                {
+	                    topDocs = searcher.search(q, sizeLimit);
+	                }
+	                
+	                if (topDocs.totalHits > 0)
+	                {
+	                	for (ScoreDoc hit : topDocs.scoreDocs)
+		                {
+		                    log.debug("Hit: {} Score: {}", new Object[]{hit.doc, hit.score});
+		                    
+							// Save the last doc to search after later, if needed
+							lastDoc = hit;
+		                    Document doc = searcher.doc(hit.doc);
+		                    int componentNid = doc.getField(FIELD_COMPONENT_NID).numericValue().intValue();
+		                    if (includedComponentNids.contains(componentNid))
+		                    {
+		                        continue;
+		                    }
+		                    else
+		                    {
+		                        includedComponentNids.add(componentNid);
+		                        results.add(new ComponentSearchResult(componentNid, hit.score));
+		                        if (results.size() == sizeLimit)
+		                        {
+		                        	complete = true;
+		                            break;
+		                        }
+		                    }
+		                }
+	                }
+	                else
+	                {
+	                	complete = true;
+	                	log.debug("Search exhausted, returning {} results from query", results.size());
+	                }
+				}
                 log.debug("Returning {} results from query", results.size());
                 return results;
             } finally {
