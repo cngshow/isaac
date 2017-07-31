@@ -443,7 +443,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         // Return from the cache if a recent query
     	if (queryCache.containsKey(q.hashCode()))
     	{
-    		return queryCache.get(q.hashCode());
+    		List<SearchResult> r = queryCache.get(q.hashCode());
+    		log.debug("Returning {} results from query cache", r.size());
+    		return r;
     	}
     	
     	try 
@@ -530,6 +532,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	                }
 				}
                 log.debug("Returning {} results from query", results.size());
+                // Add results to the query cache
                 queryCache.put(q.hashCode(), results);
                 return results;
             } finally {
