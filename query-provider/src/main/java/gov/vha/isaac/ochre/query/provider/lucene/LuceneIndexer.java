@@ -87,6 +87,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.collections.LruCache;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
@@ -158,6 +159,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
+    private final LruCache<Integer, List<SearchResult>> queryCache = new LruCache<>(20);
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -436,8 +438,15 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * on the implementation of your filter
      * @return
      */
-    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter) {
-        try 
+    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+    {
+        // Return from the cache if a recent query
+    	if (queryCache.containsKey(q.hashCode()))
+    	{
+    		return queryCache.get(q.hashCode());
+    	}
+    	
+    	try 
         {
             if (targetGeneration != null && targetGeneration != Long.MIN_VALUE) {
                 if (targetGeneration == Long.MAX_VALUE)
@@ -521,6 +530,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	                }
 				}
                 log.debug("Returning {} results from query", results.size());
+                queryCache.put(q.hashCode(), results);
                 return results;
             } finally {
                 referenceManager.release(searcher);
