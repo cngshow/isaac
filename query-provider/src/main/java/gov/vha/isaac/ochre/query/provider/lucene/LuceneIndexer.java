@@ -484,9 +484,17 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 				while (!complete)
 				{
 					TopDocs topDocs;
-	                if (filter != null && lastDoc != null)
+	                if (filter != null)
 	                {
-	                    TopDocsFilteredCollector tdf = new TopDocsFilteredCollector(sizeLimit, lastDoc, searcher, filter);
+	                	TopDocsFilteredCollector tdf;
+	                	if (lastDoc != null)
+	                	{
+	                		tdf = new TopDocsFilteredCollector(sizeLimit, lastDoc, searcher, filter);
+	                	}
+	                	else
+	                	{
+	                		tdf = new TopDocsFilteredCollector(sizeLimit, searcher, filter);
+	                	}
 	                    searcher.search(q, tdf);
 	                    topDocs = tdf.topDocs();
 	                }
