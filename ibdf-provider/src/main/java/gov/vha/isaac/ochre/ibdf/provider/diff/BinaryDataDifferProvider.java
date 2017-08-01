@@ -245,20 +245,20 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	private void generateComparisonAnalysisFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
-		try (FileWriter textComparisonWriter = new FileWriter(comparisonAnalysisDir + textFullComparisonFileName);
-				JsonDataWriterService comparisonAnalysisJsonWriter = new JsonDataWriterService(
+		try (FileWriter allChangesTextWriter = new FileWriter(comparisonAnalysisDir + textFullComparisonFileName);
+				JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
 						new File(comparisonAnalysisDir + jsonFullComparisonFileName));) {
 
 			for (ChangeType key : changedComponents.keySet()) {
 				int counter = 1;
 
-				FileWriter ComparisonAnalysisTextWriter = new FileWriter(comparisonAnalysisDir + key + "_File.txt");
+				FileWriter changeTypeWriter = new FileWriter(comparisonAnalysisDir + key + "_File.txt");
 
 				try {
 					List<OchreExternalizable> components = changedComponents.get(key);
 
-					comparisonAnalysisJsonWriter.put("\n\n\n\t\t\t**** " + key.toString() + " ****");
-					textComparisonWriter.write("\n\n\n\t\t\t**** " + key.toString() + " ****");
+					allChangesJsonWriter.put("\n\n\n\t\t\t**** " + key.toString() + " ****");
+					allChangesTextWriter.write("\n\n\n\t\t\t**** " + key.toString() + " ****");
 
 					for (OchreExternalizable c : components) {
 						String componentType;
@@ -272,23 +272,29 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 								+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
 
 						// Print Header
-						comparisonAnalysisJsonWriter.put(componentToWrite);
-						ComparisonAnalysisTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
-						textComparisonWriter.write("\n\n\n\t\t\t" + componentToWrite);
+						allChangesJsonWriter.put(componentToWrite);
+						allChangesTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
+						changeTypeWriter.write("\n\n\n\t\t\t" + componentToWrite);
+
+						// Print Value (JSON Working TXT has issues)
+						allChangesJsonWriter.put(c);
 
 						try {
-							// Print Value (JSON Working TXT has issues)
-						comparisonAnalysisJsonWriter.put(c);
-							ComparisonAnalysisTextWriter.write(c.toString() + "\n\n\n");
-							textComparisonWriter.write(c.toString());
+							changeTypeWriter.write(c.toString() + "\n\n\n");
 						} catch (Exception e) {
-							log.debug("Failure writing toString for: " + ((ObjectChronology<?>) c).getPrimordialUuid());
+
+						}
+
+						try {
+							allChangesTextWriter.write(c.toString());
+						} catch (Exception e) {
+
 						}
 					}
 				} catch (IOException e) {
 					log.error("Failure processing changes of type " + key.toString());
 				} finally {
-					ComparisonAnalysisTextWriter.close();
+					changeTypeWriter.close();
 				}
 			}
 		}
@@ -330,15 +336,16 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		this.inputAnalysisDir = inputAnalysisDir;
 		this.comparisonAnalysisDir = comparisonAnalysisDir;
 		this.deltaIbdfPath = deltaIbdfPathFile;
-		this.inputAnalysisDir = inputAnalysisDir;
 
 		if (generateAnalysisFiles) {
 			File f = new File(inputAnalysisDir);
+			deleteDirectoryFiles(f);
+			f.mkdirs();
+
+			f = new File(comparisonAnalysisDir);
+			deleteDirectoryFiles(f);
 			f.mkdirs();
 		}
-
-		File f = new File(comparisonAnalysisDir);
-		f.mkdirs();
 	}
 
 	@Override
@@ -520,8 +527,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 							+ se.getPrimordialUuid() + " ----\n");
 					inputAnalysisTextWriter.write(se.toString());
 				} catch (Exception e) {
-					log.error("Failure on TXT writing " + se.getSememeType() + " which is index: " + i + " in writing *"
-							+ version + "* content to text file for analysis (UUID: " + se.getPrimordialUuid() + ".");
 					inputAnalysisTextWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: "
 							+ i + " in writing *" + version + "* content to text file for analysis (UUID: "
 							+ se.getPrimordialUuid() + ".");
@@ -532,5 +537,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			log.error("Failure on writing index: " + i + " in writing *" + version
 					+ "* content to text file for analysis.");
 		}
+	}
+
+	// In case someone doesn't want to clean DB but still rerun operation to
+	// gather some information, delete all comparison files
+	private void deleteDirectoryFiles(File dir) {
+		if (dir.isDirectory() == false) {
+			return;
+		}
+
+		File[] listFiles = dir.listFiles();
+		for (File file : listFiles) {
+			file.delete();
+		}
+
+		// now directory is empty, so we can delete it
+		dir.delete();
 	}
 }
