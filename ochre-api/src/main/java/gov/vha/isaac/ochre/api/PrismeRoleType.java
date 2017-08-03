@@ -34,5 +34,10 @@ public enum PrismeRoleType {
 	 *The requirements document specifies this as a role type too, but it currently carries the same 
 	 * connotation as GENERAL. 
 	 */
-	DEPLOYMENT;
+	DEPLOYMENT,
+	
+	/**
+	 * A type for roles that should never be assigned to any real user
+	 */
+	NON_USER;
 }

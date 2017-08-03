@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.codehaus.plexus.util.FileUtils;
@@ -173,7 +172,7 @@ public class IBDFCreationUtility
 	
 	private final int authorSeq_;
 	private final int terminologyPathSeq_;
-	private final long defaultTime_;
+	private long defaultTime_;
 	
 	private final static UUID isARelUuid_ = MetaData.IS_A.getPrimordialUuid();
 	public final static String metadataSemanticTag_ = " (ISAAC)";
@@ -336,6 +335,13 @@ public class IBDFCreationUtility
 	
 	/**
 	 * This constructor is for use when we are using this utility code to process changes directly into a (already) running DB, rather than writing an IBDF file.
+	 * 
+	 * DANGER WILL ROBINSON!
+	 * Using this class at runtime is tricky, and not the designed use case.
+	 * If you do so make sure that you)
+	 * A) - only use a time of Long.MAX_VALUE.
+	 * B) - you may need to record some changes yourself, using {@link #storeManualUpdate(OchreExternalizable)}
+	 * 
 	 *  @param author - which author to use for these changes
 	 *  @param module - which module to use while loading
 	 *  @param path - which path to use for these changes
@@ -359,7 +365,7 @@ public class IBDFCreationUtility
 		
 		sememeBuilderService_ = Get.sememeBuilderService();
 		
-		defaultTime_ = System.currentTimeMillis();
+		defaultTime_ = Long.MAX_VALUE;
 		
 		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, terminologyPathSeq_);
 		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
@@ -887,11 +893,11 @@ public class IBDFCreationUtility
 			{
 				if (ochreObject instanceof ConceptChronology)
 				{
-					Get.commitService().addUncommitted((ConceptChronology)ochreObject).get();
+					Get.commitService().addUncommitted((ConceptChronology<?>)ochreObject).get();
 				}
 				else if (ochreObject instanceof SememeChronology)
 				{
-					Get.commitService().addUncommitted((SememeChronology)ochreObject).get();
+					Get.commitService().addUncommitted((SememeChronology<?>)ochreObject).get();
 				}
 				else
 				{
@@ -1236,6 +1242,12 @@ public class IBDFCreationUtility
 	public SememeChronology<LogicGraphSememe<?>> addRelationshipGraph(ComponentReference concept, UUID graphPrimordialUuid, 
 			LogicalExpression logicalExpression, boolean stated, Long time, UUID module)
 	{
+		return addRelationshipGraph(concept, graphPrimordialUuid, logicalExpression, stated, time, module, null);
+	}
+	
+	public SememeChronology<LogicGraphSememe<?>> addRelationshipGraph(ComponentReference concept, UUID graphPrimordialUuid, 
+			LogicalExpression logicalExpression, boolean stated, Long time, UUID module, UUID sourceRelTypeUUID)
+	{
 		HashSet<UUID> temp = stated ? conceptHasStatedGraph : conceptHasInferredGraph;
 		if (temp.contains(concept.getPrimordialUuid()))
 		{
@@ -1270,6 +1282,13 @@ public class IBDFCreationUtility
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(
 				createStamp(State.ACTIVE, selectTime(concept, time), module), builtObjects);
+		
+		if (sourceRelTypeUUID != null)
+		{
+			builtObjects.add(addUUIDAnnotation(ComponentReference.fromChronology(sci, () -> "Graph"), sourceRelTypeUUID,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getPrimordialUuid()));
+			ls_.addRelationship(getOriginStringForUuid(isARelUuid_) + ":" + getOriginStringForUuid(sourceRelTypeUUID));
+		}
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -1421,7 +1440,7 @@ public class IBDFCreationUtility
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
-					UUID secondParentToUse = p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null;
+					UUID secondParentToUse = p.getSecondParent();
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
@@ -1656,5 +1675,24 @@ public class IBDFCreationUtility
 		}
 		ConverterUUID.clearCache();
 		clearLoadStats();
+	}
+	
+	/**
+	 * Allows to set the module and associated time, helpful for versioning.
+	 * 
+	 * @param module The module UUID, setting as the default module
+	 * @param time The module time, if applicable, setting as the defaul time
+	 */
+	public void setModule(UUID module, Long time)
+	{
+		if (module != null)
+		{
+			module_ = ComponentReference.fromConcept(module);
+		}
+
+		if (time != null && time.longValue() > 0)
+		{
+			defaultTime_ = time.longValue();
+		}
 	}
 }

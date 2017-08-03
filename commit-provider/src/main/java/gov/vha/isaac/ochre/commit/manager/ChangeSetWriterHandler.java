@@ -83,31 +83,26 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 		writer = new MultipleDataWriterService(changeSetFolder, "ChangeSet-", Optional.of(jsonFileSuffix), Optional.of(ibdfFileSuffix));
 	}
 
-
-	/*
-	 */
 	private void sequenceSetChange(ConceptSequenceSet conceptSequenceSet) {
 
 		conceptSequenceSet.stream().forEach((conceptSequence) -> {
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptSequence);
 			try {
 				writeToFile(concept);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+			} catch (Exception e) {
+				throw new RuntimeException("Error writing concept " + conceptSequence , e);
 			}
 		});
 	}
 
-	/*
-	 */
 	private void sequenceSetChange(SememeSequenceSet sememeSequenceSet) {
 
 		sememeSequenceSet.stream().forEach((sememeSequence) -> {
 			SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeService().getSememe(sememeSequence);
 			try {
 				writeToFile(sememe);
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+			} catch (Exception e) {
+				throw new RuntimeException("Error writing sememe " + sememeSequence, e);
 			}
 		});
 	}
@@ -199,7 +194,7 @@ public class ChangeSetWriterHandler implements ChangeSetWriterService, ChangeSet
 							LOG.debug("handle Post Commit: {} sememes", commitRecord.getSememesInCommit().size());
 						}
 					} catch (Exception e) {
-						LOG.error("Error in Change set writer handler ", e.getMessage());
+						LOG.error("Error in Change set writer handler ", e);
 						throw new RuntimeException(e);
 					}
 				}

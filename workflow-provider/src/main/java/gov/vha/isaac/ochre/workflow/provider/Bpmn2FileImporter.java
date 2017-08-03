@@ -58,7 +58,7 @@ import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.definition.KnowledgePackage;
 import org.xml.sax.SAXException;
 
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.workflow.model.contents.AvailableAction;
 import gov.vha.isaac.ochre.workflow.model.contents.DefinitionDetail;
 import gov.vha.isaac.ochre.workflow.model.contents.ProcessDetail.EndWorkflowType;
@@ -193,14 +193,14 @@ public class Bpmn2FileImporter {
 	private UUID populateWorkflowDefinitionRecords(ProcessDescriptor descriptor) {
 		if (provider.getDefinitionDetailStore().size() == 0)
 		{
-			Set<UserRole> roles = new HashSet<>();
-			roles.add(UserRole.AUTOMATED);
+			Set<PrismeRole> roles = new HashSet<>();
+			roles.add(PrismeRole.AUTOMATED);
 	
 			ProcessAssetDesc definition = descriptor.getProcess();
 	
 			for (String key : descriptor.getTaskAssignments().keySet()) {
 				for (String role : descriptor.getTaskAssignments().get(key)) {
-					roles.add(UserRole.safeValueOf(role).get());
+					roles.add(PrismeRole.safeValueOf(role).get());
 				}
 			}
 			
@@ -270,7 +270,7 @@ public class Bpmn2FileImporter {
 	private Set<AvailableAction> generateAvailableActions() throws Exception {
 		Set<AvailableAction> actions = new HashSet<>();
 		String initialState = null;
-		Set<UserRole> roles = new HashSet<>();
+		Set<PrismeRole> roles = new HashSet<>();
 		Set<AvailableAction> startNodeActions = new HashSet<>();
 		String flagMetaDataStr = null;
 		Set<AvailableAction> availActions = new HashSet<>();
@@ -341,7 +341,7 @@ public class Bpmn2FileImporter {
 	 *            associated with the outgoing connections
 	 * @return The full set of AvailableActions based on the current node
 	 */
-	private Set<AvailableAction> identifyNodeActions(Node node, String initialState, Set<UserRole> roles,
+	private Set<AvailableAction> identifyNodeActions(Node node, String initialState, Set<PrismeRole> roles,
 			List<Connection> nodeOutgoingConnections, List<SequenceFlow> allOutgoingConnections) {
 		Set<AvailableAction> availActions = new HashSet<>();
 
@@ -383,14 +383,14 @@ public class Bpmn2FileImporter {
 			}
 
 			if (roles.size() == 0 && node.getId() == ruleFlow.getStartNodes().iterator().next().getId()) {
-				roles.add(UserRole.AUTOMATED);
+				roles.add(PrismeRole.AUTOMATED);
 			}
 
 			// Verify that all requirements met
 			if (action != null && outcome != null && state != null && roles.size() > 0) {
 
 				// Generate a new AvailableAction for each role
-				for (UserRole role : roles) {
+				for (PrismeRole role : roles) {
 					AvailableAction newAction = new AvailableAction(currentDefinitionId, state, action, outcome, role);
 					availActions.add(newAction);
 				}
@@ -569,8 +569,8 @@ public class Bpmn2FileImporter {
 	 * @return The set of workflow roles which defining the user role
 	 *         which can execute the task
 	 */
-	private Set<UserRole> getActorFromHumanTask(HumanTaskNode node) {
-		Set<UserRole> restrictions = new HashSet<>();
+	private Set<PrismeRole> getActorFromHumanTask(HumanTaskNode node) {
+		Set<PrismeRole> restrictions = new HashSet<>();
 
 		// Get HumanTaskNode's restrictions
 		Work work = node.getWork();
@@ -581,7 +581,7 @@ public class Bpmn2FileImporter {
 			if (roleString != null) {
 				String[] roles = roleString.split(",");
 				for (String role : roles) {
-					restrictions.add(UserRole.safeValueOf(role.trim()).get());
+					restrictions.add(PrismeRole.safeValueOf(role.trim()).get());
 				}
 			}
 		}

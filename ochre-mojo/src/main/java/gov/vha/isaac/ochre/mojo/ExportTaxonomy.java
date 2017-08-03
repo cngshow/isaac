@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.Optional;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -64,6 +66,8 @@ public class ExportTaxonomy extends AbstractMojo {
                    taxonomy.exportJavaBinding(javaWriter, bindingPackage,  bindingClass);
                }
             
+            HashMap<String, MetadataConceptConstant> constantsForYamlOnly = new HashMap<>();
+            
             //Read in the MetadataConceptConstant constant objects
             for (ModuleProvidedConstants mpc : LookupService.get().getAllServices(ModuleProvidedConstants.class))
             {
@@ -75,6 +79,24 @@ public class ExportTaxonomy extends AbstractMojo {
                     count++;
                 }
                 getLog().info("Created " + count + " concepts (+ their children)");
+                if (mpc.getConstantsForInfoOnly() != null)
+                {
+                    for (MetadataConceptConstant mc : mpc.getConstantsForInfoOnly())
+                    {
+                        for (Field f : mpc.getClass().getDeclaredFields())
+                        {
+                            if (f.get(mpc) == mc)
+                            {
+                                constantsForYamlOnly.put(f.getName(), mc);
+                                break;
+                            }
+                        }
+                    }
+                    if (mpc.getConstantsForInfoOnly().length > 0)
+                    {
+                        getLog().info("Added " + mpc.getConstantsForInfoOnly().length + " constants to the YAML file for info only");
+                    }
+                }
             }
             
             //Now write out the other files, so they have all of the constants.
@@ -84,7 +106,7 @@ public class ExportTaxonomy extends AbstractMojo {
                        taxonomy.getClass().getSimpleName() + ".yaml"));)
                {
                    
-                   taxonomy.exportYamlBinding(yamlFile, bindingPackage, bindingClass);
+                   taxonomy.exportYamlBinding(yamlFile, bindingPackage, bindingClass, constantsForYamlOnly);
                    taxonomy.exportJaxb(xmlData);
                }
             Path ibdfPath = Paths.get(metadataDirectory.getAbsolutePath(), taxonomy.getClass().getSimpleName() + ".ibdf");

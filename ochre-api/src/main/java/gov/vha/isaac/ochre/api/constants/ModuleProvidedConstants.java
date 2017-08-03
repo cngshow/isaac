@@ -25,4 +25,13 @@ public interface ModuleProvidedConstants {
 	 * @return
 	 */
 	public MetadataConceptConstant[] getConstantsToCreate();
+	
+	/**
+	 * An optional method that can be implemented, for a list of informative UUID constants.  Constants returned via this call will NOT be created in the database, 
+	 * however, they may be included in accessory files such as IsaacMetadataAuxiliary.yaml
+	 */
+	default public MetadataConceptConstant[] getConstantsForInfoOnly()
+	{
+		return new MetadataConceptConstant[] {};
+	}
 }

@@ -1982,12 +1982,14 @@ public class Frills implements DynamicSememeColumnUtility {
 		ObjectChronology objectToCommit = null;
 
 		State priorState = null;
+		int sequence = 0;
 		
 		switch (type)
 		{
 			case CONCEPT:
 			{
 				ConceptChronology cc = Get.conceptService().getConcept(nid);
+				sequence = cc.getConceptSequence();
 
 				@SuppressWarnings("unchecked")
 				VersionUpdatePair<ConceptVersion> updatePair = resetConceptState(state, cc, editCoordinate, readCoordinates);
@@ -2001,7 +2003,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			case SEMEME:
 			{
 				SememeChronology<? extends SememeVersion<?>> sememe = Get.sememeService().getSememe(nid);
-
+				sequence = sememe.getSememeSequence();
 				switch (sememe.getSememeType()) 
 				{
 					case DESCRIPTION: {
@@ -2109,11 +2111,11 @@ public class Frills implements DynamicSememeColumnUtility {
 		
 		if (objectToCommit != null) 
 		{
-			log.debug("Built updated version of " + type + " " + nid + " with state changed (from " + priorState + " to " + state + ")");
+			log.debug("Built updated version of " + type + " " + nid + "<" + sequence + ">" + " with state changed (from " + priorState + " to " + state + ")");
 		} 
 		else 
 		{
-			log.debug("No need to commit update of " + type + " " + nid + " with unchanged state (" + state + ")");
+			log.debug("No need to commit update of " + type + " " + nid + "<" + sequence + ">" + " with unchanged state (" + state + ")");
 		}
 
 		return objectToCommit;
