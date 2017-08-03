@@ -28,6 +28,11 @@
             <artifactId>query-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>vhat-constants</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
      <build>
          <plugins>

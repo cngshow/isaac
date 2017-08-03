@@ -116,6 +116,7 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
+import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
 
 /**
  * Goal which converts VHAT data into the workbench jbin format
@@ -190,11 +191,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			LOG.info("VHA XML Parsed");
 			
-			extendedDescriptionTypeNameMap.put("abbreviation", UUID.fromString("630759bf-98e0-5548-ab51-4ac4b155802c"));
-			extendedDescriptionTypeNameMap.put("fully specified name", UUID.fromString("97f32713-bdd2-5885-bc88-0d5298ab4b52"));
-			extendedDescriptionTypeNameMap.put("preferred name", UUID.fromString("a20e5175-6257-516a-a97d-d7f9655916b8"));
-			extendedDescriptionTypeNameMap.put("synonym", UUID.fromString("11af6808-1ee9-5571-a169-0dac0c74c579"));
-			extendedDescriptionTypeNameMap.put("vista name", UUID.fromString("72518b09-d5dd-5af0-bd41-0c7e46dfe85e"));
+			extendedDescriptionTypeNameMap.put(VHATConstants.VHAT_ABBREVIATION.getPrimaryName().toLowerCase(), VHATConstants.VHAT_ABBREVIATION.getPrimordialUuid());
+			extendedDescriptionTypeNameMap.put(VHATConstants.VHAT_FULLY_SPECIFIED_NAME.getPrimaryName().toLowerCase(), VHATConstants.VHAT_FULLY_SPECIFIED_NAME.getPrimordialUuid());
+			extendedDescriptionTypeNameMap.put(VHATConstants.VHAT_PREFERRED_NAME.getPrimaryName().toLowerCase(), VHATConstants.VHAT_PREFERRED_NAME.getPrimordialUuid());
+			extendedDescriptionTypeNameMap.put(VHATConstants.VHAT_SYNONYM.getPrimaryName().toLowerCase(), VHATConstants.VHAT_SYNONYM.getPrimordialUuid());
+			extendedDescriptionTypeNameMap.put(VHATConstants.VHAT_VISTA_NAME.getPrimaryName().toLowerCase(), VHATConstants.VHAT_VISTA_NAME.getPrimordialUuid());
 			
 			ConverterUUID.configureNamespace(TermAux.VHAT_MODULES.getPrimordialUuid());
 			
@@ -318,13 +319,16 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" + cc.getVUID() + "' is already in use");
 					}
 				}
-				for (Designation d : cc.getDesignations().getDesignation())
+				if (cc.getDesignations() != null && cc.getDesignations().getDesignation() != null)
 				{
-					if (d.getAction() == ActionType.ADD && d.getVUID() != null)
+					for (Designation d : cc.getDesignations().getDesignation())
 					{
-						if (Frills.getNidForVUID(d.getVUID()).isPresent())
+						if (d.getAction() == ActionType.ADD && d.getVUID() != null)
 						{
-							throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+							if (Frills.getNidForVUID(d.getVUID()).isPresent())
+							{
+								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+							}
 						}
 					}
 				}
@@ -819,7 +823,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				throw new IOException("No code or vuid was supplied, and generate vuids was not requested for " + concept.getName());
 			}
 			
-			String code = StringUtils.isBlank(concept.getCode()) ? concept.getVUID().toString() : concept.getCode();
+			String code = StringUtils.isBlank(concept.getCode()) ? (concept.getVUID() == null ? null : concept.getVUID().toString()) : concept.getCode();
 			if (StringUtils.isNotBlank(code) && findConcept(code).isPresent())
 			{
 				throw new IOException("Add was specified for the " + typeLabel + " '" + code + "' but that " + typeLabel + " already exists!");
@@ -913,7 +917,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				throw new IOException("No code or vuid was supplied, and generate vuids was not requested for a designation");
 			}
 			
-			String code = StringUtils.isBlank(d.getCode()) ? d.getVUID().toString() : d.getCode();
+			String code = StringUtils.isBlank(d.getCode()) ? (d.getVUID() == null ? null : d.getVUID().toString()) : d.getCode();
 			if (StringUtils.isNotBlank(code) && findDescription(parentConceptUUID, code).isPresent())
 			{
 				throw new IOException("Add was specified for the designation '" + code + "' but that designation already exists!");
@@ -1354,7 +1358,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				String code = StringUtils.isBlank(d.getCode()) ? vuid : d.getCode();
 				
 				descRef = ComponentReference.fromChronology(importUtil_.addDescription(concept, createNewDescriptionUuid(concept.getPrimordialUuid(), code), 
-					d.getValueNew(), DescriptionType.SYNONYM, false, extendedDescriptionTypeNameMap.get(d.getTypeName()), 
+					d.getValueNew(), DescriptionType.SYNONYM, false, extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
 					d.isActive() ? State.ACTIVE : State.INACTIVE));
 				
 				
@@ -1438,7 +1442,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							Frills.isDescriptionPreferred(latest.get().value().getNid(), readCoordinate_),
 							StringUtils.isBlank(d.getTypeName()) ? 
 									Frills.getDescriptionExtendedTypeConcept(readCoordinate_, latest.get().value().getSememeSequence()).orElse(null)
-									: extendedDescriptionTypeNameMap.get(d.getTypeName()), 
+									: extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
 							d.isActive() == null ? latest.get().value().getState() : (d.isActive() ? State.ACTIVE : State.INACTIVE)));
 					
 					//copy all other nested components
@@ -1581,8 +1585,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			try 
 			{
-				Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_);
-				updated.add(sememe);
+				updated.add(Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_));
 				updated.addAll(recursiveRetireNested(sememe.getPrimordialUuid()));
 			} catch (Exception e) 
 			{
@@ -1638,7 +1641,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			}
 			else
 			{
-				return Optional.of(candidates.get(0).getPrimordialUuid());
+				return Get.identifierService().getUuidPrimordialForNid(candidates.get(0).getReferencedComponentNid());
 			}
 		} else {
 			LOG.warn("Sememe Index not available - can't lookup VUID");
