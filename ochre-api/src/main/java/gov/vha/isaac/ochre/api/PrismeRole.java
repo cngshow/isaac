@@ -37,7 +37,9 @@ public enum PrismeRole {
 	REVIEWER(PrismeRoleType.MODELING, PrismeRoleConstants.REVIEWER),
 	APPROVER(PrismeRoleType.MODELING, PrismeRoleConstants.APPROVER),
 	VUID_REQUESTOR(PrismeRoleType.GENERAL, PrismeRoleConstants.VUID_REQUESTOR),
-	NTRT(PrismeRoleType.GENERAL, PrismeRoleConstants.NTRT),
+	NTRT_USER(PrismeRoleType.GENERAL, PrismeRoleConstants.NTRT_USER),
+	NTRT_STAFF(PrismeRoleType.GENERAL, PrismeRoleConstants.NTRT_STAFF),
+	NTRT_ADMIN(PrismeRoleType.GENERAL, PrismeRoleConstants.NTRT_ADMIN),
 	DEPLOYMENT_MANAGER(PrismeRoleType.DEPLOYMENT, PrismeRoleConstants.DEPLOYMENT_MANAGER),
 	AUTOMATED(PrismeRoleType.NON_USER, PrismeRoleConstants.AUTOMATED);
 

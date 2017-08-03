@@ -303,6 +303,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 */
 	private int createStamp(State state) {
 
+		//TODO DAN says - why are there hard coded UUIDs here?  They can't possibly be right for a generic use case.
+		//Plus, the VHA Module isn't used as a module anymore, so that is broken.
+		
 		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
 				LookupService.getService(IdentifierService.class)
 						.getConceptSequenceForUuids(UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c")), // USER

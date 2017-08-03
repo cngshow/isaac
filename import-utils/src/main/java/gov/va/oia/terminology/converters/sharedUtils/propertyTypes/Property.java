@@ -20,6 +20,7 @@ package gov.va.oia.terminology.converters.sharedUtils.propertyTypes;
 
 import java.util.UUID;
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
+import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeColumnInfo;
 import gov.vha.isaac.ochre.api.constants.DynamicSememeConstants;
@@ -48,6 +49,7 @@ public class Property
 	private UUID useWBPropertyTypeInstead = null;  //see comments in setter
 	private DynamicSememeColumnInfo[] dataColumnsForDynamicRefex_ = null;
 	private boolean isIdentifier_;
+	private UUID secondParent_ = null;
 	
 	/**
 	 * @param dataTypesForDynamicRefex - if null - will use the default information for the parent {@link PropertyType} - otherwise, 
@@ -75,6 +77,10 @@ public class Property
 		this.isDisabled_ = disabled;
 		this.propertySubType_ = propertySubType;
 		this.isIdentifier_ = isIdentifier;
+		if (isIdentifier_)
+		{
+			this.secondParent_ = MetaData.IDENTIFIER_SOURCE.getPrimordialUuid();
+		}
 		
 		//if owner is null, have to delay this until the setOwner call
 		//leave the assemblageConceptUUID null for now - it should be set to "getUUID()" but that isn't always ready
@@ -202,6 +208,10 @@ public class Property
 
 	public void setIsIdentifier(boolean isIdentifier) {
 		this.isIdentifier_ = isIdentifier;
+		if (isIdentifier_)
+		{
+			this.secondParent_ = MetaData.IDENTIFIER_SOURCE.getPrimordialUuid();
+		}
 	}
 
 	public UUID getUUID()
@@ -211,6 +221,16 @@ public class Property
 			propertyUUID = owner_.getPropertyUUID(this.sourcePropertyNameFSN_);
 		}
 		return propertyUUID;
+	}
+	
+	public UUID getSecondParent()
+	{
+		return secondParent_;
+	}
+	
+	public void setSecondParent(UUID secondParent)
+	{
+		this.secondParent_ = secondParent;
 	}
 
 	public boolean isDisabled()

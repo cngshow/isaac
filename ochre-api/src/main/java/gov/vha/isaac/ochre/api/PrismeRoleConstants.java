@@ -35,7 +35,9 @@ public class PrismeRoleConstants {
 	public final static String REVIEWER = "reviewer";
 	public final static String APPROVER = "approver";
 	public final static String VUID_REQUESTOR = "vuid_requestor";
-	public final static String NTRT = "ntrt";
+	public final static String NTRT_USER = "ntrt_user";
+	public final static String NTRT_STAFF = "ntrt_staff";
+	public final static String NTRT_ADMIN = "ntrt_admin";
 	public final static String DEPLOYMENT_MANAGER = "deployment_manager";
 	public final static String AUTOMATED = "automated";
 }
