@@ -335,6 +335,13 @@ public class IBDFCreationUtility
 	
 	/**
 	 * This constructor is for use when we are using this utility code to process changes directly into a (already) running DB, rather than writing an IBDF file.
+	 * 
+	 * DANGER WILL ROBINSON!
+	 * Using this class at runtime is tricky, and not the designed use case.
+	 * If you do so make sure that you)
+	 * A) - only use a time of Long.MAX_VALUE.
+	 * B) - you may need to record some changes yourself, using {@link #storeManualUpdate(OchreExternalizable)}
+	 * 
 	 *  @param author - which author to use for these changes
 	 *  @param module - which module to use while loading
 	 *  @param path - which path to use for these changes
@@ -358,7 +365,7 @@ public class IBDFCreationUtility
 		
 		sememeBuilderService_ = Get.sememeBuilderService();
 		
-		defaultTime_ = System.currentTimeMillis();
+		defaultTime_ = Long.MAX_VALUE;
 		
 		StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, terminologyPathSeq_);
 		readBackStamp_ = new StampCoordinateImpl(StampPrecedence.PATH, stampPosition, ConceptSequenceSet.EMPTY, State.ANY_STATE_SET);
@@ -886,11 +893,11 @@ public class IBDFCreationUtility
 			{
 				if (ochreObject instanceof ConceptChronology)
 				{
-					Get.commitService().addUncommitted((ConceptChronology)ochreObject).get();
+					Get.commitService().addUncommitted((ConceptChronology<?>)ochreObject).get();
 				}
 				else if (ochreObject instanceof SememeChronology)
 				{
-					Get.commitService().addUncommitted((SememeChronology)ochreObject).get();
+					Get.commitService().addUncommitted((SememeChronology<?>)ochreObject).get();
 				}
 				else
 				{
@@ -1420,7 +1427,7 @@ public class IBDFCreationUtility
 				else
 				{
 					//don't feed in the 'definition' if it is an association, because that will be done by the configureConceptAsDynamicRefex method
-					UUID secondParentToUse = p.isIdentifier() ? MetaData.IDENTIFIER_SOURCE.getPrimordialUuid() : null;
+					UUID secondParentToUse = p.getSecondParent();
 					ConceptChronology<? extends ConceptVersion<?>> concept = createConcept(p.getUUID(), p.getSourcePropertyNameFSN() + metadataSemanticTag_, 
 							p.getSourcePropertyNameFSN(), 
 							p.getSourcePropertyAltName(), (p instanceof PropertyAssociation ? null : p.getSourcePropertyDefinition()), 
