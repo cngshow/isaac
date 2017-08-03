@@ -245,10 +245,10 @@ public class LookupService {
      */
     public static void startupIsaac() {
         try {
-        	//So Fortify does not complain about Locale dependent comparison
-        	//when the application uses .equals or 
-        	Locale.setDefault(Locale.US);
-        	
+            //So Fortify does not complain about Locale dependent comparison
+            //when the application uses .equals or 
+            Locale.setDefault(Locale.US);
+            
             // Set run level to startup database and associated services running on top of database
             setRunLevel(SL_L2_DATABASE_SERVICES_STARTED_RUNLEVEL);
 

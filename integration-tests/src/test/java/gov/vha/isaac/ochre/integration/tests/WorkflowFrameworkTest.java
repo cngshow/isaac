@@ -17,7 +17,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.User;
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
@@ -92,12 +92,12 @@ public class WorkflowFrameworkTest {
 	public void setUpUsers() throws Exception {
 		userId = UUID.randomUUID();
 		SimpleUserRoleService rolesService = LookupService.get().getService(SimpleUserRoleService.class);
-		rolesService.addRole(UserRole.EDITOR);
-		rolesService.addRole(UserRole.REVIEWER);
-		rolesService.addRole(UserRole.APPROVER);
-		rolesService.addRole(UserRole.AUTOMATED);
+		rolesService.addRole(PrismeRole.EDITOR);
+		rolesService.addRole(PrismeRole.REVIEWER);
+		rolesService.addRole(PrismeRole.APPROVER);
+		rolesService.addRole(PrismeRole.AUTOMATED);
 
-		rolesService.addUser(new User("test", userId, null, UserRole.EDITOR, UserRole.APPROVER, UserRole.REVIEWER));
+		rolesService.addUser(new User("test", userId, null, PrismeRole.EDITOR, PrismeRole.APPROVER, PrismeRole.REVIEWER));
 	}
 
 	@Test(groups = { "wf" }, dependsOnGroups = { "load" })
@@ -779,7 +779,7 @@ public class WorkflowFrameworkTest {
 
 		// Add Process History with START_STATE-AUTOMATED-EDIT_STATE
 		AvailableAction startAdvancement = new AvailableAction(requestedDefinitionId, startNodeAction.getInitialState(),
-				startNodeAction.getAction(), startNodeAction.getOutcomeState(), UserRole.AUTOMATED);
+				startNodeAction.getAction(), startNodeAction.getOutcomeState(), PrismeRole.AUTOMATED);
 		ProcessHistory advanceEntry = new ProcessHistory(processId, userId, new Date().getTime(),
 				startAdvancement.getInitialState(), startAdvancement.getAction(), startAdvancement.getOutcomeState(),
 				"", 1);

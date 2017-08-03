@@ -18,12 +18,11 @@ package gov.vha.isaac.ochre.commit.manager;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.map.OpenIntIntHashMap;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
@@ -34,19 +33,19 @@ import gov.vha.isaac.ochre.api.commit.AlertType;
 import gov.vha.isaac.ochre.api.commit.ChangeChecker;
 import gov.vha.isaac.ochre.api.commit.CheckPhase;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
+import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.commit.Stamp;
 import gov.vha.isaac.ochre.api.commit.StampService;
 import gov.vha.isaac.ochre.api.commit.UncommittedStamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.progress.ActiveTasks;
-import gov.vha.isaac.ochre.api.task.TimedTask;
 
 /**
  *
  * @author kec
  */
-public class CommitTask extends TimedTask<Optional<CommitRecord>> {
+public class CommitTaskImpl extends CommitTask {
 
 	/**
 	 *
@@ -73,7 +72,7 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 			ConcurrentSkipListSet<Alert> alertCollection,
 			Map<UncommittedStamp, Integer> pendingStampsForCommit,
 			CommitProvider commitProvider) {
-		CommitTask task = new CommitTask(commitComment,
+		CommitTask task = new CommitTaskImpl(commitComment,
 				uncommittedConceptsWithChecksSequenceSet,
 				uncommittedConceptsNoChecksSequenceSet,
 				uncommittedSememesWithChecksSequenceSet,
@@ -99,7 +98,7 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 	private final CommitProvider commitProvider;
 	private final StampService stampProvider;
 
-	private CommitTask(String commitComment,
+	private CommitTaskImpl(String commitComment,
 			ConceptSequenceSet uncommittedConceptsWithChecksSequenceSet,
 			ConceptSequenceSet uncommittedConceptsNoChecksSequenceSet,
 			SememeSequenceSet uncommittedSememesWithChecksSequenceSet,
@@ -135,12 +134,6 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 	@Override
 	protected Optional<CommitRecord> call() throws Exception {
 		try {
-			// TODO handle notification...
-			//            try {
-			//                GlobalPropertyChange.fireVetoableChange(TerminologyStoreDI.CONCEPT_EVENT.PRE_COMMIT, null, conceptsToCommit);
-			//            } catch (PropertyVetoException ex) {
-			//                return;
-			//            }
 			conceptsToCommit.stream().forEach((conceptSequence) -> {
 				ConceptChronology c = Get.conceptService().getConcept(conceptSequence);
 				if (conceptsToCheck.contains(conceptSequence)) {
@@ -195,20 +188,22 @@ public class CommitTask extends TimedTask<Optional<CommitRecord>> {
 
 				return Optional.of(commitRecord);
 			}
-			// TODO Indexers need to be change listeners
-			//            notifyCommit();
-			//            if (indexers != null) {
-			//                for (IndexService i : indexers) {
-			//                    i.commitWriter();
-			//                }
-			//            }
-			//            GlobalPropertyChange.firePropertyChange(TerminologyStoreDI.CONCEPT_EVENT.POST_COMMIT, null, conceptsToCommit);
+
 			return Optional.empty();
 		} catch (Exception e1) {
 			throw new RuntimeException("Commit Failure of commit with message " + commitComment, e1);
 		} finally {
 			Get.activeTasks().remove(this);
 		}
+	}
+
+	/**
+	 * @see gov.vha.isaac.ochre.api.commit.CommitTask#getAlerts()
+	 */
+	@Override
+	public Set<Alert> getAlerts()
+	{
+		return alertCollection;
 	}
 
 }

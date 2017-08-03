@@ -1,9 +1,31 @@
 ISAAC Changelog 
 
-This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers 
-where provided, and the git commit history.
+This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
-* 2017/07/?? - 4.12 - PENDING
+* 2017/08/?? - 4.16 - PENDING
+    * Much internal refactoring to make proper use of constants rather that hard-coded UUIDs.
+    * Added various VHAT constants to a VHAT package
+    * published new VHAT constants as part of the YAML constants file
+    * Fixed XML import bugs related to invalid constants being used
+    * Fixed XML import commit bugs
+    * Fixed XML import null pointer bugs when items for update had no designations
+    * Fixed XML import null pointer bugs when vuid and code were not specified and autogenerate was expected
+    * Fixed XML import bugs with recursive retire upon remove of a concept (nested items not being retired as expected)
+    * Fixed XML import bug with moveFromConcept
+
+* 2017/07/27 - 4.15
+    * DATABASE COMPATIBILITY ISSUE - Updating Lucene version to current.  Upon start with an old database, the indexes will be deleted, and new indexes will be built.  This will take much longer than a normal startup.  The automatic reindex feature is a new feature.
+    * Bug fixed in lucene index design, where queries with sememe filters did not find appropriate results on edits that had occurred after the initial index.
+    * Bugs fixed relating to timing issues on when an item was committed, vs when it is available in the index.  Commit now does not complete until the index is also up to date.
+
+* 2017/07/25 - 4.14
+    * Changes for has_parent code found during testing.
+
+* 2017/07/20 - 4.13
+    * Adding isA / hasA relationship / association synchronization for commits to VHAT content.
+    * Experimental hack fix to IsomorphicResultsBottomUp to prevent null pointer when processing logic graphs with multiple parents.
+
+* 2017/07/20 - 4.12
     * Implementing vuid validation, vuid auto-generate, and moveFromConceptCode in the XML import.
     * update SCTID and VUID ID search convenience methods in Frills to wait for any in-progress index updates
 

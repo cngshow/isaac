@@ -17,17 +17,20 @@
  * limitations under the License.
  */
 
-package gov.vha.isaac.ochre.modules.vhat;
+package gov.vha.isaac.rest.services;
 
-import java.util.UUID;
+import javax.ws.rs.client.Client;
+
+import org.jvnet.hk2.annotations.Contract;
 
 /**
  * 
- * {@link VHATConstants}
+ * {@link ClientService}
  *
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-public class VHATConstants {
-	public final static UUID VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID = UUID.fromString("4ab30955-f50a-5f5f-8397-3fe473b22ed1");
+@Contract
+public interface ClientService {
+	Client getClient();
 }

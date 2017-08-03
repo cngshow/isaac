@@ -31,7 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.UserRole;
+import gov.vha.isaac.ochre.api.PrismeRole;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
 import gov.vha.isaac.ochre.workflow.model.WorkflowContentStore;
 import gov.vha.isaac.ochre.workflow.model.contents.AbstractStorableWorkflowContents;
@@ -80,7 +80,7 @@ public class WorkflowContentStoreTest {
 	 */
 	@Test
 	public void testAvailableActionStore() throws Exception {
-		AvailableAction createdEntry1 = new AvailableAction(UUID.randomUUID(), "EDIT", "REVIEW", "REVIEW", UserRole.REVIEWER);
+		AvailableAction createdEntry1 = new AvailableAction(UUID.randomUUID(), "EDIT", "REVIEW", "REVIEW", PrismeRole.REVIEWER);
 
 		// New scope to ensure closing store
 		WorkflowContentStore<AvailableAction> availableActionStore = LookupService.get().getService(WorkflowProvider.class).getAvailableActionStore();
@@ -99,7 +99,7 @@ public class WorkflowContentStoreTest {
 
 		// Add second entry
 		AvailableAction createdEntry2 = new AvailableAction(UUID.randomUUID(), "REVIEW", "APPROVE", "APPROVE",
-				UserRole.APPROVER);
+				PrismeRole.APPROVER);
 		UUID key2 = availableActionStore.add(createdEntry2);
 		Assert.assertEquals(availableActionStore.size(), 2);
 
@@ -113,7 +113,7 @@ public class WorkflowContentStoreTest {
 
 		// Test update of an entry
 		AvailableAction updatedEntry2 = new AvailableAction(createdEntry2.getDefinitionId(), "REVIEW",
-				"Ready for Approval", "APPROVE", UserRole.APPROVER);
+				"Ready for Approval", "APPROVE", PrismeRole.APPROVER);
 		availableActionStore.put(key2, updatedEntry2);
 		Assert.assertEquals(allEntries.size(), 2);
 
@@ -314,9 +314,9 @@ public class WorkflowContentStoreTest {
 	 */
 	@Test
 	public void testDefinitionDetailsStore() throws Exception {
-		Set<UserRole> roles1 = new HashSet<>();
-		roles1.add(UserRole.EDITOR);
-		roles1.add(UserRole.REVIEWER);
+		Set<PrismeRole> roles1 = new HashSet<>();
+		roles1.add(PrismeRole.EDITOR);
+		roles1.add(PrismeRole.REVIEWER);
 		String description = "This is the description for this unit test";
 
 		DefinitionDetail createdEntry1 = new DefinitionDetail("BPMN2 ID-X", "JUnit BPMN2", "Testing", "1.0", roles1,
@@ -338,9 +338,9 @@ public class WorkflowContentStoreTest {
 		Assert.assertEquals(createdEntry1, pulledEntry1);
 
 		// Add second entry
-		Set<UserRole> roles2 = new HashSet<>();
-		roles2.add(UserRole.EDITOR);
-		roles2.add(UserRole.APPROVER);
+		Set<PrismeRole> roles2 = new HashSet<>();
+		roles2.add(PrismeRole.EDITOR);
+		roles2.add(PrismeRole.APPROVER);
 		DefinitionDetail createdEntry2 = new DefinitionDetail("BPMN2 ID-Y", "JUnit BPMN2", "Testing", "1.0", roles2,
 				description);
 

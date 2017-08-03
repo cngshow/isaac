@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>4.13-SNAPSHOT</version>
+        <version>4.16-SNAPSHOT</version>
     </parent>
 
     <groupId>gov.vha.isaac.ochre.modules</groupId>
@@ -12,6 +12,11 @@
     <name>REST: UTILS</name>
 
     <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ochre-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.reactfx</groupId>
             <artifactId>reactfx</artifactId>

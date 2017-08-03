@@ -16,7 +16,7 @@ import java.util.Collection;
  *
  * @author kec
  */
-public interface ChangeChecker extends Comparable<ChangeChecker> {
+public interface ChangeChecker {
     
     void check(ConceptChronology<? extends ConceptVersion<?>> cc, 
                Collection<Alert> alertCollection,
@@ -25,5 +25,4 @@ public interface ChangeChecker extends Comparable<ChangeChecker> {
     void check(SememeChronology<? extends SememeVersion<?>> sc, 
                Collection<Alert> alertCollection,
                CheckPhase checkPhase);
-    
 }

@@ -9,10 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -26,7 +26,7 @@ import gov.vha.isaac.ochre.api.task.TimedTask;
 public class GenerateIndexes extends TimedTask<Void> {
     private static final Logger log = LogManager.getLogger();
 
-    List<IndexServiceBI> indexers;
+    List<IndexServiceBI> indexers = new ArrayList<>();
     long componentCount;
     AtomicLong processed = new AtomicLong(0);
 
@@ -39,7 +39,6 @@ public class GenerateIndexes extends TimedTask<Void> {
         }
         else
         {
-            indexers = new ArrayList<>();
             for (Class<?> clazz : indexersToReindex)
             {
                 if (!IndexServiceBI.class.isAssignableFrom(clazz))
@@ -67,7 +66,37 @@ public class GenerateIndexes extends TimedTask<Void> {
             i.clearIndex();
             i.clearIndexedStatistics();
         }
-
+    }
+    
+    /**
+     * Used to avoid circular dependencies during a re-index upon startup
+     * @param indexersToReindex
+     */
+    public GenerateIndexes(IndexServiceBI ...indexersToReindex) {
+        updateTitle("Index generation");
+        updateProgress(-1, Long.MAX_VALUE); // Indeterminate progress
+        
+        if (indexersToReindex != null)
+        {
+            for (IndexServiceBI i : indexersToReindex)
+            {
+                indexers.add(i);
+            }
+        }
+        
+        List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
+        for (IndexServiceBI i : indexers) {
+            if (islList != null)
+            {
+                for (IndexStatusListenerBI isl : islList)
+                {
+                    isl.reindexBegan(i);
+                }
+            }            
+            log.info("Clearing index for: " + i.getIndexerName());
+            i.clearIndex();
+            i.clearIndexedStatistics();
+        }
     }
 
     @Override
