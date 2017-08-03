@@ -164,7 +164,7 @@ public interface CommitService extends DatabaseServices {
      * @deprecated use corresponding method that specifies the edit coordinate.
      */
     @Deprecated
-    Task<Optional<CommitRecord>> commit(String commitComment);
+    CommitTask commit(String commitComment);
 
     /**
      * @param chronicledConcept

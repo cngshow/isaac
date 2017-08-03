@@ -70,6 +70,8 @@ import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
+import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
@@ -234,9 +236,21 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				
 				
 				LOG.info("Committing Changes");
-				Get.commitService().commit("VHAT Delta file");
+				CommitTask ct = Get.commitService().commit("VHAT Delta file");
 				
-				System.out.println("Load complete!");
+				if (ct.get().isPresent())
+				{
+					LOG.info("Load complete!");
+				}
+				else
+				{
+					LOG.error("commit failed to process!");
+					for (Alert a : ct.getAlerts())
+					{
+						LOG.error(a.getAlertType().name() + ": " + a.getAlertText());
+					}
+					throw new RuntimeException("Unexpected internal error!");
+				}
 			}
 			catch (RuntimeException e)
 			{
