@@ -78,6 +78,7 @@ import gov.vha.isaac.ochre.mapping.constants.IsaacMappingConstants;
 import gov.vha.isaac.ochre.model.configuration.LanguageCoordinates;
 import gov.vha.isaac.ochre.model.coordinate.StampCoordinateImpl;
 import gov.vha.isaac.ochre.model.coordinate.StampPositionImpl;
+import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
 
 
 public class VetsExporter {
@@ -97,44 +98,6 @@ public class VetsExporter {
 
 	TaxonomyService ts = Get.taxonomyService();
 	
-	// TODO: Source all the following hardcoded UUID values from MetaData, once available
-	// ConceptChronology: VHAT Attribute Types <261> uuid:8287530a-b6b0-594d-bf46-252e09434f7e
-	// VHAT Metadata -> "Attribute Types"
-	final UUID vhatPropertyTypesUUID = UUID.fromString("8287530a-b6b0-594d-bf46-252e09434f7e");
-	final int vhatPropertyTypesNid = Get.identifierService().getNidForUuids(vhatPropertyTypesUUID);
-
-	// ConceptChronology: Refsets (ISAAC) <325> uuid:fab80263-6dae-523c-b604-c69e450d8c7f
-	// VHAT Metadata -> "Refsets"
-	final UUID vhatRefsetTypesUUID = UUID.fromString("fab80263-6dae-523c-b604-c69e450d8c7f");
-	final int vhatRefsetTypesNid = Get.identifierService().getNidForUuids(vhatRefsetTypesUUID);
-	
-	// conceptChronology: CODE (ISAAC) <77> uuid:803af596-aea8-5184-b8e1-45f801585d17
-	final UUID codeAssemblageUUID = MetaData.CODE.getPrimordialUuid();
-	final int codeAssemblageConceptSeq = Get.identifierService().getConceptSequenceForUuids(codeAssemblageUUID);
-	
-	// ConceptChronology: VHAT <1129> uuid:6e60d7fd-3729-5dd3-9ce7-6d97c8f75447
-	// VHAT CodeSystem
-	final UUID vhatCodeSystemUUID = UUID.fromString("6e60d7fd-3729-5dd3-9ce7-6d97c8f75447");
-	final int vhatCodeSystemNid = Get.identifierService().getNidForUuids(vhatCodeSystemUUID);
-
-	// ConceptChronology: Preferred Name (ISAAC) <257> uuid:a20e5175-6257-516a-a97d-d7f9655916b8
-	// VHAT Description Types -> Preferred Name
-	final UUID preferredNameExtendedType = UUID.fromString("a20e5175-6257-516a-a97d-d7f9655916b8");
-	
-	// ConceptChronology: Association Types (ISAAC) <309> uuid:55f56c52-757a-5db8-bf1e-3ed613711386
-	// ISAAC Associations => RelationshipType UUID
-	final UUID vhatAssociationTypesUUID = UUID.fromString("55f56c52-757a-5db8-bf1e-3ed613711386");
-	
-	// ConceptChronology: Description Types (ISAAC) <254> uuid:09c43aa9-eaed-5217-bc5f-23cacca4df38
-	// ISAAC Descriptions => DesignationType UUID
-	final UUID vhatDesignationTypesUUID = UUID.fromString("09c43aa9-eaed-5217-bc5f-23cacca4df38");
-	
-	// ConceptChronology: All VHAT Concepts (ISAAC) <365> uuid:f2df3cf5-a426-50f9-a660-081a5ca22c70
-	final UUID vhatAllConceptsUUID = UUID.fromString("f2df3cf5-a426-50f9-a660-081a5ca22c70");
-	
-	// ConceptChronology: Missing SDO Code System Concepts <42268> uuid:52460eeb-1388-512d-a5e4-fddd64fe0aee
-	final UUID missingSDOCodeSystemsUUID = UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee");
-				
 	boolean fullExportMode = false;
 
 	public VetsExporter()
@@ -178,7 +141,7 @@ public class VetsExporter {
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
-				Get.identifierService().getNidForUuids(vhatAssociationTypesUUID)).forEach((conceptId) -> {
+				Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid())).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 					relationshipTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
@@ -196,7 +159,7 @@ public class VetsExporter {
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
-				Get.identifierService().getNidForUuids(vhatPropertyTypesUUID)).forEach((conceptId) -> {
+				VHATConstants.VHAT_ATTRIBUTE_TYPES.getNid()).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 					propertyTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
@@ -214,7 +177,7 @@ public class VetsExporter {
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
-				Get.identifierService().getNidForUuids(vhatDesignationTypesUUID)).forEach((conceptId) -> {
+				Get.identifierService().getNidForUuids(VHATConstants.VHAT_DESCRIPTION_TYPES.getPrimordialUuid())).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 					designationTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});
@@ -231,12 +194,12 @@ public class VetsExporter {
 		}
 
 		// Get data, Add to map
-		Get.taxonomyService().getAllRelationshipOriginSequences(Get.identifierService().getNidForUuids(vhatRefsetTypesUUID)).forEach((tcs) ->
+		Get.taxonomyService().getAllRelationshipOriginSequences(VHATConstants.VHAT_REFSETS.getNid()).forEach((tcs) ->
 		{
 			ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(tcs);
 			// Excluding these:
-			if (concept.getPrimordialUuid().equals(vhatAllConceptsUUID)
-					|| concept.getPrimordialUuid().equals(missingSDOCodeSystemsUUID)
+			if (concept.getPrimordialUuid().equals(VHATConstants.VHAT_ALL_CONCEPTS.getPrimordialUuid())
+					|| concept.getPrimordialUuid().equals(VHATConstants.VHAT_MISSING_SDO_CODE_SYSTEM_CONCEPTS.getPrimordialUuid())
 					|| Frills.definesMapping(concept.getConceptSequence()) ) 
 			{ 
 				// Skip
@@ -263,11 +226,11 @@ public class VetsExporter {
 		});
 
 
-		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(vhatCodeSystemNid);
+		ConceptChronology<? extends ConceptVersion<?>> vhatConcept = Get.conceptService().getConcept(VHATConstants.VHAT_ROOT_CONCEPT.getNid());
 
 		xmlCodeSystem.setAction(ActionType.NONE);
 		xmlCodeSystem.setName(getPreferredNameDescriptionType(vhatConcept.getNid()));
-		xmlCodeSystem.setVUID(Frills.getVuId(vhatCodeSystemNid).orElse(null));
+		xmlCodeSystem.setVUID(Frills.getVuId(VHATConstants.VHAT_ROOT_CONCEPT.getNid()).orElse(null));
 		xmlCodeSystem.setDescription("VHA Terminology");  //This is in an acceptable synonym, but easier to hard code at the moment...
 		xmlCodeSystem.setCopyright(Year.now().getValue() + "");
 		xmlCodeSystem.setCopyrightURL("");
@@ -416,12 +379,12 @@ public class VetsExporter {
 				});
 			}
 			
-			if (!ts.wasEverKindOf(concept.getConceptSequence(), vhatCodeSystemNid))
+			if (!ts.wasEverKindOf(concept.getConceptSequence(), VHATConstants.VHAT_ROOT_CONCEPT.getNid()))
 			{
 				// Needed to ignore all the dynamically created/non-imported concepts
 				skippedForNonVHAT.getAndIncrement();
 			}
-			else if (concept.getNid() == vhatCodeSystemNid)
+			else if (concept.getNid() == VHATConstants.VHAT_ROOT_CONCEPT.getNid())
 			{
 				//skip
 			}
@@ -530,8 +493,8 @@ public class VetsExporter {
 		Get.sememeService().getSememesForComponent(componentNid).forEach((sememe) ->
 		{
 			//skip code and vuid properties - they have special handling
-			if (sememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() && sememe.getAssemblageSequence() != codeAssemblageConceptSeq
-					&& ts.wasEverKindOf(sememe.getAssemblageSequence(), vhatPropertyTypesNid))
+			if (sememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() && sememe.getAssemblageSequence() != MetaData.CODE.getConceptSequence()
+					&& ts.wasEverKindOf(sememe.getAssemblageSequence(), VHATConstants.VHAT_ATTRIBUTE_TYPES.getNid()))
 			{
 				PropertyType property = buildProperty(sememe, startDate, endDate, constructor);
 				if (property != null)
@@ -839,9 +802,9 @@ public class VetsExporter {
 							//skip code and vuid properties - they are handled already
 							
 							if (nestedSememe.getAssemblageSequence() != MetaData.VUID.getConceptSequence() 
-									&& nestedSememe.getAssemblageSequence() != codeAssemblageConceptSeq)
+									&& nestedSememe.getAssemblageSequence() != MetaData.CODE.getConceptSequence())
 							{
-								if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), vhatPropertyTypesNid))
+								if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), VHATConstants.VHAT_ATTRIBUTE_TYPES.getNid()))
 								{
 									PropertyType property = buildProperty(nestedSememe, startDate, endDate, null);
 									if (property != null)
@@ -850,7 +813,7 @@ public class VetsExporter {
 									}
 								}
 								//a refset that doesn't represent a mapset
-								else if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), vhatRefsetTypesNid) &&
+								else if (ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), VHATConstants.VHAT_REFSETS.getNid()) &&
 										! ts.wasEverKindOf(nestedSememe.getAssemblageSequence(), IsaacMappingConstants.get().DYNAMIC_SEMEME_MAPPING_SEMEME_TYPE.getNid()))
 								{
 									SubsetMembership sm = buildSubsetMembership(nestedSememe, startDate, endDate);
@@ -1030,7 +993,8 @@ public class VetsExporter {
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DescriptionSememe<?>>> latestVersion = ((SememeChronology)sememeChronology).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
 			if (latestVersion.isPresent()
-					&& preferredNameExtendedType.equals(Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememeChronology.getNid()).orElse(null)))
+					&& VHATConstants.VHAT_PREFERRED_NAME.getPrimordialUuid()
+						.equals(Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememeChronology.getNid()).orElse(null)))
 			{
 				if (latestVersion.get().value().getState() == State.ACTIVE)
 				{
@@ -1222,7 +1186,7 @@ public class VetsExporter {
 	{
 
 		Optional<SememeChronology<? extends SememeVersion<?>>> sc = Get.sememeService().getSememesForComponentFromAssemblage(componentNid,
-				codeAssemblageConceptSeq).findFirst();
+				MetaData.CODE.getConceptSequence()).findFirst();
 		if (sc.isPresent())
 		{
 			//There was a bug in the older terminology loaders which loaded 'Code' as a static sememe, but marked it as a dynamic sememe.

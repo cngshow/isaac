@@ -7,9 +7,9 @@
         <version>4.16-SNAPSHOT</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
-    <artifactId>vhat-util</artifactId>
+    <artifactId>vhat-constants</artifactId>
     <packaging>jar</packaging>
-    <name>VHAT: Util</name>
+    <name>VHAT: Constants</name>
     
     <description>
         Code built on top of the low-level ISAAC APIs that is useful for those using the VHAT module
@@ -21,26 +21,6 @@
             <artifactId>ochre-api</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-metadata</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-model</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>ochre-util</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>vhat-constants</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
+     </dependencies>
 
 </project>

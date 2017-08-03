@@ -34,8 +34,8 @@ public class TaxonomyWalkCollector implements
     public TaxonomyWalkCollector(TaxonomyCoordinate taxonomyCoordinate) {
         this.taxonomyCoordinate = taxonomyCoordinate;
         taxonomyFlags = TaxonomyFlags.getFlagsFromTaxonomyCoordinate(taxonomyCoordinate);
-        int watchNid = Get.identifierService().getNidForUuids(UUID.fromString("df79ab93-4436-35b8-be3f-2a8e5849d732"));
-        watchSequences.add(Get.identifierService().getConceptSequence(watchNid));
+//        int watchNid = Get.identifierService().getNidForUuids(UUID.fromString("df79ab93-4436-35b8-be3f-2a8e5849d732"));
+//        watchSequences.add(Get.identifierService().getConceptSequence(watchNid));
     }
 
     @Override

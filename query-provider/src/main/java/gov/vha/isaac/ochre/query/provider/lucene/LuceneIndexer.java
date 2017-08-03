@@ -831,6 +831,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 GenerateIndexes gi = new GenerateIndexes(this);
                 LookupService.getService(WorkExecutors.class).getExecutor().execute(gi);
                 gi.get();
+                log.info("Reindex complete");
             } 
             catch (Exception e) 
             {
@@ -838,7 +839,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 throw new RuntimeException(e.getMessage());
             }
          }
-         log.info("Reindex complete");
+         log.info("Indexer Contstructed");
     }
 
     protected abstract boolean indexChronicle(ObjectChronology<?> chronicle);

@@ -33,21 +33,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.mahout.math.map.OpenIntIntHashMap;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.SystemStatusService;
-import gov.vha.isaac.ochre.api.DatabaseServices.DatabaseValidity;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
@@ -61,6 +57,7 @@ import gov.vha.isaac.ochre.api.commit.CheckPhase;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.commit.CommitService;
+import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.commit.UncommittedStamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -430,8 +427,7 @@ public class CommitProvider implements CommitService {
 	 * @return a task that is already submitted to an executor.
 	 */
 	@Override
-	public synchronized Task<Optional<CommitRecord>> commit(String commitComment) {
-		//		return commit(Get.configurationService().getDefaultEditCoordinate(), commitComment);
+	public synchronized CommitTask commit(String commitComment) {
 		Semaphore pendingWrites = writePermitReference.getAndSet(new Semaphore(WRITE_POOL_SIZE));
 		pendingWrites.acquireUninterruptibly(WRITE_POOL_SIZE);
 		alertCollection.clear();
@@ -443,7 +439,7 @@ public class CommitProvider implements CommitService {
 		try
 		{
 			uncommittedSequenceLock.lock();
-			CommitTask task = CommitTask.get(commitComment,
+			CommitTask task = CommitTaskImpl.get(commitComment,
 					uncommittedConceptsWithChecksSequenceSet,
 					uncommittedConceptsNoChecksSequenceSet,
 					uncommittedSememesWithChecksSequenceSet,
