@@ -1242,6 +1242,12 @@ public class IBDFCreationUtility
 	public SememeChronology<LogicGraphSememe<?>> addRelationshipGraph(ComponentReference concept, UUID graphPrimordialUuid, 
 			LogicalExpression logicalExpression, boolean stated, Long time, UUID module)
 	{
+		return addRelationshipGraph(concept, graphPrimordialUuid, logicalExpression, stated, time, module, null);
+	}
+	
+	public SememeChronology<LogicGraphSememe<?>> addRelationshipGraph(ComponentReference concept, UUID graphPrimordialUuid, 
+			LogicalExpression logicalExpression, boolean stated, Long time, UUID module, UUID sourceRelTypeUUID)
+	{
 		HashSet<UUID> temp = stated ? conceptHasStatedGraph : conceptHasInferredGraph;
 		if (temp.contains(concept.getPrimordialUuid()))
 		{
@@ -1276,6 +1282,13 @@ public class IBDFCreationUtility
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(
 				createStamp(State.ACTIVE, selectTime(concept, time), module), builtObjects);
+		
+		if (sourceRelTypeUUID != null)
+		{
+			builtObjects.add(addUUIDAnnotation(ComponentReference.fromChronology(sci, () -> "Graph"), sourceRelTypeUUID,
+					DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_RELATIONSHIP_TYPE.getPrimordialUuid()));
+			ls_.addRelationship(getOriginStringForUuid(isARelUuid_) + ":" + getOriginStringForUuid(sourceRelTypeUUID));
+		}
 
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
