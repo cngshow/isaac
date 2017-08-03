@@ -1542,11 +1542,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					
 					
 					//retire the old sememe:
-					@SuppressWarnings("unchecked")
-					MutableDescriptionSememe<?> mss = ((SememeChronology<DescriptionSememe<?>>)oldSc)
-						.createMutableVersion(MutableDescriptionSememe.class, State.INACTIVE, editCoordinate_);
-					mss.setText(latest.get().value().getText());
-					importUtil_.storeManualUpdate(oldSc);
+					try
+					{
+						importUtil_.storeManualUpdate(Frills.resetStateWithNoCommit(State.INACTIVE, oldSc.getNid(), editCoordinate_, readCoordinate_));
+					}
+					catch (Exception e)
+					{
+						throw new RuntimeException(e);
+					}
 					
 					//retire nested components
 					for (ObjectChronology<?> o : recursiveRetireNested(oldSc.getPrimordialUuid()))
@@ -1838,7 +1841,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					
 					NecessarySet(And(cas.toArray(new Assertion[gatheredisA.size()])));
 					le = leb.build();
-					importUtil_.addRelationshipGraph(concept, null, le, true, null,  null);
+					importUtil_.addRelationshipGraph(concept, null, le, true, null,  null, VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid());
 				}
 			}
 		}	
