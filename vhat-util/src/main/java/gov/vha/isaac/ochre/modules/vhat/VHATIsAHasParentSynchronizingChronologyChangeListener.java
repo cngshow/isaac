@@ -40,6 +40,8 @@ import javax.annotation.PreDestroy;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.glassfish.hk2.runlevel.RunLevel;
+import org.jvnet.hk2.annotations.Service;
 
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.DataTarget;
@@ -86,8 +88,8 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-//@Service // TODO uncomment to enable
-//@RunLevel(value = LookupService.SL_L1) // TODO uncomment to enable
+//@Service // TODO uncomment to activate
+//@RunLevel(value = LookupService.SL_L1) // TODO uncomment to activate
 public class VHATIsAHasParentSynchronizingChronologyChangeListener implements ChronologyChangeListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingChronologyChangeListener.class);
 
@@ -114,7 +116,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 	}
 	
 	private static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getHasParentVHATAssociationTypeObject() {
-		return Get.conceptService().getOptionalConcept(Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID));
+		return Get.conceptService().getOptionalConcept(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getNid());
 	}
 
 	private final static ConcurrentSkipListSet<Integer> sequencesOfGeneratedSememesToIgnore = new ConcurrentSkipListSet<>();
@@ -369,7 +371,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		final Set<Integer> selectedAssemblages = new HashSet<>();
 		if (!getHasParentVHATAssociationTypeObject().isPresent())
 		{
-			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE_UUID;
+			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid();
 			LOG.error(msg);
 			throw new RuntimeException(msg);
 		}
