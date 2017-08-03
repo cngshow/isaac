@@ -11,6 +11,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
     * Fixed XML import null pointer bugs when items for update had no designations
     * Fixed XML import null pointer bugs when vuid and code were not specified and autogenerate was expected
     * Fixed XML import bugs with recursive retire upon remove of a concept (nested items not being retired as expected)
+    * Fixed XML import bug with moveFromConcept
 
 * 2017/07/27 - 4.15
     * DATABASE COMPATIBILITY ISSUE - Updating Lucene version to current.  Upon start with an old database, the indexes will be deleted, and new indexes will be built.  This will take much longer than a normal startup.  The automatic reindex feature is a new feature.
