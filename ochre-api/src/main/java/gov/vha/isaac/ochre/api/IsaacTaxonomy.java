@@ -122,7 +122,7 @@ public class IsaacTaxonomy {
         if (StringUtils.isNotBlank(definition)) {
             addDescription(definition, cb, TermAux.DEFINITION_DESCRIPTION_TYPE, false);
         }
-	
+    
         return cb;
     }
 
@@ -224,7 +224,7 @@ public class IsaacTaxonomy {
             
             if (isIdentifier) {
                 addIdentifierAssemblageMembership(cb);
-        	}
+            }
 
             return cb;
         } catch (Exception e) {
@@ -323,7 +323,7 @@ public class IsaacTaxonomy {
         out.close();
     }
     
-    public void exportYamlBinding(Writer out, String packageName, String className) throws IOException  {
+    public void exportYamlBinding(Writer out, String packageName, String className, List<MetadataConceptConstant> additionalConstants) throws IOException  {
         out.append("#YAML Bindings for " + packageName + "." + className + "\n");
         //TODO use common code (when moved somewhere common) to extract the version number from the pom.xml
         out.append("#Generated " + new Date().toString() + "\n");
@@ -348,6 +348,31 @@ public class IsaacTaxonomy {
                 out.append("        - " + uuid.toString() + "\n");
             }
         }
+        
+        if (additionalConstants != null)
+        {
+            for (MetadataConceptConstant mcc : additionalConstants)
+            {
+                String preferredName = mcc.getPrimaryName();
+                String constantName = preferredName.toUpperCase();
+
+                if (preferredName.indexOf("(") > 0 || preferredName.indexOf(")") > 0) {
+                    throw new RuntimeException("The metadata concept '" + preferredName + "' contains parens, which is illegal.");
+                }
+                constantName = constantName.replace(" ", "_");
+                constantName = constantName.replace("-", "_");
+                constantName = constantName.replace("+", "_PLUS");
+                constantName = constantName.replace("/", "_AND");
+
+                out.append("\n" + constantName + ":\n");
+                out.append("    fsn: " + preferredName + "\n");
+                out.append("    uuids:\n");
+                for (UUID uuid : mcc.getUuidList()) {
+                    out.append("        - " + uuid.toString() + "\n");
+                }
+            }
+        }
+        
         out.close();
     }
 
@@ -384,7 +409,7 @@ public class IsaacTaxonomy {
     }
 
     @SuppressWarnings("unchecked")
-	private void buildAndWrite(@SuppressWarnings("rawtypes") IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
+    private void buildAndWrite(@SuppressWarnings("rawtypes") IdentifiedComponentBuilder builder, int stampCoordinate, ConceptService conceptService, SememeService sememeService) throws IllegalStateException {
         List<?> builtObjects = new ArrayList<>();
         builder.build(stampCoordinate, builtObjects);
         builtObjects.forEach((builtObject) -> {
