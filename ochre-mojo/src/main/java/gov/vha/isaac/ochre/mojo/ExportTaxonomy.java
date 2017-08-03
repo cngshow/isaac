@@ -12,9 +12,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -65,7 +66,7 @@ public class ExportTaxonomy extends AbstractMojo {
                    taxonomy.exportJavaBinding(javaWriter, bindingPackage,  bindingClass);
                }
             
-            ArrayList<MetadataConceptConstant> constantsForYamlOnly = new ArrayList<>();
+            HashMap<String, MetadataConceptConstant> constantsForYamlOnly = new HashMap<>();
             
             //Read in the MetadataConceptConstant constant objects
             for (ModuleProvidedConstants mpc : LookupService.get().getAllServices(ModuleProvidedConstants.class))
@@ -82,7 +83,14 @@ public class ExportTaxonomy extends AbstractMojo {
                 {
                     for (MetadataConceptConstant mc : mpc.getConstantsForInfoOnly())
                     {
-                        constantsForYamlOnly.add(mc);
+                        for (Field f : mpc.getClass().getDeclaredFields())
+                        {
+                            if (f.get(mpc) == mc)
+                            {
+                                constantsForYamlOnly.put(f.getName(), mc);
+                                break;
+                            }
+                        }
                     }
                     if (mpc.getConstantsForInfoOnly().length > 0)
                     {

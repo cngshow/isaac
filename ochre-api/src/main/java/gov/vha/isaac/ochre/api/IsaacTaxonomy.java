@@ -18,7 +18,6 @@ package gov.vha.isaac.ochre.api;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Writer;
@@ -26,13 +25,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.UUID;
-
 import org.jvnet.hk2.annotations.Contract;
-
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.commit.CommitService;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
@@ -323,7 +322,7 @@ public class IsaacTaxonomy {
         out.close();
     }
     
-    public void exportYamlBinding(Writer out, String packageName, String className, List<MetadataConceptConstant> additionalConstants) throws IOException  {
+    public void exportYamlBinding(Writer out, String packageName, String className, Map<String, MetadataConceptConstant> additionalConstants) throws IOException  {
         out.append("#YAML Bindings for " + packageName + "." + className + "\n");
         //TODO use common code (when moved somewhere common) to extract the version number from the pom.xml
         out.append("#Generated " + new Date().toString() + "\n");
@@ -351,10 +350,10 @@ public class IsaacTaxonomy {
         
         if (additionalConstants != null)
         {
-            for (MetadataConceptConstant mcc : additionalConstants)
+            for (Entry<String, MetadataConceptConstant> mcc : additionalConstants.entrySet())
             {
-                String preferredName = mcc.getPrimaryName();
-                String constantName = preferredName.toUpperCase();
+                String preferredName = mcc.getValue().getPrimaryName();
+                String constantName = mcc.getKey();
 
                 if (preferredName.indexOf("(") > 0 || preferredName.indexOf(")") > 0) {
                     throw new RuntimeException("The metadata concept '" + preferredName + "' contains parens, which is illegal.");
@@ -367,7 +366,7 @@ public class IsaacTaxonomy {
                 out.append("\n" + constantName + ":\n");
                 out.append("    fsn: " + preferredName + "\n");
                 out.append("    uuids:\n");
-                for (UUID uuid : mcc.getUuidList()) {
+                for (UUID uuid : mcc.getValue().getUuidList()) {
                     out.append("        - " + uuid.toString() + "\n");
                 }
             }
