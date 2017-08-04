@@ -52,6 +52,7 @@ import gov.vha.isaac.ochre.api.collections.StampSequenceSet;
 import gov.vha.isaac.ochre.api.collections.UuidIntMapMap;
 import gov.vha.isaac.ochre.api.commit.Alert;
 import gov.vha.isaac.ochre.api.commit.AlertType;
+import gov.vha.isaac.ochre.api.commit.Alerts;
 import gov.vha.isaac.ochre.api.commit.ChangeChecker;
 import gov.vha.isaac.ochre.api.commit.CheckPhase;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -60,8 +61,11 @@ import gov.vha.isaac.ochre.api.commit.CommitService;
 import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.commit.UncommittedStamp;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
+import gov.vha.isaac.ochre.api.component.concept.ConceptVersion;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
+import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
+import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.StampAlias;
@@ -172,6 +176,36 @@ public class CommitProvider implements CommitService {
 				stampCommentMap.read(new File(commitManagerFolder.toFile(), STAMP_COMMENT_MAP_FILENAME));
 				databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
 			}
+			checkers.add(new ChangeChecker()
+			{
+				@Override
+				public void check(SememeChronology<? extends SememeVersion<?>> sc, Collection<Alert> alertCollection, CheckPhase checkPhase)
+				{
+					if (checkPhase == CheckPhase.ADD_UNCOMMITTED)
+					{
+						//TODO add more sanity checks like this to save us heartache...
+						if (sc.getSememeType() == SememeType.DESCRIPTION)
+						{
+							for (SememeVersion<?> sv : sc.getUnwrittenVersionList())
+							{
+								if (((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
+										((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
+										((DescriptionSememe<?>)sv).getDescriptionTypeConceptSequence() == 0 ||
+										((DescriptionSememe<?>)sv).getText() == null)
+								{
+									alertCollection.add(Alerts.error("Failed to set all required fields on a description!", sv.getNid()));
+								}
+							}
+						}
+					}
+				}
+				
+				@Override
+				public void check(ConceptChronology<? extends ConceptVersion<?>> cc, Collection<Alert> alertCollection, CheckPhase checkPhase)
+				{
+					// no default concept checker
+				}
+			});
 
 		} catch (Exception e) {
 			LookupService.getService(SystemStatusService.class).notifyServiceConfigurationFailure("Cradle Commit Provider", e);

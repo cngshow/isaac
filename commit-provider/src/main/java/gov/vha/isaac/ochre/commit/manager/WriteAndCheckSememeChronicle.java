@@ -23,6 +23,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.AlertType;
 import gov.vha.isaac.ochre.api.commit.ChangeChecker;
 import gov.vha.isaac.ochre.api.commit.CheckPhase;
 import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
@@ -75,15 +76,23 @@ public class WriteAndCheckSememeChronicle extends Task<Void> {
     @Override
     public Void call() throws Exception {
         try {
-            Get.sememeService().writeSememe(sc);
-            uncommittedTracking.accept(sc, true);
-            updateProgress(1, 3);
-            updateMessage("checking: " + sc.getSememeType() + " " + sc.getSememeSequence());
             if (sc.getCommitState() == CommitStates.UNCOMMITTED) {
                 checkers.stream().forEach((check) -> {
                     check.check(sc, alertCollection, CheckPhase.ADD_UNCOMMITTED);
                 });
             }
+            
+            for (Alert a : alertCollection) {
+                if (a.getAlertType() == AlertType.ERROR) {
+                    throw new RuntimeException("There is an error: " + a.toString());
+                }
+            }
+        
+            Get.sememeService().writeSememe(sc);
+            uncommittedTracking.accept(sc, true);
+            updateProgress(1, 3);
+            updateMessage("checking: " + sc.getSememeType() + " " + sc.getSememeSequence());
+            
 
             updateProgress(2, 3);
             updateMessage("notifying: " + sc.getSememeType() + " " + sc.getSememeSequence());
