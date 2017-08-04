@@ -88,8 +88,8 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-//@Service // TODO uncomment to activate
-//@RunLevel(value = LookupService.SL_L1) // TODO uncomment to activate
+@Service
+@RunLevel(value = LookupService.SL_L1)
 public class VHATIsAHasParentSynchronizingChronologyChangeListener implements ChronologyChangeListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingChronologyChangeListener.class);
 
@@ -113,10 +113,6 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		}
 
 		return VHAT_STAMP_COORDINATE;
-	}
-	
-	private static Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> getHasParentVHATAssociationTypeObject() {
-		return Get.conceptService().getOptionalConcept(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getNid());
 	}
 
 	private final static ConcurrentSkipListSet<Integer> sequencesOfGeneratedSememesToIgnore = new ConcurrentSkipListSet<>();
@@ -179,16 +175,10 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 			return;
 		}
 		
-		final Optional<? extends ConceptChronology<? extends ConceptVersion<?>>> hasParentVHATAssociationTypeObject = getHasParentVHATAssociationTypeObject();
-		if (! hasParentVHATAssociationTypeObject.isPresent()) {
-			// Ignore because VHAT not configured in DB
-			return;
-		}
-		
 		if (sc.getSememeType() == SememeType.LOGIC_GRAPH) {
 			sememeSequencesForUnhandledLogicGraphChanges.add(sc.getSememeSequence());
 		} else if (sc.getSememeType() == SememeType.DYNAMIC
-				&& sc.getAssemblageSequence() == getHasParentVHATAssociationTypeObject().get().getConceptSequence()) {
+				&& sc.getAssemblageSequence() == VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getConceptSequence()) {
 			sememeSequencesForUnhandledHasParentAssociationChanges.add(sc.getSememeSequence());
 		} else {
 			// Ignore if not either LOGIC_GRAPH or DYNAMIC has_parent association sememe
@@ -271,10 +261,10 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 						data[0] = new DynamicSememeUUIDImpl(uuidOfParentAccordingToNewLogicGraphVersion.get());
 
 						SememeBuilder<? extends SememeChronology<?>> associationSememeBuilder =  Get.sememeBuilderService().getDynamicSememeBuilder(
-								referencedConcept.getNid(), getHasParentVHATAssociationTypeObject().get().getConceptSequence(), data);
+								referencedConcept.getNid(), VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getConceptSequence(), data);
 						UUID associationItemUUID = UuidT5Generator.get(IsaacMappingConstants.get().MAPPING_NAMESPACE.getUUID(), 
 								referencedConcept.getPrimordialUuid().toString() + "|" 
-										+ getHasParentVHATAssociationTypeObject().get().getPrimordialUuid().toString() + "|"
+										+ VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid().toString() + "|"
 										+ uuidOfParentAccordingToNewLogicGraphVersion.get());
 						if (Get.identifierService().hasUuid(associationItemUUID))
 						{
@@ -367,15 +357,19 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		}
 	}
 	
-	private static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
+	public static Collection<DynamicSememeImpl> getActiveHasParentAssociationDynamicSememesAttachedToComponent(int nid) {
+		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, TermAux.DEVELOPMENT_PATH.getConceptSequence());
+		final StampCoordinate activeVhatStampCoordinate = 
+				new StampCoordinateImpl(StampPrecedence.PATH,
+						stampPosition, 
+						ConceptSequenceSet.of(getVHATModules()),
+						State.ACTIVE_ONLY_SET);
+		
+		return getHasParentAssociationDynamicSememesAttachedToComponent(nid, activeVhatStampCoordinate);
+	}
+	public static Collection<DynamicSememeImpl> getHasParentAssociationDynamicSememesAttachedToComponent(int nid, StampCoordinate sc) {
 		final Set<Integer> selectedAssemblages = new HashSet<>();
-		if (!getHasParentVHATAssociationTypeObject().isPresent())
-		{
-			String msg = "No concept for VHAT has_parent UUID=" + VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid();
-			LOG.error(msg);
-			throw new RuntimeException(msg);
-		}
-		selectedAssemblages.add(getHasParentVHATAssociationTypeObject().get().getConceptSequence());
+		selectedAssemblages.add(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getConceptSequence());
 		
 		final Set<SememeType> sememeTypesToExclude = new HashSet<>();
 		for (SememeType type : SememeType.values()) {
@@ -384,17 +378,11 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 			}
 		}
 
-		final StampPosition stampPosition = new StampPositionImpl(Long.MAX_VALUE, TermAux.DEVELOPMENT_PATH.getConceptSequence());
-		final StampCoordinate activeVhatStampCoordinate = 
-				new StampCoordinateImpl(StampPrecedence.PATH,
-						stampPosition, 
-						ConceptSequenceSet.of(getVHATModules()),
-						State.ACTIVE_ONLY_SET);
 		final Iterator<SememeChronology<? extends SememeVersion<?>>> it = Frills.getSememesForComponentFromAssemblagesFilteredBySememeType(nid, selectedAssemblages, sememeTypesToExclude).iterator();
 		final List<DynamicSememeImpl> hasParentAssociationDynamicSememesToReturn = new ArrayList<>();
 		while (it.hasNext()) {
 			SememeChronology<DynamicSememeImpl> hasParentAssociationDynamicSememe = (SememeChronology<DynamicSememeImpl>)it.next();
-			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, activeVhatStampCoordinate);
+			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, sc);
 			if (optionalLatestVersion.isPresent()) {
 				if (optionalLatestVersion.get().contradictions().isPresent()) {
 					// TODO handle contradictions
