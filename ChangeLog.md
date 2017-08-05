@@ -2,6 +2,9 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/08/?? - 4.17 - PENDING
+    *
+
 * 2017/08/03 - 4.16
     * Much internal refactoring to make proper use of constants rather that hard-coded UUIDs.
     * Added various VHAT constants to a VHAT package
