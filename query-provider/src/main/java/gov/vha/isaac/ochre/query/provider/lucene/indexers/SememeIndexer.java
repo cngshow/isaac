@@ -72,6 +72,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeSequence;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
@@ -147,7 +148,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 					}
 				}
 				indexModule(doc, dsv.getModuleSequence());
-				indexPath(doc, dsv.getNid()); //PathSequence
+				indexPath(doc, dsv.getPathSequence());
 			}
 			//TODO enhance the index configuration to allow us to configure Static sememes as indexed, or not indexed
 			//static sememe types are never more than 1 column, always pass -1
@@ -157,11 +158,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				handleType(doc, new DynamicSememeStringImpl(ssv.getString()), -1);
 				incrementIndexedItemCount("Sememe String");
 				indexModule(doc, ssv.getModuleSequence());
-				//log.info("In StingSememe");
 				indexPath(doc, ssv.getPathSequence());
-				//indexPath(doc, ssv.getNid());
-				//doc.add(new StringField("test" + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, ssv.getModuleSequence() +":" + ssv.getPathSequence(), Store.NO));
-				
 			}
 			else if (sv instanceof LongSememe)
 			{
@@ -373,6 +370,20 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 		
 		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
 	}
+	
+	/**
+	 * Adds (optional) parameter of a StampCoordinate to {@link #queryNumericRange(DynamicSememeData, boolean, DynamicSememeData, boolean, Integer[], Integer[], int, Long)}.
+	 * 
+	 * @param stamp The StampCoordinate with parameters to constrain the search.
+	 * @return
+	 */
+	public final List<SearchResult> queryNumericRange(final DynamicSememeData queryDataLower, final boolean queryDataLowerInclusive,
+			final DynamicSememeData queryDataUpper, final boolean queryDataUpperInclusive, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
+			Long targetGeneration, StampCoordinate stamp)
+	{
+		this.setStampCoordinate(stamp);
+		return this.queryNumericRange(queryDataLower, queryDataLowerInclusive, queryDataUpper, queryDataUpperInclusive, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration);
+	}
 
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long)
@@ -401,6 +412,20 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	{
 		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration, (Predicate<Integer>)null);
 	}
+	
+	/**
+	 * Adds (optional) parameter of a StampCoordinate to {@link #query(DynamicSememeData, boolean, Integer[], Integer[], int, Long)}.
+	 * 
+	 * @param stamp The StampCoordinate with parameters to constrain the search.
+	 * @return
+	 */
+	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
+	{
+		this.setStampCoordinate(stamp);
+		return this.query(queryData, prefixSearch, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration);
+	}
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
 	 */
@@ -506,6 +531,18 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
 		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
+	}
+	
+	/**
+	 * Adds (optional) parameter of a StampCoordinate to {@link #query(int, Integer[], Integer[], int, Long)}.
+	 * 
+	 * @param stamp The StampCoordinate with parameters to constrain the search.
+	 * @return
+	 */
+	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
+	{
+		this.setStampCoordinate(stamp);
+		return this.query(nid, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration);
 	}
 
 	private Query buildNumericQuery(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive, DynamicSememeData queryDataUpper,
