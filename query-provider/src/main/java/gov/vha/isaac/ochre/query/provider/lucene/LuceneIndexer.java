@@ -158,6 +158,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
     private final LruCache<Integer, List<SearchResult>> queryCache = new LruCache<>(20);
+    private boolean useQueryCaching = true;
     private StampCoordinate searchStampCoordinate = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
@@ -436,12 +437,24 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
      * the nid should be allowed in the result, false otherwise.  Note that this may cause large performance slowdowns, depending
      * on the implementation of your filter
-     * @return
+     * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of
+     * that match relative to other matches.
      */
     protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
     {
     	// Include the module and path selelctions
     	q=this.buildStampQuery(q);
+    	
+    	// Get the generated query cache key 
+    	// The global (optional) searchStampCoordinate is set elsewhere.
+    	// This is necessary to make sure all the parameters are accounted for other than just the query.
+    	// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
+    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter, searchStampCoordinate);
+    	
+    	if (useQueryCaching && this.queryCache.containsKey(cacheKey))
+    	{
+    		return queryCache.get(cacheKey);
+    	}
     	
     	try 
         {
@@ -537,7 +550,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 //				}
                 log.debug("Returning {} results from query", results.size());
                 // Add results to the query cache
-                queryCache.put(q.hashCode(), results);
+                queryCache.put(cacheKey, results);
                 return results;
             } finally {
                 referenceManager.release(searcher);
@@ -979,8 +992,61 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	return x;
     }
     
+    /**
+     * Sets the StampCoordinate to be used to constrain the query.
+     * 
+     * @param stamp The StampCoordinate representing the desired STAMP parameters
+     * 
+     */
     public void setStampCoordinate(StampCoordinate stamp)
     {
     	this.searchStampCoordinate = stamp;
+    }
+    
+    /**
+     * Generates a consisten query cache key for this running instance that respects all the 
+     * requested parameters. Any changes to the query, size, target generation, filter
+     * or StampCoordinate will result in a different entry.
+     * 
+     * @param query The Lucene Query object.
+     * @param sizeLimit The number of results desired.
+     * @param targetGeneration The (optional) target generation value for this query.
+     * @param filter The (optional) filter value for this query.
+     * @param stamp The (optional) StampCoordinate associated with this query.
+     * 
+     * @return An integer value used to key the query cache. 
+     */
+    private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+    {
+    	StringBuilder sb = new StringBuilder("cache|size:" + sizeLimit);
+    	if (query != null)
+    	{
+    		sb.append("|query_hash:" + query.hashCode());
+    	}
+    	if (targetGeneration != null)
+    	{
+    		sb.append("|target_gen:" + targetGeneration);
+    	}
+    	if (filter != null)
+    	{
+    		sb.append("|filter_hash:" + filter.hashCode());
+    	}
+    	if (stamp != null)
+    	{
+    		sb.append("|stamp_hash:" + stamp.hashCode());
+    	}
+    	int key = sb.toString().hashCode();
+    	log.debug("Created query key: '{}' from '{}'", key, sb.toString());
+    	return key;
+    }
+    
+    /**
+     * Allows enabling or disabling query caching.
+     * 
+     * @param b True to use caching, false otherwise
+     */
+    public void useQueryCaching(boolean b)
+    {
+    	useQueryCaching = b;
     }
 }
