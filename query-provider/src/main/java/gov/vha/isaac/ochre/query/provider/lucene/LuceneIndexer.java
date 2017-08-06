@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +79,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.MMapDirectory;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.ConfigurationService;
 import gov.vha.isaac.ochre.api.Get;
@@ -93,6 +91,7 @@ import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.ComponentSearchResult;
 import gov.vha.isaac.ochre.api.index.ConceptSearchResult;
@@ -102,7 +101,6 @@ import gov.vha.isaac.ochre.api.index.IndexedGenerationCallable;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.util.NamedThreadFactory;
 import gov.vha.isaac.ochre.api.util.RecursiveDelete;
-import gov.vha.isaac.ochre.api.util.UUIDUtil;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.impl.utility.Frills;
@@ -160,6 +158,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
     private final LruCache<Integer, List<SearchResult>> queryCache = new LruCache<>(20);
+    private StampCoordinate searchStampCoordinate = null;
 
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -344,7 +343,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     * that match relative to other matches.
     */
    @Override
-    public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit, Long targetGeneration) {
+    public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit, Long targetGeneration) 
+   {
        return query(query, false, semeneConceptSequence, sizeLimit, targetGeneration);
    }
 
@@ -440,13 +440,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      */
     protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
     {
-        // Return from the cache if a recent query
-    	if (queryCache.containsKey(q.hashCode()))
-    	{
-    		List<SearchResult> r = queryCache.get(q.hashCode());
-    		log.debug("Returning {} results from query cache", r.size());
-    		return r;
-    	}
+    	// Include the module and path selelctions
+    	q=this.buildStampQuery(q);
     	
     	try 
         {
@@ -475,14 +470,14 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 log.debug("Running query: {}", q.toString());
                 
                 // We're only going to return up to what was requested
-                List<SearchResult> results = new ArrayList<>(sizeLimit);
+                List<SearchResult> results = new ArrayList<>();
                 HashSet<Integer> includedComponentNids = new HashSet<>();
                 ScoreDoc lastDoc = null;
                 boolean complete = false;  //i.e., results.size() < sizeLimit
                 
 				// Keep going until the requested number of docs are found, or no more matches/results
-				while (!complete)
-				{
+//				while (!complete)
+//				{
 					TopDocs topDocs;
 	                if (filter != null)
 	                {
@@ -519,7 +514,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 		                    int componentNid = doc.getField(FIELD_COMPONENT_NID).numericValue().intValue();
 		                    if (includedComponentNids.contains(componentNid))
 		                    {
-		                        continue;
+		                    	continue;
 		                    }
 		                    else
 		                    {
@@ -538,7 +533,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	                	complete = true;
 	                	log.debug("Search exhausted, returning {} results from query", results.size());
 	                }
-				}
+	                topDocs = null;
+//				}
                 log.debug("Returning {} results from query", results.size());
                 // Add results to the query cache
                 queryCache.put(q.hashCode(), results);
@@ -614,7 +610,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 wrap.add(new TermQuery(new Term(FIELD_SEMEME_ASSEMBLAGE_SEQUENCE, i + "")), Occur.SHOULD);
             }
             outerWrap.add(wrap.build(), Occur.MUST);
-            
             return outerWrap.build();
         }
         else
@@ -652,6 +647,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 qp2.setAllowLeadingWildcard(true);
                 bq.add(qp2.parse(query), Occur.SHOULD);
             }
+            
             return new BooleanQuery.Builder().add(bq.build(), Occur.MUST).build();
         }
         catch (IOException|ParseException e)
@@ -925,7 +921,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	{
 		UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
 		addField(doc, FIELD_INDEXED_MODULE_STRING_VALUE, moduleUuid.toString(), false);
-		incrementIndexedItemCount("Module"); // - " + moduleUuid
+		incrementIndexedItemCount("Module");
 	}
 
 	/**
@@ -938,6 +934,53 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	{
 		UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
 		addField(doc, FIELD_INDEXED_PATH_STRING_VALUE, pathUuid.toString(), false);
-		incrementIndexedItemCount("Path"); // - " + pathUuid
+		incrementIndexedItemCount("Path");
 	}
+	
+	/**
+	 * 
+	 * @param stamp
+	 * @return
+	 */
+    protected Query buildStampQuery(Query query)
+    {
+    	Builder bq = new BooleanQuery.Builder();
+    	
+    	if (this.searchStampCoordinate == null)
+    	{
+    		return query;
+    	}
+    	
+    	System.out.println(query);
+    	bq.add(query, Occur.SHOULD);
+    	
+    	// TODO: Check if this can ever return null
+    	Integer pathSeq = this.searchStampCoordinate.getStampPosition().getStampPathSequence();
+    	if (pathSeq != null) 
+		{
+			UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
+			bq.add(new TermQuery(new Term(FIELD_INDEXED_PATH_STRING_VALUE + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString())), Occur.MUST);
+		}
+		
+    	if (this.searchStampCoordinate.getModuleSequences().asArray().length > 0)
+    	{
+    		Builder inner = new BooleanQuery.Builder();
+			
+    		for (int moduleSeq : this.searchStampCoordinate.getModuleSequences().asArray())
+    		{
+    			UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
+    			inner.add(new TermQuery(new Term(FIELD_INDEXED_MODULE_STRING_VALUE + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, moduleUuid.toString())), Occur.SHOULD);
+    		}
+    		bq.add(inner.build(), Occur.MUST);
+    	}
+    	
+		Query x = new BooleanQuery.Builder().add(bq.build(), Occur.SHOULD).build();
+		System.out.println(x);
+    	return x;
+    }
+    
+    public void setStampCoordinate(StampCoordinate stamp)
+    {
+    	this.searchStampCoordinate = stamp;
+    }
 }
