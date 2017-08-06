@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 import org.jvnet.hk2.annotations.Contract;
 import gov.vha.isaac.ochre.api.DatabaseServices;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 
 /**
  * The contract interface for indexing services.
@@ -193,4 +194,12 @@ public interface IndexServiceBI extends DatabaseServices {
      * @return the merged results, in a collection that iterates in the same order as they were passed in.
      */
     Collection<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult);
+    
+    /**
+     * Set the StampCoordinate to constrain the search to the selected coordinate parameters. This is an
+     * optional parameter to most query methods.
+     * 
+     * @param stampCoordinate
+     */
+    void setStampCoordinate(StampCoordinate stampCoordinate);
 }
