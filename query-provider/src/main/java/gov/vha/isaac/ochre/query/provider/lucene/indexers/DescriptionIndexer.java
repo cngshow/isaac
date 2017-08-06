@@ -163,26 +163,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     }
     
     /**
-     * Adds (optional) parameter of a StampCoordinate to {@link #query(String, boolean, Integer[], int, Long)}.  
-     *
-     * @param query The query to apply.
-     * @param prefixSearch if true, utilize a search algorithm that is optimized for prefix searching.
-     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
-     * to wait for a target generation.
-     * @param stamp the StampCoordinate to constrain the search
-     *
-     * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
-     * to other matches.
-     */
-    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
-    {
-    	this.setStampCoordinate(stamp);
-        return this.query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration);
-    }
-    
-    /**
      * A generic query API that handles most common cases.  The cases handled for various component property types
      * are detailed below.
      * 
@@ -227,31 +207,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     }
     
     /**
-     * Adds (optional) parameter of a StampCoordinate to {@link #query(String, boolean, Integer[], int, Long, Predicate, boolean)}.
-     * 
-     * @param query The query to apply.
-     * @param prefixSearch If true, utilize a search algorithm that is optimized for prefix searching.
-     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
-     * to wait for a target generation.
-     * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
-     * the nid should be allowed in the result, false otherwise.
-     * @param metadataOnly - Only search descriptions on concepts which are part of the {@link MetaData#ISAAC_METADATA} tree when true, 
-     * otherwise, search all descriptions.
-     * @param stamp The StampCoordinate with parameters to constrain the search.
-     *
-     * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
-     * to other matches.
-     */
-    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
-            boolean metadataOnly, StampCoordinate stamp)
-    {
-    	this.setStampCoordinate(stamp);
-    	return this.query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration, filter, metadataOnly);
-    }
-
-    /**
      * Search the specified description type.
      *
      *
@@ -282,33 +237,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
     }
     
     /**
-     * Adds (optional) parameter of a StampCoordinate to {@link #query(String, UUID, int, Long)}
-     *
-     * @param query The query to apply
-     * @param extendedDescriptionType - The UUID of an extended description type
-     * - should be a child of the concept "Description type in source
-     * terminology (ISAAC)" If this is passed in as null,
-     * this falls back to a standard description search that searches all
-     * description types
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the
-     * search or Long.MIN_VALUE if there is no need to wait for a target
-     * generation. Long.MAX_VALUE can be passed in to force this query to wait
-     * until any in progress indexing operations are completed - and then use
-     * the latest index.
-     * @param stamp The StampCoordinate with parameters to constrain the search.
-     * 
-     * @return a List of <code>SearchResult</codes> that contains the nid of the
-     * component that matched, and the score of that match relative to other
-     * matches.
-    */
-    public final List<SearchResult> query(String query, UUID extendedDescriptionType, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
-    {
-    	this.setStampCoordinate(stamp);
-    	return this.query(query, extendedDescriptionType, sizeLimit, targetGeneration);
-    }
-
-    /**
      * Search the specified description type.
      *
      * @param query The query to apply
@@ -333,31 +261,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
                     sizeLimit, targetGeneration, null);
         }
     }
-    /**
-     * Adds (optional) parameter of a StampCoordinate to {@link #query(String, LuceneDescriptionType, int, Long)}
-     *
-     * @param query The query to apply
-     * @param descriptionType - The type of description to search. If this is
-     * passed in as null, this falls back to a standard description search that
-     * searches all description types
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the
-     * search or Long.MIN_VALUE if there is no need to wait for a target
-     * generation. Long.MAX_VALUE can be passed in to force this query to wait
-     * until any in progress indexing operations are completed - and then use
-     * the latest index.
-     * @param stamp The StampCoordinate with parameters to constrain the search.
-     * 
-     * @return a List of <code>SearchResult</codes> that contains the nid of the
-     * component that matched, and the score of that match relative to other
-     * matches.
-     */
-    public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
-    {
-    	this.setStampCoordinate(stamp);
-        return this.query(query, descriptionType, sizeLimit, targetGeneration);
-    }
-
+    
     private void setupNidConstants() {
         // Can't put these in the start me, because if the database is not yet imported, then these calls will fail. 
         if (!sequencesSetup.get()) {
