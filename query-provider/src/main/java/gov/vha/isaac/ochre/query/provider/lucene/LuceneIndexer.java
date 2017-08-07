@@ -340,16 +340,39 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no 
     * need to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any 
     * in-progress indexing operations are completed - and then use the latest index.
+    * 
     * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of 
     * that match relative to other matches.
     */
    @Override
     public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit, Long targetGeneration) 
    {
-       return query(query, false, semeneConceptSequence, sizeLimit, targetGeneration);
+       return query(query, semeneConceptSequence, sizeLimit, targetGeneration, null);
    }
 
-    /**
+   /**
+	*
+	* Calls {@link #query(String, boolean, Integer, int, long)} with the prefixSearch field set to false.
+	*
+	* @param query The query to apply.
+	* @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within.  If null, 
+	* searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
+	* or the concept sequence {@link MetaData#SCTID} for example.
+	* @param sizeLimit The maximum size of the result list.
+	* @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no 
+	* need to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any 
+	* in-progress indexing operations are completed - and then use the latest index.
+	* @param stamp The (optional) StampCoordinate to constrain the search.
+	* 
+	* @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of 
+	* that match relative to other matches.
+	*/
+	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp) 
+	{
+		return query(query, false, semeneConceptSequence, sizeLimit, targetGeneration, stamp);
+	}
+
+  	/**
      * A generic query API that handles most common cases.  The cases handled for various component property types
      * are detailed below.
      * 
@@ -383,6 +406,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      */
     @Override
     public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration);
+    
+    @Override
+    public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
     @Override
     public final void clearIndex() {
@@ -440,7 +466,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of
      * that match relative to other matches.
      */
-    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+    protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
     {
     	// Include the module and path selelctions
     	q=this.buildStampQuery(q);
@@ -448,7 +474,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	// Get the generated query cache key 
     	// This is necessary to make sure all the parameters are accounted for other than just the query.
     	// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
-    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter);
+    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter, stamp);
     	
     	if (useQueryCaching && this.queryCache.containsKey(cacheKey))
     	{
@@ -514,6 +540,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	                    topDocs = searcher.search(q, sizeLimit);
 	                }
 	                
+	                // If no scoreDocs exist, we're done 
 	                if (topDocs.scoreDocs.length == 0)
 	                {
 	                	complete = true;
@@ -993,10 +1020,10 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * @param stamp The StampCoordinate representing the desired STAMP parameters
      * 
      */
-    public void setStampCoordinate(StampCoordinate stamp)
-    {
-    	this.searchStampCoordinate = stamp;
-    }
+//    public void setStampCoordinate(StampCoordinate stamp)
+//    {
+//    	this.searchStampCoordinate = stamp;
+//    }
     
     /**
      * Generates a consisten query cache key for this running instance that respects all the 
@@ -1011,7 +1038,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * 
      * @return An integer value used to key the query cache. 
      */
-    private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+    private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
     {
     	StringBuilder sb = new StringBuilder("cache|size:" + sizeLimit);
     	if (query != null)
@@ -1026,9 +1053,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	{
     		sb.append("|filter_hash:" + filter.hashCode());
     	}
-    	if (searchStampCoordinate != null)
+    	if (stamp != null)
     	{
-    		sb.append("|stamp_hash:" + searchStampCoordinate.hashCode());
+    		sb.append("|stamp_hash:" + stamp.hashCode());
     	}
     	int key = sb.toString().hashCode();
     	log.debug("Created query key: '{}' from '{}'", key, sb.toString());
