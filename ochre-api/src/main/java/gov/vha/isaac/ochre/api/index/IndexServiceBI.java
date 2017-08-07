@@ -187,6 +187,8 @@ public interface IndexServiceBI extends DatabaseServices {
      */
     List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration);
     
+    List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+    
     /**
      * Locate the concept most closely tied to a search result, and merge them together, maintaining the best score.
      * This is a convenience method.
@@ -194,12 +196,4 @@ public interface IndexServiceBI extends DatabaseServices {
      * @return the merged results, in a collection that iterates in the same order as they were passed in.
      */
     Collection<ConceptSearchResult> mergeResultsOnConcept(List<SearchResult> searchResult);
-    
-    /**
-     * Set the StampCoordinate to constrain the search to the selected coordinate parameters. This is an
-     * optional parameter to most query methods.
-     * 
-     * @param stampCoordinate
-     */
-    void setStampCoordinate(StampCoordinate stampCoordinate);
 }
