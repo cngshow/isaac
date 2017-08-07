@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -157,7 +158,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
-    private final LruCache<Integer, List<SearchResult>> queryCache = new LruCache<>(20);
+    private final java.util.Map<Integer, List<SearchResult>> queryCache = Collections.synchronizedMap(new LruCache<Integer, List<SearchResult>>(20));
     
     protected LuceneIndexer(String indexName) throws IOException {
         try {
@@ -465,17 +466,21 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
     {
     	// Include the module and path selelctions
-    	q=this.buildStampQuery(q, stamp);
+    	q = this.buildStampQuery(q, stamp);
     	
     	// Get the generated query cache key 
     	// This is necessary to make sure all the parameters are accounted for other than just the query.
     	// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
     	int cacheKey = getQueryCacheKey(q, sizeLimit, targetGeneration, filter, stamp);
     	
-    	if (queryCache.containsKey(cacheKey))
+    	synchronized(queryCache)
     	{
-    		return queryCache.get(cacheKey);
+    		if (queryCache.containsKey(cacheKey))
+        	{
+        		return queryCache.get(cacheKey);
+        	}
     	}
+    	
     	
     	try 
         {
@@ -571,7 +576,10 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 				}
                 log.debug("Returning {} results from query", results.size());
                 // Add results to the query cache
-                queryCache.put(cacheKey, results);
+                synchronized(queryCache)
+            	{
+                	queryCache.put(cacheKey, results);
+            	}
                 return results;
             } finally {
                 referenceManager.release(searcher);
