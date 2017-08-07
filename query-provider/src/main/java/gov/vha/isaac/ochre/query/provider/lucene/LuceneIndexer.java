@@ -962,7 +962,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     		return query;
     	}
     	
-    	System.out.println(query);
     	bq.add(query, Occur.SHOULD);
     	
     	// TODO: Check if this can ever return null
@@ -985,9 +984,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     		bq.add(inner.build(), Occur.MUST);
     	}
     	
-		Query x = new BooleanQuery.Builder().add(bq.build(), Occur.SHOULD).build();
-		System.out.println(x);
-    	return x;
+		return new BooleanQuery.Builder().add(bq.build(), Occur.SHOULD).build();
     }
     
     /**
