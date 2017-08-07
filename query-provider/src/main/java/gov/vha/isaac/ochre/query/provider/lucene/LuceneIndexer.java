@@ -446,10 +446,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	q=this.buildStampQuery(q);
     	
     	// Get the generated query cache key 
-    	// The global (optional) searchStampCoordinate is set elsewhere.
     	// This is necessary to make sure all the parameters are accounted for other than just the query.
     	// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
-    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter, searchStampCoordinate);
+    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter);
     	
     	if (useQueryCaching && this.queryCache.containsKey(cacheKey))
     	{
@@ -489,8 +488,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
                 boolean complete = false;  //i.e., results.size() < sizeLimit
                 
 				// Keep going until the requested number of docs are found, or no more matches/results
-//				while (!complete)
-//				{
+				while (!complete)
+				{
 					TopDocs topDocs;
 	                if (filter != null)
 	                {
@@ -515,7 +514,12 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	                    topDocs = searcher.search(q, sizeLimit);
 	                }
 	                
-	                if (topDocs.totalHits > 0)
+	                if (topDocs.scoreDocs.length == 0)
+	                {
+	                	complete = true;
+	                	log.debug("Search exhausted after finding only {} results (of {} requested) from query", results.size(), sizeLimit);
+	                }
+	                else
 	                {
 	                	for (ScoreDoc hit : topDocs.scoreDocs)
 		                {
@@ -541,13 +545,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 		                    }
 		                }
 	                }
-	                else
-	                {
-	                	complete = true;
-	                	log.debug("Search exhausted, returning {} results from query", results.size());
-	                }
-	                topDocs = null;
-//				}
+				}
                 log.debug("Returning {} results from query", results.size());
                 // Add results to the query cache
                 queryCache.put(cacheKey, results);
@@ -1016,7 +1014,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * 
      * @return An integer value used to key the query cache. 
      */
-    private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+    private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
     {
     	StringBuilder sb = new StringBuilder("cache|size:" + sizeLimit);
     	if (query != null)
@@ -1031,9 +1029,9 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	{
     		sb.append("|filter_hash:" + filter.hashCode());
     	}
-    	if (stamp != null)
+    	if (searchStampCoordinate != null)
     	{
-    		sb.append("|stamp_hash:" + stamp.hashCode());
+    		sb.append("|stamp_hash:" + searchStampCoordinate.hashCode());
     	}
     	int key = sb.toString().hashCode();
     	log.debug("Created query key: '{}' from '{}'", key, sb.toString());
