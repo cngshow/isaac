@@ -13,10 +13,10 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import java.util.Collection;
 
 /**
- *
+ * This must be comparable, because it gets used in ConcurrentSkipListSet in the CommitProvider, which assumes things are comparable
  * @author kec
  */
-public interface ChangeChecker {
+public interface ChangeChecker extends Comparable<ChangeChecker>{
     
     void check(ConceptChronology<? extends ConceptVersion<?>> cc, 
                Collection<Alert> alertCollection,
@@ -25,4 +25,19 @@ public interface ChangeChecker {
     void check(SememeChronology<? extends SememeVersion<?>> sc, 
                Collection<Alert> alertCollection,
                CheckPhase checkPhase);
+    
+    /**
+     * @return the desired ordering of your change checker, lower numbers execute first.  Used in the implementation of comparable.
+     */
+    default int getRank() {
+        return 1;
+    }
+
+    /**
+     * Sorts based on {@link #getRank()}
+     */
+    @Override
+    default int compareTo(ChangeChecker o) {
+        return Integer.compare(getRank(), o.getRank());
+    }
 }
