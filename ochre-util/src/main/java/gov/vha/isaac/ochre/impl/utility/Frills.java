@@ -771,7 +771,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(sctID + " ", true,
-					new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MAX_VALUE);
+					new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MAX_VALUE, null);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -791,7 +791,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(vuID + " ", true,
-					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MAX_VALUE);
+					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MAX_VALUE, null);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -849,7 +849,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		};
 		//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 		List<SearchResult> results = si.query(vuID + " ", true,
-				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MAX_VALUE, filter);
+				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MAX_VALUE, filter, null);
 		if (results.size() > 0) {
 			for (SearchResult result : results) {
 				matchingVuidSememeNids.add(result.getNid());
@@ -1567,7 +1567,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 				List<SearchResult> result = si.query(localIdentifier + " ", true, 
-						new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MIN_VALUE);
+						new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MIN_VALUE, null);
 				if (result.size() > 0)
 				{
 					int componentNid = Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid();

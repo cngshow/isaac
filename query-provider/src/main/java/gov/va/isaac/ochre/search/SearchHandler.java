@@ -110,7 +110,7 @@ public class SearchHandler
 					try
 					{
 						return index.query(queryString, prefixSearch, getDescriptionSememeAssemblages(), 
-								resultLimit, Long.MIN_VALUE);
+								resultLimit, Long.MIN_VALUE, null);
 					}
 					catch (Exception e)
 					{
@@ -175,7 +175,7 @@ public class SearchHandler
 				{
 					try
 					{
-						return index.query(queryString, descriptionType, resultLimit, Long.MIN_VALUE);
+						return index.query(queryString, descriptionType, resultLimit, Long.MIN_VALUE, null);
 					}
 					catch (Exception e)
 					{
@@ -230,7 +230,7 @@ public class SearchHandler
 				{
 					try
 					{
-						return index.query(queryString, extendedDescriptionType, resultLimit, Long.MIN_VALUE);
+						return index.query(queryString, extendedDescriptionType, resultLimit, Long.MIN_VALUE, null);
 					}
 					catch (Exception e)
 					{
@@ -542,7 +542,7 @@ public class SearchHandler
 			{
 				try
 				{
-					return index.query(searchString, prefixSearch, (assemblageNid == null ? (Integer[])null : new Integer[] {assemblageNid}), resultLimit, Long.MIN_VALUE);
+					return index.query(searchString, prefixSearch, (assemblageNid == null ? (Integer[])null : new Integer[] {assemblageNid}), resultLimit, Long.MIN_VALUE, null);
 				}
 				catch (Exception e)
 				{
