@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -158,7 +159,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private Boolean dbBuildMode = null;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
-    private final java.util.Map<Integer, List<SearchResult>> queryCache = Collections.synchronizedMap(new LruCache<Integer, List<SearchResult>>(20));
+    private final Map<Integer, List<SearchResult>> queryCache = Collections.synchronizedMap(new LruCache<Integer, List<SearchResult>>(20));
     
     protected LuceneIndexer(String indexName) throws IOException {
         try {
