@@ -398,13 +398,11 @@ public abstract class LuceneIndexer implements IndexServiceBI {
      * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
      * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
      * indexing operations are completed - and then use the latest index.
+     * @param stamp The (optional) StampCoordinate to constrain the search.
      *
      * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
      * to other matches.
      */
-    @Override
-    public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration);
-    
     @Override
     public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
@@ -937,16 +935,6 @@ public abstract class LuceneIndexer implements IndexServiceBI {
         return indexFolder_.toPath(); 
 	}
 
-	protected void addField(Document doc, String fieldName, String value, boolean tokenize) {
-		// index twice per field - once with the standard analyzer, once with
-		// the whitespace analyzer.
-		if (tokenize) 
-		{
-			doc.add(new TextField(fieldName, value, Field.Store.NO));
-		}
-		doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
-	}
-
 	/**
 	 * Indexing the UUID of the ISAAC modules for each sememe.
 	 * 
@@ -956,7 +944,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	protected void indexModule(Document doc, int moduleSeq) 
 	{
 		UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
-		addField(doc, FIELD_INDEXED_MODULE_UUID, moduleUuid.toString(), false);
+		doc.add(new TextField(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, moduleUuid.toString(), Field.Store.NO));
 		incrementIndexedItemCount("Module");
 	}
 
@@ -969,7 +957,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	protected void indexPath(Document doc, int pathSeq) 
 	{
 		UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
-		addField(doc, FIELD_INDEXED_PATH_UUID, pathUuid.toString(), false);
+		doc.add(new TextField(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString(), Field.Store.NO));
 		incrementIndexedItemCount("Path");
 	}
 	
