@@ -96,12 +96,16 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	@Parameter
 	private Boolean createAnalysisFiles = false;
 
+	@Parameter(required = true)
+	protected String converterSourceArtifactVersion;
+
 	private static final Logger log = LogManager.getLogger();
 
 	public void execute() throws MojoExecutionException {
 		BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
 		differService.initialize(comparisonAnalysisDir, inputAnalysisDir, deltaIbdfPath, createAnalysisFiles,
-				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate);
+				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate,
+				"VHAT " + converterSourceArtifactVersion);
 
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap = null;
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = null;

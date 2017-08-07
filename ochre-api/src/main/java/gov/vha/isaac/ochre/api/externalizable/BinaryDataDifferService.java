@@ -37,7 +37,7 @@ public interface BinaryDataDifferService {
 
 	public void initialize(String comparisonAnalysisDir, String inputFilesDir, String deltaIbdfPath,
 			Boolean createAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
-			boolean diffOnModule, boolean diffOnPath, String importDate);
+			boolean diffOnModule, boolean diffOnPath, String importDate, String moduleName);
 
 	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFil(File versionFile)
 			throws Exception;

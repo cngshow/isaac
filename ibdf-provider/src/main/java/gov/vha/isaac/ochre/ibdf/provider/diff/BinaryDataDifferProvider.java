@@ -45,6 +45,7 @@ import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifierService;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.CommitService;
 import gov.vha.isaac.ochre.api.commit.StampService;
@@ -57,6 +58,7 @@ import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
+import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 
 /**
  * Routines enabling the examination of two ibdf files containing two distinct
@@ -86,7 +88,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private String inputAnalysisDir;
 	private String comparisonAnalysisDir;
 	private String deltaIbdfPath;
-
+	private UUID moduleUuid;
 	private final String textInputFileName = "bothVersions.txt";
 	private final String jsonFullComparisonFileName = "allChangedComponents.json";
 	private final String textFullComparisonFileName = "allChangedComponents.txt";
@@ -145,10 +147,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 							OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
 									activeStampSeq, type);
 							if (modifiedComponents != null) {
-								if (type == OchreExternalizableObjectType.CONCEPT) {
-									throw new Exception("Cannot modify Concept in current Object Model");
-								}
-
 								changedComponents.add(modifiedComponents);
 							}
 						} catch (Exception e) {
@@ -313,28 +311,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *            - time or null (for default)
 	 */
 	private int createStamp(State state) {
-
-		//TODO DAN says - why are there hard coded UUIDs here?  They can't possibly be right for a generic use case.
-		//Plus, the VHA Module isn't used as a module anymore, so that is broken.
-		
 		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
-				LookupService.getService(IdentifierService.class)
-						.getConceptSequenceForUuids(UUID.fromString("f7495b58-6630-3499-a44e-2052b5fcf06c")), // USER
-				LookupService.getService(IdentifierService.class)
-						.getConceptSequenceForUuids(UUID.fromString("8aa5fda8-33e9-5eaf-88e8-dd8a024d2489")), // VHA
-																												// MODULE
-				LookupService.getService(IdentifierService.class)
-						.getConceptSequenceForUuids(UUID.fromString("1f200ca6-960e-11e5-8994-feff819cdc9f"))); // DEV
-																												// PATH
+				TermAux.USER.getConceptSequence(), // Author
+				LookupService.getService(IdentifierService.class).getConceptSequenceForUuids(moduleUuid), // Module
+				TermAux.DEVELOPMENT_PATH.getConceptSequence()); // Path
 	}
 
 	@Override
 	public void initialize(String comparisonAnalysisDir, String inputAnalysisDir, String deltaIbdfPathFile,
 			Boolean generateAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
-			boolean diffOnModule, boolean diffOnPath, String importDate) {
+			boolean diffOnModule, boolean diffOnPath, String importDate, String moduleToCreate) {
 		diffUtil = new BinaryDataDifferProviderUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule,
 				diffOnPath);
 		diffUtil.setNewImportDate(importDate);
+
+		this.moduleUuid = UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate);
 
 		this.inputAnalysisDir = inputAnalysisDir;
 		this.comparisonAnalysisDir = comparisonAnalysisDir;
@@ -410,7 +401,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (itemCount % 250 == 0) {
+					if (itemCount % 10000 == 0) {
 						log.info("Still processing ibdf file.  Status: " + itemCount + " entries, " + "Loaded "
 								+ conceptCount + " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, "
 								+ commentCount + " comments");
@@ -479,7 +470,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (ic % 250 == 0) {
+					if (ic % 10000 == 0) {
 						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, ");
 					}
 				}
