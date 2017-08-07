@@ -32,6 +32,7 @@ import gov.vha.isaac.ochre.api.index.IndexServiceBI;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.query.provider.lucene.LuceneDescriptionType;
 import gov.vha.isaac.ochre.query.provider.lucene.LuceneIndexer;
+import gov.vha.isaac.ochre.query.provider.lucene.PerFieldAnalyzer;
 
 /**
  * Lucene Manager for a Description index. Provides the description indexing
@@ -119,45 +120,17 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
 			}
 		}
     }
-
-    /**
-     * A generic query API that handles most common cases.  The cases handled for various component property types
-     * are detailed below.
-     * 
-     * NOTE - subclasses of LuceneIndexer may have other query(...) methods that allow for more specific and or complex
-     * queries.  Specifically both {@link DynamicSememeIndexer} and {@link DescriptionIndexer} have their own 
-     * query(...) methods which allow for more advanced queries.
-     *
-     * @param query The query to apply.
-     * @param prefixSearch if true, utilize a search algorithm that is optimized for prefix searching, such as the searching 
-     * that would be done to implement a type-ahead style search.  Does not use the Lucene Query parser.  Every term (or token) 
-     * that is part of the query string will be required to be found in the result.
-     * 
-     * Note, it is useful to NOT trim the text of the query before it is sent in - if the last word of the query has a 
-     * space character following it, that word will be required as a complete term.  If the last word of the query does not 
-     * have a space character following it, that word will be required as a prefix match only.
-     * 
-     * For example:
-     * The query "family test" will return results that contain 'Family Testudinidae'
-     * The query "family test " will not match on  'Testudinidae', so that will be excluded.
-     * 
-     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
-     * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
-     * or the concept sequence {@link MetaData#SCTID} for example.
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
-     * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
-     * indexing operations are completed - and then use the latest index.
-     *
-     * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
-     * to other matches.
-     */
-    @Override
-    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration)
-    {
-        return query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration, null);
-    }
     
+    protected void addField(Document doc, String fieldName, String value, boolean tokenize) {
+		// index twice per field - once with the standard analyzer, once with
+		// the whitespace analyzer.
+		if (tokenize) 
+		{
+			doc.add(new TextField(fieldName, value, Field.Store.NO));
+		}
+		doc.add(new TextField(fieldName + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, value, Field.Store.NO));
+	}
+
     /**
      * A generic query API that handles most common cases.  The cases handled for various component property types
      * are detailed below.
@@ -232,49 +205,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
      * on the implementation of your filter
      * @param metadataOnly - Only search descriptions on concepts which are part of the {@link MetaData#ISAAC_METADATA} tree when true, 
      * otherwise, search all descriptions.
-     *
-     * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
-     * to other matches.
-     */
-    public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
-            boolean metadataOnly)
-    {
-        return query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration, filter, metadataOnly, null);
-    }
-    
-    /**
-     * A generic query API that handles most common cases.  The cases handled for various component property types
-     * are detailed below.
-     * 
-     * NOTE - subclasses of LuceneIndexer may have other query(...) methods that allow for more specific and or complex
-     * queries.  Specifically both {@link DynamicSememeIndexer} and {@link DescriptionIndexer} have their own 
-     * query(...) methods which allow for more advanced queries.
-     *
-     * @param query The query to apply.
-     * @param prefixSearch if true, utilize a search algorithm that is optimized for prefix searching, such as the searching 
-     * that would be done to implement a type-ahead style search.  Does not use the Lucene Query parser.  Every term (or token) 
-     * that is part of the query string will be required to be found in the result.
-     * 
-     * Note, it is useful to NOT trim the text of the query before it is sent in - if the last word of the query has a 
-     * space character following it, that word will be required as a complete term.  If the last word of the query does not 
-     * have a space character following it, that word will be required as a prefix match only.
-     * 
-     * For example:
-     * The query "family test" will return results that contain 'Family Testudinidae'
-     * The query "family test " will not match on  'Testudinidae', so that will be excluded.
-     * 
-     * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
-     * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
-     * or the concept sequence {@link MetaData#SCTID} for example.
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
-     * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
-     * indexing operations are completed - and then use the latest index.
-     * @param filter - an optional filter on results - if provided, the filter should expect nids, and can return true, if
-     * the nid should be allowed in the result, false otherwise.  Note that this may cause large performance slowdowns, depending
-     * on the implementation of your filter
-     * @param metadataOnly - Only search descriptions on concepts which are part of the {@link MetaData#ISAAC_METADATA} tree when true, 
-     * otherwise, search all descriptions.
      * @param stamp The (optional) StampCoordinate to constrain the search.
      *
      * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
@@ -285,30 +215,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
         return search(
                 restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, metadataOnly), sememeConceptSequence),
                 sizeLimit, targetGeneration, filter, null);
-    }
-    
-    /**
-     * Search the specified description type.
-     *
-     * @param query The query to apply
-     * @param extendedDescriptionType - The UUID of an extended description type
-     * - should be a child of the concept "Description type in source
-     * terminology (ISAAC)" If this is passed in as null,
-     * this falls back to a standard description search that searches all
-     * description types
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the
-     * search or Long.MIN_VALUE if there is no need to wait for a target
-     * generation. Long.MAX_VALUE can be passed in to force this query to wait
-     * until any in progress indexing operations are completed - and then use
-     * the latest index.
-     * @return a List of <code>SearchResult</codes> that contains the nid of the
-     * component that matched, and the score of that match relative to other
-     * matches.
-    */
-    public final List<SearchResult> query(String query, UUID extendedDescriptionType, int sizeLimit, Long targetGeneration)
-    {
-    	return query(query, extendedDescriptionType, sizeLimit, targetGeneration, null);
     }
     
     /**
@@ -340,29 +246,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI 
             return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false, false),
                     sizeLimit, targetGeneration, null, stamp);
         }
-    }
-    
-    /**
-     * Search the specified description type.
-     *
-     * @param query The query to apply
-     * @param descriptionType - The type of description to search. If this is
-     * passed in as null, this falls back to a standard description search that
-     * searches all description types
-     * @param sizeLimit The maximum size of the result list.
-     * @param targetGeneration target generation that must be included in the
-     * search or Long.MIN_VALUE if there is no need to wait for a target
-     * generation. Long.MAX_VALUE can be passed in to force this query to wait
-     * until any in progress indexing operations are completed - and then use
-     * the latest index.
-     * 
-     * @return a List of <code>SearchResult</codes> that contains the nid of the
-     * component that matched, and the score of that match relative to other
-     * matches.
-     */
-    public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, int sizeLimit, Long targetGeneration)
-    {
-        return query(query, descriptionType, sizeLimit, targetGeneration, null);
     }
     
     /**
