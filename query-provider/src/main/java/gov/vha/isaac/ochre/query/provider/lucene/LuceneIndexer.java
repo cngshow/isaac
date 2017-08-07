@@ -129,8 +129,8 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 
     //this isn't indexed
     public static final String FIELD_COMPONENT_NID = "_component_nid_";
-    private static final String FIELD_INDEXED_MODULE_STRING_VALUE = "_module_content_";
-    private static final String FIELD_INDEXED_PATH_STRING_VALUE = "_path_content_";
+    private static final String FIELD_INDEXED_MODULE_UUID = "_module_content_";
+    private static final String FIELD_INDEXED_PATH_UUID = "_path_content_";
     
     protected static final FieldType FIELD_TYPE_INT_STORED_NOT_INDEXED;
 
@@ -158,9 +158,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     boolean reindexRequired = false;
     private final LruCache<Integer, List<SearchResult>> queryCache = new LruCache<>(20);
-    private boolean useQueryCaching = true;
-    private StampCoordinate searchStampCoordinate = null;
-
+    
     protected LuceneIndexer(String indexName) throws IOException {
         try {
             indexName_ = indexName;
@@ -469,14 +467,14 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
     {
     	// Include the module and path selelctions
-    	q=this.buildStampQuery(q);
+    	q=this.buildStampQuery(q, stamp);
     	
     	// Get the generated query cache key 
     	// This is necessary to make sure all the parameters are accounted for other than just the query.
     	// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
-    	int cacheKey = this.getQueryCacheKey(q, sizeLimit, targetGeneration, filter, stamp);
+    	int cacheKey = getQueryCacheKey(q, sizeLimit, targetGeneration, filter, stamp);
     	
-    	if (useQueryCaching && this.queryCache.containsKey(cacheKey))
+    	if (queryCache.containsKey(cacheKey))
     	{
     		return queryCache.get(cacheKey);
     	}
@@ -958,7 +956,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	protected void indexModule(Document doc, int moduleSeq) 
 	{
 		UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
-		addField(doc, FIELD_INDEXED_MODULE_STRING_VALUE, moduleUuid.toString(), false);
+		addField(doc, FIELD_INDEXED_MODULE_UUID, moduleUuid.toString(), false);
 		incrementIndexedItemCount("Module");
 	}
 
@@ -971,7 +969,7 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	protected void indexPath(Document doc, int pathSeq) 
 	{
 		UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
-		addField(doc, FIELD_INDEXED_PATH_STRING_VALUE, pathUuid.toString(), false);
+		addField(doc, FIELD_INDEXED_PATH_UUID, pathUuid.toString(), false);
 		incrementIndexedItemCount("Path");
 	}
 	
@@ -980,50 +978,40 @@ public abstract class LuceneIndexer implements IndexServiceBI {
 	 * @param stamp
 	 * @return
 	 */
-    protected Query buildStampQuery(Query query)
+    protected Query buildStampQuery(Query query, StampCoordinate stamp)
     {
-    	Builder bq = new BooleanQuery.Builder();
-    	
-    	if (this.searchStampCoordinate == null)
+    	if (stamp == null)
     	{
     		return query;
     	}
     	
-    	bq.add(query, Occur.SHOULD);
+    	Builder bq = new BooleanQuery.Builder();
+    	
+    	// Original query
+    	bq.add(query, Occur.MUST);
     	
     	// TODO: Check if this can ever return null
-    	Integer pathSeq = this.searchStampCoordinate.getStampPosition().getStampPathSequence();
+    	Integer pathSeq = stamp.getStampPosition().getStampPathSequence();
     	if (pathSeq != null) 
 		{
 			UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
-			bq.add(new TermQuery(new Term(FIELD_INDEXED_PATH_STRING_VALUE + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString())), Occur.MUST);
+			bq.add(new TermQuery(new Term(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString())), Occur.MUST);
 		}
 		
-    	if (this.searchStampCoordinate.getModuleSequences().asArray().length > 0)
+    	if (stamp.getModuleSequences().asArray().length > 0)
     	{
     		Builder inner = new BooleanQuery.Builder();
 			
-    		for (int moduleSeq : this.searchStampCoordinate.getModuleSequences().asArray())
+    		for (int moduleSeq : stamp.getModuleSequences().asArray())
     		{
     			UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
-    			inner.add(new TermQuery(new Term(FIELD_INDEXED_MODULE_STRING_VALUE + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, moduleUuid.toString())), Occur.SHOULD);
+    			inner.add(new TermQuery(new Term(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, moduleUuid.toString())), Occur.SHOULD);
     		}
     		bq.add(inner.build(), Occur.MUST);
     	}
     	
-		return new BooleanQuery.Builder().add(bq.build(), Occur.SHOULD).build();
+    	return bq.build();
     }
-    
-    /**
-     * Sets the StampCoordinate to be used to constrain the query.
-     * 
-     * @param stamp The StampCoordinate representing the desired STAMP parameters
-     * 
-     */
-//    public void setStampCoordinate(StampCoordinate stamp)
-//    {
-//    	this.searchStampCoordinate = stamp;
-//    }
     
     /**
      * Generates a consisten query cache key for this running instance that respects all the 
@@ -1060,15 +1048,5 @@ public abstract class LuceneIndexer implements IndexServiceBI {
     	int key = sb.toString().hashCode();
     	log.debug("Created query key: '{}' from '{}'", key, sb.toString());
     	return key;
-    }
-    
-    /**
-     * Allows enabling or disabling query caching.
-     * 
-     * @param b True to use caching, false otherwise
-     */
-    public void useQueryCaching(boolean b)
-    {
-    	useQueryCaching = b;
     }
 }
