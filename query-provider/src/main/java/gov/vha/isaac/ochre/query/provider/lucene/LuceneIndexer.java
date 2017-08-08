@@ -92,7 +92,9 @@ import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
+import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.ComponentSearchResult;
@@ -869,7 +871,9 @@ public abstract class LuceneIndexer implements IndexServiceBI
 			Document doc = new Document();
 			doc.add(new LegacyIntField(FIELD_COMPONENT_NID, chronicle.getNid(),
 					LuceneIndexer.FIELD_TYPE_INT_STORED_NOT_INDEXED));
-
+			
+			indexStamp(chronicle, doc);
+			
 			addFields(chronicle, doc);
 
 			// Note that the addDocument operation could cause duplicate documents to be
@@ -887,6 +891,37 @@ public abstract class LuceneIndexer implements IndexServiceBI
 			releaseLatch(getNid(), indexGeneration);
 
 			return indexGeneration;
+		}
+		
+		private void indexStamp(ObjectChronology<?> chron, Document doc)
+		{
+			SememeChronology<?> sememeChronology = (SememeChronology<?>) chron;
+			
+			List<Integer> uniqPathSeq = new ArrayList<>();
+			List<Integer> uniqModuleSeq = new ArrayList<>();
+			
+			for (SememeVersion<?> sv : sememeChronology.getVersionList())
+			{
+				if (!uniqPathSeq.contains(sv.getPathSequence()))
+				{
+					int pathSeq = sv.getPathSequence();
+					UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
+					doc.add(new TextField(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, 
+							pathUuid.toString(), Field.Store.NO));
+					incrementIndexedItemCount("Path");
+					uniqPathSeq.add(pathSeq);
+				}
+				
+				if (!uniqModuleSeq.contains(sv.getModuleSequence()))
+				{
+					int moduleSeq = sv.getModuleSequence();
+					UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
+					doc.add(new TextField(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER,
+							moduleUuid.toString(), Field.Store.NO));
+					incrementIndexedItemCount("Module");
+					uniqModuleSeq.add(moduleSeq);
+				}
+			}
 		}
 	}
 
@@ -1003,34 +1038,6 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	public Path getDatabaseFolder()
 	{
 		return indexFolder_.toPath();
-	}
-
-	/**
-	 * Indexing the UUID of the ISAAC modules for each sememe.
-	 * 
-	 * @param doc - The Lucene document/record to index
-	 * @param moduleSeq - The ISAAC module sequence identifier
-	 */
-	protected void indexModule(Document doc, int moduleSeq)
-	{
-		UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
-		doc.add(new TextField(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER,
-				moduleUuid.toString(), Field.Store.NO));
-		incrementIndexedItemCount("Module");
-	}
-
-	/**
-	 * Indexing the UUID of the ISAAC paths for each sememe.
-	 * 
-	 * @param doc - The Lucene document/record to index
-	 * @param pathSeq - The ISAAC module sequence identifier
-	 */
-	protected void indexPath(Document doc, int pathSeq)
-	{
-		UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
-		doc.add(new TextField(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString(),
-				Field.Store.NO));
-		incrementIndexedItemCount("Path");
 	}
 
 	/**

@@ -2,8 +2,6 @@ package gov.vha.isaac.ochre.query.provider.lucene.indexers;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -14,7 +12,6 @@ import java.util.function.Predicate;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexableField;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.MetaData;
@@ -101,29 +98,6 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 				indexDescription(doc,
 						(SememeChronology<DescriptionSememe<? extends DescriptionSememe<?>>>) sememeChronology);
 				incrementIndexedItemCount("Description");
-				for (SememeVersion<?> sv : sememeChronology.getVersionList())
-				{
-					indexModule(doc, sv.getModuleSequence());
-					indexPath(doc, sv.getPathSequence());
-				}
-			}
-		}
-
-		//Due to indexing all of the versions, we may have added duplicate field name/value combinations to the document.
-		//Remove the dupes.
-		Iterator<IndexableField> it = doc.iterator();
-		HashSet<String> uniqueFields = new HashSet<>();
-		while (it.hasNext())
-		{
-			IndexableField field = it.next();
-			String temp = field.name() + "::" + field.stringValue();
-
-			if (uniqueFields.contains(temp))
-			{
-				it.remove();
-			} else
-			{
-				uniqueFields.add(temp);
 			}
 		}
 	}

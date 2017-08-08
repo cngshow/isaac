@@ -147,8 +147,6 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 						handleType(doc, dataCol, columns.length > 1 ? col : -1);  
 					}
 				}
-				indexModule(doc, dsv.getModuleSequence());
-				indexPath(doc, dsv.getPathSequence());
 			}
 			//TODO enhance the index configuration to allow us to configure Static sememes as indexed, or not indexed
 			//static sememe types are never more than 1 column, always pass -1
@@ -157,24 +155,18 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				StringSememe<?> ssv = (StringSememe<?>) sv;
 				handleType(doc, new DynamicSememeStringImpl(ssv.getString()), -1);
 				incrementIndexedItemCount("Sememe String");
-				indexModule(doc, ssv.getModuleSequence());
-				indexPath(doc, ssv.getPathSequence());
 			}
 			else if (sv instanceof LongSememe)
 			{
 				LongSememe<?> lsv = (LongSememe<?>) sv;
 				handleType(doc, new DynamicSememeLongImpl(lsv.getLongValue()), -1);
 				incrementIndexedItemCount("Sememe Long");
-				indexModule(doc, lsv.getModuleSequence());
-				indexPath(doc, lsv.getPathSequence());
 			}
 			else if (sv instanceof ComponentNidSememe)
 			{
 				ComponentNidSememe<?> csv = (ComponentNidSememe<?>) sv;
 				handleType(doc, new DynamicSememeNidImpl(csv.getComponentNid()), -1);
 				incrementIndexedItemCount("Sememe Component Nid");
-				indexModule(doc, csv.getModuleSequence());
-				indexPath(doc, csv.getPathSequence());
 			}
 			else if (sv instanceof LogicGraphSememe)
 			{
@@ -187,8 +179,6 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				{
 					handleType(doc, new DynamicSememeNidImpl(Get.identifierService().getConceptNid(sequence)), -1);
 				});
-				indexModule(doc, lgsv.getModuleSequence());
-				indexPath(doc, lgsv.getPathSequence());
 			}
 			else
 			{
