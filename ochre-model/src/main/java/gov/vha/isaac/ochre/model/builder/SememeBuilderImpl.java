@@ -192,7 +192,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             primaryNested = Get.commitService().addUncommittedNoChecks(sememeChronicle);
         }
         ArrayList<OptionalWaitTask<?>> nested = new ArrayList<>();
-        sememeBuilders.forEach((builder) -> nested.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        getSememeBuilders().forEach((builder) -> nested.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         builtObjects.add(sememeChronicle);
         for (SememeBuildListenerI listener : sememeBuildListeners) {
             if (listener != null) {
@@ -309,7 +309,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             default:
                 throw new UnsupportedOperationException("Can't handle: " + sememeType);
         }
-        sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
+        getSememeBuilders().forEach((builder) -> builder.build(stampSequence, builtObjects));
         builtObjects.add(sememeChronicle);
         for (SememeBuildListenerI listener : sememeBuildListeners) {
             if (listener != null) {
@@ -331,10 +331,10 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     @Override
     public IdentifiedComponentBuilder<C> setT5Uuid() {
         if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
-        	throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
+            throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
         }
 
-        if (isPrimordialUuidSet()) {
+        if (!isPrimordialUuidSet()) {
             int assemblageNid = Get.identifierService().getConceptNid(assemblageConceptSequence);
             UUID assemblageUuid = Get.identifierService().getUuidPrimordialForNid(assemblageNid).get();
 
