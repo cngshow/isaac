@@ -59,8 +59,8 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     private transient DescriptionBuilder<?, ?> fsnDescriptionBuilder = null;
     private transient DescriptionBuilder<?, ?> preferredDescriptionBuilder = null;
     
-    private transient HashMap<LogicalExpressionBuilder, SememeBuilder<?>> builtLogicalExpressionBuilders;
-    private transient HashMap<LogicalExpression, SememeBuilder<?>> builtLogicalExpressions;
+    private transient HashMap<LogicalExpressionBuilder, SememeBuilder<?>> builtLogicalExpressionBuilders = new HashMap<>();
+    private transient HashMap<LogicalExpression, SememeBuilder<?>> builtLogicalExpressions = new HashMap<>();
     
 
     /**
