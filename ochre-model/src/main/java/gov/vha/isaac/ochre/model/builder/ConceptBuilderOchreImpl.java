@@ -16,6 +16,7 @@
 package gov.vha.isaac.ochre.model.builder;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.Get;
@@ -29,6 +30,7 @@ import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.concept.ConceptSpecification;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilderService;
+import gov.vha.isaac.ochre.api.component.sememe.SememeBuilder;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuilderService;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.coordinate.LogicCoordinate;
@@ -56,6 +58,10 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     
     private transient DescriptionBuilder<?, ?> fsnDescriptionBuilder = null;
     private transient DescriptionBuilder<?, ?> preferredDescriptionBuilder = null;
+    
+    private transient HashMap<LogicalExpressionBuilder, SememeBuilder<?>> builtLogicalExpressionBuilders;
+    private transient HashMap<LogicalExpression, SememeBuilder<?>> builtLogicalExpressions;
+    
 
     /**
      * @param conceptName - Optional - if specified, a FSN will be created using this value (but see additional information on semanticTag)
@@ -195,28 +201,10 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
         ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(state, editCoordinate);
         builtObjects.add(conceptChronology);
-        if (getFullySpecifiedDescriptionBuilder() != null) {
-            descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());
-        }
-        if (getSynonymPreferredDescriptionBuilder() != null) {
-            descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
-        }
-        descriptionBuilders.forEach((builder) -> {
-            nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects));
-        });
-        if (defaultLogicCoordinate == null && (logicalExpressions.size() > 0 || logicalExpressionBuilders.size() > 0)) {
-            throw new IllegalStateException("A logic coordinate is required when a logical expression is passed");
-        }
-        SememeBuilderService builderService = LookupService.getService(SememeBuilderService.class);
-        for (LogicalExpression logicalExpression : logicalExpressions) {
-            sememeBuilders.add(builderService.
-                    getLogicalExpressionSememeBuilder(logicalExpression, this, defaultLogicCoordinate.getStatedAssemblageSequence()));
-        }
-        for (LogicalExpressionBuilder builder : logicalExpressionBuilders) {
-            sememeBuilders.add(builderService.
-                    getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
-        }
-        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        
+        getDescriptionBuilders().forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        getSememeBuilders().forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        
         Task<Void> primaryNested;
         if (changeCheckerMode == ChangeCheckerMode.ACTIVE) {
             primaryNested = Get.commitService().addUncommitted(conceptChronology);
@@ -227,38 +215,13 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public ConceptChronology build(int stampCoordinate, List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
+    public ConceptChronology<?> build(int stampCoordinate, List<ObjectChronology<? extends StampedVersion>> builtObjects) throws IllegalStateException {
 
         ConceptChronologyImpl conceptChronology = (ConceptChronologyImpl) Get.conceptService().getConcept(getUuids());
         conceptChronology.createMutableVersion(stampCoordinate);
         builtObjects.add(conceptChronology);
-        if (getFullySpecifiedDescriptionBuilder() != null) {
-            descriptionBuilders.add(getFullySpecifiedDescriptionBuilder());
-        }
-        if (getSynonymPreferredDescriptionBuilder() != null) {
-            descriptionBuilders.add(getSynonymPreferredDescriptionBuilder());
-        }
-        descriptionBuilders.forEach((builder) -> {
-            builder.setT5Uuid();
-            builder.build(stampCoordinate, builtObjects);
-        });
-        if (defaultLogicCoordinate == null && (logicalExpressions.size() > 0 || logicalExpressionBuilders.size() > 0)) {
-            throw new IllegalStateException("A logic coordinate is required when a logical expression is passed");
-        }
-        SememeBuilderService builderService = LookupService.getService(SememeBuilderService.class);
-        for (LogicalExpression logicalExpression : logicalExpressions) {
-            sememeBuilders.add(builderService.
-                    getLogicalExpressionSememeBuilder(logicalExpression, this, defaultLogicCoordinate.getStatedAssemblageSequence()));
-        }
-        for (LogicalExpressionBuilder builder : logicalExpressionBuilders) {
-            sememeBuilders.add(builderService.
-                    getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
-        }
-        sememeBuilders.forEach((builder) -> { 
-            builder.setT5Uuid();
-            builder.build(stampCoordinate, builtObjects);
-        });
-
+        getDescriptionBuilders().forEach((builder) -> builder.build(stampCoordinate, builtObjects));
+        getSememeBuilders().forEach((builder) -> builder.build(stampCoordinate, builtObjects));
         return conceptChronology;
     }
 
@@ -266,9 +229,51 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     public String getConceptDescriptionText() {
         return conceptName;
     }
+    
     @Override
     public List<DescriptionBuilder<?, ?>> getDescriptionBuilders() {
-        return descriptionBuilders;
+        List<DescriptionBuilder<?, ?>> temp = new ArrayList<>(descriptionBuilders.size() +2);
+        temp.addAll(descriptionBuilders);
+        if (getFullySpecifiedDescriptionBuilder() != null) {
+            temp.add(getFullySpecifiedDescriptionBuilder());
+        }
+        if (getSynonymPreferredDescriptionBuilder() != null) {
+            temp.add(getSynonymPreferredDescriptionBuilder());
+        }
+        return temp;
+    }
+    
+    
+
+    @Override
+    public List<SememeBuilder<?>> getSememeBuilders()
+    {
+        List<SememeBuilder<?>> temp = new ArrayList<>(getSememeBuilders().size() + logicalExpressionBuilders.size() + logicalExpressions.size());
+        temp.addAll(super.getSememeBuilders());
+        
+        if (defaultLogicCoordinate == null && (logicalExpressions.size() > 0 || logicalExpressionBuilders.size() > 0)) {
+            throw new IllegalStateException("A logic coordinate is required when a logical expression is passed");
+        }
+        
+        SememeBuilderService<?> builderService = LookupService.getService(SememeBuilderService.class);
+        for (LogicalExpression logicalExpression : logicalExpressions) {
+            if (!builtLogicalExpressions.containsKey(logicalExpression))
+            {
+                builtLogicalExpressions.put(logicalExpression, builderService.
+                    getLogicalExpressionSememeBuilder(logicalExpression, this, defaultLogicCoordinate.getStatedAssemblageSequence()));
+            }
+            temp.add(builtLogicalExpressions.get(logicalExpression));
+         }
+         for (LogicalExpressionBuilder builder : logicalExpressionBuilders) {
+            if (!builtLogicalExpressionBuilders.containsKey(builder))
+            {
+                builtLogicalExpressionBuilders.put(builder, builderService.
+                    getLogicalExpressionSememeBuilder(builder.build(), this, defaultLogicCoordinate.getStatedAssemblageSequence()));
+            }
+            temp.add(builtLogicalExpressionBuilders.get(builder));
+         }
+        
+        return temp;
     }
 
     @Override

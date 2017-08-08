@@ -457,7 +457,7 @@ public class IsaacTaxonomy {
             ensureStableUUID(cb);
         }
         for (SememeBuilder<?> builder : sememeBuilders) {
-        	ensureStableUUID(builder);
+            ensureStableUUID(builder);
         }
     }
     
@@ -474,19 +474,9 @@ public class IsaacTaxonomy {
             ensureStableUUID(builder);
         }
     
-        for (SememeBuilder builder : cb.getSememeBuilders()) {
+        for (SememeBuilder<?> builder : cb.getSememeBuilders()) {
             ensureStableUUID(builder);
         }
-    }
-
-    /**
-     * Review description builder and assign it and its sememes a Type5 UUID.
-     *
-     * @param builder the description builder
-     */
-    private void ensureStableUUID(DescriptionBuilder<?, ?> builder) {
-        builder.setT5Uuid();
-        builder.getSememeBuilders().forEach((b) -> ((SememeBuilder)b).setT5Uuid());
     }
 
     /**
@@ -494,8 +484,8 @@ public class IsaacTaxonomy {
      *
      * @param builder the builder
      */
-    private void ensureStableUUID(SememeBuilder builder) {
+    private void ensureStableUUID(IdentifiedComponentBuilder<?> builder) {
         builder.setT5Uuid();
-        builder.getSememeBuilders().forEach((b) -> ((SememeBuilder)b).setT5Uuid());
+        builder.getSememeBuilders().forEach((b) -> ensureStableUUID(b));
     }
 }

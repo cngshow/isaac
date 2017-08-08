@@ -125,7 +125,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
                     build(editCoordinate, changeCheckerMode, builtObjects));
         });
         
-        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        getSememeBuilders().forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         
         return new OptionalWaitTask<T>(null, (T)newDescription.getNoWait(), nestedBuilders);
     }
@@ -149,27 +149,25 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
                 descBuilder.build(stampSequence, builtObjects);
         SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
         preferredInDialectAssemblages.forEach(( assemblageProxy) -> {
-            SememeBuilder<?> builder = sememeBuilderService.getComponentSememeBuilder(
+            sememeBuilderService.getComponentSememeBuilder(
                     TermAux.PREFERRED.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy));
-            builder.setT5Uuid();
-            builder.build(stampSequence, builtObjects);
+                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
+                    build(stampSequence, builtObjects);
         });
         acceptableInDialectAssemblages.forEach(( assemblageProxy) -> {
-            SememeBuilder<?> builder = sememeBuilderService.getComponentSememeBuilder(
+            sememeBuilderService.getComponentSememeBuilder(
                     TermAux.ACCEPTABLE.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy));
-            builder.setT5Uuid();
-            builder.build(stampSequence, builtObjects);
+                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
+                    build(stampSequence, builtObjects);
         });
-        sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
+        getSememeBuilders().forEach((builder) -> builder.build(stampSequence, builtObjects));
         return (T) newDescription;
     }
     
     @Override
-    public IdentifiedComponentBuilder<T>  setT5Uuid() {
+    public DescriptionBuilder  setT5Uuid() {
         if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
-        	throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
+            throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
         }
         
         if (!isPrimordialUuidSet()) {

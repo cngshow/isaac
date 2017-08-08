@@ -42,7 +42,7 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
 
     protected final List<UUID> additionalUuids = new ArrayList<>();
     private UUID primordialUuid = null;
-    protected final List<SememeBuilder<?>> sememeBuilders = new ArrayList<>();
+    private final List<SememeBuilder<?>> sememeBuilders = new ArrayList<>();
     protected State state = State.ACTIVE;
     
     @Override
@@ -91,7 +91,7 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
 
     @Override
     public IdentifiedComponentBuilder<T> setPrimordialUuid(UUID uuid) {
-        if (this.primordialUuid != null) {
+        if (isPrimordialUuidSet()) {
             throw new RuntimeException("Attempting to set primordial UUID which has already been set.");
         }
         this.primordialUuid = uuid;
