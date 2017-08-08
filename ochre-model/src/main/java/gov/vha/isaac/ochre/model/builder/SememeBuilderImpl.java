@@ -329,7 +329,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     }
 
     @Override
-    public IdentifiedComponentBuilder<C> setT5Uuid() {
+    public SememeBuilder setT5Uuid() {
         if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
             throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
         }
