@@ -248,7 +248,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     @Override
     public List<SememeBuilder<?>> getSememeBuilders()
     {
-        List<SememeBuilder<?>> temp = new ArrayList<>(getSememeBuilders().size() + logicalExpressionBuilders.size() + logicalExpressions.size());
+        List<SememeBuilder<?>> temp = new ArrayList<>(super.getSememeBuilders().size() + logicalExpressionBuilders.size() + logicalExpressions.size());
         temp.addAll(super.getSememeBuilders());
         
         if (defaultLogicCoordinate == null && (logicalExpressions.size() > 0 || logicalExpressionBuilders.size() > 0)) {
