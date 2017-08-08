@@ -84,9 +84,10 @@ public interface ConceptBuilder extends IdentifiedComponentBuilder<ConceptChrono
 	 */
 	ConceptBuilder addLogicalExpression(LogicalExpression logicalExpression);
 
-    /**
-     * Gets the stored description builders.
-     * @return the description builders
-     */
-    List<DescriptionBuilder<?, ?>> getDescriptionBuilders();
+	/**
+	 * Gets the stored description builders.  This should include the FullySpecified Description Builder if set, and the SynonymPreferredDescriptionBuilder, 
+	 * if set
+	 * @return the description builders
+	 */
+	List<DescriptionBuilder<?, ?>> getDescriptionBuilders();
 }

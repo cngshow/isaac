@@ -26,7 +26,6 @@ import gov.vha.isaac.ochre.api.identity.IdentifiedObject;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Interface IdentifiedComponentBuilder.
  *
@@ -37,7 +36,6 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
     
     /**
      * If already set, a runtime exception will be thrown.
-     * Otherwise, a randomly generated UUID will be automatically used. 
      * @param uuid the primordial uuid for the component to be built. 
      * @return the builder for chaining of operations in a fluent pattern. 
      */
@@ -144,13 +142,14 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
 
     /**
      * Gets the sememe builders stored by the builder.
+     * This should include any 'special' builders, like logical expression builders
      * @return the sememe builders
      */
     List<SememeBuilder<?>> getSememeBuilders();
 
     /**
      * Throws runtime exception if Primordial UUID has been set and is random (t4).
-     * Also, does nothing if UUID has already been set to a non-random (t4) value.
+     * Does nothing if UUID has already been set to a non-random (Not a Type 4 UUID) value.
      *
      * @return the identified component builder
      */
