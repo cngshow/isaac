@@ -88,8 +88,8 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-@Service
-@RunLevel(value = LookupService.SL_L1)
+//@Service // TODO uncomment to enable VHATIsAHasParentSynchronizingChronologyChangeListener
+//@RunLevel(value = LookupService.SL_L1) // TODO uncomment to enable VHATIsAHasParentSynchronizingChronologyChangeListener
 public class VHATIsAHasParentSynchronizingChronologyChangeListener implements ChronologyChangeListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingChronologyChangeListener.class);
 
@@ -240,11 +240,19 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 							DynamicSememeImpl mutableVersion = hasParentSememe.getChronology().createMutableVersion(DynamicSememeImpl.class, State.INACTIVE, editCoordinate);
 							mutableVersion.setData(hasParentSememe.getData());
 							sequencesOfGeneratedSememesToIgnore.add(hasParentSememe.getNid());
-							Get.commitService().addUncommitted(mutableVersion.getChronology());
+							try {
+								Get.commitService().addUncommitted(mutableVersion.getChronology()).get();
+							} catch (InterruptedException | ExecutionException e) {
+								LOG.error("FAILED calling addUncommitted() to retire VHAT has_parent association sememe " + hasParentSememe, e);
+							}
 						}
 					}
 
-					Get.commitService().commit("Retiring " + hasParentAssociationDynamicSememes.size() + " VHAT has_parent sememes");
+					try {
+						Get.commitService().commit("Retiring " + hasParentAssociationDynamicSememes.size() + " VHAT has_parent sememes").get();
+					} catch (InterruptedException | ExecutionException e) {
+						LOG.error("FAILED commit while retiring " + hasParentAssociationDynamicSememes.size() + " VHAT has_parent sememes");
+					}
 				}
 
 				// For each parent from an active logic graph
@@ -324,32 +332,52 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 					return;
 				}
 
-				// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
-				// Need to rebuild logic graph
-
-				LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
-				for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
-					NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
-				}
-				LogicalExpression parentDef = defBuilder.build();
-
-				@SuppressWarnings("unchecked")
-				LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, (hasParentAssociationDynamicSememes.size() > 0 ? State.ACTIVE : State.INACTIVE), editCoordinate);
-				newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
-
-				sequencesOfGeneratedSememesToIgnore.add(conceptLogicGraphSememeChronology.get().getSememeSequence());
-				Get.commitService().addUncommitted(conceptLogicGraphSememeChronology.get());
-
 				Runnable runnable = new Runnable() {
 					public void run() {
 						try {
-							Get.commitService().commit("Updating VHAT logic graph sememe for concept (NID=" + referencedConcept.getPrimordialUuid() + ")").get();
-							LOG.debug("Created new version of logic graph sememe {} with {} parent(s) for concept {}", newLogicGraphSememeVersion.getPrimordialUuid(), parentSequencesFromHasParentAssociationDynamicSememes.size(), referencedConcept.getPrimordialUuid());
-						} catch (InterruptedException | ExecutionException e) {
-							LOG.error("FAILED committing new version of logic graph sememe " + newLogicGraphSememeVersion.getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + referencedConcept.getPrimordialUuid(), e);
+							// This code for use when retiring existing logic graph sememe
+							LogicGraphSememeImpl retiringLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, State.INACTIVE, editCoordinate);
+							sequencesOfGeneratedSememesToIgnore.add(retiringLogicGraphSememeVersion.getSememeSequence());
+							try {
+								Get.commitService().addUncommittedNoChecks(retiringLogicGraphSememeVersion.getChronology()).get();
+							} catch (InterruptedException | ExecutionException e) {
+								LOG.error("FAILED calling addUncommitted() to retire logic graph of VHAT concept " + referencedConcept, e);
+								return;
+							}
+							Get.commitService().commit("Retiring VHAT logic graph sememe for concept (NID=" + referencedConcept.getPrimordialUuid() + ")").get();
+							LOG.debug("Retired logic graph sememe {} with {} parent(s) for concept {}", retiringLogicGraphSememeVersion.getPrimordialUuid(), parentSequencesFromHasParentAssociationDynamicSememes.size(), referencedConcept.getPrimordialUuid());
+							
+							// This new builtSememeVersion may have resulted in added or retired or changed has_parent association
+							// Need to rebuild logic graph
+							LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
+							for (int parentConceptSequence : parentSequencesFromHasParentAssociationDynamicSememes) {
+								NecessarySet(And(ConceptAssertion(parentConceptSequence, defBuilder)));
+							}
+							LogicalExpression parentDef = defBuilder.build();
+
+							// This code for use when retiring existing logic graph sememe
+							// Create new logic graph sememe on concept
+							SememeBuilder<?> logicGraphSememeBuilder = Get.sememeBuilderService().getLogicalExpressionSememeBuilder(parentDef, conceptLogicGraphSememeChronology.get().getReferencedComponentNid(), conceptLogicGraphSememeChronology.get().getAssemblageSequence());
+							logicGraphSememeBuilder.build(editCoordinate, ChangeCheckerMode.INACTIVE).get();
+
+							// This code for use when updating an existing logic graph sememe
+//							@SuppressWarnings("unchecked")
+//							LogicGraphSememeImpl newLogicGraphSememeVersion = ((SememeChronology<LogicGraphSememeImpl>)(conceptLogicGraphSememeChronology.get())).createMutableVersion(LogicGraphSememeImpl.class, (hasParentAssociationDynamicSememes.size() > 0 ? State.ACTIVE : State.INACTIVE), editCoordinate);
+//							newLogicGraphSememeVersion.setGraphData(parentDef.getData(DataTarget.INTERNAL));
+//							sequencesOfGeneratedSememesToIgnore.add(conceptLogicGraphSememeChronology.get().getSememeSequence());
+//							try {
+//								Get.commitService().addUncommittedNoChecks(newLogicGraphSememeVersion.getChronology()).get();
+//							} catch (InterruptedException | ExecutionException e) {
+//								LOG.error("FAILED calling addUncommitted() to update logic graph of VHAT concept " + referencedConcept, e);
+//								return;
+//							}
+//							Get.commitService().commit("Committing new version of logic graph sememe " + conceptLogicGraphSememeChronology.get().getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + referencedConcept.getPrimordialUuid());
+						} catch (Exception e) {
+							LOG.error("FAILED committing new version of logic graph sememe " + conceptLogicGraphSememeChronology.get().getPrimordialUuid() + " with " + parentSequencesFromHasParentAssociationDynamicSememes.size() + " parent(s) for concept " + referencedConcept.getPrimordialUuid(), e);
 						}
 					}
 				};
+
 				Get.workExecutors().getExecutor().submit(runnable);
 			} finally {
 				sememeSequencesForUnhandledHasParentAssociationChanges.remove(hasParentSememeSequence);
@@ -363,11 +391,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 				new StampCoordinateImpl(StampPrecedence.PATH,
 						stampPosition, 
 						ConceptSequenceSet.of(getVHATModules()),
-						State.ACTIVE_ONLY_SET);
+						State.ANY_STATE_SET);
 		
-		return getHasParentAssociationDynamicSememesAttachedToComponent(nid, activeVhatStampCoordinate);
-	}
-	public static Collection<DynamicSememeImpl> getHasParentAssociationDynamicSememesAttachedToComponent(int nid, StampCoordinate sc) {
 		final Set<Integer> selectedAssemblages = new HashSet<>();
 		selectedAssemblages.add(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getConceptSequence());
 		
@@ -382,12 +407,17 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		final List<DynamicSememeImpl> hasParentAssociationDynamicSememesToReturn = new ArrayList<>();
 		while (it.hasNext()) {
 			SememeChronology<DynamicSememeImpl> hasParentAssociationDynamicSememe = (SememeChronology<DynamicSememeImpl>)it.next();
-			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, sc);
-			if (optionalLatestVersion.isPresent()) {
-				if (optionalLatestVersion.get().contradictions().isPresent()) {
-					// TODO handle contradictions
+			if (hasParentAssociationDynamicSememe.isLatestVersionActive(activeVhatStampCoordinate.makeAnalog(State.ACTIVE_ONLY_SET))) {
+				Optional<LatestVersion<DynamicSememeImpl>> optionalLatestVersion =  hasParentAssociationDynamicSememe.getLatestVersion(DynamicSememeImpl.class, activeVhatStampCoordinate);
+				if (optionalLatestVersion.isPresent()) {
+					if (optionalLatestVersion.get().contradictions().isPresent()) {
+						// TODO handle contradictions
+					}
+
+					if (optionalLatestVersion.get().value().getState() == State.ACTIVE) {
+						hasParentAssociationDynamicSememesToReturn.add(optionalLatestVersion.get().value());
+					}
 				}
-				hasParentAssociationDynamicSememesToReturn.add(optionalLatestVersion.get().value());
 			}
 		}
 		
