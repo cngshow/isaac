@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
@@ -271,7 +272,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public void setT5Uuid() {
+    public IdentifiedComponentBuilder<ConceptChronology<?>> setT5Uuid() {
         throw new UnsupportedOperationException("Concept doesn't have a full T5 implementation defined yet");
     }
 }

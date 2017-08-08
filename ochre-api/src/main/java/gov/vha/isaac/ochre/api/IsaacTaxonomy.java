@@ -466,7 +466,7 @@ public class IsaacTaxonomy {
      * @param cb the concept builder
      */
     private void ensureStableUUID(ConceptBuilder cb) {
-        if (cb.getPrimordialUuid().version() == 4) {
+        if (!cb.isPrimordialUuidSet()) {
             cb.setPrimordialUuid(UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, cb.getConceptDescriptionText()));
         }
 

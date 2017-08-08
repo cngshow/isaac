@@ -19,6 +19,7 @@ package gov.vha.isaac.ochre.model.builder;
 import java.util.ArrayList;
 import java.util.List;
 import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
@@ -166,8 +167,12 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
     }
     
     @Override
-    public void setT5Uuid() {
-        if (getPrimordialUuid().version() == 4) {
+    public IdentifiedComponentBuilder<T>  setT5Uuid() {
+        if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
+        	throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
+        }
+        
+        if (!isPrimordialUuidSet()) {
             int assemblageSeq = TermAux.getDescriptionAssemblageConceptSequence(languageForDescription.getConceptSequence());
             int caseSigNid = Get.identifierService().getConceptNid(Get.languageCoordinateService().caseSignificanceToConceptSequence(false));
             
@@ -180,5 +185,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
                             languageForDescription.getPrimordialUuid(), 
                             descriptionText));
         }
+        
+        return this;
     }
 }

@@ -329,8 +329,12 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     }
 
     @Override
-    public void setT5Uuid() {
-        if (getPrimordialUuid().version() == 4) {
+    public IdentifiedComponentBuilder<C> setT5Uuid() {
+        if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
+        	throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
+        }
+
+        if (isPrimordialUuidSet()) {
             int assemblageNid = Get.identifierService().getConceptNid(assemblageConceptSequence);
             UUID assemblageUuid = Get.identifierService().getUuidPrimordialForNid(assemblageNid).get();
 
@@ -356,5 +360,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
                 setPrimordialUuid(UuidFactory.getUuidForStringSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
             }
         }
+        
+        return this;
     }
 }

@@ -89,13 +89,11 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
         return this;
     }
 
-    /**
-     * If not set, a randomly generated UUID will be automatically used.
-     * @param uuid
-     * @return the builder for chaining of operations in a fluent pattern.
-     */
     @Override
     public IdentifiedComponentBuilder<T> setPrimordialUuid(UUID uuid) {
+        if (this.primordialUuid != null) {
+            throw new RuntimeException("Attempting to set primordial UUID which has already been set.");
+        }
         this.primordialUuid = uuid;
         return this;
     }
@@ -122,5 +120,10 @@ public abstract class ComponentBuilder<T extends CommittableComponent>
     @Override
     public List<SememeBuilder<?>> getSememeBuilders() {
         return sememeBuilders;
+    }
+    
+    @Override
+    public boolean isPrimordialUuidSet() {
+        return this.primordialUuid != null;
     }
 }
