@@ -899,7 +899,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		LookupService.get().getAllServiceHandles(IndexServiceBI.class).forEach(index
 				-> {
 			//Making a query, with long.maxValue, causes the index to refresh itself, and look at the latest updates, if there have been updates.
-			index.getService().query("hi", null, 1, Long.MAX_VALUE);
+			index.getService().query("hi", null, 1, Long.MAX_VALUE, null);
 		});
 	}
 	
