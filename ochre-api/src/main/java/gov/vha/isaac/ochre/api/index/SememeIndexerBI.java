@@ -74,28 +74,6 @@ public interface SememeIndexerBI extends IndexServiceBI {
 			Long targetGeneration, StampCoordinate stamp);
 
 	/**
-	 * A convenience method.
-	 * 
-	 * Search DynamicSememeData columns, treating them as text - and handling the search in the same mechanism as if this were a
-	 * call to the method {@link LuceneIndexer#query(String, boolean, Integer, int, long)}
-	 * 
-	 * Calls the method {@link #query(DynamicSememeDataBI, Integer, boolean, Integer[], int, long) with a null parameter for
-	 * the searchColumns, and wraps the queryString into a DynamicSememeString.
-	 * 
-	 * The optional Predicate<Integer> filter allows application of exclusionary criteria to the returned result
-	 *
-	 * @param queryString
-	 * @param assemblageNid
-	 * @param prefixSearch
-	 * @param sizeLimit
-	 * @param targetGeneration
-	 * @param filter - allows application of exclusionary criteria to the returned result
-	 * @return
-	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
-			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
-
-	/**
 	 * 
 	 * @param queryData - The query data object (string, int, etc)
 	 * @param sememeConceptSequence (optional) limit the search to the specified assemblage

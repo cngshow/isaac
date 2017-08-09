@@ -150,11 +150,53 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
+		return query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration, null, stamp);
+	}
+	
+	/**
+	 * A generic query API that handles most common cases.  The cases handled for various component property types
+	 * are detailed below.
+	 * 
+	 * NOTE - subclasses of LuceneIndexer may have other query(...) methods that allow for more specific and or complex
+	 * queries.  Specifically both {@link DynamicSememeIndexer} and {@link DescriptionIndexer} have their own 
+	 * query(...) methods which allow for more advanced queries.
+	 *
+	 * @param query The query to apply.
+	 * @param prefixSearch if true, utilize a search algorithm that is optimized for prefix searching, such as the searching 
+	 * that would be done to implement a type-ahead style search.  Does not use the Lucene Query parser.  Every term (or token) 
+	 * that is part of the query string will be required to be found in the result.
+	 * 
+	 * Note, it is useful to NOT trim the text of the query before it is sent in - if the last word of the query has a 
+	 * space character following it, that word will be required as a complete term.  If the last word of the query does not 
+	 * have a space character following it, that word will be required as a prefix match only.
+	 * 
+	 * For example:
+	 * The query "family test" will return results that contain 'Family Testudinidae'
+	 * The query "family test " will not match on  'Testudinidae', so that will be excluded.
+	 * 
+	 * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+	 * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
+	 * or the concept sequence {@link MetaData#SCTID} for example.
+	 * @param sizeLimit The maximum size of the result list.
+	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
+	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
+	 * indexing operations are completed - and then use the latest index.
+	 * @param filter The (optional) filter allowing application of exclusionary criteria to the returned result.
+	 * @param stamp The (optional) StampCoordinate to constrain the search.
+	 *
+	 * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
+	 * to other matches.
+	 */
+	@Override
+	public List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+	{
 		return search(
-				restrictToSememe(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, false),
+				restrictToSememe(buildTokenizedStringQuery(queryString, FIELD_INDEXED_STRING_VALUE, prefixSearch, false),
 						sememeConceptSequence),
 				sizeLimit, targetGeneration, null, stamp);
 	}
+
 
 	/**
 	 * A generic query API that handles most common cases.  The cases handled for various component property types
