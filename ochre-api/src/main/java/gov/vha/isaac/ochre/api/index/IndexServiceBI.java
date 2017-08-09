@@ -171,12 +171,15 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *            this query to wait until any in progress indexing operations
 	 *            are completed - and then use the latest index. Null behaves
 	 *            the same as Long.MIN_VALUE
+	 * @param stamp
+	 *            The (optional) StampCoordinate to constrain the search.
 	 * 
 	 * @return a List of
 	 *         {@code SearchResult</codes> that contains the nid of the
 	 * component that matched, and the score of that match relative to other matches.
 	 */
-	List<SearchResult> query(String query, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration);
+	List<SearchResult> query(String query, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, 
+			StampCoordinate stamp);
 
 	/**
 	 * @param query
