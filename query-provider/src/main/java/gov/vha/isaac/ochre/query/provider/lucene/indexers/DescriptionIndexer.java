@@ -194,7 +194,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 		return search(
 				restrictToSememe(buildTokenizedStringQuery(queryString, FIELD_INDEXED_STRING_VALUE, prefixSearch, false),
 						sememeConceptSequence),
-				sizeLimit, targetGeneration, null, stamp);
+				sizeLimit, targetGeneration, filter, stamp);
 	}
 
 
