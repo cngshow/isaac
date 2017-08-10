@@ -22,7 +22,6 @@ package gov.vha.isaac.ochre.modules.vhat;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,17 +31,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
-
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.hk2.runlevel.RunLevel;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
@@ -90,8 +90,8 @@ import gov.vha.isaac.ochre.model.sememe.version.LogicGraphSememeImpl;
  * @author <a href="mailto:joel.kniaz.list@gmail.com">Joel Kniaz</a>
  *
  */
-@Service // TODO uncomment to enable VHATIsAHasParentSynchronizingChronologyChangeListener
-@RunLevel(value = LookupService.SL_L1) // TODO uncomment to enable VHATIsAHasParentSynchronizingChronologyChangeListener
+@Service
+@RunLevel(value = LookupService.SL_L1)
 public class VHATIsAHasParentSynchronizingChronologyChangeListener implements ChronologyChangeListener {
 	private static final Logger LOG = LogManager.getLogger(VHATIsAHasParentSynchronizingChronologyChangeListener.class);
 
@@ -117,11 +117,14 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		return VHAT_STAMP_COORDINATE;
 	}
 
-	private final static ConcurrentSkipListSet<Integer> nidsOfGeneratedSememesToIgnore = new ConcurrentSkipListSet<>();
-	private final static UUID providerUuid = UUID.randomUUID();
+	private final ConcurrentSkipListSet<Integer> nidsOfGeneratedSememesToIgnore = new ConcurrentSkipListSet<>();
+	private final UUID providerUuid = UUID.randomUUID();
 
 	private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledLogicGraphChanges = new ConcurrentSkipListSet<>();
 	private final ConcurrentSkipListSet<Integer> sememeSequencesForUnhandledHasParentAssociationChanges = new ConcurrentSkipListSet<>();
+	
+	private ConcurrentLinkedQueue<Future<?>> inProgressJobs = new ConcurrentLinkedQueue<>();
+	private ScheduledFuture<?> sf;
 
 	public VHATIsAHasParentSynchronizingChronologyChangeListener() {
 	}
@@ -129,11 +132,14 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 	@PostConstruct
 	private void startMe() {
 		Get.commitService().addChangeListener(this);
+		//Prevent a memory leak, by scheduling a thread to periodically empty the job list 
+		sf = Get.workExecutors().getScheduledThreadPoolExecutor().scheduleAtFixedRate((() -> waitForJobsToComplete()), 5, 5, TimeUnit.MINUTES);
 	}
 
 	@PreDestroy
 	private void stopMe() {
 		Get.commitService().removeChangeListener(this);
+		sf.cancel(true);
 	}
 
 	/* (non-Javadoc)
@@ -167,8 +173,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 			sememeSequencesForUnhandledLogicGraphChanges.add(sc.getSememeSequence());
 		} else if (sc.getSememeType() == SememeType.DYNAMIC
 				&& sc.getAssemblageSequence() == VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getConceptSequence()) {
-			// TODO uncomment to enable when logic graph merge fixed
-			//sememeSequencesForUnhandledHasParentAssociationChanges.add(sc.getSememeSequence());
+			sememeSequencesForUnhandledHasParentAssociationChanges.add(sc.getSememeSequence());
 		} else {
 			// Ignore if not either LOGIC_GRAPH or DYNAMIC has_parent association sememe
 			return;
@@ -247,7 +252,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 							}
 						}
 					};
-					Get.workExecutors().getExecutor().submit(runnable);
+					inProgressJobs.add(Get.workExecutors().getExecutor().submit(runnable));
 				}
 
 				// For each parent from an active logic graph
@@ -302,7 +307,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 							}
 						};
 
-						Get.workExecutors().getExecutor().submit(runnable);
+						inProgressJobs.add(Get.workExecutors().getExecutor().submit(runnable));
 					}
 				}
 			} finally {
@@ -437,10 +442,30 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 				// Use either updateExistingLogicGraphRunnable or retireAndCreateLogicGraphRunnable,
 				// depending on which (if either) works better with logic graph merge
 				final Runnable runnableToUse = updateExistingLogicGraphRunnable;
-				Get.workExecutors().getExecutor().submit(runnableToUse);
+				inProgressJobs.add(Get.workExecutors().getExecutor().submit(runnableToUse));
 			} finally {
 				sememeSequencesForUnhandledHasParentAssociationChanges.remove(hasParentSememeSequence);
 			}
+		}
+	}
+	
+	public void waitForJobsToComplete()
+	{
+		Future<?> f = null;
+		f = inProgressJobs.peek();
+		while (f != null)
+		{
+			try
+			{
+				//wait for execution of the job to complete
+				f.get();
+			}
+			catch (Exception e)
+			{
+				LOG.error("There was an error in a submitted job!", e);
+			}
+			inProgressJobs.remove(f);
+			f = inProgressJobs.peek();
 		}
 	}
 	
