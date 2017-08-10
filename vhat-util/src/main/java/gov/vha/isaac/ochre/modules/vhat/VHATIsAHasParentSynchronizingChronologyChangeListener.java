@@ -461,7 +461,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 	public void waitForJobsToComplete()
 	{
 		Future<?> f = null;
-		f = inProgressJobs.poll();
+		f = inProgressJobs.peek();
 		while (f != null)
 		{
 			try
@@ -473,7 +473,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 			{
 				LOG.error("There was an error in a submitted job!", e);
 			}
-			f = inProgressJobs.poll();
+			inProgressJobs.remove(f);
+			f = inProgressJobs.peek();
 		}
 	}
 	
