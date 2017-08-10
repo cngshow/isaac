@@ -410,8 +410,8 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         }
 
         HashMap<Integer, HashSet<IsomorphicSolution>> scoreSolutionMap = new HashMap<>();
-        //int maxScore = 0;
-        int maxScore = Integer.MIN_VALUE;
+        int maxScore = 0;
+        //int maxScore = Integer.MIN_VALUE;
         for (IsomorphicSolution solution: possibleSolutions) {
             if (solution.getScore() >= maxScore) {
                 maxScore = solution.getScore();
