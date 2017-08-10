@@ -152,20 +152,6 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 		// Only using handleCommit()
 	}
 
-	private <S extends SememeVersion<? extends SememeVersion<?>>> Optional<S> getLatestVersion(SememeChronology<S> sememeChronology, StampCoordinate stampCoordinate) {
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		final Optional<LatestVersion<SememeVersion<?>>> rawLatestOptional = ((SememeChronology)sememeChronology).getLatestVersion(SememeVersion.class, stampCoordinate);
-		if (! rawLatestOptional.isPresent()) {
-			// Ignore non-VHAT commit
-			return Optional.empty();
-		}
-		
-		// TODO handle LatestVersion contradictions
-		
-		SememeVersion rawLatestVersion = rawLatestOptional.get().value();
-		return Optional.of((S)rawLatestVersion);
-	}
-
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.commit.ChronologyChangeListener#handleChange(gov.vha.isaac.ochre.api.component.sememe.SememeChronology)
 	 */
@@ -201,7 +187,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 					continue;
 				}
 				SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(logicGraphSequence);
-				Optional<LogicGraphSememeImpl> logicGraph = getLatestVersion((SememeChronology<LogicGraphSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
+				Optional<LogicGraphSememeImpl> logicGraph = Frills.getLatestVersion((SememeChronology<LogicGraphSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
 				if (! logicGraph.isPresent()) {
 					// Apparently not a relevant LOGIC_GRAPH sememe
 					return;
@@ -247,7 +233,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 									nidsOfGeneratedSememesToIgnore.add(hasParentSememe.getNid());
 									try {
 										Get.commitService().addUncommitted(mutableVersion.getChronology()).get();
-									} catch (InterruptedException | ExecutionException e) {
+									} catch (RuntimeException | InterruptedException | ExecutionException e) {
+										nidsOfGeneratedSememesToIgnore.remove(hasParentSememe.getNid());
 										LOG.error("FAILED calling addUncommitted() to retire VHAT has_parent association sememe " + hasParentSememe, e);
 									}
 								}
@@ -300,7 +287,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 								
 								try {
 									Get.commitService().addUncommitted((SememeChronology<?>)builtHasParentAssociation).get();
-								} catch (InterruptedException | ExecutionException e) {
+								} catch (RuntimeException | InterruptedException | ExecutionException e) {
+									nidsOfGeneratedSememesToIgnore.remove(builtHasParentAssociation.getNid());
 									LOG.error("FAILED calling addUncommitted() before committing new has_parent association sememe with SOURCE/CHILD=" + referencedConcept.getPrimordialUuid() + " and TARGET/PARENT=" + uuidOfParentAccordingToNewLogicGraphVersion.get(), e);
 									return;
 								}
@@ -329,7 +317,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 					continue;
 				}
 				SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(hasParentSememeSequence);
-				Optional<DynamicSememeImpl> hasParentSememe = getLatestVersion((SememeChronology<DynamicSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
+				Optional<DynamicSememeImpl> hasParentSememe = Frills.getLatestVersion((SememeChronology<DynamicSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
 				if (! hasParentSememe.isPresent()) {
 					// Apparently not a relevant has_parent association sememe
 					return;
@@ -375,7 +363,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 
 							try {
 								Get.commitService().addUncommittedNoChecks(retiringLogicGraphSememeVersion.getChronology()).get();
-							} catch (InterruptedException | ExecutionException e) {
+							} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								nidsOfGeneratedSememesToIgnore.remove(retiringLogicGraphSememeVersion.getNid());
 								LOG.error("FAILED calling addUncommitted() to retire logic graph of VHAT concept " + referencedConcept, e);
 								return;
 							}
@@ -400,7 +389,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 							// This code for use when updating an existing logic graph sememe
 							try {
 								Get.commitService().addUncommittedNoChecks(conceptLogicGraphSememeChronology.get()).get();
-							} catch (InterruptedException | ExecutionException e) {
+							} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								nidsOfGeneratedSememesToIgnore.remove(conceptLogicGraphSememeChronology.get().getNid());
 								LOG.error("FAILED calling addUncommitted() on logic graph of VHAT concept " + referencedConcept, e);
 								return;
 							}
@@ -430,7 +420,8 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements Ch
 							nidsOfGeneratedSememesToIgnore.add(conceptLogicGraphSememeChronology.get().getNid());
 							try {
 								Get.commitService().addUncommittedNoChecks(conceptLogicGraphSememeChronology.get()).get();
-							} catch (InterruptedException | ExecutionException e) {
+							} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								nidsOfGeneratedSememesToIgnore.remove(conceptLogicGraphSememeChronology.get().getNid());
 								LOG.error("FAILED calling addUncommitted() on logic graph of VHAT concept " + referencedConcept, e);
 								return;
 							}
