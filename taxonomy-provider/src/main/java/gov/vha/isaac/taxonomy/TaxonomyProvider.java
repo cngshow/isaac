@@ -106,7 +106,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
     private IdentifierService identifierService;
     private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
     
-    private LruCache<Integer, Tree> treeCache = new LruCache<>(5);
+    private volatile LruCache<Integer, Tree> treeCache = new LruCache<>(5);
 
     private TaxonomyProvider() throws IOException {
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
@@ -192,9 +192,11 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         {
             if (temp != null)
             {
+                LOG.debug("Returning cached tree for {}", tc);
                 return temp;
             }
         }
+        LOG.debug("Building tree for {}", tc);
         long stamp = stampedLock.tryOptimisticRead();
         IntStream conceptSequenceStream = Get.identifierService().getParallelConceptSequenceStream();
         GraphCollector collector = new GraphCollector(originDestinationTaxonomyRecordMap, tc);
@@ -218,6 +220,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
             temp = graphBuilder.getSimpleDirectedGraphGraph();
             treeCache.put(tc.hashCode(), temp);
+            LOG.debug("Tree build completed");
             return temp;
 
         } finally {
@@ -751,6 +754,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public void updateTaxonomy(SememeChronology<LogicGraphSememe<?>> logicGraphChronology) {
+        LOG.debug("Updating taxonomy for commit to " + logicGraphChronology);
         int conceptSequence = identifierService.getConceptSequence(logicGraphChronology.getReferencedComponentNid());
         Optional<TaxonomyRecordPrimitive> record = originDestinationTaxonomyRecordMap.get(conceptSequence);
 
@@ -786,6 +790,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LogicalExpression comparisonExpression = node.getParent().getData().getLogicalExpression();
             LogicalExpression referenceExpression = node.getData().getLogicalExpression();
             IsomorphicResultsBottomUp isomorphicResults = new IsomorphicResultsBottomUp(referenceExpression, comparisonExpression);
+            LOG.debug("Computed {}", isomorphicResults);
             isomorphicResults.getAddedRelationshipRoots().forEach((logicalNode) -> {
                 int stampSequence = node.getData().getStampSequence();
                 processRelationshipRoot(logicalNode, parentTaxonomyRecord, taxonomyFlags, stampSequence, comparisonExpression);
