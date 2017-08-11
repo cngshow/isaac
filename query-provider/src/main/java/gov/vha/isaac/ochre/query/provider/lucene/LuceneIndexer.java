@@ -336,30 +336,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	@Override
 	public final List<SearchResult> query(String query, int sizeLimit)
 	{
-		return query(query, null, sizeLimit, Long.MIN_VALUE);
-	}
-
-	/**
-	*
-	* Calls {@link #query(String, boolean, Integer, int, long)} with the prefixSearch field set to false.
-	*
-	* @param query The query to apply.
-	* @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within.  If null, 
-	* searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
-	* or the concept sequence {@link MetaData#SCTID} for example.
-	* @param sizeLimit The maximum size of the result list.
-	* @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no 
-	* need to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any 
-	* in-progress indexing operations are completed - and then use the latest index.
-	* 
-	* @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of 
-	* that match relative to other matches.
-	*/
-	@Override
-	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit,
-			Long targetGeneration)
-	{
-		return query(query, semeneConceptSequence, sizeLimit, targetGeneration, null);
+		return query(query, null, sizeLimit, Long.MIN_VALUE, null);
 	}
 
 	/**
