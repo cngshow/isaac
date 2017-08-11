@@ -1312,6 +1312,43 @@ public class Frills implements DynamicSememeColumnUtility {
 		return new String[] {columnName, columnDescription};
 	}
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <T extends SememeVersion<T>> Optional<T> getLatestVersion(SememeChronology<T> sememeChronology, StampCoordinate sc) {
+		return getLatestVersion((SememeChronology)sememeChronology, SememeVersion.class, sc);
+	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static <T extends ConceptVersion<T>> Optional<T> getLatestVersion(ConceptChronology<T> conceptChronology, StampCoordinate sc) {
+		return getLatestVersion((ConceptChronology)conceptChronology, ConceptVersion.class, sc);
+	}
+	public static <T extends StampedVersion> Optional<T> getLatestVersion(ObjectChronology<T> objectChronology, Class<T> clazz, StampCoordinate sc) {
+			Optional<LatestVersion<T>> latestVersionOptional = objectChronology.getLatestVersion(clazz, sc);
+	
+			if (latestVersionOptional.isPresent()) {
+				if (latestVersionOptional.get().contradictions().isPresent()) {
+					// TODO properly handle contradictions
+					final OchreExternalizableObjectType objectType = objectChronology.getOchreObjectType();
+					String detail = "object";
+					switch (objectType) {
+					case SEMEME:
+						detail = objectType + " UUID=" + objectChronology.getPrimordialUuid() + ", SEMEME SEQ=" + ((SememeChronology<?>)objectChronology).getSememeSequence() + ", REF COMP NID=" + ((SememeChronology<?>)objectChronology).getReferencedComponentNid();
+						break;
+					case CONCEPT:
+					case STAMP_ALIAS:
+					case STAMP_COMMENT:
+						detail = objectType + " UUID=" + objectChronology.getPrimordialUuid();
+						break;
+					default:
+						throw new RuntimeException("Unsupported OchreExternalizableObjectType for passed ObjectChronology UUID=" + objectChronology.getPrimordialUuid());
+					}
+	//				log.warn("Getting latest version of " + detail + " with " + latestVersionOptional.get().contradictions().get().size() 
+	//						+ " version contradictions");
+				}
+				
+				return Optional.of(latestVersionOptional.get().value());
+			}
+	
+			return Optional.empty();
+		}
 	/**
 	 * Utility method to get the best text value description for a concept, according to the user preferences.  
 	 * Calls {@link #getDescription(UUID, LanguageCoordinate, StampCoordinate)} with nulls. 

@@ -61,7 +61,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -113,7 +112,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         folderPath = LookupService.getService(ConfigurationService.class).getChronicleFolderPath();
         taxonomyProviderFolder = folderPath.resolve(TAXONOMY);
         if (!Files.exists(taxonomyProviderFolder)) {
-        	databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
+            databaseValidity = DatabaseValidity.MISSING_DIRECTORY;
         }
 
         loadRequired.set(!Files.exists(taxonomyProviderFolder));
@@ -141,7 +140,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
                 }
 
                 if (isPopulated) {
-                	databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
+                    databaseValidity = DatabaseValidity.POPULATED_DIRECTORY;
                 }
             }
             Get.commitService().addChangeListener(this);
@@ -188,14 +187,14 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public Tree getTaxonomyTree(TaxonomyCoordinate tc) {
-    	//TODO determine if the returned tree is thread safe for multiple accesses in parallel, if not, may need a pool of these.
-    	Tree temp = treeCache.get(tc.hashCode());
-    	{
-    		if (temp != null)
-    		{
-    			return temp;
-    		}
-    	}
+        //TODO determine if the returned tree is thread safe for multiple accesses in parallel, if not, may need a pool of these.
+        Tree temp = treeCache.get(tc.hashCode());
+        {
+            if (temp != null)
+            {
+                return temp;
+            }
+        }
         long stamp = stampedLock.tryOptimisticRead();
         IntStream conceptSequenceStream = Get.identifierService().getParallelConceptSequenceStream();
         GraphCollector collector = new GraphCollector(originDestinationTaxonomyRecordMap, tc);
@@ -741,7 +740,13 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         if (sememeSequencesForUnhandledChanges.size() > 0) {
             treeCache.clear();
         }
-        UpdateTaxonomyAfterCommitTask.get(this, commitRecord, sememeSequencesForUnhandledChanges, stampedLock);
+        try {
+            UpdateTaxonomyAfterCommitTask.get(this, commitRecord, sememeSequencesForUnhandledChanges, stampedLock).get();
+        }
+        catch (Exception e){
+            LOG.error("Error updating taxonomy after commit!", e);
+        }
+        
     }
 
     @Override
@@ -1074,7 +1079,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
 
     @Override
     public DatabaseValidity getDatabaseValidityStatus() {
-    	return databaseValidity;
+        return databaseValidity;
     }
     
     @Override
