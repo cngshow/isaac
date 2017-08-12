@@ -107,6 +107,7 @@ public class CommitProvider implements CommitService {
 	private final ConcurrentSkipListSet<ChangeChecker> checkers = new ConcurrentSkipListSet<>();
 	private long lastCommit = Long.MIN_VALUE;
 	private AtomicBoolean loadRequired = new AtomicBoolean();
+	private AtomicLong lastCommitTime = new AtomicLong(Long.MIN_VALUE);
 
 	ThreadLocal<Set<Integer>> deferredImportNoCheckNids = new ThreadLocal<>();
 
@@ -362,7 +363,17 @@ public class CommitProvider implements CommitService {
 			alertCollection.addAll(alerts);
 
 		} else {
-			long commitTime = System.currentTimeMillis();
+
+			//Make it impossible to have two commits happen in the same MS - because this messes up the RelativePositionCalculator
+			final AtomicLong commitTime = new AtomicLong(System.currentTimeMillis());
+			if (commitTime.get() <= lastCommitTime.get())
+			{
+				commitTime.set(lastCommitTime.incrementAndGet());
+			}
+			else
+			{
+				lastCommitTime.set(commitTime.get());
+			}
 			// TODO have it only commit the versions on the sememe consistent with the edit coordinate.
 			// successful check, commit and remove uncommitted sequences...
 			StampSequenceSet stampsInCommit = new StampSequenceSet();
@@ -372,7 +383,7 @@ public class CommitProvider implements CommitService {
 
 			chronicle.getVersionList().forEach((version) -> {
 				if (((ObjectVersionImpl) version).isUncommitted() && ((ObjectVersionImpl) version).getAuthorSequence() == editCoordinate.getAuthorSequence()) {
-					((ObjectVersionImpl) version).setTime(commitTime);
+					((ObjectVersionImpl) version).setTime(commitTime.get());
 					stampsInCommit.add(((ObjectVersionImpl) version).getStampSequence());
 				}
 			});
@@ -391,7 +402,7 @@ public class CommitProvider implements CommitService {
 				Get.sememeService().writeSememe(sememeChronology);
 			}
 
-			commitRecord = new CommitRecord(Instant.ofEpochMilli(commitTime),
+			commitRecord = new CommitRecord(Instant.ofEpochMilli(commitTime.get()),
 					stampsInCommit,
 					stampAliases, conceptsInCommit, sememesInCommit,
 					commitComment);

@@ -78,12 +78,12 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         this.referenceVisitData = new TreeNodeVisitData(referenceExpression.getNodeCount());
         //should not be null since it was created above, but flagged by Fortify
         if (this.referenceExpression != null) {
-        	this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
+            this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
         }
         this.comparisonVisitData = new TreeNodeVisitData(comparisonExpression.getNodeCount());
         //should not be null since it was created above, but flagged by Fortify
         if (this.comparisonExpression != null) {
-        	this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
+            this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
         }
         this.referenceExpressionToMergedNodeIdMap = new int[referenceExpression.getNodeCount()];
         Arrays.fill(referenceExpressionToMergedNodeIdMap, -1);
@@ -394,7 +394,11 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         
         if (!temp.isPresent()) {
             //TODO this isn't at all right.  But, I think we aren't hitting this any more, with Keith's other fix
-            log.error("DAN WAS HERE -> Returning an empty IsomorphicSolution because no possible solution was found!");
+            log.error("DAN WAS HERE -> Returning an empty IsomorphicSolution because no possible solution was found - trying to compute \r\n" 
+                    + referenceExpression.toString() 
+                    + "\r\n"
+                    + "and \r\n"
+                    + comparisonExpression.toString(), new Exception("Just printing stack trace"));
             int[] sillySolution = new int[referenceExpression.getNodeCount()];
             Arrays.fill(sillySolution, -1);
             return new IsomorphicSolution(sillySolution, null, null);
