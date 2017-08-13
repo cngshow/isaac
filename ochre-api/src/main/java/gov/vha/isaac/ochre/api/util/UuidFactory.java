@@ -52,6 +52,11 @@ public class UuidFactory {
 
 	public static UUID getUuidForLogicGraphSememe(UUID authority, UUID assemblage, UUID refComp, Object[] parameters) {
 		String logicGraphStr = ((LogicalExpression) parameters[0]).toString().replaceAll("<[0-9]+>", "");
+		
+		if (logicGraphStr.contains("No desc for:")) {
+			logicGraphStr = logicGraphStr.substring(0, logicGraphStr.indexOf("No desc for:"));
+		}
+		
 		return UuidT5Generator.get(authority,
 				createUuidTextSeed(assemblage.toString(), refComp.toString(), logicGraphStr));
 	}
