@@ -47,6 +47,10 @@ import java.util.function.Supplier;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -92,9 +96,7 @@ import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitRecord;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.DynamicSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.index.ComponentSearchResult;
@@ -165,8 +167,8 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	private Boolean dbBuildMode = null;
 	private DatabaseValidity databaseValidity = DatabaseValidity.NOT_SET;
 	boolean reindexRequired = false;
-	private final Map<Integer, List<SearchResult>> queryCache = Collections
-			.synchronizedMap(new LruCache<Integer, List<SearchResult>>(20));
+	private final Map<Triple<Query, Integer, Integer>, Pair<ScoreDoc, List<SearchResult>>> queryCache = Collections
+			.synchronizedMap(new LruCache<Triple<Query, Integer, Integer>, Pair<ScoreDoc, List<SearchResult>>>(20));
 
 	protected LuceneIndexer(String indexName) throws IOException {
 		try
@@ -336,7 +338,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	@Override
 	public final List<SearchResult> query(String query, int sizeLimit)
 	{
-		return query(query, null, sizeLimit, Long.MIN_VALUE, null);
+		return query(query, null, 1, sizeLimit, Long.MIN_VALUE, null);
 	}
 
 	/**
@@ -356,10 +358,10 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	* @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of 
 	* that match relative to other matches.
 	*/
-	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int sizeLimit,
+	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(query, false, semeneConceptSequence, sizeLimit, targetGeneration, stamp);
+		return query(query, false, semeneConceptSequence, pageNum, sizeLimit, targetGeneration, stamp);
 	}
 
 	/**
@@ -397,7 +399,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 */
 	@Override
 	public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence,
-			int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	@Override
 	public final void clearIndex()
@@ -405,6 +407,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 		try
 		{
 			indexWriter.deleteAll();
+			clearQueryCache();
 		} catch (IOException ex)
 		{
 			throw new RuntimeException(ex);
@@ -467,22 +470,47 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of
 	 * that match relative to other matches.
 	 */
-	protected final List<SearchResult> search(Query q, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
+	protected final List<SearchResult> search(Query q, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
 			StampCoordinate stamp)
 	{
 		// Include the module and path selelctions
 		q = this.buildStampQuery(q, stamp);
 
-		// Get the generated query cache key 
-		// This is necessary to make sure all the parameters are accounted for other than just the query.
-		// A change to the sizeLimit, filter and StampCoordinate needs to return different results.
-		int cacheKey = getQueryCacheKey(q, sizeLimit, targetGeneration, filter, stamp);
-
+		// Pages are 1-based
+		if (pageNum < 1)
+		{
+			pageNum = 1;
+		}
+		int prevPageNum = pageNum - 1;
+		
+		// An upper bound to restrict searches to
+		// Note: this is in the results array initializer - too large a value can result in OOM errors
+		int maxSearchLimit = 100000;
+		// The max number of documents to return during a single query
+		int maxResultLimit = Math.min(pageNum * sizeLimit, maxSearchLimit);
+		// The last document of the previous page of results
+		ScoreDoc prevPageLastDoc = null;
+		
+		// Triples as keys into the cache, for both the current page and previous page, in
+		// order to collect the last page doc
+		Triple<Query, Integer, Integer> prevPageCacheKey 
+						= new ImmutableTriple<>(q, new Integer(prevPageNum), new Integer(sizeLimit));
+		Triple<Query, Integer, Integer> pageCacheKey 
+						= new ImmutableTriple<>(q, new Integer(pageNum), new Integer(sizeLimit));
+		
 		synchronized (queryCache)
 		{
-			if (queryCache.containsKey(cacheKey))
+			// If the current query+page+limit are cached, return the cached results
+			if (queryCache.containsKey(pageCacheKey))
 			{
-				return queryCache.get(cacheKey);
+				log.debug("Returning results from cache.");
+				return queryCache.get(pageCacheKey).getRight();
+			}
+			// If the previous query+page+limit is cached, fetch the previous page's last doc
+			if (queryCache.containsKey(prevPageCacheKey))
+			{
+				prevPageLastDoc = queryCache.get(prevPageCacheKey).getLeft();
+				log.debug("Found doc {} from previous page results for searching after.", prevPageLastDoc.doc);
 			}
 		}
 
@@ -512,9 +540,9 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				log.debug("Running query: {}", q.toString());
 
 				// We're only going to return up to what was requested
-				List<SearchResult> results = new ArrayList<>();
+				List<SearchResult> results = new ArrayList<>(maxResultLimit);
 				HashSet<Integer> includedComponentNids = new HashSet<>();
-				ScoreDoc lastDoc = null;
+				ScoreDoc lastDoc = prevPageLastDoc;
 				boolean complete = false; //i.e., results.size() < sizeLimit
 
 				// Keep going until the requested number of docs are found, or no more matches/results
@@ -526,19 +554,19 @@ public abstract class LuceneIndexer implements IndexServiceBI
 						TopDocsFilteredCollector tdf;
 						if (lastDoc != null)
 						{
-							tdf = new TopDocsFilteredCollector(sizeLimit, lastDoc, searcher, filter);
+							tdf = new TopDocsFilteredCollector(maxSearchLimit, lastDoc, searcher, filter);
 						} else
 						{
-							tdf = new TopDocsFilteredCollector(sizeLimit, searcher, filter);
+							tdf = new TopDocsFilteredCollector(maxSearchLimit, searcher, filter);
 						}
 						searcher.search(q, tdf);
 						topDocs = tdf.topDocs();
 					} else if (lastDoc != null)
 					{
-						topDocs = searcher.searchAfter(lastDoc, q, sizeLimit);
+						topDocs = searcher.searchAfter(lastDoc, q, maxSearchLimit);
 					} else
 					{
-						topDocs = searcher.search(q, sizeLimit);
+						topDocs = searcher.search(q, maxSearchLimit);
 					}
 
 					// If no scoreDocs exist, we're done 
@@ -546,7 +574,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 					{
 						complete = true;
 						log.debug("Search exhausted after finding only {} results (of {} requested) from query",
-								results.size(), sizeLimit);
+								results.size(), maxResultLimit);
 					} else
 					{
 						for (ScoreDoc hit : topDocs.scoreDocs)
@@ -564,7 +592,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 							{
 								includedComponentNids.add(componentNid);
 								results.add(new ComponentSearchResult(componentNid, hit.score));
-								if (results.size() == sizeLimit)
+								if (results.size() == maxResultLimit)
 								{
 									complete = true;
 									break;
@@ -574,12 +602,25 @@ public abstract class LuceneIndexer implements IndexServiceBI
 					}
 				}
 				log.debug("Returning {} results from query", results.size());
-				// Add results to the query cache
+				
+				// Work out the start (inclusive) and end (exclusive) indexes
+				// to return the correct subset (if any) from the results list
+				int startIndexInclusive = (pageNum - 1) * sizeLimit;
+				int endIndexExclusive = startIndexInclusive + sizeLimit - 1;
+				endIndexExclusive = (endIndexExclusive > results.size()) ? results.size() - 1 : endIndexExclusive;
+				endIndexExclusive += 1; // Because it is exclusive
+				List<SearchResult> slicedResults = (endIndexExclusive <= startIndexInclusive)
+						? new ArrayList<>()
+						: results.subList(startIndexInclusive, Math.min(endIndexExclusive, results.size()));
+				
+				// Add the last doc found and the results sub-list to the query cache
+				Pair<ScoreDoc, List<SearchResult>> pair = new ImmutablePair<>(lastDoc, slicedResults);
 				synchronized (queryCache)
 				{
-					queryCache.put(cacheKey, results);
+					queryCache.put(pageCacheKey, pair);
 				}
-				return results;
+				
+				return slicedResults;
 			} finally
 			{
 				referenceManager.release(searcher);
@@ -753,6 +794,8 @@ public abstract class LuceneIndexer implements IndexServiceBI
 			releaseLatch(chronicleNid, Long.MIN_VALUE);
 			return null;
 		}
+		
+		clearQueryCache();
 
 		if (indexChronicle.getAsBoolean())
 		{
@@ -1018,8 +1061,10 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	}
 
 	/**
+	 * Return a Query adding the appropriate Stamp criteria for Path and/or Module(s).
 	 * 
-	 * @param stamp
+	 * @param query The query base to add Stamp parameters to
+	 * @param stamp The StampCoordinate to further restrict the query
 	 * @return
 	 */
 	protected Query buildStampQuery(Query query, StampCoordinate stamp)
@@ -1061,40 +1106,11 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	}
 
 	/**
-	 * Generates a consisten query cache key for this running instance that respects all the 
-	 * requested parameters. Any changes to the query, size, target generation, filter
-	 * or StampCoordinate will result in a different entry.
-	 * 
-	 * @param query The Lucene Query object.
-	 * @param sizeLimit The number of results desired.
-	 * @param targetGeneration The (optional) target generation value for this query.
-	 * @param filter The (optional) filter value for this query.
-	 * @param stamp The (optional) StampCoordinate associated with this query.
-	 * 
-	 * @return An integer value used to key the query cache. 
+	 * Clear the page/query cache. Should be done during re-indexing or when clearing
+	 * the current index.
 	 */
-	private int getQueryCacheKey(Query query, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
-			StampCoordinate stamp)
+	private void clearQueryCache()
 	{
-		StringBuilder sb = new StringBuilder("cache|size:" + sizeLimit);
-		if (query != null)
-		{
-			sb.append("|query_hash:" + query.hashCode());
-		}
-		if (targetGeneration != null)
-		{
-			sb.append("|target_gen:" + targetGeneration);
-		}
-		if (filter != null)
-		{
-			sb.append("|filter_hash:" + filter.hashCode());
-		}
-		if (stamp != null)
-		{
-			sb.append("|stamp_hash:" + stamp.hashCode());
-		}
-		int key = sb.toString().hashCode();
-		log.debug("Created query key: '{}' from '{}'", key, sb.toString());
-		return key;
+		this.queryCache.clear();
 	}
 }
