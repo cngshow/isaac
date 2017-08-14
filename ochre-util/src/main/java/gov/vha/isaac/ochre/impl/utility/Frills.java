@@ -129,6 +129,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	private static LruCache<Integer, Boolean> isAssociationCache = new LruCache<>(50);
 	private static LruCache<Integer, Boolean> isMappingCache = new LruCache<>(50);
 	private static LruCache<Integer, Integer> moduleToTermTypeCache = new LruCache<>(50);
+	
 	/**
 	 * @param version StampedVersion from which to generate StampCoordinate
 	 * @return StampCoordinate corresponding to StampedVersion values
@@ -771,7 +772,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(sctID + " ", true,
-					new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MAX_VALUE, null);
+					new Integer[] {MetaData.SCTID.getConceptSequence()}, 1, 5, Long.MAX_VALUE, null);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -791,7 +792,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		if (si != null) {
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			List<SearchResult> result = si.query(vuID + " ", true,
-					new Integer[] {MetaData.VUID.getConceptSequence()}, 5, Long.MAX_VALUE, null);
+					new Integer[] {MetaData.VUID.getConceptSequence()}, 1, 5, Long.MAX_VALUE, null);
 			if (result.size() > 0) {
 				return Optional.of(Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid());
 			}
@@ -849,7 +850,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		};
 		//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 		List<SearchResult> results = si.query(vuID + " ", true,
-				new Integer[] {MetaData.VUID.getConceptSequence()}, 1000, Long.MAX_VALUE, filter, null);
+				new Integer[] {MetaData.VUID.getConceptSequence()}, 1, 1000, Long.MAX_VALUE, filter, null);
 		if (results.size() > 0) {
 			for (SearchResult result : results) {
 				matchingVuidSememeNids.add(result.getNid());
@@ -899,7 +900,7 @@ public class Frills implements DynamicSememeColumnUtility {
 		LookupService.get().getAllServiceHandles(IndexServiceBI.class).forEach(index
 				-> {
 			//Making a query, with long.maxValue, causes the index to refresh itself, and look at the latest updates, if there have been updates.
-			index.getService().query("hi", null, 1, Long.MAX_VALUE, null);
+			index.getService().query("hi", null, 1, 1, Long.MAX_VALUE, null);
 		});
 	}
 	
@@ -1604,7 +1605,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			{
 				//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 				List<SearchResult> result = si.query(localIdentifier + " ", true, 
-						new Integer[] {MetaData.SCTID.getConceptSequence()}, 5, Long.MIN_VALUE, null);
+						new Integer[] {MetaData.SCTID.getConceptSequence()}, 1, 5, Long.MIN_VALUE, null);
 				if (result.size() > 0)
 				{
 					int componentNid = Get.sememeService().getSememe(result.get(0).getNid()).getReferencedComponentNid();

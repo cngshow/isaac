@@ -1622,7 +1622,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			@SuppressWarnings("rawtypes")
 			ArrayList<SememeChronology> candidates = new ArrayList<>();
-			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MAX_VALUE, null);
+			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 1, 50, Long.MAX_VALUE, null);
 			result.forEach(sr -> 
 			{
 				@SuppressWarnings("rawtypes")
