@@ -52,7 +52,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	List<SearchResult> queryNumericRange(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive,
 			DynamicSememeData queryDataUpper, boolean queryDataUpperInclusive, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * A convenience method.
@@ -70,7 +70,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * @param targetGeneration
 	 * @return
 	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp);
 
 	/**
@@ -87,7 +87,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * @param queryData - The query data object (string, int, etc)
@@ -104,7 +104,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
+			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
 
 	/**
 	 * Search for matches to the specified nid. Note that in the current implementation, you will only find matches to sememes
@@ -129,7 +129,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
 	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
-	List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
+	List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp);
 
 }

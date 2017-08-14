@@ -180,7 +180,7 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         {@code SearchResult</codes> that contains the nid of the
 	 * component that matched, and the score of that match relative to other matches.
 	 */
-	List<SearchResult> query(String query, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, 
+	List<SearchResult> query(String query, Integer[] sememeConceptSequence, int pageNum, int sizeLimit, Long targetGeneration, 
 			StampCoordinate stamp);
 
 	/**
@@ -226,7 +226,7 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         component that matched, and the score of that match relative to
 	 *         other matches.
 	 */
-	List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp);
 
 	/**
@@ -275,7 +275,7 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         component that matched, and the score of that match relative to
 	 *         other matches.
 	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
 
 	/**

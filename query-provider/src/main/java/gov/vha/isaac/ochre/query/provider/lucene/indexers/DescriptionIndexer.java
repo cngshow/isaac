@@ -147,10 +147,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * to other matches.
 	 */
 	@Override
-	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(query, prefixSearch, sememeConceptSequence, sizeLimit, targetGeneration, null, stamp);
+		return query(query, prefixSearch, sememeConceptSequence, pageNum, sizeLimit, targetGeneration, null, stamp);
 	}
 	
 	/**
@@ -188,13 +188,13 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * to other matches.
 	 */
 	@Override
-	public List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	public List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
 		return search(
 				restrictToSememe(buildTokenizedStringQuery(queryString, FIELD_INDEXED_STRING_VALUE, prefixSearch, false),
 						sememeConceptSequence),
-				sizeLimit, targetGeneration, filter, stamp);
+				pageNum, sizeLimit, targetGeneration, filter, stamp);
 	}
 
 
@@ -236,12 +236,12 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
 	 * to other matches.
 	 */
-	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
+	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
 			Long targetGeneration, Predicate<Integer> filter, boolean metadataOnly, StampCoordinate stamp)
 	{
 		return search(restrictToSememe(
 				buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, metadataOnly),
-				sememeConceptSequence), sizeLimit, targetGeneration, filter, null);
+				sememeConceptSequence), pageNum, sizeLimit, targetGeneration, filter, null);
 	}
 
 	/**
@@ -265,18 +265,18 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * component that matched, and the score of that match relative to other
 	 * matches.
 	*/
-	public final List<SearchResult> query(String query, UUID extendedDescriptionType, int sizeLimit,
+	public final List<SearchResult> query(String query, UUID extendedDescriptionType, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
 		if (extendedDescriptionType == null)
 		{
-			return super.query(query, (Integer[]) null, sizeLimit, targetGeneration, stamp);
+			return super.query(query, (Integer[]) null, pageNum, sizeLimit, targetGeneration, stamp);
 		} else
 		{
 			return search(
 					buildTokenizedStringQuery(query,
 							FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false, false),
-					sizeLimit, targetGeneration, null, stamp);
+					pageNum, sizeLimit, targetGeneration, null, stamp);
 		}
 	}
 
@@ -299,16 +299,16 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * component that matched, and the score of that match relative to other
 	 * matches.
 	 */
-	public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, int sizeLimit,
+	public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, int pageNum, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
 		if (descriptionType == null)
 		{
-			return super.query(query, (Integer[]) null, sizeLimit, targetGeneration, stamp);
+			return super.query(query, (Integer[]) null, pageNum, sizeLimit, targetGeneration, stamp);
 		} else
 		{
 			return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + descriptionType.name(),
-					false, false), sizeLimit, targetGeneration, null, stamp);
+					false, false), pageNum, sizeLimit, targetGeneration, null, stamp);
 		}
 	}
 
