@@ -57,7 +57,7 @@ import gov.vha.isaac.ochre.api.util.NumericUtils;
  * And for the following two:
  * {@link DynamicSememeValidatorType#IS_CHILD_OF}
  * {@link DynamicSememeValidatorType#IS_KIND_OF}
- * The validatorDefinitionData should be either an {@link DynamicSememeNid} or {@link DynamicSememeSequence} or a {@link DynamicSememeUUID}.
+ * The validatorDefinitionData should be either an {@link DynamicSememeNid} or a {@link DynamicSememeUUID}.
  * 
  * For {@link DynamicSememeValidatorType#COMPONENT_TYPE} the validator definition data should be a {@link DynamicSememeArray <DynamicSememeString>}
  * where position 0 is a string constant parseable by {@link ObjectChronologyType#parse(String)}.  Postion 1 is optional, and is only applicable when 
@@ -197,17 +197,6 @@ public enum DynamicSememeValidatorType
 					return false;
 				}
 			}
-			case SEQUENCE:  //can't support component type with sequence, because we don't know how to look it up
-			{
-				if (this == IS_CHILD_OF || this == IS_KIND_OF || this == REGEXP)
-				{
-					return true;
-				}
-				else
-				{
-					return false;
-				}
-			}
 			case STRING: case BYTEARRAY:
 			{
 				if (this == REGEXP)
@@ -318,10 +307,6 @@ public enum DynamicSememeValidatorType
 				{
 					childId = ((DynamicSememeNid) userData).getDataNid();
 				}
-				else if (userData instanceof DynamicSememeSequence)
-				{
-					childId = ((DynamicSememeSequence) userData).getDataSequence();
-				}
 				else
 				{
 					throw new RuntimeException("Userdata is invalid for a IS_CHILD_OF or IS_KIND_OF comparison");
@@ -334,10 +319,6 @@ public enum DynamicSememeValidatorType
 				else if (validatorDefinitionData instanceof DynamicSememeNid)
 				{
 					parentId = ((DynamicSememeNid) validatorDefinitionData).getDataNid();
-				}
-				else if (userData instanceof DynamicSememeSequence)
-				{
-					parentId = ((DynamicSememeSequence) validatorDefinitionData).getDataSequence();
 				}
 				else
 				{

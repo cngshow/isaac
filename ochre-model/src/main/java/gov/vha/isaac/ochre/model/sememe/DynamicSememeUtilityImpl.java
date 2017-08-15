@@ -23,7 +23,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeInteger;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeLong;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNid;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeSequence;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeArrayImpl;
@@ -211,10 +210,6 @@ public class DynamicSememeUtilityImpl implements DynamicSememeUtility
 				else if (DynamicSememeDataType.ARRAY == columnType)
 				{
 					result = (DynamicSememeArray<?>)defaultValue;
-				}
-				else if (DynamicSememeDataType.SEQUENCE== columnType)
-				{
-					result = (DynamicSememeSequence)defaultValue;
 				}
 				else if (DynamicSememeDataType.POLYMORPHIC == columnType)
 				{

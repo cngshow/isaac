@@ -71,7 +71,6 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 	public final MetadataConceptConstant DYNAMIC_SEMEME_DT_DOUBLE = new MetadataConceptConstant("double", UUID.fromString("7172e6ac-a05a-5a34-8275-aef430b18207")) {};
 	public final MetadataConceptConstant DYNAMIC_SEMEME_DT_POLYMORPHIC = new MetadataConceptConstant("polymorphic", UUID.fromString("3d634fd6-1498-5e8b-b914-e75b42018397")) {};
 	public final MetadataConceptConstant DYNAMIC_SEMEME_DT_ARRAY = new MetadataConceptConstant("array", UUID.fromString("318622e6-dd7a-5651-851d-2d5c2af85767")) {};
-	public final MetadataConceptConstant DYNAMIC_SEMEME_DT_SEQUENCE = new MetadataConceptConstant("sequence", UUID.fromString("5bfd7cfb-ca7e-584d-8672-e089dbb4e912")) {};
 	
 	//The following data types already exist, but I'm also adding them to our hierarchy for clarity
 	public final MetadataConceptConstant DYNAMIC_SEMEME_DT_STRING = new MetadataConceptConstant("String",UUID.fromString("a46aaf11-b37a-32d6-abdc-707f084ec8f5")) {};
@@ -93,7 +92,6 @@ public class DynamicSememeConstants implements ModuleProvidedConstants
 			addChild(DYNAMIC_SEMEME_DT_STRING);
 			addChild(DYNAMIC_SEMEME_DT_INTEGER);
 			addChild(DYNAMIC_SEMEME_DT_UUID);
-			addChild(DYNAMIC_SEMEME_DT_SEQUENCE);
 		}
 	};
 
