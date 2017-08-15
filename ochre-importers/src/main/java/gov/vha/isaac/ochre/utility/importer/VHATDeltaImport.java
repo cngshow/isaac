@@ -409,6 +409,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	 */
 	private void createNewProperties(Terminology terminology) throws Exception
 	{
+		//Have to turn off dupe detection, cause they were already entered once, above, in the populate code.
+		ConverterUUID.disableUUIDMap_ = true;
 		LOG.info("Checking for properties that need creation");
 		gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyType associations = new BPT_Associations("VHAT");
 		gov.va.oia.terminology.converters.sharedUtils.propertyTypes.PropertyType annotations = new BPT_Annotations("VHAT");
@@ -436,6 +438,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		
 		importUtil_.loadMetaDataItems(associations, null);
 		importUtil_.loadMetaDataItems(annotations, null);
+		ConverterUUID.disableUUIDMap_ = false;
 	}
 	
 	private void createNewSubsets(Terminology terminology) throws IOException
@@ -1622,7 +1625,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			//force the prefix algorithm, and add a trailing space - quickest way to do an exact-match type of search
 			@SuppressWarnings("rawtypes")
 			ArrayList<SememeChronology> candidates = new ArrayList<>();
-			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MAX_VALUE);
+			List<SearchResult> result = si.query(conceptCode + " ", true, new Integer[] {MetaData.CODE.getConceptSequence()}, 50, Long.MAX_VALUE, null);
 			result.forEach(sr -> 
 			{
 				@SuppressWarnings("rawtypes")
