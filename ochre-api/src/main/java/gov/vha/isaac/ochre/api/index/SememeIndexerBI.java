@@ -26,6 +26,7 @@ import org.jvnet.hk2.annotations.Contract;
 
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 
 /**
  * 
@@ -51,7 +52,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	List<SearchResult> queryNumericRange(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive,
 			DynamicSememeData queryDataUpper, boolean queryDataUpperInclusive, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration);
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * A convenience method.
@@ -70,29 +71,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * @return
 	 */
 	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
-			Long targetGeneration);
-
-	/**
-	 * A convenience method.
-	 * 
-	 * Search DynamicSememeData columns, treating them as text - and handling the search in the same mechanism as if this were a
-	 * call to the method {@link LuceneIndexer#query(String, boolean, Integer, int, long)}
-	 * 
-	 * Calls the method {@link #query(DynamicSememeDataBI, Integer, boolean, Integer[], int, long) with a null parameter for
-	 * the searchColumns, and wraps the queryString into a DynamicSememeString.
-	 * 
-	 * The optional Predicate<Integer> filter allows application of exclusionary criteria to the returned result
-	 *
-	 * @param queryString
-	 * @param assemblageNid
-	 * @param prefixSearch
-	 * @param sizeLimit
-	 * @param targetGeneration
-	 * @param filter - allows application of exclusionary criteria to the returned result
-	 * @return
-	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit,
-			Long targetGeneration, Predicate<Integer> filter);
+			Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * 
@@ -108,7 +87,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration);
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * @param queryData - The query data object (string, int, etc)
@@ -125,7 +104,7 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter);
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
 
 	/**
 	 * Search for matches to the specified nid. Note that in the current implementation, you will only find matches to sememes
@@ -151,6 +130,6 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
 	List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
-			Long targetGeneration);
+			Long targetGeneration, StampCoordinate stamp);
 
 }

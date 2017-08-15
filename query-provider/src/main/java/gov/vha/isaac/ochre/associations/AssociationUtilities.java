@@ -134,7 +134,7 @@ public class AssociationUtilities
 			
 			//TODO when issue with colIndex restrictions is fixed, put it back.
 			List<SearchResult> refexes = indexer.query(new DynamicSememeStringImpl(componentNid + (uuid == null ? "" : " OR " + uuid)),
-					false, associationTypes.toArray(new Integer[associationTypes.size()]), null, Integer.MAX_VALUE, null);
+					false, associationTypes.toArray(new Integer[associationTypes.size()]), null, Integer.MAX_VALUE, null, null);
 			for (SearchResult sr : refexes)
 			{
 				@SuppressWarnings("rawtypes")

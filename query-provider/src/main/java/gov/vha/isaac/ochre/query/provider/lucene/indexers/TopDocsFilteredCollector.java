@@ -27,6 +27,7 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.FilterCollector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.LeafCollector;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -46,6 +47,21 @@ public class TopDocsFilteredCollector extends FilterCollector
 	
 	/**
 	 * @param numHits - how many results to return
+	 * @param lastDoc - the document at the bottom of the previous page
+	 * @param query - needed to setup the TopScoreDocCollector properly
+	 * @param searcher - needed to read the nids out of the matching documents
+	 * @param filter - a predicate that should return true, if the given nid should be allowed in the results, false, if not.
+	 * @throws IOException 
+	 */
+	public TopDocsFilteredCollector(int numHits, ScoreDoc after, IndexSearcher searcher, Predicate<Integer> filter) throws IOException
+	{
+		super(TopScoreDocCollector.create(numHits, after));
+		searcher_ = searcher;
+		filter_ = filter;
+	}
+
+	/**
+	 * @param numHits - how many results to return
 	 * @param query - needed to setup the TopScoreDocCollector properly
 	 * @param searcher - needed to read the nids out of the matching documents
 	 * @param filter - a predicate that should return true, if the given nid should be allowed in the results, false, if not.
@@ -53,9 +69,7 @@ public class TopDocsFilteredCollector extends FilterCollector
 	 */
 	public TopDocsFilteredCollector(int numHits, IndexSearcher searcher, Predicate<Integer> filter) throws IOException
 	{
-		super(TopScoreDocCollector.create(numHits));
-		searcher_ = searcher;
-		filter_ = filter;
+		this(numHits, null, searcher, filter);
 	}
 
 	@Override

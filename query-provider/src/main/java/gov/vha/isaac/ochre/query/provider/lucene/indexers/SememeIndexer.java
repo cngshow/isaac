@@ -72,6 +72,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeSequence;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
+import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
 import gov.vha.isaac.ochre.api.index.SearchResult;
 import gov.vha.isaac.ochre.api.index.SememeIndexerBI;
 import gov.vha.isaac.ochre.api.logic.LogicNode;
@@ -345,7 +346,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	@Override
 	public final List<SearchResult> queryNumericRange(final DynamicSememeData queryDataLower, final boolean queryDataLowerInclusive,
 			final DynamicSememeData queryDataUpper, final boolean queryDataUpperInclusive, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
-			Long targetGeneration)
+			Long targetGeneration, StampCoordinate stamp)
 	{
 		Query q = new QueryWrapperForColumnHandling()
 		{
@@ -357,24 +358,25 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
 		
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null, stamp);
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long)
 	 */
 	@Override
-	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration)
+	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration);
+		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration, null, stamp);
 	}
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
 	 */
 	@Override
-	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
-		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration, filter);
+		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, sizeLimit, targetGeneration, filter, stamp);
 	}
 
 	/* (non-Javadoc)
@@ -383,16 +385,17 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	//TODO fix this limitation on the column restriction...
 	@Override
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration)
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration, (Predicate<Integer>)null);
+		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, sizeLimit, targetGeneration, (Predicate<Integer>)null, stamp);
 	}
+	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData, boolean, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
 	 */
 	@Override
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
-			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter)
+			Integer[] searchColumns, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
 		Query q = null;
 
@@ -473,14 +476,14 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				throw new RuntimeException("unexpected error, see logs");
 			}
 		}
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, filter);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, filter, stamp);
 	}
 
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(int, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long)
 	 */
 	@Override
-	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit, Long targetGeneration)
+	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
 		Query q = new QueryWrapperForColumnHandling()
 		{
@@ -491,9 +494,9 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 			}
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
-		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null);
+		return search(restrictToSememe(q, sememeConceptSequence), sizeLimit, targetGeneration, null, stamp);
 	}
-
+	
 	private Query buildNumericQuery(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive, DynamicSememeData queryDataUpper,
 			boolean queryDataUpperInclusive, String columnName)
 	{

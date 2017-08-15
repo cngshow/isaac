@@ -165,6 +165,7 @@ public class GenerateIndexes extends TimedTask<Void> {
                 for (IndexServiceBI i : indexers) {
                     i.commitWriter();
                 }
+                log.info("Indexed " + processedCount + " sememes");
             }
         }
     }
