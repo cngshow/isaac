@@ -13,6 +13,7 @@
 		<Logger name="gov.vha.isaac.identifier.IdentifierProvider" level="info" />
 		<Logger name="gov.vha.isaac.ochre.query.provider.lucene" level="info" />
 		<Logger name="gov.vha.isaac.ochre.logic.provider" level="info" />
+		<Logger name="gov.vha.isaac.taxonomy.TaxonomyProvider" level="info" />
 		<Root level="debug">
 			<AppenderRef ref="STDOUT" />
 		</Root>

@@ -621,7 +621,8 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				}
 				
 				return slicedResults;
-			} finally
+			} 
+			finally
 			{
 				referenceManager.release(searcher);
 			}
@@ -1079,15 +1080,14 @@ public abstract class LuceneIndexer implements IndexServiceBI
 		// Original query
 		bq.add(query, Occur.MUST);
 
-		// TODO: Check if this can ever return null
-		Integer pathSeq = stamp.getStampPosition().getStampPathSequence();
-		if (pathSeq != null)
-		{
-			UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
-			bq.add(new TermQuery(
-					new Term(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString())),
-					Occur.MUST);
-		}
+		//TODO design flaw - we don't have a way to only search with a module restriction... by using the StampCoordinate, we are forcing a search
+		//restriction onto a single path, which wasn't intended.
+		int pathSeq = stamp.getStampPosition().getStampPathSequence();
+		UUID pathUuid = Get.identifierService().getUuidPrimordialFromConceptId(pathSeq).get();
+		bq.add(new TermQuery(
+				new Term(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, pathUuid.toString())),
+				Occur.MUST);
+
 
 		if (stamp.getModuleSequences().asArray().length > 0)
 		{
@@ -1095,7 +1095,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 
 			for (int moduleSeq : stamp.getModuleSequences().asArray())
 			{
-				UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
+				UUID moduleUuid = Get.identifierService().getUuidPrimordialFromConceptId(moduleSeq).get();
 				inner.add(new TermQuery(new Term(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER,
 						moduleUuid.toString())), Occur.SHOULD);
 			}
