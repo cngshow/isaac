@@ -17,6 +17,7 @@ package gov.vha.isaac.ochre.api;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.commit.CommittableComponent;
@@ -150,10 +151,14 @@ public interface IdentifiedComponentBuilder<T extends CommittableComponent> exte
     /**
      * Throws runtime exception if Primordial UUID has been set and is random (t4).
      * Does nothing if UUID has already been set to a non-random (Not a Type 4 UUID) value.
+     * 
+     * @param namespace - what namespace to use to generate the UUIDs
+     * @param consumer - an optional function that can be passed in.  Has no impact on the UUID generation.  Implementors of 
+     * the method will receive the UUID seed string into the consumer during generation (useful as a debug aid), and the resulting UUID
      *
      * @return the identified component builder
      */
-    public IdentifiedComponentBuilder<T> setT5Uuid();
+    public IdentifiedComponentBuilder<T> setT5Uuid(UUID namespace, BiConsumer<String, UUID> consumer);
 
     /**
      * Returns true if the primordial UUID has already been set.

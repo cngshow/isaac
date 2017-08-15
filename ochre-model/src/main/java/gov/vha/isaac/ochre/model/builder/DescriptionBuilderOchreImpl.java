@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
@@ -36,7 +38,6 @@ import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.api.util.UuidFactory;
-import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 
@@ -138,7 +139,7 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
     }
     
     @Override
-    public DescriptionBuilder setT5Uuid() {
+    public DescriptionBuilder setT5Uuid(UUID namespace, BiConsumer<String, UUID> consumer) {
         if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
             throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
         }
@@ -148,13 +149,14 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
             int caseSigNid = Get.identifierService().getConceptNid(Get.languageCoordinateService().caseSignificanceToConceptSequence(false));
             
             setPrimordialUuid(
-                    UuidFactory.getUuidForDescriptionSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, 
-                            assemblageSeq,
+                    UuidFactory.getUuidForDescriptionSememe(namespace,
+                            Get.identifierService().getUuidPrimordialFromConceptId(assemblageSeq).get(),
                             conceptBuilder.getPrimordialUuid(), 
-                            caseSigNid,
+                            Get.identifierService().getUuidPrimordialForNid(caseSigNid).get(),
                             descriptionType.getPrimordialUuid(),
                             languageForDescription.getPrimordialUuid(), 
-                            descriptionText));
+                            descriptionText,
+                            consumer));
         }
         
         return this;

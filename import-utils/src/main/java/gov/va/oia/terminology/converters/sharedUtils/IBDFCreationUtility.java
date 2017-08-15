@@ -47,7 +47,6 @@ import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.ValueProperty
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
 import gov.va.oia.terminology.converters.sharedUtils.stats.LoadStats;
 import gov.vha.isaac.MetaData;
-import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -88,7 +87,6 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
 import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
-import gov.vha.isaac.ochre.api.util.ChecksumGenerator;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
@@ -658,7 +656,7 @@ public class IBDFCreationUtility
 						descriptionValue, 
 						concept.getNid());
 		if (descriptionPrimordialUUID == null) {
-			descBuilder.setT5Uuid();
+			descBuilder.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		} else {
 			descBuilder.setPrimordialUuid(descriptionPrimordialUUID);
 		}
@@ -680,7 +678,7 @@ public class IBDFCreationUtility
 					preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(), newDescription.getNid(),
 					Get.identifierService().getConceptSequenceForUuids(dialect));
 
-			acceptabilityTypeBuilder.setT5Uuid();
+			acceptabilityTypeBuilder.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 			acceptabilityTypeBuilder.build(createStamp(state, selectTime(concept, time), module), builtObjects);
 
 			ls_.addAnnotation("Description", getOriginStringForUuid(dialect));
@@ -720,16 +718,16 @@ public class IBDFCreationUtility
 		@SuppressWarnings("rawtypes")
 		SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(),
+		SememeBuilder<? extends SememeChronology> sb = sememeBuilderService.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(),
 				description.getNid(), Get.identifierService().getConceptSequenceForUuids(dialectRefset));
 		
 		if (acceptabilityPrimordialUUID == null) {
-			sb.setT5Uuid();
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		} else {
 			sb.setPrimordialUuid(acceptabilityPrimordialUUID);
 		}
 		
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
 		SememeChronology<ComponentNidSememe<?>> sc = (SememeChronology<ComponentNidSememe<?>>)sb.build(
 				createStamp(state, selectTime(description, time), module), builtObjects);
@@ -819,17 +817,18 @@ public class IBDFCreationUtility
 	{
 		validateDataTypes(refexDynamicTypeUuid, values);
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getDynamicSememeBuilder(referencedComponent.getNid(), 
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getDynamicSememeBuilder(referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refexDynamicTypeUuid), values);
 		
 		if (uuidForCreatedAnnotation == null) {
-			sb.setT5Uuid();
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		} else {
 			sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		}
 		
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
-		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), builtObjects);
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
+		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), 
+				builtObjects);
 		
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -906,7 +905,7 @@ public class IBDFCreationUtility
 
 	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
 		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
-		sb.setT5Uuid();
+		sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime(referencedComponent, (Long)null)), builtObjects);
@@ -1012,19 +1011,19 @@ public class IBDFCreationUtility
 			UUID refsetUuid, State state)
 	{
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refsetUuid));
 		
 		if (uuidForCreatedAnnotation == null)
 		{
-			sb.setT5Uuid();
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		}
 		else
 		{
 			sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		}
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
 		SememeChronology<StringSememe<?>> sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, null)), builtObjects);
 		
@@ -1180,17 +1179,17 @@ public class IBDFCreationUtility
 		LogicalExpression logicalExpression = leb.build();
 
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence());
 
 		
 		if (relPrimordialUuid != null) {
 			sb.setPrimordialUuid(relPrimordialUuid);
 		} else {
-			sb.setT5Uuid();
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		}
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(createStamp(State.ACTIVE, selectTime(concept, time)), builtObjects);
@@ -1231,20 +1230,20 @@ public class IBDFCreationUtility
 		temp.add(concept.getPrimordialUuid());
 		
 		@SuppressWarnings("rawtypes") 
-		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				stated ? conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence() : 
 					conceptBuilderService_.getDefaultLogicCoordinate().getInferredAssemblageSequence());
 
 		if (graphPrimordialUuid == null)
 		{
-			sb.setT5Uuid();
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		}
 		else
 		{
 			sb.setPrimordialUuid(graphPrimordialUuid);
 		}		
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(

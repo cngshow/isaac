@@ -122,7 +122,8 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
     */
     public IsaacMetadataAuxiliary() throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG, AUXILIARY_METADATA_VERSION);
+        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG, AUXILIARY_METADATA_VERSION, 
+                TermAux.ISAAC_MODULE.getPrimordialUuid());
 
         try {
             createConcept(TermAux.ISAAC_ROOT);

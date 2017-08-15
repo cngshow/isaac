@@ -81,15 +81,17 @@ public class IsaacTaxonomy {
     private final ConceptSpecification authorSpec;
     private final String semanticTag;
     private final String auxiliaryMetadataVersion;
+    private final UUID namespace;
 
     public IsaacTaxonomy(ConceptSpecification path, ConceptSpecification author, ConceptSpecification module,
-            ConceptSpecification isaType, String semanticTag, String auxiliaryMetadataVersion) {
+            ConceptSpecification isaType, String semanticTag, String auxiliaryMetadataVersion, UUID namespaceForUUIDGeneration) {
         this.pathSpec = path;
         this.authorSpec = author;
         this.moduleSpec = module;
         this.isaTypeSpec = isaType;
         this.semanticTag = semanticTag;
         this.auxiliaryMetadataVersion = auxiliaryMetadataVersion;
+        this.namespace = namespaceForUUIDGeneration;
     }
 
     protected final ConceptBuilder createConcept(ConceptSpecification specification) {
@@ -485,7 +487,7 @@ public class IsaacTaxonomy {
      * @param builder the builder
      */
     private void ensureStableUUID(IdentifiedComponentBuilder<?> builder) {
-        builder.setT5Uuid();
+        builder.setT5Uuid(namespace, null);
         builder.getSememeBuilders().forEach((b) -> ensureStableUUID(b));
     }
 }

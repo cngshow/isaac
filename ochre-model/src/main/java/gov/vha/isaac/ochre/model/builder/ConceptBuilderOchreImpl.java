@@ -18,6 +18,8 @@ package gov.vha.isaac.ochre.model.builder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 import org.apache.commons.lang3.StringUtils;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
@@ -277,7 +279,7 @@ public class ConceptBuilderOchreImpl extends ComponentBuilder<ConceptChronology<
     }
 
     @Override
-    public IdentifiedComponentBuilder<ConceptChronology<?>> setT5Uuid() {
+    public IdentifiedComponentBuilder<ConceptChronology<?>> setT5Uuid(UUID namespace, BiConsumer<String, UUID> consumer) {
         throw new UnsupportedOperationException("Concept doesn't have a full T5 implementation defined yet");
     }
 }

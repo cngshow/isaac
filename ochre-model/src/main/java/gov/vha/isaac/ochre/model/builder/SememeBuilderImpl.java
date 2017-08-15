@@ -19,17 +19,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
-
+import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.glassfish.hk2.api.ServiceHandle;
-import org.glassfish.hk2.api.ServiceLocator;
-
 import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.commit.ChangeCheckerMode;
 import gov.vha.isaac.ochre.api.component.sememe.SememeBuildListenerI;
@@ -43,7 +39,6 @@ import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
 import gov.vha.isaac.ochre.api.util.UuidFactory;
-import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
@@ -329,7 +324,7 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
     }
 
     @Override
-    public SememeBuilder setT5Uuid() {
+    public SememeBuilder<C> setT5Uuid(UUID namespace, BiConsumer<String, UUID> consumer) {
         if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
             throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
         }
@@ -346,18 +341,24 @@ public class SememeBuilderImpl<C extends SememeChronology<? extends SememeVersio
             }
 
             if (sememeType == SememeType.LOGIC_GRAPH) {
-                setPrimordialUuid(UuidFactory.getUuidForLogicGraphSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+                setPrimordialUuid(UuidFactory.getUuidForLogicGraphSememe(namespace, assemblageUuid, refCompUuid, (LogicalExpression) parameters[0], consumer));
             } else if (sememeType == SememeType.MEMBER) {
-                setPrimordialUuid(UuidFactory.getUuidForMemberSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid));
+                setPrimordialUuid(UuidFactory.getUuidForMemberSememe(namespace, assemblageUuid, refCompUuid, consumer));
             } else if (sememeType == SememeType.DYNAMIC) {
-                setPrimordialUuid(UuidFactory.getUuidForDynamicSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+                setPrimordialUuid(UuidFactory.getUuidForDynamicSememe(namespace, assemblageUuid, refCompUuid, 
+                    (parameters != null && parameters.length > 0 ? ((AtomicReference<DynamicSememeData[]>)parameters[0]).get() : null), consumer));
             } else if (sememeType == SememeType.COMPONENT_NID) {
                 UUID componentUuid = Get.identifierService().getUuidPrimordialForNid((Integer)parameters[0]).get();
-                setPrimordialUuid(UuidFactory.getUuidForComponentNidSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, componentUuid));
+                setPrimordialUuid(UuidFactory.getUuidForComponentNidSememe(namespace, assemblageUuid, refCompUuid, componentUuid, consumer));
             } else if (sememeType == SememeType.DESCRIPTION) {
-                setPrimordialUuid(UuidFactory.getUuidForDescriptionSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+                setPrimordialUuid(UuidFactory.getUuidForDescriptionSememe(namespace, assemblageUuid, refCompUuid, 
+                    Get.identifierService().getUuidPrimordialFromConceptId((Integer) parameters[0]).get(),
+                    Get.identifierService().getUuidPrimordialFromConceptId((Integer) parameters[1]).get(),
+                    Get.identifierService().getUuidPrimordialFromConceptId((Integer) parameters[2]).get(),
+                    (String) parameters[3],
+                    consumer));
             } else if (sememeType == SememeType.STRING) {
-                setPrimordialUuid(UuidFactory.getUuidForStringSememe(UuidT5Generator.PATH_ID_FROM_FS_DESC, assemblageUuid, refCompUuid, parameters));
+                setPrimordialUuid(UuidFactory.getUuidForStringSememe(namespace, assemblageUuid, refCompUuid, (String) parameters[0], consumer));
             }
         }
         

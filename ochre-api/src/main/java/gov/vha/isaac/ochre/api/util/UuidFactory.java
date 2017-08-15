@@ -15,12 +15,14 @@
  */
 package gov.vha.isaac.ochre.api.util;
 
+import java.util.Arrays;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-
+import java.util.function.BiConsumer;
+import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeDataType;
+import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 
 /**
@@ -29,103 +31,127 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
  */
 public class UuidFactory {
 	private static final String MEMBER_SEED_STRING = "MEMBER_SEED_STRING";
-	private static final String EMPTY_CONTENT_DYNAMIC_SEED_STRING = "EMPTY_CONTENT_DYNAMIC_SEED_STRING";
 
 	/**
-	 * Gets the uuid of a component from the specified alternate identifier of
-	 * the same component.
-	 *
-	 * @param authority
-	 *            the uuid representing the authoring associated with the
-	 *            alternate id
-	 * @param altId
-	 *            a string representation of the alternate id
-	 * @return the uuid of the specified component
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param refComp
+	 * @param le
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
 	 */
-	public static UUID getUuidFromAlternateId(UUID authority, String altId) {
-		if (authority.equals(TermAux.SNOMED_IDENTIFIER.getUuids()[0])
-				|| authority.equals(TermAux.SNOMED_IDENTIFIER.getUuids()[1])) {
-			return UuidT3Generator.fromSNOMED(altId);
+	public static UUID getUuidForLogicGraphSememe(UUID namespace, UUID assemblage, UUID refComp, LogicalExpression le, BiConsumer<String, UUID> consumer) {
+		byte[][] leBytes = le.getData(DataTarget.EXTERNAL);
+		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), toString(leBytes)), consumer);
+	}
+	
+	private static String toString(byte[][] b)
+	{
+		StringBuilder temp = new StringBuilder();
+		temp.append("[");
+		for (byte[] bNested : b)
+		{
+			temp.append(Arrays.toString(bNested));
 		}
-		return UuidT5Generator.get(authority, altId);
+		temp.append("]");
+		return temp.toString();
 	}
 
-	public static UUID getUuidForLogicGraphSememe(UUID authority, UUID assemblage, UUID refComp, Object[] parameters) {
-		String logicGraphStr = ((LogicalExpression) parameters[0]).toString().replaceAll("<[0-9]+>", "");
-		
-		if (logicGraphStr.contains("No desc for:")) {
-			logicGraphStr = logicGraphStr.substring(0, logicGraphStr.indexOf("No desc for:"));
-		}
-		
-		return UuidT5Generator.get(authority,
-				createUuidTextSeed(assemblage.toString(), refComp.toString(), logicGraphStr));
+	/**
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param refComp
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
+	 */
+	public static UUID getUuidForMemberSememe(UUID namespace, UUID assemblage, UUID refComp, BiConsumer<String, UUID> consumer) {
+
+		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), MEMBER_SEED_STRING), consumer);
 	}
 
-	public static UUID getUuidForMemberSememe(UUID authority, UUID assemblage, UUID refComp) {
-		return UuidT5Generator.get(authority,
-				createUuidTextSeed(assemblage.toString(), refComp.toString(), MEMBER_SEED_STRING));
-	}
-
-	public static UUID getUuidForDynamicSememe(UUID authority, UUID assemblage, UUID refComp, Object[] dynamicData) {
-		if (dynamicData != null && dynamicData.length > 0
-				&& ((AtomicReference<DynamicSememeData[]>) dynamicData[0]).get() != null) {
-			DynamicSememeData[] dataArray = ((AtomicReference<DynamicSememeData[]>) dynamicData[0]).get();
-
-			StringBuilder dataArrayStr = new StringBuilder();
-
-			for (int i = 0; i < dataArray.length; i++) {
-				if (dataArray[i] != null) {
-					dataArrayStr.append(dataArray[i].dataToString() + "|");
-				} else {
-					dataArrayStr.append("NULL|");
+	/**
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param refComp
+	 * @param data
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
+	 */
+	public static UUID getUuidForDynamicSememe(UUID namespace, UUID assemblage, UUID refComp, DynamicSememeData[] data, BiConsumer<String, UUID> consumer) {
+		StringBuilder temp = new StringBuilder();
+		temp.append(assemblage.toString()); 
+		temp.append(refComp.toString());
+		temp.append(data == null ? "0" : data.length + "");
+		if (data != null) {
+			for (DynamicSememeData d : data)
+			{
+				if (d == null)
+				{
+					temp.append("null");
+				}
+				else
+				{
+					temp.append(d.getDynamicSememeDataType().getDisplayName());
+					if (d.getDynamicSememeDataType() == DynamicSememeDataType.NID)
+					{
+						temp.append(Get.identifierService().getUuidPrimordialForNid(((DynamicSememeNid)d).getDataNid()));
+					}
+					else
+					{
+						temp.append(new String(ChecksumGenerator.calculateChecksum("SHA1", d.getData())));
+					}
 				}
 			}
-
-			return UuidT5Generator.get(authority,
-					createUuidTextSeed(assemblage.toString(), refComp.toString(), dataArrayStr.toString()));
-
-		} else {
-			return UuidT5Generator.get(authority,
-					createUuidTextSeed(assemblage.toString(), refComp.toString(), EMPTY_CONTENT_DYNAMIC_SEED_STRING));
 		}
+		
+		return UuidT5Generator.get(namespace, temp.toString(), consumer);
 	}
 
-	public static UUID getUuidForComponentNidSememe(UUID authority, UUID assemblage, UUID refComp, UUID component) {
-		return UuidT5Generator.get(authority,
-				createUuidTextSeed(assemblage.toString(), refComp.toString(), component.toString()));
+	/**
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param refComp
+	 * @param component
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
+	 */
+	public static UUID getUuidForComponentNidSememe(UUID namespace, UUID assemblage, UUID refComp, UUID component, BiConsumer<String, UUID> consumer) {
+		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), component.toString()), consumer);
 	}
 
-	public static UUID getUuidForDescriptionSememe(UUID authority, int assemblageSeq, UUID concept, int caseSigNid,
-			UUID descType, UUID language, String descriptionText) {
-		int assemblageNid = Get.identifierService().getConceptNid(assemblageSeq);
-
-		return UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC,
-				createUuidTextSeedForDescription(Get.identifierService().getUuidPrimordialForNid(assemblageNid).get(),
-						concept, Get.identifierService().getUuidPrimordialForNid(caseSigNid).get(), descType, language,
-						descriptionText));
+	/**
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param refComp
+	 * @param value
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
+	 */
+	public static UUID getUuidForStringSememe(UUID namespace, UUID assemblage, UUID refComp, String value, BiConsumer<String, UUID> consumer) {
+		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), value), consumer);
 	}
 
-	public static UUID getUuidForStringSememe(UUID authority, UUID assemblage, UUID refComp, Object[] parameters) {
-		return UuidT5Generator.get(authority,
-				createUuidTextSeed(assemblage.toString(), refComp.toString(), (String) parameters[0]));
-	}
-
-	public static UUID getUuidForDescriptionSememe(UUID authority, UUID assemblage, UUID concept, Object[] parameters) {
-		int caseSigNid = Get.identifierService().getConceptNid((Integer) parameters[0]);
-		int descTypeNid = Get.identifierService().getConceptNid((Integer) parameters[1]);
-		int languageNid = Get.identifierService().getConceptNid((Integer) parameters[2]);
-
-		return UuidT5Generator.get(authority,
-				createUuidTextSeedForDescription(assemblage, concept,
-						Get.identifierService().getUuidPrimordialForNid(caseSigNid).get(),
-						Get.identifierService().getUuidPrimordialForNid(descTypeNid).get(),
-						Get.identifierService().getUuidPrimordialForNid(languageNid).get(), (String) parameters[3]));
-	}
-
-	private static String createUuidTextSeedForDescription(UUID assemblage, UUID concept, UUID caseSignificance,
-			UUID descriptionType, UUID language, String descriptionText) {
-		return createUuidTextSeed(assemblage.toString(), concept.toString(), caseSignificance.toString(),
-				descriptionType.toString(), language.toString(), descriptionText);
+	/**
+	 * 
+	 * @param namespace
+	 * @param assemblage
+	 * @param concept
+	 * @param caseSignificance
+	 * @param descriptionType
+	 * @param language
+	 * @param descriptionText
+	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return
+	 */
+	public static UUID getUuidForDescriptionSememe(UUID namespace, UUID assemblage, UUID concept, UUID caseSignificance,
+			UUID descriptionType, UUID language, String descriptionText, BiConsumer<String, UUID> consumer) {
+		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), concept.toString(), caseSignificance.toString(),
+				descriptionType.toString(), language.toString(), descriptionText), consumer);
 	}
 
 	/**
