@@ -26,6 +26,8 @@ import gov.vha.isaac.ochre.api.collections.SequenceSet;
 import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -38,7 +40,9 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
 
     LogicalExpressionOchreImpl isomorphicExpression;
 
-   LogicalExpressionOchreImpl mergedExpression;
+    LogicalExpressionOchreImpl mergedExpression;
+    
+    Logger log = LogManager.getLogger();
 
     /**
      * Nodes that are relationship roots in the referenceExpression.
@@ -74,12 +78,12 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         this.referenceVisitData = new TreeNodeVisitData(referenceExpression.getNodeCount());
         //should not be null since it was created above, but flagged by Fortify
         if (this.referenceExpression != null) {
-        	this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
+            this.referenceExpression.depthFirstVisit(null, this.referenceExpression.getRoot(), referenceVisitData, 0);
         }
         this.comparisonVisitData = new TreeNodeVisitData(comparisonExpression.getNodeCount());
         //should not be null since it was created above, but flagged by Fortify
         if (this.comparisonExpression != null) {
-        	this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
+            this.comparisonExpression.depthFirstVisit(null, comparisonExpression.getRoot(), comparisonVisitData, 0);
         }
         this.referenceExpressionToMergedNodeIdMap = new int[referenceExpression.getNodeCount()];
         Arrays.fill(referenceExpressionToMergedNodeIdMap, -1);
@@ -125,8 +129,13 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
          // Add the deletions
          getDeletedRelationshipRoots().forEach((deletionRoot) -> {
              //deleted relationships roots come from the comparison expression. 
-             int rootToAddParentSequence = referenceExpressionToMergedNodeIdMap[this.comparisonExpressionToReferenceNodeIdMap[comparisonVisitData.getPredecessorSequence(deletionRoot.getNodeIndex())]];
-             addFragment(deletionRoot, this.comparisonExpression, rootToAddParentSequence);
+             int predecessorSequence = this.comparisonVisitData.getPredecessorSequence(deletionRoot.getNodeIndex());
+             int comparisonExpressionToReferenceNodeId = this.comparisonExpressionToReferenceNodeIdMap[predecessorSequence];
+             if (comparisonExpressionToReferenceNodeId >= 0) {
+                   final int rootToAddParentSequence =
+                   this.referenceExpressionToMergedNodeIdMap[comparisonExpressionToReferenceNodeId];
+                   addFragment(deletionRoot, this.comparisonExpression, rootToAddParentSequence);
+                }
          });
          
 
@@ -380,8 +389,23 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
             nodesToTry = nextSetToTry;
         }
 
-        return possibleSolutions.stream().max((IsomorphicSolution o1, IsomorphicSolution o2)
-                -> Integer.compare(o1.getScore(), o2.getScore())).get();
+        Optional<IsomorphicSolution> temp = possibleSolutions.stream().max((IsomorphicSolution o1, IsomorphicSolution o2)
+                -> Integer.compare(o1.getScore(), o2.getScore()));
+        
+        if (!temp.isPresent()) {
+            //TODO this isn't at all right.  But, I think we aren't hitting this any more, with Keith's other fix
+            log.error("DAN WAS HERE -> Returning an empty IsomorphicSolution because no possible solution was found - trying to compute \r\n" 
+                    + referenceExpression.toString() 
+                    + "\r\n"
+                    + "and \r\n"
+                    + comparisonExpression.toString(), new Exception("Just printing stack trace"));
+            int[] sillySolution = new int[referenceExpression.getNodeCount()];
+            Arrays.fill(sillySolution, -1);
+            return new IsomorphicSolution(sillySolution, null, null);
+        }
+        else {
+            return temp.get();
+        }
     }
 
     /**
@@ -410,8 +434,7 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
         }
 
         HashMap<Integer, HashSet<IsomorphicSolution>> scoreSolutionMap = new HashMap<>();
-        //int maxScore = 0;
-        int maxScore = Integer.MIN_VALUE;
+        int maxScore = 0;
         for (IsomorphicSolution solution: possibleSolutions) {
             if (solution.getScore() >= maxScore) {
                 maxScore = solution.getScore();
@@ -424,7 +447,8 @@ public class IsomorphicResultsBottomUp implements IsomorphicResults {
             }
         }
 
-        return scoreSolutionMap.get(maxScore);
+        HashSet<IsomorphicSolution> temp = scoreSolutionMap.get(maxScore); 
+        return temp == null ? new HashSet<>()  : temp;
     }
 
     private Set<IsomorphicSolution> generatePossibleSolutionsForNode(int solutionNodeId,
