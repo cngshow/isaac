@@ -91,6 +91,7 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpression;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.NodeSemantic;
+import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
 import gov.vha.isaac.ochre.api.util.NumericUtils;
 import gov.vha.isaac.ochre.api.util.TaskCompleteCallback;
 import gov.vha.isaac.ochre.api.util.UUIDUtil;
@@ -2299,5 +2300,25 @@ public class Frills implements DynamicSememeColumnUtility {
 		}
 		
 		return parentConceptSequences;
+	}
+	
+	/**
+	 * Create a logical expression suitable for populating a concept's logic graph sememe
+	 * 
+	 * @param parentConceptSequences
+	 * @return
+	 */
+	public static LogicalExpression createConceptParentLogicalExpression(int...parentConceptSequences) {
+		// build logic graph
+		LogicalExpressionBuilder defBuilder = LookupService.getService(LogicalExpressionBuilderService.class).getLogicalExpressionBuilder();
+		ArrayList<Assertion> assertions = new ArrayList<>();
+		for (int parentConceptSequence : parentConceptSequences) {
+			assertions.add(ConceptAssertion(parentConceptSequence, defBuilder));
+		}
+		
+		NecessarySet(And(assertions.toArray(new Assertion[assertions.size()])));
+		LogicalExpression parentDef = defBuilder.build();
+		
+		return parentDef;
 	}
 }
