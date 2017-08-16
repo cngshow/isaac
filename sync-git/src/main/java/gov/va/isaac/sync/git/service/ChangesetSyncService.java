@@ -78,6 +78,7 @@ public class ChangesetSyncService {
 		
 		Get.workExecutors().getExecutor().execute(() ->
 		{
+			boolean paused = false;
 			try
 			{
 				LOG.debug("Reading repositories from {} as user {}", gitConfig.get().getURL(), gitConfig.get().getUsername());
@@ -102,6 +103,7 @@ public class ChangesetSyncService {
 				ssg.setRootLocation(csw.getWriteFolder().toFile());
 				
 				csw.pause();
+				paused = true;
 				
 				LOG.debug("Attempting to link and fetch from remote GIT repository");
 				String targetUrl = GitBlitUtils.adjustBareUrlForGitBlit(gitConfig.get().getURL()) + "r/" + changeSetRepo;
@@ -134,7 +136,10 @@ public class ChangesetSyncService {
 			{
 				try
 				{
-					LookupService.get().getService(ChangeSetWriterService.class).resume();
+					if (paused)
+					{
+						LookupService.get().getService(ChangeSetWriterService.class).resume();
+					}
 				}
 				catch (Exception e)
 				{
