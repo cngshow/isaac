@@ -163,23 +163,71 @@ public class QueryProviderTest
 	public void test_search() throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
 		Method search = LuceneIndexer.class
-				.getDeclaredMethod("search", Query.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
+				.getDeclaredMethod("search", Query.class, int.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
 		search.setAccessible(true);
 		
 		// No stamp (null)
-		List<SearchResult> result = (List<SearchResult>) search.invoke(li_, q_base_, 100, Long.MAX_VALUE, null, null);
+		List<SearchResult> result = (List<SearchResult>) search.invoke(li_, q_base_, 1, 100, Long.MAX_VALUE, null, null);
 		Assert.assertEquals(result.size(), 29);
 		
 		// Dev latest stamp coord
-		result = (List<SearchResult>) search.invoke(li_, q_stamp1_, 100, Long.MAX_VALUE, null, stamp1_);
+		result = (List<SearchResult>) search.invoke(li_, q_stamp1_, 1, 100, Long.MAX_VALUE, null, stamp1_);
 		Assert.assertEquals(result.size(), 29);
 		
 		// Dev with Isaac stamp coord 
-		result = (List<SearchResult>) search.invoke(li_, q_stamp2_, 10, Long.MAX_VALUE, null, stamp2_);
+		result = (List<SearchResult>) search.invoke(li_, q_stamp2_, 1, 10, Long.MAX_VALUE, null, stamp2_);
 		Assert.assertEquals(result.size(), 10);
 		
-		// Master latest stamp coord
-		result = (List<SearchResult>) search.invoke(li_, q_stamp4_, 100, Long.MAX_VALUE, null, stamp4_);
+		// Dev with Isaac, Loinc, Vhat stamp coord
+		result = (List<SearchResult>) search.invoke(li_, q_stamp3_, 6, 5, Long.MAX_VALUE, null, stamp3_);
+		Assert.assertEquals(result.size(), 4);
+		
+		// Same stamp coord, but past last page of results
+		result = (List<SearchResult>) search.invoke(li_, q_stamp3_, 7, 5, Long.MAX_VALUE, null, stamp3_);
 		Assert.assertEquals(result.size(), 0);
+		
+		// Master latest stamp coord
+		result = (List<SearchResult>) search.invoke(li_, q_stamp4_, 1, 100, Long.MAX_VALUE, null, stamp4_);
+		Assert.assertEquals(result.size(), 0);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Test
+	public void test_clearQueryCache() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, SecurityException
+	{
+		Method search = LuceneIndexer.class
+				.getDeclaredMethod("search", Query.class, int.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
+		search.setAccessible(true);
+		
+		Method clearQueryCache = LuceneIndexer.class.getDeclaredMethod("clearQueryCache");
+		clearQueryCache.setAccessible(true);
+		
+		Field queryCacheField = LuceneIndexer.class.getDeclaredField("queryCache");
+		queryCacheField.setAccessible(true);
+		
+		Map<Triple<Query, Integer, Integer>, Pair<ScoreDoc, List<SearchResult>>> queryCache = 
+				(Map<Triple<Query, Integer, Integer>, Pair<ScoreDoc, List<SearchResult>>>) queryCacheField.get(li_);
+		Assert.assertEquals(queryCache.size(), 0);
+		
+		clearQueryCache.invoke(li_);
+		//System.out.println("cache size: " + queryCache.size());
+		
+		List<SearchResult> result = (List<SearchResult>) search.invoke(li_, q_stamp1_, 1, 100, Long.MAX_VALUE, null, stamp1_);
+		Assert.assertEquals(result.size(), 29);
+		Assert.assertEquals(queryCache.size(), 1);
+		//System.out.println("result size: " + result.size() + ", cache size: " + queryCache.size());
+		
+		result = (List<SearchResult>) search.invoke(li_, q_stamp1_, 1, 100, Long.MAX_VALUE, null, stamp1_);
+		Assert.assertEquals(queryCache.size(), 1);
+		//System.out.println("result size: " + result.size() + ", cache size: " + queryCache.size());
+		
+		result = (List<SearchResult>) search.invoke(li_, q_stamp1_, 1, 1, Long.MAX_VALUE, null, stamp1_);
+		Assert.assertEquals(queryCache.size(), 2);
+		//System.out.println("result size: " + result.size() + ", cache size: " + queryCache.size());
+		
+		clearQueryCache.invoke(li_);
+		
+		Assert.assertEquals(queryCache.size(), 0);
+		//System.out.println("cache size: " + queryCache.size());
 	}
 }
