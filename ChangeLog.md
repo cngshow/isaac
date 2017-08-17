@@ -2,6 +2,10 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/08/17 - 4.19
+    * Updates to Frills, improving documentation in VHATIsAHasParentSynchronizingChronologyChangeListener and changing VHATIsAHasParentSynchronizingChronologyChangeListener to reuse retired has_parent association sememes where possible
+
+
 * 2017/08/15 - 4.18
     * Updates for VHAT has parent bug fixes
     * Updating Lucene search capabilities to support native searching / filtering of queries by module / path.
