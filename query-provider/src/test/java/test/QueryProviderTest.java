@@ -81,7 +81,7 @@ public class QueryProviderTest
 			LookupService.startupIsaac();
 			LoadTermstore lt = new LoadTermstore();
 			lt.setLog(new SystemStreamLog());
-			lt.setibdfFilesFolder(new File("src/test/resources/ibdf/"));
+			lt.setibdfFilesFolder(new File("target/data/"));
 			lt.execute();
 			new IndexTermstore().execute();
 			
