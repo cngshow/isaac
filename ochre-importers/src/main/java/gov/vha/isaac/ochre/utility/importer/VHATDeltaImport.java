@@ -121,9 +121,6 @@ import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
 /**
  * Goal which converts VHAT data into the workbench jbin format
  * 
- * Not yet handled:
- * 1) mapsets
- * 
  */
 public class VHATDeltaImport extends ConverterBaseMojo
 {
