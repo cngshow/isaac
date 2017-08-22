@@ -146,6 +146,22 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
         }
         return dsud;
     }
+    
+    /**
+     * Invent DynamicSememeUsageDescription info for {@link TermAux#IDENTIFIER_SOURCE} sememes
+     */
+    public static DynamicSememeUsageDescription mockIdentifierType() {
+        DynamicSememeUsageDescriptionImpl dsud = new DynamicSememeUsageDescriptionImpl();
+        dsud.name_ = Get.conceptDescriptionText(TermAux.IDENTIFIER_SOURCE.getConceptSequence());
+        dsud.referencedComponentTypeRestriction_ = null;
+        dsud.referencedComponentTypeSubRestriction_ = null;
+        dsud.refexUsageDescriptorSequence_ = TermAux.IDENTIFIER_SOURCE.getConceptSequence();
+        dsud.sememeUsageDescription_ = "-";
+        dsud.refexColumnInfo_ = new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
+            TermAux.IDENTIFIER_SOURCE.getPrimordialUuid(),
+            0, DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_STRING.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, null, null, false)};
+         return dsud;
+    }
 
     private DynamicSememeUsageDescriptionImpl() {
         //For use by the mock static method

@@ -3,7 +3,6 @@ package gov.vha.isaac.ochre.impl.utility;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.And;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.ConceptAssertion;
 import static gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder.NecessarySet;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,14 +27,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import javax.inject.Singleton;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.hk2.annotations.Service;
-
 import gov.vha.isaac.MetaData;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
@@ -1673,7 +1669,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param stampCoord - optional - what stamp to use when returning the ConceptSnapshot (defaults to user prefs)
 	 * @param langCoord - optional - what lang coord to use when returning the ConceptSnapshot (defaults to user prefs)
 	 * @return the ConceptSnapshot, or an optional that indicates empty, if the identifier was invalid, or if the concept didn't 
-	 *   have a version available on the specified stampCoord
+	 *	have a version available on the specified stampCoord
 	 */
 	public static Optional<ConceptSnapshot> getConceptSnapshot(UUID conceptUUID, StampCoordinate stampCoord, LanguageCoordinate langCoord)
 	{
@@ -1821,6 +1817,27 @@ public class Frills implements DynamicSememeColumnUtility {
 	public static boolean definesDynamicSememe(int conceptSequence)
 	{
 		return DynamicSememeUsageDescriptionImpl.isDynamicSememe(conceptSequence);
+	}
+	
+
+	/**
+	 * Returns true if a concept has a {@link MetaData#IDENTIFIER_SOURCE} sememe attached to it (at any coordinate)
+	 * @param assemblageNidOrSequence
+	 * @return
+	 */
+	public static boolean definesIdentifierSememe(int assemblageNidOrSequence) 
+	{
+		if (assemblageNidOrSequence >= 0 || Get.identifierService().getChronologyTypeForNid(assemblageNidOrSequence) == ObjectChronologyType.CONCEPT) 
+		{
+			Optional<SememeChronology<? extends SememeVersion<?>>> sememe = Get.sememeService().getSememesForComponentFromAssemblage(
+					Get.identifierService().getConceptNid(assemblageNidOrSequence),
+						MetaData.IDENTIFIER_SOURCE.getConceptSequence()).findAny();
+		if (sememe.isPresent())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static Optional<String> getAnnotationStringValue(int componentId, int assemblageConceptId, StampCoordinate stamp) {
