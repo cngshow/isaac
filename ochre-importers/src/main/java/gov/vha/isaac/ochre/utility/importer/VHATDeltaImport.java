@@ -118,6 +118,7 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
+import gov.vha.isaac.ochre.modules.vhat.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
 
 /**
  * Goal which converts VHAT data into the workbench jbin format
@@ -226,7 +227,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				// Disable VHATIsAHasParentSynchronizingChronologyChangeListener listener
 				// because the import generates all necessary components
-				LookupService.getService(ChronologyChangeListener.class).disable();
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).disable();
 
 				importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 				LOG.info("Import Util configured");
@@ -265,7 +266,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				LOG.warn("Unexpected error setting up", e);
 				throw new IOException("Unexpected error setting up", e);
 			} finally {
-				LookupService.getService(ChronologyChangeListener.class).enable();
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).enable();
 			}
 		}
 		catch (RuntimeException | IOException e)
