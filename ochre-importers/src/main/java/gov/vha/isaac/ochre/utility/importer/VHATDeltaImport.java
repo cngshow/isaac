@@ -65,6 +65,7 @@ import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
+import gov.vha.isaac.ochre.api.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
@@ -223,6 +224,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			try
 			{
+				// Disable VHATIsAHasParentSynchronizingChronologyChangeListener listener
+				// because the import generates all necessary components
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).disable();
+
 				importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 				LOG.info("Import Util configured");
 				createNewProperties(terminology);
@@ -259,6 +264,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				LOG.warn("Unexpected error setting up", e);
 				throw new IOException("Unexpected error setting up", e);
+			} finally {
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).enable();
 			}
 		}
 		catch (RuntimeException | IOException e)
