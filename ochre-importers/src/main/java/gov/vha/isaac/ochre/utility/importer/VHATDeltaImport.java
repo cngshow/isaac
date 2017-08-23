@@ -65,13 +65,13 @@ import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
-import gov.vha.isaac.ochre.api.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.LatestVersion;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -226,7 +226,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				// Disable VHATIsAHasParentSynchronizingChronologyChangeListener listener
 				// because the import generates all necessary components
-				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).disable();
+				LookupService.getService(ChronologyChangeListener.class).disable();
 
 				importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 				LOG.info("Import Util configured");
@@ -265,7 +265,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				LOG.warn("Unexpected error setting up", e);
 				throw new IOException("Unexpected error setting up", e);
 			} finally {
-				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).enable();
+				LookupService.getService(ChronologyChangeListener.class).enable();
 			}
 		}
 		catch (RuntimeException | IOException e)
@@ -1481,7 +1481,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 												Get.identifierService().getUuidPrimordialFromConceptId(nested.getAssemblageSequence()).get(), State.ACTIVE, null, null);
 									}
 									
-									@SuppressWarnings({ "unchecked", "unused" })
+									@SuppressWarnings({ "unchecked" })
 									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
 										State.INACTIVE, editCoordinate_);
 									mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
