@@ -154,6 +154,6 @@ public class User implements Principal {
 	 */
 	@Override
 	public String toString() {
-		return "User [name=" + name + ", id=" + id + ", roles=" + roles + "]";
+		return "User [name=" + name + ", id=" + id + ", roles=" + roles + ", checkedAt=" + rolesUpdatedAt+"]";
 	}
 }
