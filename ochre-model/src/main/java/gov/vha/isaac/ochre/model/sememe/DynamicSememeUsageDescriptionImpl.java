@@ -148,17 +148,17 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
     }
     
     /**
-     * Invent DynamicSememeUsageDescription info for {@link TermAux#IDENTIFIER_SOURCE} sememes
+     * Invent DynamicSememeUsageDescription info for static sememes that are marked as type {@link TermAux#IDENTIFIER_SOURCE}
      */
-    public static DynamicSememeUsageDescription mockIdentifierType() {
+    public static DynamicSememeUsageDescription mockIdentifierType(int identifierAssemblageConceptId) {
         DynamicSememeUsageDescriptionImpl dsud = new DynamicSememeUsageDescriptionImpl();
-        dsud.name_ = Get.conceptDescriptionText(TermAux.IDENTIFIER_SOURCE.getConceptSequence());
+        dsud.name_ = Get.conceptDescriptionText(identifierAssemblageConceptId);
         dsud.referencedComponentTypeRestriction_ = null;
         dsud.referencedComponentTypeSubRestriction_ = null;
-        dsud.refexUsageDescriptorSequence_ = TermAux.IDENTIFIER_SOURCE.getConceptSequence();
+        dsud.refexUsageDescriptorSequence_ = Get.identifierService().getConceptSequence(identifierAssemblageConceptId);
         dsud.sememeUsageDescription_ = "-";
         dsud.refexColumnInfo_ = new DynamicSememeColumnInfo[]{new DynamicSememeColumnInfo(
-            TermAux.IDENTIFIER_SOURCE.getPrimordialUuid(),
+            Get.identifierService().getUuidPrimordialFromConceptId(identifierAssemblageConceptId).get(),
             0, DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_STRING.getPrimordialUuid(), DynamicSememeDataType.STRING, null, true, null, null, false)};
          return dsud;
     }
@@ -350,16 +350,17 @@ public class DynamicSememeUsageDescriptionImpl implements DynamicSememeUsageDesc
         }
     }
 
-    /*
-	 * @see DynamicSememeUsageDescription#getDynamicSememeUsageDescriptorSequence()
+    /**
+     * 
+     * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription#getDynamicSememeUsageDescriptorSequence()
      */
     @Override
     public int getDynamicSememeUsageDescriptorSequence() {
         return refexUsageDescriptorSequence_;
     }
 
-    /*
-	 * @see DynamicSememeUsageDescription#getDynamicSememeUsageDescription()
+    /**
+     * @see gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeUsageDescription#getDynamicSememeUsageDescription()
      */
     @Override
     public String getDynamicSememeUsageDescription() {
