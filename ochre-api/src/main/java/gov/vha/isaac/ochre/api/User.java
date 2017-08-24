@@ -87,7 +87,7 @@ public class User implements Principal {
 	 */
 	public boolean rolesStillValid()
 	{
-		return (System.currentTimeMillis() - ROLE_CHECK_INTERVAL) > rolesUpdatedAt;
+		return (System.currentTimeMillis() - ROLE_CHECK_INTERVAL) < rolesUpdatedAt;
 	}
 	
 	public long rolesCheckedAt()
