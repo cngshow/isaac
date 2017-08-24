@@ -569,7 +569,7 @@ public class VetsExporter {
 								}
 								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_GROUPING.getPrimordialUuid()))
 								{
-									me.setGrouping(dsd[col].getDataObject());
+									me.setGrouping(Long.parseLong(dsd[col].getDataObject().toString()));
 								}
 								else if (columnUUID.equals(IsaacMappingConstants.get().DYNAMIC_SEMEME_COLUMN_MAPPING_EFFECTIVE_DATE.getPrimordialUuid()))
 								{

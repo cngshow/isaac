@@ -1031,7 +1031,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				log.info("Reindex complete");
 			} catch (Exception e)
 			{
-				log.fatal("bah!", e);
+				log.fatal("Failure during reindex in startup!", e);
 				throw new RuntimeException(e.getMessage());
 			}
 		}

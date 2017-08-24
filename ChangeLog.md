@@ -2,8 +2,15 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
-* 2017/08/?? - 4.20 - PENDING
-    *
+* 2017/08/ - 4.22 - PENDING
+    * 
+
+* 2017/08/23 - 4.21
+    * Fix a silly bug accidently introduced in the 4.20 build relating to identifer type sememes (code, vuid, etc)
+    * Changes to VHATIsAHasParent code
+
+* 2017/08/22 - 4.20
+    * Cleaning up prior to code complete, minor bug fixes found during development testing.
 
 * 2017/08/17 - 4.19
     * Updates to Frills, improving documentation in VHATIsAHasParentSynchronizingChronologyChangeListener and changing VHATIsAHasParentSynchronizingChronologyChangeListener to reuse retired has_parent association sememes where possible
