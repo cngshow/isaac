@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package gov.vha.isaac.ochre.api;
+package gov.vha.isaac.ochre.modules.vhat;
 
 import org.jvnet.hk2.annotations.Contract;
 
@@ -45,14 +45,4 @@ public interface VHATIsAHasParentSynchronizingChronologyChangeListenerI extends 
 	 * Call to ensure that all background processing completed before continuing
 	 */
 	void waitForJobsToComplete();
-	
-	/**
-	 * Disable the listener
-	 */
-	void disable();
-
-	/**
-	 * Enable the listener
-	 */
-	void enable();
 }

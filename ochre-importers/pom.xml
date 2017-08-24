@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>4.21</version>
+        <version>4.22</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
     <artifactId>ochre-importers</artifactId>
@@ -31,6 +31,11 @@
         <dependency>
             <groupId>gov.vha.isaac.ochre.modules</groupId>
             <artifactId>vhat-constants</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>vhat-util</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
