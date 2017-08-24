@@ -96,7 +96,7 @@ public class UuidIntMapMap implements UuidToIntMap {
                         maps[i] = new MemoryManagedReference<>(SERIALIZER.deserialize(in),
                                 mapFile, SERIALIZER);
                         WriteToDiskCache.addToCache(maps[i]);
-                        LOG.debug("UuidIntMapMap restored: " + i + " from: " + this + " file: " + mapFile.getAbsolutePath());
+                        LOG.trace("UuidIntMapMap restored: " + i + " from: " + this + " file: " + mapFile.getAbsolutePath());
                     } finally {
                         DiskSemaphore.release();
                     }

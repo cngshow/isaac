@@ -71,6 +71,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -117,12 +118,10 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
+import gov.vha.isaac.ochre.modules.vhat.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
 
 /**
  * Goal which converts VHAT data into the workbench jbin format
- * 
- * Not yet handled:
- * 1) mapsets
  * 
  */
 public class VHATDeltaImport extends ConverterBaseMojo
@@ -226,6 +225,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			try
 			{
+				// Disable VHATIsAHasParentSynchronizingChronologyChangeListener listener
+				// because the import generates all necessary components
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).disable();
+
 				importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 				LOG.info("Import Util configured");
 				createNewProperties(terminology);
@@ -262,6 +265,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				LOG.warn("Unexpected error setting up", e);
 				throw new IOException("Unexpected error setting up", e);
+			} finally {
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).enable();
 			}
 		}
 		catch (RuntimeException | IOException e)
@@ -1477,7 +1482,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 												Get.identifierService().getUuidPrimordialFromConceptId(nested.getAssemblageSequence()).get(), State.ACTIVE, null, null);
 									}
 									
-									@SuppressWarnings({ "unchecked", "unused" })
+									@SuppressWarnings({ "unchecked" })
 									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
 										State.INACTIVE, editCoordinate_);
 									mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());

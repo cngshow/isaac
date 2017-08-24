@@ -21,6 +21,9 @@ import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Observable update rules: 
  * 1. A Chronology update will be sent to the ObservableChronology with the 
@@ -48,7 +51,8 @@ import java.util.UUID;
  * @author kec
  */
 public interface ChronologyChangeListener {
-    
+	final static Logger log = LogManager.getLogger(ChronologyChangeListener.class);
+	
     /**
      * 
      * @return a unique UUID for this listener. 
@@ -72,5 +76,18 @@ public interface ChronologyChangeListener {
      * @param commitRecord a record of a successful commit. 
      */
     void handleCommit(CommitRecord commitRecord);
-    
+
+    /**
+     * Disable the listener
+     */
+    default void disable() {
+        log.warn("disable() method not implemented by {}", this.getClass().getSimpleName());
+    }
+
+    /**
+     * Enable the listener
+     */
+    default void enable() {
+        log.warn("enable() method not implemented by {}", this.getClass().getSimpleName());
+    }
 }

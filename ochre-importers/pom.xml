@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.vha.isaac.ochre</groupId>
         <artifactId>isaac-parent</artifactId>
-        <version>4.19-SNAPSHOT</version>
+        <version>4.22-SNAPSHOT</version>
     </parent>
     <groupId>gov.vha.isaac.ochre.modules</groupId>
     <artifactId>ochre-importers</artifactId>
@@ -33,9 +33,39 @@
             <artifactId>vhat-constants</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>gov.vha.isaac.ochre.modules</groupId>
+            <artifactId>vhat-util</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
      <build>
          <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>gov.vha.isaac.ochre.modules</groupId>
+                                    <artifactId>vhat-constants</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <includes>TerminologyData.xsd.hidden</includes>
+                                    <outputDirectory>${project.build.directory}/schema</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jvnet.jaxb2.maven2</groupId>
                 <artifactId>maven-jaxb2-plugin</artifactId>
@@ -46,7 +76,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <schemaDirectory>src/main/resources/</schemaDirectory>
+                            <schemaDirectory>${project.build.directory}/schema</schemaDirectory>
                             <schemaIncludes>
                                 <include>TerminologyData.xsd.hidden</include>
                             </schemaIncludes>

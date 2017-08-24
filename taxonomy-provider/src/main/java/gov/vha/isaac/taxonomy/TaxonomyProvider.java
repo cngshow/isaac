@@ -192,7 +192,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
         {
             if (temp != null)
             {
-                LOG.debug("Returning cached tree for {}", tc);
+                LOG.trace("Returning cached tree for {}", tc);
                 return temp;
             }
         }
@@ -790,7 +790,7 @@ public class TaxonomyProvider implements TaxonomyService, ConceptActiveService, 
             LogicalExpression comparisonExpression = node.getParent().getData().getLogicalExpression();
             LogicalExpression referenceExpression = node.getData().getLogicalExpression();
             IsomorphicResultsBottomUp isomorphicResults = new IsomorphicResultsBottomUp(referenceExpression, comparisonExpression);
-            LOG.debug("Computed {}", isomorphicResults);
+            LOG.trace("Computed {}", isomorphicResults);
             isomorphicResults.getAddedRelationshipRoots().forEach((logicalNode) -> {
                 int stampSequence = node.getData().getStampSequence();
                 processRelationshipRoot(logicalNode, parentTaxonomyRecord, taxonomyFlags, stampSequence, comparisonExpression);
