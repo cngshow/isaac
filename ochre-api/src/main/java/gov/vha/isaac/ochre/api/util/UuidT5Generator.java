@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 
 /**
  *
@@ -37,6 +38,22 @@ public class UuidT5Generator {
    public static final UUID REL_ADAPTOR_NAMESPACE = UUID.fromString("9cb2bf66-1863-11e5-b60b-1697f925ec7");
     
     public static final UUID AUTHOR_TIME_ID = UUID.fromString("c6915290-30fc-11e1-b86c-0800200c9a66");
+    
+    /**
+     * Same as {@link #get(UUID, String)} but with an optional consumer, which will get a call with the fed in name and resulting UUID.
+     * 
+     * @param namespace
+     * @param name
+     * @param consumer optional callback for debug / UUID generation tracking.
+     * @return
+     */
+    public static UUID get(UUID namespace, String name, BiConsumer<String, UUID> consumer) {
+        UUID temp = get(namespace, name);
+        if (consumer != null) {
+            consumer.accept(name,  temp);
+        }
+        return temp;
+    }
 
     public static UUID get(UUID namespace, String name) {
         try {

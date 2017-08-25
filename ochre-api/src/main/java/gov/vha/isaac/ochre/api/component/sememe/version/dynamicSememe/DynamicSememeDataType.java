@@ -39,7 +39,6 @@ public enum DynamicSememeDataType {
 	UUID(109, DynamicSememeUUID.class, "UUID"),
 	POLYMORPHIC(110, DynamicSememePolymorphic.class, "Unspecified"),
 	ARRAY(111, DynamicSememeArray.class, "Array"),
-	SEQUENCE(112, DynamicSememeSequence.class, "Component Sequence"),
 	UNKNOWN(Byte.MAX_VALUE, null, "Unknown");
 
 	private int externalizedToken_;
@@ -70,8 +69,6 @@ public enum DynamicSememeDataType {
 				return POLYMORPHIC;
 			case 111:
 				return ARRAY;
-			case 112:
-				return SEQUENCE;
 			default:
 				return UNKNOWN;
 		}
@@ -160,7 +157,6 @@ public enum DynamicSememeDataType {
 			case UNKNOWN: return DynamicSememeConstants.get().UNKNOWN_CONCEPT;
 			case UUID: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_UUID.getUUID();
 			case ARRAY: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_ARRAY.getUUID();
-			case SEQUENCE: return DynamicSememeConstants.get().DYNAMIC_SEMEME_DT_SEQUENCE.getUUID();
 
 			default: throw new RuntimeException("Implementation error");
 		}
@@ -205,9 +201,6 @@ public enum DynamicSememeDataType {
 		}
 		if (DynamicSememeArray.class.isAssignableFrom(c)) {
 			return ARRAY;
-		}
-		if (DynamicSememeSequence.class.isAssignableFrom(c)) {
-			return SEQUENCE;
 		}
 		LogManager.getLogger().warn("Couldn't map class {} to type!", c);
 		return UNKNOWN;

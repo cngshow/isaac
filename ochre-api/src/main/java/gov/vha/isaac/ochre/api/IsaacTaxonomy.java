@@ -81,15 +81,17 @@ public class IsaacTaxonomy {
     private final ConceptSpecification authorSpec;
     private final String semanticTag;
     private final String auxiliaryMetadataVersion;
+    private final UUID namespace;
 
     public IsaacTaxonomy(ConceptSpecification path, ConceptSpecification author, ConceptSpecification module,
-            ConceptSpecification isaType, String semanticTag, String auxiliaryMetadataVersion) {
+            ConceptSpecification isaType, String semanticTag, String auxiliaryMetadataVersion, UUID namespaceForUUIDGeneration) {
         this.pathSpec = path;
         this.authorSpec = author;
         this.moduleSpec = module;
         this.isaTypeSpec = isaType;
         this.semanticTag = semanticTag;
         this.auxiliaryMetadataVersion = auxiliaryMetadataVersion;
+        this.namespace = namespaceForUUIDGeneration;
     }
 
     protected final ConceptBuilder createConcept(ConceptSpecification specification) {
@@ -221,6 +223,7 @@ public class IsaacTaxonomy {
                  }
             }
             
+            ensureStableUUID(cb);
             if (isIdentifier) {
                 addIdentifierAssemblageMembership(cb);
             }
@@ -455,11 +458,36 @@ public class IsaacTaxonomy {
         for (ConceptBuilder cb : conceptBuilders.values()) {
             ensureStableUUID(cb);
         }
+        for (SememeBuilder<?> builder : sememeBuilders) {
+            ensureStableUUID(builder);
+        }
     }
     
-    private void ensureStableUUID(ConceptBuilder builder) {
-        if (builder.getPrimordialUuid().version() == 4) {
-            builder.setPrimordialUuid(UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, builder.getConceptDescriptionText()));
+    /**
+     * Review concept builder and assign it, its descriptions, and its sememes, a Type5 UUID.
+     * @param cb the concept builder
+     */
+    private void ensureStableUUID(ConceptBuilder cb) {
+        if (!cb.isPrimordialUuidSet()) {
+            cb.setPrimordialUuid(UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, cb.getConceptDescriptionText()));
         }
+
+        for (DescriptionBuilder<?, ?> builder : cb.getDescriptionBuilders()) {
+            ensureStableUUID(builder);
+        }
+    
+        for (SememeBuilder<?> builder : cb.getSememeBuilders()) {
+            ensureStableUUID(builder);
+        }
+    }
+
+    /**
+     * Review sememe builder and assign it and its sememes a Type5 UUID.
+     *
+     * @param builder the builder
+     */
+    private void ensureStableUUID(IdentifiedComponentBuilder<?> builder) {
+        builder.setT5Uuid(namespace, null);
+        builder.getSememeBuilders().forEach((b) -> ensureStableUUID(b));
     }
 }

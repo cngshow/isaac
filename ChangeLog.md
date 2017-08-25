@@ -2,6 +2,11 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/08/25 - 5.00
+    * 537659 - Fixes for us extension processing
+    * Rework UUID generation for central consistency, to allow delta processing to work later
+    * Performance improvements on the Lucene indexer
+
 * 2017/08/24 - 4.22
     * Fix yet more problems with the caching of users and roles.
     * Debug and other logging improvements.

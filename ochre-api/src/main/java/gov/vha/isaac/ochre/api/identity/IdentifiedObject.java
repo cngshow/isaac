@@ -15,11 +15,11 @@
  */
 package gov.vha.isaac.ochre.api.identity;
 
-import gov.vha.isaac.ochre.api.Get;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
-
 import java.util.List;
 import java.util.UUID;
+
+import gov.vha.isaac.ochre.api.Get;
+import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 
 /**
  *
@@ -33,6 +33,14 @@ public interface IdentifiedObject {
         return getUuidList().toArray(new UUID[getUuidList().size()]);
     }
 
+    /**
+     * If not yet set via a call to {@link IdentifiedComponentBuilder#setPrimordialUuid(UUID)},  or {@link IdentifiedComponentBuilder#setT5Uuid()}
+     * a randomly generated UUID will be created and returned.
+     * 
+     * Otherwise, return already set value.
+     * @param uuid
+     * @return the builder for chaining of operations in a fluent pattern.
+     */
     default UUID getPrimordialUuid() {
         return getUuidList().get(0);
     }

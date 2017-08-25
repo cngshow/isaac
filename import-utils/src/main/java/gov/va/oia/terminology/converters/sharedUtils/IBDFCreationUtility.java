@@ -47,7 +47,6 @@ import gov.va.oia.terminology.converters.sharedUtils.propertyTypes.ValueProperty
 import gov.va.oia.terminology.converters.sharedUtils.stats.ConverterUUID;
 import gov.va.oia.terminology.converters.sharedUtils.stats.LoadStats;
 import gov.vha.isaac.MetaData;
-import gov.vha.isaac.ochre.api.DataTarget;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
@@ -88,7 +87,6 @@ import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilder;
 import gov.vha.isaac.ochre.api.logic.LogicalExpressionBuilderService;
 import gov.vha.isaac.ochre.api.logic.assertions.Assertion;
 import gov.vha.isaac.ochre.api.logic.assertions.ConceptAssertion;
-import gov.vha.isaac.ochre.api.util.ChecksumGenerator;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.model.concept.ConceptChronologyImpl;
 import gov.vha.isaac.ochre.model.configuration.LogicCoordinates;
@@ -500,7 +498,7 @@ public class IBDFCreationUtility
 		{
 			addDescription(ComponentReference.fromConcept(concept), preferredName, DescriptionType.SYNONYM, true, null, State.ACTIVE);
 		}
-		if (StringUtils.isNotEmpty(altName))
+		if (StringUtils.isNotEmpty(altName) && !altName.equals(preferredName))
 		{
 			addDescription(ComponentReference.fromConcept(concept), altName, DescriptionType.SYNONYM, false, null, State.ACTIVE);
 		}
@@ -649,12 +647,6 @@ public class IBDFCreationUtility
 		{
 			languageCode = MetaData.ENGLISH_LANGUAGE.getPrimordialUuid();
 		}
-		if (descriptionPrimordialUUID == null)
-		{
-			descriptionPrimordialUUID = ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), descriptionValue, 
-					wbDescriptionType.name(), dialect.toString(), languageCode.toString(), preferred == null ? "null" : preferred.toString());
-		}
-		
 		
 		@SuppressWarnings({ "rawtypes" }) 
 		SememeBuilder<? extends SememeChronology<? extends DescriptionSememe>> descBuilder = sememeBuilderService_.getDescriptionSememeBuilder(
@@ -663,8 +655,12 @@ public class IBDFCreationUtility
 						wbDescriptionType.getConceptSpec().getConceptSequence(), 
 						descriptionValue, 
 						concept.getNid());
-		descBuilder.setPrimordialUuid(descriptionPrimordialUUID);
-
+		if (descriptionPrimordialUUID == null) {
+			descBuilder.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
+		} else {
+			descBuilder.setPrimordialUuid(descriptionPrimordialUUID);
+		}
+		
 		List<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		
 		SememeChronology<DescriptionSememe<?>> newDescription = (SememeChronology<DescriptionSememe<?>>)
@@ -682,9 +678,7 @@ public class IBDFCreationUtility
 					preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(), newDescription.getNid(),
 					Get.identifierService().getConceptSequenceForUuids(dialect));
 
-			UUID acceptabilityTypePrimordialUUID = ConverterUUID
-					.createNamespaceUUIDFromStrings(descriptionPrimordialUUID.toString(), dialect.toString());
-			acceptabilityTypeBuilder.setPrimordialUuid(acceptabilityTypePrimordialUUID);
+			acceptabilityTypeBuilder.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 			acceptabilityTypeBuilder.build(createStamp(state, selectTime(concept, time), module), builtObjects);
 
 			ls_.addAnnotation("Description", getOriginStringForUuid(dialect));
@@ -724,19 +718,16 @@ public class IBDFCreationUtility
 		@SuppressWarnings("rawtypes")
 		SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(),
+		SememeBuilder<? extends SememeChronology> sb = sememeBuilderService.getComponentSememeBuilder(preferred ? TermAux.PREFERRED.getNid() : TermAux.ACCEPTABLE.getNid(),
 				description.getNid(), Get.identifierService().getConceptSequenceForUuids(dialectRefset));
 		
-		if (acceptabilityPrimordialUUID == null)
-		{
-			//TODO not sure if preferred should be part of UUID
-			acceptabilityPrimordialUUID = ConverterUUID.createNamespaceUUIDFromStrings(description.getPrimordialUuid().toString(), 
-					dialectRefset.toString(), preferred + "");
+		if (acceptabilityPrimordialUUID == null) {
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
+		} else {
+			sb.setPrimordialUuid(acceptabilityPrimordialUUID);
 		}
 		
-		sb.setPrimordialUuid(acceptabilityPrimordialUUID);
-		
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
 		SememeChronology<ComponentNidSememe<?>> sc = (SememeChronology<ComponentNidSememe<?>>)sb.build(
 				createStamp(state, selectTime(description, time), module), builtObjects);
@@ -826,36 +817,18 @@ public class IBDFCreationUtility
 	{
 		validateDataTypes(refexDynamicTypeUuid, values);
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getDynamicSememeBuilder(referencedComponent.getNid(), 
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getDynamicSememeBuilder(referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refexDynamicTypeUuid), values);
 		
-		if (uuidForCreatedAnnotation == null)
-		{
-			StringBuilder temp = new StringBuilder();
-			temp.append(refexDynamicTypeUuid.toString()); 
-			temp.append(referencedComponent.getPrimordialUuid().toString());
-			if (values != null)
-			{
-				for (DynamicSememeData d : values)
-				{
-					if (d == null)
-					{
-						temp.append("null");
-					}
-					else
-					{
-						temp.append(d.getDynamicSememeDataType().getDisplayName());
-						temp.append(new String(ChecksumGenerator.calculateChecksum("SHA1", d.getData())));
-					}
-				}
-			}
-			uuidForCreatedAnnotation = ConverterUUID.createNamespaceUUIDFromString(temp.toString());
+		if (uuidForCreatedAnnotation == null) {
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
+		} else {
+			sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		}
 		
-		sb.setPrimordialUuid(uuidForCreatedAnnotation);
-		
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
-		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), builtObjects);
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
+		SememeChronology<DynamicSememe<?>> sc = (SememeChronology<DynamicSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, time), module), 
+				builtObjects);
 		
 		for (OchreExternalizable ochreObject : builtObjects)
 		{
@@ -932,6 +905,7 @@ public class IBDFCreationUtility
 
 	private SememeChronology<?> addMembership(ComponentReference referencedComponent, ConceptSpecification assemblage) {
 		SememeBuilder<?> sb = Get.sememeBuilderService().getMembershipSememeBuilder(referencedComponent.getNid(), assemblage.getNid());
+		sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 
 		ArrayList<ObjectChronology<? extends StampedVersion>> builtObjects = new ArrayList<>();
 		SememeChronology<?> sc = (SememeChronology<?>)sb.build(createStamp(State.ACTIVE, selectTime(referencedComponent, (Long)null)), builtObjects);
@@ -1037,23 +1011,19 @@ public class IBDFCreationUtility
 			UUID refsetUuid, State state)
 	{
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getStringSememeBuilder(annotationValue, referencedComponent.getNid(), 
 				Get.identifierService().getConceptSequenceForUuids(refsetUuid));
 		
 		if (uuidForCreatedAnnotation == null)
 		{
-			StringBuilder temp = new StringBuilder();
-			temp.append(annotationValue);
-			temp.append(refsetUuid.toString()); 
-			temp.append(referencedComponent.getPrimordialUuid().toString());
-			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromString(temp.toString()));
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		}
 		else
 		{
 			sb.setPrimordialUuid(uuidForCreatedAnnotation);
 		}
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 		@SuppressWarnings("unchecked")
 		SememeChronology<StringSememe<?>> sc = (SememeChronology<StringSememe<?>>)sb.build(createStamp(state, selectTime(referencedComponent, null)), builtObjects);
 		
@@ -1209,13 +1179,17 @@ public class IBDFCreationUtility
 		LogicalExpression logicalExpression = leb.build();
 
 		@SuppressWarnings("rawtypes")
-		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence());
 
-		sb.setPrimordialUuid(relPrimordialUuid != null ? relPrimordialUuid
-				: ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), Arrays.toString(targetUuid), isARelUuid_.toString()));
+		
+		if (relPrimordialUuid != null) {
+			sb.setPrimordialUuid(relPrimordialUuid);
+		} else {
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
+		}
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(createStamp(State.ACTIVE, selectTime(concept, time)), builtObjects);
@@ -1256,28 +1230,20 @@ public class IBDFCreationUtility
 		temp.add(concept.getPrimordialUuid());
 		
 		@SuppressWarnings("rawtypes") 
-		SememeBuilder sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
+		SememeBuilder<? extends SememeChronology>  sb = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicalExpression, concept.getNid(),
 				stated ? conceptBuilderService_.getDefaultLogicCoordinate().getStatedAssemblageSequence() : 
 					conceptBuilderService_.getDefaultLogicCoordinate().getInferredAssemblageSequence());
 
 		if (graphPrimordialUuid == null)
 		{
-			// Build a LogicGraph UUID seed based on concept & logicExpression.getData(EXTERNAL)
-			StringBuilder byteString = new StringBuilder();
-			byte[][] byteArray = logicalExpression.getData(DataTarget.EXTERNAL);
-			for (int i = 0; i < byteArray.length; i++) {
-				byteString.append(Arrays.toString(byteArray[i]));
-			}
-	
-			// Create UUID from seed and assign SesemeBuilder the value
-			sb.setPrimordialUuid(ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), "" +stated, byteString.toString()));
+			sb.setT5Uuid(ConverterUUID.getNamespace(), (name, uuid) -> ConverterUUID.addMapping(name, uuid));
 		}
 		else
 		{
 			sb.setPrimordialUuid(graphPrimordialUuid);
 		}		
 
-		ArrayList<OchreExternalizable> builtObjects = new ArrayList<>();
+		ArrayList<ObjectChronology<?>> builtObjects = new ArrayList<>();
 
 		@SuppressWarnings("unchecked")
 		SememeChronology<LogicGraphSememe<?>> sci = (SememeChronology<LogicGraphSememe<?>>) sb.build(
@@ -1469,7 +1435,11 @@ public class IBDFCreationUtility
 						//add the inverse name, if it has one
 						if (!StringUtils.isBlank(item.getAssociationInverseName()))
 						{
-							SememeChronology<DescriptionSememe<?>> inverseDesc = addDescription(ComponentReference.fromConcept(concept), item.getAssociationInverseName(), 
+							//Need to make our own UUID here, cause there are cases where the inverse name is identical to the forward name.
+							SememeChronology<DescriptionSememe<?>> inverseDesc = addDescription(ComponentReference.fromConcept(concept), 
+									ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), item.getAssociationInverseName(), 
+											"inverse", DescriptionType.SYNONYM.name()),
+									item.getAssociationInverseName(), 
 									DescriptionType.SYNONYM, false, null, State.ACTIVE);
 							
 							addRefsetMembership(ComponentReference.fromChronology(inverseDesc), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getUUID(), 
