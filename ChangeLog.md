@@ -3,7 +3,8 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
 * 2017/08/?? - 4.23 - PENDING
-    *
+    * 537659 - Fixes for us extension processing
+    
 
 * 2017/08/24 - 4.22
     * Fix yet more problems with the caching of users and roles.
