@@ -4,7 +4,8 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 
 * 2017/08/?? - 4.23 - PENDING
     * 537659 - Fixes for us extension processing
-    
+    * Rework UUID generation for central consistency, to allow delta processing to work later
+    * Performance improvements on the Lucene indexer
 
 * 2017/08/24 - 4.22
     * Fix yet more problems with the caching of users and roles.
