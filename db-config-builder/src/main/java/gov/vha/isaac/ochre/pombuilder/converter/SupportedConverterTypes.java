@@ -207,7 +207,7 @@ public enum SupportedConverterTypes
 			new UploadFileInfo("", "https://www.cms.gov/Medicare/Coding/ICD10", 
 					"2017-PCS-Long-Abbrev-Titles.zip",
 					"The file must be a zip file, which should be downloaded from the 'YYYY ICD-10-PCS and GEMs'"
-					+ " section, have 'Long-Abbrev-Titles' in the file name and end with '.zip'.  This uploaded zip file"
+					+ " section, have 'Long-Abbrev-Titles' or 'Order-File' in the file name and end with '.zip'.  This uploaded zip file"
 					+ " MUST contain a file that has 'order_YYYY' in the file name, and ends with .txt", 
 					".*\\d{4}.*\\.zip$", true)
 	}, "icd10-mojo", "icd10-ibdf-pcs", "convert-ICD10-to-ibdf", "gov.vha.isaac.terminology.source.icd10", "International Classification of Diseases, Tenth Revision, Procedure Coding System", 
