@@ -1435,7 +1435,11 @@ public class IBDFCreationUtility
 						//add the inverse name, if it has one
 						if (!StringUtils.isBlank(item.getAssociationInverseName()))
 						{
-							SememeChronology<DescriptionSememe<?>> inverseDesc = addDescription(ComponentReference.fromConcept(concept), item.getAssociationInverseName(), 
+							//Need to make our own UUID here, cause there are cases where the inverse name is identical to the forward name.
+							SememeChronology<DescriptionSememe<?>> inverseDesc = addDescription(ComponentReference.fromConcept(concept), 
+									ConverterUUID.createNamespaceUUIDFromStrings(concept.getPrimordialUuid().toString(), item.getAssociationInverseName(), 
+											"inverse", DescriptionType.SYNONYM.name()),
+									item.getAssociationInverseName(), 
 									DescriptionType.SYNONYM, false, null, State.ACTIVE);
 							
 							addRefsetMembership(ComponentReference.fromChronology(inverseDesc), DynamicSememeConstants.get().DYNAMIC_SEMEME_ASSOCIATION_INVERSE_NAME.getUUID(), 
