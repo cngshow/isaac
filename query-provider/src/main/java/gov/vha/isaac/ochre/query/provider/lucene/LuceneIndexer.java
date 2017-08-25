@@ -882,7 +882,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				if (!uniqPathSeq.contains(sv.getPathSequence()))
 				{
 					int pathSeq = sv.getPathSequence();
-					UUID pathUuid = Get.conceptSpecification(pathSeq).getPrimordialUuid();
+					UUID pathUuid = Get.identifierService().getUuidPrimordialFromConceptId(pathSeq).get();
 					doc.add(new TextField(FIELD_INDEXED_PATH_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER, 
 							pathUuid.toString(), Field.Store.NO));
 					incrementIndexedItemCount("Path");
@@ -892,7 +892,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				if (!uniqModuleSeq.contains(sv.getModuleSequence()))
 				{
 					int moduleSeq = sv.getModuleSequence();
-					UUID moduleUuid = Get.conceptSpecification(moduleSeq).getPrimordialUuid();
+					UUID moduleUuid = Get.identifierService().getUuidPrimordialFromConceptId(moduleSeq).get();
 					doc.add(new TextField(FIELD_INDEXED_MODULE_UUID + PerFieldAnalyzer.WHITE_SPACE_FIELD_MARKER,
 							moduleUuid.toString(), Field.Store.NO));
 					incrementIndexedItemCount("Module");
