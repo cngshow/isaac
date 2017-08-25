@@ -9,14 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
-import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
-import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.task.TimedTask;
 
 /**
@@ -111,7 +107,7 @@ public class GenerateIndexes extends TimedTask<Void> {
             log.info("Sememes to index: " + sememeCount);
             componentCount = sememeCount;
             
-            for (SememeChronology<?> sememe : (Iterable<SememeChronology<? extends SememeVersion<?>>>) Get.sememeService().getParallelSememeStream()::iterator)
+            Get.sememeService().getParallelSememeStream().forEach(sememe -> 
             {
                 for (IndexServiceBI i : indexers) {
                     try {
@@ -127,7 +123,8 @@ public class GenerateIndexes extends TimedTask<Void> {
                     }
                 }
                 updateProcessedCount();
-            }
+            });
+            
             
             List<IndexStatusListenerBI> islList = LookupService.get().getAllServices(IndexStatusListenerBI.class);
 
