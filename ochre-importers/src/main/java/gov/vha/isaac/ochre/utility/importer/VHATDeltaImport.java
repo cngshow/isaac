@@ -1414,7 +1414,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setText(StringUtils.isBlank(d.getValueNew()) ? 
 								(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
 								: d.getValueNew());
-						
+						mss.setCaseSignificanceConceptSequence(latest.get().value().getCaseSignificanceConceptSequence());
+						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
+						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
+
 						//No changing of type name, code, or vuid
 					}
 					else
