@@ -1294,7 +1294,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
 							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
 					{
-						return propertyValue.equals(sv.get().value().getData()[0].toString());
+						return propertyValue.equals(sv.get().value().getData()[0].dataToString());
 					}
 				}
 				return false;
