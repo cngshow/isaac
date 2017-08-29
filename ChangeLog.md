@@ -8,6 +8,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
     * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import
     * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import
     * Added VHAT_ASSOCIATION_TYPES constant
+    * Changes to look for duplicate VUIDs in imported XML file prior to processing
 
 * 2017/08/25 - 5.00
     * 537659 - Fixes for us extension processing
