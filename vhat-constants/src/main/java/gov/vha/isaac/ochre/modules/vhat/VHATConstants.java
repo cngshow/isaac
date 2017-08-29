@@ -75,6 +75,9 @@ public class VHATConstants implements ModuleProvidedConstants {
 			
 	public final static MetadataConceptConstant VHAT_MISSING_SDO_CODE_SYSTEM_CONCEPTS = new MetadataConceptConstant("Missing SDO Code System Concepts", 
 			UUID.fromString("52460eeb-1388-512d-a5e4-fddd64fe0aee")){};
+	
+	public final static MetadataConceptConstant VHAT_ASSOCIATION_TYPES = new MetadataConceptConstant("VHAT Association Types", 
+			UUID.fromString("c025773c-2a59-57c9-9def-083d7935233e")){};
 
 	@Override
 	public MetadataConceptConstant[] getConstantsToCreate()
@@ -88,7 +91,7 @@ public class VHATConstants implements ModuleProvidedConstants {
 	{
 		return new MetadataConceptConstant[] {VHAT_HAS_PARENT_ASSOCIATION_TYPE, VHAT_ABBREVIATION, VHAT_FULLY_SPECIFIED_NAME, VHAT_PREFERRED_NAME, 
 				VHAT_SYNONYM, VHAT_VISTA_NAME, VHAT_ATTRIBUTE_TYPES, VHAT_REFSETS, VHAT_ROOT_CONCEPT, VHAT_DESCRIPTION_TYPES, VHAT_ALL_CONCEPTS, 
-				VHAT_MISSING_SDO_CODE_SYSTEM_CONCEPTS};
+				VHAT_MISSING_SDO_CODE_SYSTEM_CONCEPTS, VHAT_ASSOCIATION_TYPES};
 	}
 	
 	
