@@ -3,6 +3,10 @@ ISAAC Changelog
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
 * 2017/08/?? - 5.01 - PENDING
+    * Minor metadata naming change to be more consistent in the GUI
+    * Fix for Property sememe lookup to get the needed string value in the XML Delta import
+    * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import
+    * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import
 
 * 2017/08/25 - 5.00
     * 537659 - Fixes for us extension processing
