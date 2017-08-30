@@ -138,7 +138,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	private EditCoordinate editCoordinate_;
 	private LongSupplier vuidSupplier_;
 	private HashSet<String> conceptsToBeCreated_ = new HashSet<>();
-	private HashSet<Long> vuidsInXmlFile_ = new HashSet<>();
 	
 	private static final Logger LOG = LogManager.getLogger();
 	
@@ -304,6 +303,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	private void vuidCheck(Terminology terminology)
 	{
 		LOG.info("Checking for in use VUIDs");
+		HashSet<Long> vuidsInXmlFile_ = new HashSet<>();
 		
 		if (terminology.getCodeSystem().getAction() == ActionType.ADD && terminology.getCodeSystem().getVUID() != null)
 		{
@@ -312,12 +312,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
 						+ terminology.getCodeSystem().getVUID() + "' is already in use");
 			}
-			else if (vuidsInXmlFile_.contains(terminology.getCodeSystem().getVUID()))
+			else if (!vuidsInXmlFile_.add(terminology.getCodeSystem().getVUID()))
 			{
 				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
 						+ terminology.getCodeSystem().getVUID() + "' is not unique to the import data");
 			}
-			vuidsInXmlFile_.add(terminology.getCodeSystem().getVUID());
 		}
 		
 		if (terminology.getCodeSystem().getVersion().getCodedConcepts() != null)
@@ -330,12 +329,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" + cc.getVUID() + "' is already in use");
 					}
-					else if (vuidsInXmlFile_.contains(cc.getVUID()))
+					else if (!vuidsInXmlFile_.add(cc.getVUID()))
 					{
 						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" 
 								+ cc.getVUID() + "' is not unique to the import data");
 					}
-					vuidsInXmlFile_.add(cc.getVUID());
 				}
 				if (cc.getDesignations() != null && cc.getDesignations().getDesignation() != null)
 				{
@@ -347,12 +345,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							{
 								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
 							}
-							else if (vuidsInXmlFile_.contains(d.getVUID()))
+							else if (!vuidsInXmlFile_.add(d.getVUID()))
 							{
 								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" 
 										+ d.getVUID() + "' is not unique to the import data");
 							}
-							vuidsInXmlFile_.add(d.getVUID());
 						}
 					}
 				}
@@ -369,12 +366,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" + ms.getVUID() + "' is already in use");
 					}
-					else if (vuidsInXmlFile_.contains(ms.getVUID()))
+					else if (!vuidsInXmlFile_.add(ms.getVUID()))
 					{
 						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" 
 								+ ms.getVUID() + "' is not unique to the import data");
 					}
-					vuidsInXmlFile_.add(ms.getVUID());
 					
 					if (ms.getDesignations() != null && ms.getDesignations().getDesignation() != null)
 					{
@@ -386,12 +382,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								{
 									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
 								}
-								else if (vuidsInXmlFile_.contains(d.getVUID()))
+								else if (!vuidsInXmlFile_.add(d.getVUID()))
 								{
 									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" 
 											+ d.getVUID() + "' is not unique to the import data");
 								}
-								vuidsInXmlFile_.add(d.getVUID());
 							}
 						}
 					}
@@ -406,12 +401,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							{
 								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" + ms.getVUID() + "' is already in use");
 							}
-							else if (vuidsInXmlFile_.contains(me.getVUID()))
+							else if (!vuidsInXmlFile_.add(me.getVUID()))
 							{
 								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" 
 										+ me.getVUID() + "' is not unique to the import data");
 							}
-							vuidsInXmlFile_.add(me.getVUID());
 						}
 						if (me.getDesignations() != null && me.getDesignations().getDesignation() != null)
 						{
@@ -423,12 +417,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									{
 										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
 									}
-									else if (vuidsInXmlFile_.contains(d.getVUID()))
+									else if (!vuidsInXmlFile_.add(d.getVUID()))
 									{
 										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" 
 												+ d.getVUID() + "' is not unique to the import data");
 									}
-									vuidsInXmlFile_.add(d.getVUID());
 								}
 							}
 						}
@@ -447,12 +440,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" + s.getVUID() + "' is already in use");
 					}
-					else if (vuidsInXmlFile_.contains(s.getVUID()))
+					else if (!vuidsInXmlFile_.add(s.getVUID()))
 					{
 						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" 
 								+ s.getVUID() + "' is not unique to the import data");
 					}
-					vuidsInXmlFile_.add(s.getVUID());
 				}
 			}
 		}
