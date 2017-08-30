@@ -221,7 +221,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			headerCheck(terminology);
 			vuidCheck(terminology);
 			populateNewProperties(terminology);
-			requiredChecks(terminology);
 			
 			try
 			{
@@ -233,6 +232,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				LOG.info("Import Util configured");
 				createNewProperties(terminology);
 				createNewSubsets(terminology);
+				requiredChecks(terminology);
 				
 				LOG.info("Processing changes");
 				loadConcepts(terminology.getCodeSystem().getVersion().getCodedConcepts());
