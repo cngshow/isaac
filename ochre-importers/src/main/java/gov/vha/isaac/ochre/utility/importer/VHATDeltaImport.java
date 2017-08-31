@@ -1145,7 +1145,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			throw new IOException("Active must be provided on every property.  Missing on " + parentConcept.getCode() + ":" 
 				+ p.getTypeName());
 		}
-		if (StringUtils.isBlank(p.getValueNew()))
+		if (p.getAction() == ActionType.ADD && StringUtils.isBlank(p.getValueNew()))
 		{
 			throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueNew - from " + parentConcept.getCode());
 		}
