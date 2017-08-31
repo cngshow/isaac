@@ -190,7 +190,7 @@ public class CommitProvider implements CommitService {
 							for (SememeVersion<?> sv : sc.getUnwrittenVersionList())
 							{
 								if (((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
-										((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
+										((DescriptionSememe<?>)sv).getLanguageConceptSequence() == 0 ||
 										((DescriptionSememe<?>)sv).getDescriptionTypeConceptSequence() == 0 ||
 										((DescriptionSememe<?>)sv).getText() == null)
 								{

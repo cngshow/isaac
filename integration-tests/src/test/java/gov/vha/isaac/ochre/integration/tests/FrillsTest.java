@@ -43,7 +43,7 @@ public class FrillsTest {
 		
 		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.VUID.getNid()));
 		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.CODE.getNid()));
-		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.GENERATED_UUID.getNid()));
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.UUID.getNid()));
 		
 		Assert.assertFalse(Frills.definesIdentifierSememe(MetaData.ACCEPTABLE.getNid()));
 	}

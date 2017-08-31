@@ -303,6 +303,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	private void vuidCheck(Terminology terminology)
 	{
 		LOG.info("Checking for in use VUIDs");
+		HashSet<Long> vuidsInXmlFile_ = new HashSet<>();
 		
 		if (terminology.getCodeSystem().getAction() == ActionType.ADD && terminology.getCodeSystem().getVUID() != null)
 		{
@@ -310,6 +311,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
 						+ terminology.getCodeSystem().getVUID() + "' is already in use");
+			}
+			else if (!vuidsInXmlFile_.add(terminology.getCodeSystem().getVUID()))
+			{
+				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
+						+ terminology.getCodeSystem().getVUID() + "' is not unique to the import data");
 			}
 		}
 		
@@ -323,6 +329,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" + cc.getVUID() + "' is already in use");
 					}
+					else if (!vuidsInXmlFile_.add(cc.getVUID()))
+					{
+						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" 
+								+ cc.getVUID() + "' is not unique to the import data");
+					}
 				}
 				if (cc.getDesignations() != null && cc.getDesignations().getDesignation() != null)
 				{
@@ -333,6 +344,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							if (Frills.getNidForVUID(d.getVUID()).isPresent())
 							{
 								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+							}
+							else if (!vuidsInXmlFile_.add(d.getVUID()))
+							{
+								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" 
+										+ d.getVUID() + "' is not unique to the import data");
 							}
 						}
 					}
@@ -350,15 +366,64 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" + ms.getVUID() + "' is already in use");
 					}
-				}
-				for (MapEntry me : ms.getMapEntries().getMapEntry())
-				{
-	
-					if (me.getAction() == ActionType.ADD && me.getVUID() != null)
+					else if (!vuidsInXmlFile_.add(ms.getVUID()))
 					{
-						if (Frills.getNidForVUID(me.getVUID()).isPresent())
+						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" 
+								+ ms.getVUID() + "' is not unique to the import data");
+					}
+					
+					if (ms.getDesignations() != null && ms.getDesignations().getDesignation() != null)
+					{
+						for (MapSet.Designations.Designation d : ms.getDesignations().getDesignation())
 						{
-							throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" + ms.getVUID() + "' is already in use");
+							if (d.getAction() == ActionType.ADD && d.getVUID() != null)
+							{
+								if (Frills.getNidForVUID(d.getVUID()).isPresent())
+								{
+									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+								}
+								else if (!vuidsInXmlFile_.add(d.getVUID()))
+								{
+									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" 
+											+ d.getVUID() + "' is not unique to the import data");
+								}
+							}
+						}
+					}
+				}
+				if (ms.getMapEntries() != null && ms.getMapEntries().getMapEntry() != null)
+				{
+					for (MapEntry me : ms.getMapEntries().getMapEntry())
+					{
+						if (me.getAction() == ActionType.ADD && me.getVUID() != null)
+						{
+							if (Frills.getNidForVUID(me.getVUID()).isPresent())
+							{
+								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" + ms.getVUID() + "' is already in use");
+							}
+							else if (!vuidsInXmlFile_.add(me.getVUID()))
+							{
+								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" 
+										+ me.getVUID() + "' is not unique to the import data");
+							}
+						}
+						if (me.getDesignations() != null && me.getDesignations().getDesignation() != null)
+						{
+							for (MapEntry.Designations.Designation d : me.getDesignations().getDesignation())
+							{
+								if (d.getAction() == ActionType.ADD && d.getVUID() != null)
+								{
+									if (Frills.getNidForVUID(d.getVUID()).isPresent())
+									{
+										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+									}
+									else if (!vuidsInXmlFile_.add(d.getVUID()))
+									{
+										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" 
+												+ d.getVUID() + "' is not unique to the import data");
+									}
+								}
+							}
 						}
 					}
 				}
@@ -374,6 +439,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					if (Frills.getNidForVUID(s.getVUID()).isPresent())
 					{
 						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" + s.getVUID() + "' is already in use");
+					}
+					else if (!vuidsInXmlFile_.add(s.getVUID()))
+					{
+						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" 
+								+ s.getVUID() + "' is not unique to the import data");
 					}
 				}
 			}
@@ -1075,7 +1145,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			throw new IOException("Active must be provided on every property.  Missing on " + parentConcept.getCode() + ":" 
 				+ p.getTypeName());
 		}
-		if (StringUtils.isBlank(p.getValueNew()))
+		if (p.getAction() == ActionType.ADD && StringUtils.isBlank(p.getValueNew()))
 		{
 			throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueNew - from " + parentConcept.getCode());
 		}
@@ -1294,7 +1364,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
 							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
 					{
-						return propertyValue.equals(sv.get().value().getData()[0].toString());
+						return propertyValue.equals(sv.get().value().getData()[0].dataToString());
 					}
 				}
 				return false;
@@ -1314,7 +1384,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					@SuppressWarnings({ "unchecked", "rawtypes" })
 					Optional<LatestVersion<DynamicSememe<?>>> sv = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, readCoordinate_);
 					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
-							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
+							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.UUID)
 					{
 						return  targetConcept.equals(((DynamicSememeUUID) sv.get().value().getData()[0]).getDataUUID());
 					}
@@ -1414,7 +1484,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setText(StringUtils.isBlank(d.getValueNew()) ? 
 								(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
 								: d.getValueNew());
-						
+						mss.setCaseSignificanceConceptSequence(latest.get().value().getCaseSignificanceConceptSequence());
+						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
+						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
+
 						//No changing of type name, code, or vuid
 					}
 					else

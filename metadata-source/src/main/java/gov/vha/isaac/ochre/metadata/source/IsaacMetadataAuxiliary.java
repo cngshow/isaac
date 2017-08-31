@@ -113,6 +113,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      *          Added a VHAT_EDIT module to serve as the new default module for edits.
      *          Fixed a bug in the definition of DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_TYPE
      * 1.1.1    Removed a constant for dynamic sememe data types (which are no longer supported)
+     * 1.1.2    Renamed 'generated UUID' to 'UUID'
      * 
     **/  
     public static final String AUXILIARY_METADATA_VERSION = "1.1.1";
@@ -185,7 +186,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept(TermAux.IDENTIFIER_SOURCE).addDescription("A parent concept and membership sememe used to group identifiers", TermAux.DEFINITION_DESCRIPTION_TYPE);
                     pushParent(current());
                         createConcept("SCTID").mergeFromSpec(TermAux.SNOMED_IDENTIFIER).addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
-                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
                         createConcept("VUID", "Vets Unique Identifier").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
                         createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);// UUID comes from the algorithm in the VHAT econ loader
                     popParent();
