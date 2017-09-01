@@ -2,20 +2,23 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/09/?? - 5.03 - PENDING
+    *
+
 * 2017/09/01 - 5.02
-    * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false
+    * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false (583063)
     * Fix to VetsExporter to read and export RelationshipTypes
-    * Fix for adding Subsets in the same file as they are use in a SubsetMembership of a concept (i.e. super.xml)
-    * Fix to VetsExporter to export new/added PropertyTypes, RelationshipTypes and DesignationTypes
+    * Fix for adding Subsets in the same file as they are use in a SubsetMembership of a concept (i.e. super.xml) (583084)
+    * Fix to VetsExporter to export new/added PropertyTypes, RelationshipTypes and DesignationTypes (583108)
 
 * 2017/08/31 - 5.01
-    * Minor metadata naming change to be more consistent in the GUI
+    * Minor metadata naming change to be more consistent in the GUI (583064)
     * Fix for Property sememe lookup to get the needed string value in the XML Delta import (575460)
     * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import (570887)
-    * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import
-    * Added VHAT_ASSOCIATION_TYPES constant
-    * Changes to look for duplicate VUIDs in imported XML file prior to processing
-    * Changes to delta importer to handle Property activation/inactivation-only directives
+    * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import (583066)
+    * Added VHAT_ASSOCIATION_TYPES constant (583071)
+    * Changes to look for duplicate VUIDs in imported XML file prior to processing (583073)
+    * Changes to delta importer to handle Property activation/inactivation-only directives (583074)
 
 * 2017/08/25 - 5.00
     * 537659 - Fixes for us extension processing
