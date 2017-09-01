@@ -221,6 +221,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			headerCheck(terminology);
 			vuidCheck(terminology);
 			populateNewProperties(terminology);
+			populateNewSubsets(terminology);
 			requiredChecks(terminology);
 			
 			try
@@ -480,6 +481,39 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	}
 	
 	/**
+	 * Put any Subsets listed in the new section into our lists for UUID lookup.
+	 */
+	private void populateNewSubsets(Terminology terminology) throws IOException
+	{
+		LOG.info("Checking for subsets that need creation");
+		
+		if (terminology.getSubsets() != null)
+		{
+			for (Subset s : terminology.getSubsets().getSubset())
+			{
+				switch (s.getAction())
+				{
+					case ADD:
+						subsets_.addProperty(s.getName());
+						
+						if (s.getVUID() != null)
+						{
+							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+						}
+						break;
+					case REMOVE: case NONE:
+						// no-op
+						break;
+					case UPDATE:
+						throw new IOException("Update of subset is not supported: " + s.getName());
+					default :
+						throw new RuntimeException("Unexepected error");
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Just loads the ones that were specified as new.
 	 */
 	private void createNewProperties(Terminology terminology) throws Exception
@@ -518,26 +552,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private void createNewSubsets(Terminology terminology) throws IOException
 	{
-		LOG.info("Checking for properties that need creation");
+		LOG.info("Creating new Subsets");
+		
 		if (terminology.getSubsets() != null)
 		{
-			for (Subset s : terminology.getSubsets().getSubset())
-			{
-				switch (s.getAction())
-				{
-					case ADD:
-						subsets_.addProperty(s.getName());
-						break;
-					case REMOVE: case NONE:
-						//process these in a second pass
-						break;
-					case UPDATE:
-						throw new IOException("Update of subset is not supported: " + s.getName());
-					default :
-						throw new RuntimeException("Unexepected error");
-				}
-			}
-			
 			//create the new ones
 			try
 			{
@@ -554,23 +572,24 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
-						
 						Long vuid = s.getVUID() == null ? 
-										(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
-										: s.getVUID();
-						
+								(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
+								: s.getVUID();
+				
 						if (vuid != null)
 						{
-							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
-								MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
+									MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 						}
 						break;
-					case REMOVE: 
+					case REMOVE:
+						// add it into the subset map
+						subsets_.addProperty(s.getName());
 						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
-						//no break
+						break;
 					case NONE:
-						// add it into the subset map (for both none and remove)
+						// add it into the subset map
 						subsets_.addProperty(s.getName());
 						break;
 					default :
@@ -1293,6 +1312,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				isActive = false;
 			case UPDATE:
 				//These cases are a bit tricky, because the UUID calculated for the sememe was based on the value.  If the value
 				//only changed once, you could use old value to find it, but, if it changes twice, you can no longer calculate back to the UUID.
@@ -1455,6 +1476,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				d.setActive(false);
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
 				{
@@ -1752,6 +1775,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						sm.setActive(false);
 					case UPDATE:
 						Get.sememeService().getSememesForComponentFromAssemblage(description.getNid(), Get.identifierService()
 							//There really shouldn't be more than one of these, but if there is, no harm in changing state on all of them.
@@ -1816,6 +1841,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						r.setActive(false);
 					case UPDATE:
 						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
 						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
@@ -1829,7 +1856,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						if (ds.isPresent())
 						{
 							MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc).createMutableVersion(MutableDynamicSememe.class, 
-								r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+									r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
 							mds.setData(new DynamicSememeData[] {new DynamicSememeUUIDImpl(newTarget.isPresent() ? newTarget.get() : oldTarget.get())});
 							importUtil_.storeManualUpdate(sc);
 						}
