@@ -1293,6 +1293,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				isActive = false;
 			case UPDATE:
 				//These cases are a bit tricky, because the UUID calculated for the sememe was based on the value.  If the value
 				//only changed once, you could use old value to find it, but, if it changes twice, you can no longer calculate back to the UUID.
@@ -1455,6 +1457,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				d.setActive(false);
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
 				{
@@ -1752,6 +1756,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						sm.setActive(false);
 					case UPDATE:
 						Get.sememeService().getSememesForComponentFromAssemblage(description.getNid(), Get.identifierService()
 							//There really shouldn't be more than one of these, but if there is, no harm in changing state on all of them.
@@ -1816,6 +1822,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						r.setActive(false);
 					case UPDATE:
 						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
 						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
