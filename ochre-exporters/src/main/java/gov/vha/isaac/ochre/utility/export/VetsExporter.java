@@ -141,7 +141,7 @@ public class VetsExporter {
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
-				Get.identifierService().getNidForUuids(VHATConstants.VHAT_HAS_PARENT_ASSOCIATION_TYPE.getPrimordialUuid())).forEach((conceptId) -> {
+				VHATConstants.VHAT_ASSOCIATION_TYPES.getNid()).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
 					relationshipTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
 				});

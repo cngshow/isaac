@@ -4,6 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 
 * 2017/09/?? - 5.02 - PENDING
     * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false
+    * Fix to VetsExporter to read and export RelationshipTypes
 
 * 2017/08/31 - 5.01
     * Minor metadata naming change to be more consistent in the GUI
