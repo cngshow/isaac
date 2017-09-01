@@ -502,8 +502,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						}
 						break;
 					case REMOVE: case NONE:
-						// add it into the subset map (for both none and remove)
-						subsets_.addProperty(s.getName());
+						// no-op
 						break;
 					case UPDATE:
 						throw new IOException("Update of subset is not supported: " + s.getName());
@@ -555,8 +554,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	{
 		LOG.info("Creating new Subsets");
 		
-		Map<Long, Subset> newSubsetsMap_ = new HashMap<>();
-		
 		if (terminology.getSubsets() != null)
 		{
 			for (Subset s : terminology.getSubsets().getSubset())
@@ -568,8 +565,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				if (vuid != null)
 				{
 					vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
-					// For second pass 
-					newSubsetsMap_.put(vuid, s);
 				}
 			}
 			
@@ -583,23 +578,28 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				throw new RuntimeException("Unexpected error");
 			}
 			
-			for (Map.Entry<Long, Subset> me : newSubsetsMap_.entrySet())
+			for (Subset s : terminology.getSubsets().getSubset())
 			{
-				Long vuid = me.getKey();
-				Subset s = me.getValue();
+				Long vuid = s.getVUID();
 				
 				switch (s.getAction())
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
-						importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
-							MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
+						if (vuid != null)
+						{
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
+									MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
+						}
 						break;
-					case REMOVE: 
+					case REMOVE:
+						// add it into the subset map
+						subsets_.addProperty(s.getName());
 						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
-						//no break
+						break;
 					case NONE:
-						// no-op
+						// add it into the subset map
+						subsets_.addProperty(s.getName());
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
