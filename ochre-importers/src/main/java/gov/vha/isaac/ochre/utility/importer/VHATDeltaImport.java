@@ -221,6 +221,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			headerCheck(terminology);
 			vuidCheck(terminology);
 			populateNewProperties(terminology);
+			populateNewSubsets(terminology);
 			requiredChecks(terminology);
 			
 			try
@@ -480,6 +481,40 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	}
 	
 	/**
+	 * Put any Subsets listed in the new section into our lists for UUID lookup.
+	 */
+	private void populateNewSubsets(Terminology terminology) throws IOException
+	{
+		LOG.info("Checking for subsets that need creation");
+		
+		if (terminology.getSubsets() != null)
+		{
+			for (Subset s : terminology.getSubsets().getSubset())
+			{
+				switch (s.getAction())
+				{
+					case ADD:
+						subsets_.addProperty(s.getName());
+						
+						if (s.getVUID() != null)
+						{
+							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+						}
+						break;
+					case REMOVE: case NONE:
+						// add it into the subset map (for both none and remove)
+						subsets_.addProperty(s.getName());
+						break;
+					case UPDATE:
+						throw new IOException("Update of subset is not supported: " + s.getName());
+					default :
+						throw new RuntimeException("Unexepected error");
+				}
+			}
+		}
+	}
+	
+	/**
 	 * Just loads the ones that were specified as new.
 	 */
 	private void createNewProperties(Terminology terminology) throws Exception
@@ -518,23 +553,23 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private void createNewSubsets(Terminology terminology) throws IOException
 	{
-		LOG.info("Checking for properties that need creation");
+		LOG.info("Creating new Subsets");
+		
+		Map<Long, Subset> newSubsetsMap_ = new HashMap<>();
+		
 		if (terminology.getSubsets() != null)
 		{
 			for (Subset s : terminology.getSubsets().getSubset())
 			{
-				switch (s.getAction())
+				Long vuid = s.getVUID() == null ? 
+						(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
+						: s.getVUID();
+		
+				if (vuid != null)
 				{
-					case ADD:
-						subsets_.addProperty(s.getName());
-						break;
-					case REMOVE: case NONE:
-						//process these in a second pass
-						break;
-					case UPDATE:
-						throw new IOException("Update of subset is not supported: " + s.getName());
-					default :
-						throw new RuntimeException("Unexepected error");
+					vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
+					// For second pass 
+					newSubsetsMap_.put(vuid, s);
 				}
 			}
 			
@@ -548,30 +583,23 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				throw new RuntimeException("Unexpected error");
 			}
 			
-			for (Subset s : terminology.getSubsets().getSubset())
+			for (Map.Entry<Long, Subset> me : newSubsetsMap_.entrySet())
 			{
+				Long vuid = me.getKey();
+				Subset s = me.getValue();
+				
 				switch (s.getAction())
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
-						
-						Long vuid = s.getVUID() == null ? 
-										(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
-										: s.getVUID();
-						
-						if (vuid != null)
-						{
-							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
-								MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
-							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
-						}
+						importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
+							MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 						break;
 					case REMOVE: 
 						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
 						//no break
 					case NONE:
-						// add it into the subset map (for both none and remove)
-						subsets_.addProperty(s.getName());
+						// no-op
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
@@ -1837,7 +1865,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						if (ds.isPresent())
 						{
 							MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc).createMutableVersion(MutableDynamicSememe.class, 
-								r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+									r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
 							mds.setData(new DynamicSememeData[] {new DynamicSememeUUIDImpl(newTarget.isPresent() ? newTarget.get() : oldTarget.get())});
 							importUtil_.storeManualUpdate(sc);
 						}
