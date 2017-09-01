@@ -6,11 +6,12 @@ This changelog summarizes changes and fixes which are a part of each revision.  
     * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false
     * Fix to VetsExporter to read and export RelationshipTypes
     * Fix for adding Subsets in the same file as they are use in a SubsetMembership of a concept (i.e. super.xml)
+    * Fix to VetsExporter to export new/added PropertyTypes, RelationshipTypes and DesignationTypes
 
 * 2017/08/31 - 5.01
     * Minor metadata naming change to be more consistent in the GUI
-    * Fix for Property sememe lookup to get the needed string value in the XML Delta import
-    * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import
+    * Fix for Property sememe lookup to get the needed string value in the XML Delta import (575460)
+    * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import (570887)
     * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import
     * Added VHAT_ASSOCIATION_TYPES constant
     * Changes to look for duplicate VUIDs in imported XML file prior to processing

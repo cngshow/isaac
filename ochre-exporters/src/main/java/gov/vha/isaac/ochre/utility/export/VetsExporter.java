@@ -25,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -139,58 +141,90 @@ public class VetsExporter {
 		Terminology.CodeSystem.Version xmlVersion = new Terminology.CodeSystem.Version();
 		Terminology.CodeSystem.Version.CodedConcepts xmlCodedConcepts = new Terminology.CodeSystem.Version.CodedConcepts();
 
+		// For any added types to export
+		Set<String> newDesignationTypes = new HashSet<>();
+		Set<String> newPropertyTypes = new HashSet<>();
+		Set<String> newRelationshipTypes = new HashSet<>();
+		
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				VHATConstants.VHAT_ASSOCIATION_TYPES.getNid()).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					relationshipTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
+					String preferredNameDescriptionType = getPreferredNameDescriptionType(concept.getNid());
+					relationshipTypes.put(concept.getPrimordialUuid(), preferredNameDescriptionType);
+					
+					if (determineAction(concept, startDate, endDate).equals(ActionType.ADD))
+					{
+						newRelationshipTypes.add(preferredNameDescriptionType);
+					}
 				});
-
+		
 		if (fullExportMode)
 		{
-			// Build XML
-			for (String s : relationshipTypes.values()) {
-				xmlType = new Terminology.Types.Type();
-				xmlType.setKind(KindType.RELATIONSHIP_TYPE);
-				xmlType.setName(s);
-				terminology.getTypes().getType().add(xmlType);
-			}
+			// Adds all of the elements in the specified collection to this set if they're not already present 
+			newRelationshipTypes.addAll(relationshipTypes.values());
+		}
+
+		for (String s : newRelationshipTypes)
+		{
+			xmlType = new Terminology.Types.Type();
+			xmlType.setKind(KindType.RELATIONSHIP_TYPE);
+			xmlType.setName(s);
+			terminology.getTypes().getType().add(xmlType);
 		}
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				VHATConstants.VHAT_ATTRIBUTE_TYPES.getNid()).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					propertyTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
+					String preferredNameDescriptionType = getPreferredNameDescriptionType(concept.getNid());
+					propertyTypes.put(concept.getPrimordialUuid(), preferredNameDescriptionType);
+					
+					if (determineAction(concept, startDate, endDate).equals(ActionType.ADD))
+					{
+						newPropertyTypes.add(preferredNameDescriptionType);
+					}
 				});
 
 		if (fullExportMode)
 		{
-			// Build XML
-			for (String s : propertyTypes.values()) {
-				xmlType = new Terminology.Types.Type();
-				xmlType.setKind(KindType.PROPERTY_TYPE);
-				xmlType.setName(s);
-				terminology.getTypes().getType().add(xmlType);
-			}
+			// Adds all of the elements in the specified collection to this set if they're not already present 
+			newPropertyTypes.addAll(propertyTypes.values());
+		}
+
+		for (String s : newPropertyTypes)
+		{
+			xmlType = new Terminology.Types.Type();
+			xmlType.setKind(KindType.PROPERTY_TYPE);
+			xmlType.setName(s);
+			terminology.getTypes().getType().add(xmlType);
 		}
 
 		// Add to map
 		Get.taxonomyService().getAllRelationshipOriginSequences(
 				Get.identifierService().getNidForUuids(VHATConstants.VHAT_DESCRIPTION_TYPES.getPrimordialUuid())).forEach((conceptId) -> {
 					ConceptChronology<? extends ConceptVersion<?>> concept = Get.conceptService().getConcept(conceptId);
-					designationTypes.put(concept.getPrimordialUuid(), getPreferredNameDescriptionType(concept.getNid()));
+					String preferredNameDescriptionType = getPreferredNameDescriptionType(concept.getNid());
+					designationTypes.put(concept.getPrimordialUuid(), preferredNameDescriptionType);
+					
+					if (determineAction(concept, startDate, endDate).equals(ActionType.ADD))
+					{
+						newDesignationTypes.add(preferredNameDescriptionType);
+					}
 				});
 
 		if (fullExportMode)
 		{
-			// Build XML
-			for (String s : designationTypes.values()) {
-				xmlType = new Terminology.Types.Type();
-				xmlType.setKind(KindType.DESIGNATION_TYPE);
-				xmlType.setName(s);
-				terminology.getTypes().getType().add(xmlType);
-			}
+			// Adds all of the elements in the specified collection to this set if they're not already present 
+			newDesignationTypes.addAll(designationTypes.values());
+		}
+
+		for (String s : newDesignationTypes)
+		{
+			xmlType = new Terminology.Types.Type();
+			xmlType.setKind(KindType.DESIGNATION_TYPE);
+			xmlType.setName(s);
+			terminology.getTypes().getType().add(xmlType);
 		}
 
 		// Get data, Add to map
