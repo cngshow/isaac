@@ -556,18 +556,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		
 		if (terminology.getSubsets() != null)
 		{
-			for (Subset s : terminology.getSubsets().getSubset())
-			{
-				Long vuid = s.getVUID() == null ? 
-						(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
-						: s.getVUID();
-		
-				if (vuid != null)
-				{
-					vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
-				}
-			}
-			
 			//create the new ones
 			try
 			{
@@ -580,14 +568,17 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			for (Subset s : terminology.getSubsets().getSubset())
 			{
-				Long vuid = s.getVUID();
-				
 				switch (s.getAction())
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
+						Long vuid = s.getVUID() == null ? 
+								(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
+								: s.getVUID();
+				
 						if (vuid != null)
 						{
+							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
 							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
 									MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 						}
