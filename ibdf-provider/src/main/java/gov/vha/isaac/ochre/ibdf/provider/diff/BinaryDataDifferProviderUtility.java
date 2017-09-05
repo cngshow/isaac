@@ -68,16 +68,14 @@ import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 public class BinaryDataDifferProviderUtility {
 	static long newImportDate;
 	static boolean componentChangeFound = false;
-	boolean diffOnStatus;
 	boolean diffOnTimestamp;
 	boolean diffOnAuthor;
 	boolean diffOnModule;
 	boolean diffOnPath;
 	private SememeBuilderService<?> sememeBuilderService_;
 
-	public BinaryDataDifferProviderUtility(Boolean diffOnStatus, Boolean diffOnTimestamp, Boolean diffOnAuthor,
-			Boolean diffOnModule, Boolean diffOnPath) {
-		this.diffOnStatus = diffOnStatus;
+	public BinaryDataDifferProviderUtility(Boolean diffOnTimestamp, Boolean diffOnAuthor, Boolean diffOnModule,
+			Boolean diffOnPath) {
 		this.diffOnTimestamp = diffOnTimestamp;
 		this.diffOnAuthor = diffOnAuthor;
 		this.diffOnModule = diffOnModule;
@@ -121,7 +119,7 @@ public class BinaryDataDifferProviderUtility {
 	}
 
 	private boolean isEquivalent(StampedVersion ov, StampedVersion nv, OchreExternalizableObjectType type) {
-		if ((diffOnStatus && ov.getState() != nv.getState()) || (diffOnTimestamp && ov.getTime() != nv.getTime())
+		if ((diffOnTimestamp && ov.getTime() != nv.getTime())
 				|| (diffOnAuthor && ov.getAuthorSequence() != nv.getAuthorSequence())
 				|| (diffOnModule && ov.getModuleSequence() != nv.getModuleSequence())
 				|| (diffOnPath && ov.getPathSequence() != nv.getPathSequence())) {
@@ -137,8 +135,8 @@ public class BinaryDataDifferProviderUtility {
 
 			if ((os.getAssemblageSequence() != ns.getAssemblageSequence())
 					|| os.getReferencedComponentNid() != ns.getReferencedComponentNid()) {
-					return false;
-				}
+				return false;
+			}
 
 			switch (os.getChronology().getSememeType()) {
 			case COMPONENT_NID:
@@ -185,7 +183,7 @@ public class BinaryDataDifferProviderUtility {
 		case DYNAMIC:
 			if (((DynamicSememe<?>) originalVersion).getData().length > 0) {
 				((MutableDynamicSememe<?>) newVer).setData(((DynamicSememe<?>) originalVersion).getData());
-			} 
+			}
 			return newVer;
 		case LONG:
 			((MutableLongSememe<?>) newVer).setLongValue(((LongSememe<?>) originalVersion).getLongValue());
@@ -302,7 +300,7 @@ public class BinaryDataDifferProviderUtility {
 			break;
 		case UNKNOWN:
 		case RELATIONSHIP_ADAPTOR: // Dan doesn't believe rel adapaters are ever
-									// created / written to ibdf
+								   // created / written to ibdf
 		default:
 			throw new UnsupportedOperationException();
 		}
@@ -340,8 +338,8 @@ public class BinaryDataDifferProviderUtility {
 						.createMutableVersion(((ConceptVersion<?>) newVersion).getStampSequence());
 				return true;
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
-				SememeVersion createdVersion = ((SememeChronology) oldChron).createMutableVersion(
-							newVersion.getClass(), ((SememeVersion<?>) newVersion).getStampSequence());
+				SememeVersion createdVersion = ((SememeChronology) oldChron).createMutableVersion(newVersion.getClass(),
+						((SememeVersion<?>) newVersion).getStampSequence());
 
 				createdVersion = populateData(createdVersion, (SememeVersion<?>) newVersion, activeStampSeq);
 				return true;

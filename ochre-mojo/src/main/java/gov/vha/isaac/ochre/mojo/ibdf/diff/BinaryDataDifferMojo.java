@@ -70,10 +70,7 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	 * {@code ibdf format} files to import.
 	 */
 	@Parameter(required = true)
-	private String comparisonAnalysisDir;
-
-	@Parameter
-	private Boolean diffOnStatus = false;
+	private String analysisArtifactsDir;
 
 	@Parameter
 	private Boolean diffOnTimestamp = false;
@@ -91,10 +88,10 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	private String importDate;
 
 	@Parameter(required = true)
-	private String deltaIbdfPath;
+	private String deltaIbdfFilePath;
 
 	@Parameter
-	private Boolean createAnalysisFiles = false;
+	private Boolean generateAnalysisFiles = false;
 
 	@Parameter(required = true)
 	protected String converterSourceArtifactVersion;
@@ -103,8 +100,8 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 
 	public void execute() throws MojoExecutionException {
 		BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
-		differService.initialize(comparisonAnalysisDir, inputAnalysisDir, deltaIbdfPath, createAnalysisFiles,
-				diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate,
+		differService.initialize(analysisArtifactsDir, inputAnalysisDir, deltaIbdfFilePath, generateAnalysisFiles,
+				diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate,
 				"VHAT " + converterSourceArtifactVersion);
 
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap = null;
@@ -123,9 +120,9 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 
 			// Transform input old & new content into text & json files
 			log.info("\n\nCreating analysis files for input/output files");
-			if (createAnalysisFiles) {
+			if (generateAnalysisFiles) {
 				ranInputAnalysis = true;
-				differService.createAnalysisFiles(oldContentMap, newContentMap, null);
+				differService.generateAnalysisFiles(oldContentMap, newContentMap, null);
 			}
 
 			// Execute diff process
@@ -138,16 +135,16 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 
 			// Transform diff IBDF file into text & json files
 			log.info("\n\nCreating analysis files for diff file");
-			if (createAnalysisFiles) {
+			if (generateAnalysisFiles) {
 				ranOutputAnalysis = true;
-				differService.createAnalysisFiles(null, null, changedComponents);
+				differService.generateAnalysisFiles(null, null, changedComponents);
 			}
 		} catch (Exception e) {
-			if (createAnalysisFiles && !ranInputAnalysis) {
-				differService.createAnalysisFiles(oldContentMap, newContentMap, null);
+			if (generateAnalysisFiles && !ranInputAnalysis) {
+				differService.generateAnalysisFiles(oldContentMap, newContentMap, null);
 			}
-			if (createAnalysisFiles && !ranOutputAnalysis) {
-				differService.createAnalysisFiles(null, null, changedComponents);
+			if (generateAnalysisFiles && !ranOutputAnalysis) {
+				differService.generateAnalysisFiles(null, null, changedComponents);
 			}
 			throw new MojoExecutionException(e.getMessage(), e);
 		}

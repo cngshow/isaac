@@ -81,36 +81,65 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 @Singleton
 // TODO there are some serious thread-safety issues in this class
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
+
+	/** The log. */
 	private final Logger log = LogManager.getLogger();
+
+	/** The diff util. */
 	private BinaryDataDifferProviderUtility diffUtil;
 
+	/** The comment count. */
 	// Stream hack
 	private int conceptCount, sememeCount, itemCount, aliasCount, commentCount;
 
+	/** The input analysis dir. */
 	// Analysis File Readers/Writers
 	private String inputAnalysisDir;
-	private String comparisonAnalysisDir;
-	private String deltaIbdfPath;
+
+	/** The comparison analysis dir. */
+	private String analysisArtifactsDir;
+
+	/** The delta ibdf file path. */
+	private String deltaIbdfFilePath;
+
+	/** The module uuid. */
 	private UUID moduleUuid;
-	private final String textInputFileName = "bothVersions.txt";
+
+	/** The text input file name. */
+	private final String textBaseNewIbdfFileName = "bothVersions.txt";
+
+	/** The json full comparison file name. */
 	private final String jsonFullComparisonFileName = "allChangedComponents.json";
+
+	/** The text full comparison file name. */
 	private final String textFullComparisonFileName = "allChangedComponents.txt";
 
+	/** The component CS writer. */
 	// Changeset File Writer
 	private DataWriterService componentCSWriter = null;
 
+	/** The skipped items. */
 	HashSet<Integer> skippedItems = new HashSet<>();
 
+	/**
+	 * Instantiates a new binary data differ provider.
+	 */
 	public BinaryDataDifferProvider() {
 		// For HK2
 		log.info("binary data differ constructed");
 	}
 
+	/**
+	 * Start me.
+	 */
 	@PostConstruct
 	private void startMe() {
 		log.info("Starting BinaryDataDifferProvider.");
 	}
 
+	/**
+	 * Stop me.
+	 */
 	@PreDestroy
 	private void stopMe() {
 		log.info("Stopping BinaryDataDifferProvider.");
@@ -118,120 +147,30 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	@Override
 	public Map<ChangeType, List<OchreExternalizable>> computeDelta(
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap) {
 		List<OchreExternalizable> addedComponents = new ArrayList<>();
 		List<OchreExternalizable> retiredComponents = new ArrayList<>();
 		List<OchreExternalizable> changedComponents = new ArrayList<>();
-		CommitService commitService = Get.commitService();
 
 		final int activeStampSeq = createStamp(State.ACTIVE);
 		final int inactiveStampSeq = createStamp(State.INACTIVE);
 
 		// Find existing
 		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
-			Set<UUID> matchedComponentSet = new HashSet<UUID>();
 
 			if (type.equals(OchreExternalizableObjectType.CONCEPT)
 					|| type.equals(OchreExternalizableObjectType.SEMEME)) {
-				// Search for modified components
-				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
-					ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
-					for (OchreExternalizable newComp : newContentMap.get(type)) {
-						ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
-
-						if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
-							matchedComponentSet.add(oldCompChron.getPrimordialUuid());
-
-							try {
-								OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
-										activeStampSeq, type);
-								if (modifiedComponents != null) {
-									changedComponents.add(modifiedComponents);
-								}
-							} catch (Exception e) {
-								log.error("Failed On type: " + type + " on component: "
-										+ oldCompChron.getPrimordialUuid());
-								e.printStackTrace();
-							}
-
-							continue;
-						}
-					}
-				}
-
-				// Add oldComps not in matchedSet
-				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
-					if (!matchedComponentSet.contains(((ObjectChronology<?>) oldComp).getPrimordialUuid())) {
-						OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(oldComp,
-								oldComp.getOchreObjectType(), inactiveStampSeq);
-
-						if (retiredComp != null) {
-							retiredComponents.add(retiredComp);
-						}
-					}
-				}
-
-				// Add newComps not in matchedSet
-				for (OchreExternalizable newComp : newContentMap.get(type)) {
-					if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
-
-						OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp,
-								activeStampSeq, type);
-
-						if (addedComp != null) {
-							addedComponents.add(addedComp);
-							commitService.importNoChecks(addedComp);
-						}
-					}
-				}
-				commitService.postProcessImportNoChecks();
-
+				processVersionedContent(type, baseContentMap, newContentMap, addedComponents, retiredComponents,
+						changedComponents, activeStampSeq, inactiveStampSeq);
 			} else if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)
 					|| type.equals(OchreExternalizableObjectType.STAMP_COMMENT)) {
-				Set<Integer> matchedStampSequenceSet = new HashSet<Integer>();
-
-				// Search for modified components
-				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
-					boolean matchFound = false;
-					for (OchreExternalizable newComp : newContentMap.get(type)) {
-						if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
-							if (((StampAlias) oldComp).equals((StampAlias) newComp)) {
-								matchedStampSequenceSet.add(((StampAlias) oldComp).getStampSequence());
-								matchFound = true;
-							}
-						} else {
-							if (((StampComment) oldComp).equals((StampComment) newComp)) {
-								matchedStampSequenceSet.add(((StampComment) oldComp).getStampSequence());
-								matchFound = true;
-							}
-						}
-
-						if (matchFound) {
-							continue;
-						}
-					}
-				}
-
-				// Add newComps not in matchedSet
-				for (OchreExternalizable newComp : newContentMap.get(type)) {
-					int newSequence;
-					if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
-						newSequence = ((StampAlias) newComp).getStampSequence();
-					} else {
-						newSequence = ((StampComment) newComp).getStampSequence();
-					}
-
-					if (!matchedComponentSet.contains(newSequence)) {
-						addedComponents.add(newComp);
-						commitService.importNoChecks(newComp);
-					}
-				}
-
-				commitService.postProcessImportNoChecks();
+				processStampedContent(type, baseContentMap, newContentMap, addedComponents);
 			}
 		}
 
+		// Having identified the new, retired, and modified content of all
+		// OchreExternalizable types, add them to return map
 		Map<ChangeType, List<OchreExternalizable>> retMap = new HashMap<>();
 		retMap.put(ChangeType.NEW_COMPONENTS, addedComponents);
 		retMap.put(ChangeType.RETIRED_COMPONENTS, retiredComponents);
@@ -240,9 +179,167 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		return retMap;
 	}
 
+	/**
+	 * Identify changes between the base ibdf file and the new ibdf file for the
+	 * types {@link #OchreExternalizableObjectType.CONCEPT} and
+	 * {@link #OchreExternalizableObjectType.SEMEME}.
+	 *
+	 * @param type
+	 *            the {@link OchreExternalizableObjectType} type
+	 * @param baseContentMap
+	 *            the base ibdf file's content in a map of
+	 *            {@link OchreExternalizableObjectType} to
+	 *            {@link OchreExternalizable}
+	 * @param newContentMap
+	 *            the new ibdf file's content in a map of
+	 *            {@link OchreExternalizableObjectType} to
+	 *            {@link OchreExternalizable}
+	 * @param addedComponents
+	 *            all {@link OchreExternalizable} determined to be new in the
+	 *            new content map
+	 * @param retiredComponents
+	 *            all {@link OchreExternalizable} determined to be inactivated
+	 *            in the new content map
+	 * @param changedComponents
+	 *            all {@link OchreExternalizable} determined to be modified in
+	 *            the new content map
+	 * @param activeStampSeq
+	 *            the active stamp sequence used to make new versions
+	 * @param inactiveStampSeq
+	 *            the inactive stamp sequence used to make new versions
+	 */
+	private void processVersionedContent(OchreExternalizableObjectType type,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			List<OchreExternalizable> addedComponents, List<OchreExternalizable> retiredComponents,
+			List<OchreExternalizable> changedComponents, int activeStampSeq, int inactiveStampSeq) {
+		Set<UUID> matchedComponentSet = new HashSet<UUID>();
+		CommitService commitService = Get.commitService();
+
+		// Search for modified components
+		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
+			ObjectChronology<?> baseCompChron = (ObjectChronology<?>) baseComp;
+			for (OchreExternalizable newComp : newContentMap.get(type)) {
+				ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
+
+				if (baseCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
+					matchedComponentSet.add(baseCompChron.getPrimordialUuid());
+
+					try {
+						OchreExternalizable modifiedComponents = diffUtil.diff(baseCompChron, newCompChron,
+								activeStampSeq, type);
+						if (modifiedComponents != null) {
+							changedComponents.add(modifiedComponents);
+						}
+					} catch (Exception e) {
+						log.error("Failed On type: " + type + " on component: " + baseCompChron.getPrimordialUuid());
+						e.printStackTrace();
+					}
+
+					continue;
+				}
+			}
+		}
+
+		// Add baseComps not in matchedSet
+		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
+			if (!matchedComponentSet.contains(((ObjectChronology<?>) baseComp).getPrimordialUuid())) {
+				OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(baseComp,
+						baseComp.getOchreObjectType(), inactiveStampSeq);
+
+				if (retiredComp != null) {
+					retiredComponents.add(retiredComp);
+				}
+			}
+		}
+
+		// Add newComps not in matchedSet
+		for (OchreExternalizable newComp : newContentMap.get(type)) {
+			if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+
+				OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp, activeStampSeq,
+						type);
+
+				if (addedComp != null) {
+					addedComponents.add(addedComp);
+					commitService.importNoChecks(addedComp);
+				}
+			}
+		}
+
+		commitService.postProcessImportNoChecks();
+	}
+
+	/**
+	 * Identify new stamp-=based content added between the base ibdf file and
+	 * the new ibdf file for the types
+	 * {@link #OchreExternalizableObjectType.STAMP_ALIAS} and
+	 * {@link #OchreExternalizableObjectType.STAMP_COMMENT}.
+	 *
+	 * @param type
+	 *            the {@link OchreExternalizableObjectType} type
+	 * @param baseContentMap
+	 *            the base ibdf file's content in a map of
+	 *            {@link OchreExternalizableObjectType} to
+	 *            {@link OchreExternalizable}
+	 * @param newContentMap
+	 *            the new ibdf file's content in a map of
+	 *            {@link OchreExternalizableObjectType} to
+	 *            {@link OchreExternalizable}
+	 * @param addedComponents
+	 *            all {@link OchreExternalizable} determined to be new in the
+	 *            new content map
+	 */
+	private void processStampedContent(OchreExternalizableObjectType type,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			List<OchreExternalizable> addedComponents) {
+		Set<Integer> matchedStampSequenceSet = new HashSet<Integer>();
+		CommitService commitService = Get.commitService();
+
+		// Search for modified stamp content
+		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
+			boolean matchFound = false;
+			for (OchreExternalizable newComp : newContentMap.get(type)) {
+				if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
+					if (((StampAlias) baseComp).equals((StampAlias) newComp)) {
+						matchedStampSequenceSet.add(((StampAlias) baseComp).getStampSequence());
+						matchFound = true;
+					}
+				} else {
+					if (((StampComment) baseComp).equals((StampComment) newComp)) {
+						matchedStampSequenceSet.add(((StampComment) baseComp).getStampSequence());
+						matchFound = true;
+					}
+				}
+
+				if (matchFound) {
+					continue;
+				}
+			}
+		}
+
+		// Add new stamp content not in matchedSet
+		for (OchreExternalizable newComp : newContentMap.get(type)) {
+			int newSequence;
+			if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
+				newSequence = ((StampAlias) newComp).getStampSequence();
+			} else {
+				newSequence = ((StampComment) newComp).getStampSequence();
+			}
+
+			if (!matchedStampSequenceSet.contains(newSequence)) {
+				addedComponents.add(newComp);
+				commitService.importNoChecks(newComp);
+			}
+		}
+
+		commitService.postProcessImportNoChecks();
+	}
+
 	@Override
 	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws IOException {
-		componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfPath).toPath());
+		componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePath).toPath());
 
 		for (ChangeType key : changedComponents.keySet()) {
 			for (OchreExternalizable c : changedComponents.get(key)) {
@@ -254,19 +351,19 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public void createAnalysisFiles(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> oldContentMap,
+	public void generateAnalysisFiles(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
 			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
 			Map<ChangeType, List<OchreExternalizable>> changedComponents) {
 		try {
 			// Handle Input Files
-			if (oldContentMap != null) {
-				generateInputAnalysisFile(oldContentMap, "OLD", "oldVersion.json");
+			if (baseContentMap != null) {
+				generateInputAnalysisFile(baseContentMap, "BASE", "baseVersion.json");
 			} else {
-				log.info("oldContentMap empty so not writing json/text Input files for old content");
+				log.info("baseContentMap empty so not writing json/text Input files for base content");
 			}
 
 			if (newContentMap != null) {
-				generateInputAnalysisFile(newContentMap, "New", "newVersion.json");
+				generateInputAnalysisFile(newContentMap, "NEW", "newVersion.json");
 			} else {
 				log.info("newContentMap empty so not writing json/text Input files for new content");
 			}
@@ -285,16 +382,29 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		}
 	}
 
+	/**
+	 * Generate a json and txt file containing the changed components. The
+	 * printed out contents are grouped by {@link ChangeType}, and within each
+	 * {@link ChangeType}, by {@link OchreExternalizable}.
+	 *
+	 * @param changedComponents
+	 *            map of {@link ChangeType} defined as (new, inactivated,
+	 *            modified) to the identified {@link OchreExternalizable}
+	 *            content
+	 * @throws IOException
+	 *             Thrown if an exception occurred in writing the json or text
+	 *             files.
+	 */
 	private void generateComparisonAnalysisFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
-		try (FileWriter allChangesTextWriter = new FileWriter(comparisonAnalysisDir + textFullComparisonFileName);
+		try (FileWriter allChangesTextWriter = new FileWriter(analysisArtifactsDir + textFullComparisonFileName);
 				JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
-						new File(comparisonAnalysisDir + jsonFullComparisonFileName));) {
+						new File(analysisArtifactsDir + jsonFullComparisonFileName));) {
 
 			for (ChangeType key : changedComponents.keySet()) {
 				int counter = 1;
 
-				FileWriter changeTypeWriter = new FileWriter(comparisonAnalysisDir + key + "_File.txt");
+				FileWriter changeTypeWriter = new FileWriter(analysisArtifactsDir + key + "_File.txt");
 
 				try {
 					List<OchreExternalizable> components = changedComponents.get(key);
@@ -337,20 +447,23 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						allChangesJsonWriter.put(componentToWrite);
 						allChangesTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
 						changeTypeWriter.write("\n\n\n\t\t\t" + componentToWrite);
-
 						// Print Value (JSON Working TXT has issues)
 						allChangesJsonWriter.put(c);
 
 						try {
 							changeTypeWriter.write(c.toString() + "\n\n\n");
 						} catch (Exception e) {
-
+							// This process will be trying to read content not
+							// yet imported into database. So not actual error
+							// Exception thrown.
 						}
 
 						try {
 							allChangesTextWriter.write(c.toString());
 						} catch (Exception e) {
-
+							// This process will be trying to read content not
+							// yet imported into database. So not actual error
+							// Exception thrown.
 						}
 					}
 				} catch (IOException e) {
@@ -364,15 +477,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	/**
-	 * Set up all the boilerplate stuff.
-	 * 
-	 * Create a stamp in current database... create seq... then when
-	 * serializing, point it
-	 * 
+	 * Returns a stamp sequence based on passed in a) {@link State}, b) "Import
+	 * Date" and c) "Module UUID" while always using "USER" and "DEVELOPEMENT
+	 * PATH".
+	 *
 	 * @param state
 	 *            - state or null (for current)
-	 * @param time
-	 *            - time or null (for default)
+	 * @return the stamp sequence
 	 */
 	private int createStamp(State state) {
 		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
@@ -382,25 +493,24 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public void initialize(String comparisonAnalysisDir, String inputAnalysisDir, String deltaIbdfPathFile,
-			Boolean generateAnalysisFiles, boolean diffOnStatus, boolean diffOnTimestamp, boolean diffOnAuthor,
-			boolean diffOnModule, boolean diffOnPath, String importDate, String moduleToCreate) {
-		diffUtil = new BinaryDataDifferProviderUtility(diffOnStatus, diffOnTimestamp, diffOnAuthor, diffOnModule,
-				diffOnPath);
+	public void initialize(String analysisArtifactsDir, String inputAnalysisDir, String deltaIbdfPathFile,
+			Boolean generateAnalysisFiles, boolean diffOnTimestamp, boolean diffOnAuthor, boolean diffOnModule,
+			boolean diffOnPath, String importDate, String moduleToCreate) {
+		diffUtil = new BinaryDataDifferProviderUtility(diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
 		diffUtil.setNewImportDate(importDate);
 
 		this.moduleUuid = UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate);
 
 		this.inputAnalysisDir = inputAnalysisDir;
-		this.comparisonAnalysisDir = comparisonAnalysisDir;
-		this.deltaIbdfPath = deltaIbdfPathFile;
+		this.analysisArtifactsDir = analysisArtifactsDir;
+		this.deltaIbdfFilePath = deltaIbdfPathFile;
 
 		if (generateAnalysisFiles) {
 			File f = new File(inputAnalysisDir);
 			deleteDirectoryFiles(f);
 			f.mkdirs();
 
-			f = new File(comparisonAnalysisDir);
+			f = new File(analysisArtifactsDir);
 			deleteDirectoryFiles(f);
 			f.mkdirs();
 		}
@@ -485,6 +595,14 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		return retMap;
 	}
 
+	/**
+	 * Generates human readable analysis json file containing the contents in
+	 * the ibdf delta file located at {@link #deltaIbdfFilePath}.
+	 *
+	 * @throws FileNotFoundException
+	 *             Thrown if the delta file is not found at location specified
+	 *             by {@link #deltaIbdfFilePath}
+	 */
 	private void writeChangeSetForVerification() throws FileNotFoundException {
 		int ic = 0;
 		int cc = 0;
@@ -492,13 +610,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		int sta = 0;
 		int stc = 0;
 
-		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfPath).toPath());
+		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfFilePath).toPath());
 		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
 
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 
-		try (FileOutputStream fos = new FileOutputStream(new File(comparisonAnalysisDir + "verificationChanges.json"));
+		try (FileOutputStream fos = new FileOutputStream(new File(analysisArtifactsDir + "verificationChanges.json"));
 				JsonWriter verificationWriter = new JsonWriter(fos, args);) {
 
 			while (!queue.isEmpty() || !reader.isFinished()) {
@@ -562,41 +680,56 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	}
 
+	/**
+	 * Generates human readable analysis files out of the contents found in the
+	 * base and new inputed ibdf files to help debug process.
+	 *
+	 * @param contentMap
+	 *            The ibdf file's content in a map of
+	 *            {@link OchreExternalizableObjectType} to
+	 *            {@link OchreExternalizable}
+	 * @param version
+	 *            String representing the version of contents (either BASE or
+	 *            NEW)
+	 * @param jsonOutputFile
+	 *            the output file, in json, representing the contentMap
+	 * @throws IOException
+	 *             Thrown if an exception occurred in writing the json or text
+	 *             files.
+	 */
 	private void generateInputAnalysisFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
-			String version, String jsonInputFileName) throws IOException {
+			String version, String jsonOutputFile) throws IOException {
 
 		int i = 1;
-		try (FileWriter inputAnalysisTextWriter = new FileWriter(inputAnalysisDir + textInputFileName, true);
-				JsonDataWriterService inputAnalysisJsonWriter = new JsonDataWriterService(
-						new File(inputAnalysisDir + jsonInputFileName));) {
+		try (FileWriter textWriter = new FileWriter(inputAnalysisDir + textBaseNewIbdfFileName, true);
+				JsonDataWriterService jsonWriter = new JsonDataWriterService(
+						new File(inputAnalysisDir + jsonOutputFile));) {
 
-			inputAnalysisTextWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
-			inputAnalysisJsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+			textWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+			jsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
 				ConceptChronology<?> cc = (ConceptChronology<?>) component;
-				inputAnalysisJsonWriter
-						.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
-				inputAnalysisJsonWriter.put(cc);
-				inputAnalysisTextWriter.write(
+				jsonWriter.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
+				jsonWriter.put(cc);
+				textWriter.write(
 						"\n\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----\n");
-				inputAnalysisTextWriter.write(cc.toString());
+				textWriter.write(cc.toString());
 				i++;
 			}
 
 			i = 1;
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
 				SememeChronology<?> se = (SememeChronology<?>) component;
-				inputAnalysisJsonWriter
-						.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
-				inputAnalysisJsonWriter.put(se);
+				jsonWriter.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
+				jsonWriter.put(se);
 
 				try {
-					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   "
-							+ se.getPrimordialUuid() + " ----\n");
-					inputAnalysisTextWriter.write(se.toString());
+					textWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid()
+							+ " ----\n");
+					textWriter.write(se.toString());
 				} catch (Exception e) {
-					inputAnalysisTextWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: "
-							+ i + " in writing *" + version + "* content to text file for analysis (UUID: "
+					textWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: " + i
+							+ " in writing *" + version + "* content to text file for analysis (UUID: "
 							+ se.getPrimordialUuid() + ".");
 				}
 				i++;
@@ -605,16 +738,15 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			i = 1;
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_ALIAS)) {
 				StampAlias sa = (StampAlias) component;
-				inputAnalysisJsonWriter
-						.put("--- " + version + " Stamp Alias #" + i + "   " + sa.getStampSequence() + " ----");
-				inputAnalysisJsonWriter.put(sa);
+				jsonWriter.put("--- " + version + " Stamp Alias #" + i + "   " + sa.getStampSequence() + " ----");
+				jsonWriter.put(sa);
 
 				try {
-					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Alias #" + i + "   "
+					textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Alias #" + i + "   "
 							+ sa.getStampSequence() + " ----\n");
-					inputAnalysisTextWriter.write(sa.toString());
+					textWriter.write(sa.toString());
 				} catch (Exception e) {
-					inputAnalysisTextWriter.write("Failure on TXT writing Stamp Alias: " + sa.getStampSequence()
+					textWriter.write("Failure on TXT writing Stamp Alias: " + sa.getStampSequence()
 							+ " which is index: " + i + " in writing *" + version + ".");
 				}
 				i++;
@@ -623,16 +755,15 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			i = 1;
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_COMMENT)) {
 				StampComment sc = (StampComment) component;
-				inputAnalysisJsonWriter
-						.put("--- " + version + " Stamp Comment #" + i + "   " + sc.getStampSequence() + " ----");
-				inputAnalysisJsonWriter.put(sc);
+				jsonWriter.put("--- " + version + " Stamp Comment #" + i + "   " + sc.getStampSequence() + " ----");
+				jsonWriter.put(sc);
 
 				try {
-					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Comment #" + i + "   "
+					textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Comment #" + i + "   "
 							+ sc.getStampSequence() + " ----\n");
-					inputAnalysisTextWriter.write(sc.toString());
+					textWriter.write(sc.toString());
 				} catch (Exception e) {
-					inputAnalysisTextWriter.write("Failure on TXT writing Stamp Comment: " + sc.getStampSequence()
+					textWriter.write("Failure on TXT writing Stamp Comment: " + sc.getStampSequence()
 							+ " which is index: " + i + " in writing *" + version + ".");
 				}
 				i++;
@@ -643,8 +774,15 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		}
 	}
 
-	// In case someone doesn't want to clean DB but still rerun operation to
-	// gather some information, delete all comparison files
+	/**
+	 * Delete the {@link inputAnalysisDir} and the {@link analysisArtifactsDir}
+	 * directories. This is useful for when the databases are so large that
+	 * rerunning the process with the "clean" maven directive adds considerable
+	 * amount of time to unzip databases.
+	 *
+	 * @param dir
+	 *            the directory to delete
+	 */
 	private void deleteDirectoryFiles(File dir) {
 		if (dir.isDirectory() == false) {
 			return;
