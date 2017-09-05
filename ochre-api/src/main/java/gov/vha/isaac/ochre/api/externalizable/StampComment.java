@@ -15,11 +15,6 @@
  */
 package gov.vha.isaac.ochre.api.externalizable;
 
-import gov.vha.isaac.ochre.api.commit.CommitStates;
-import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
-
 /**
  *
  * @author kec
@@ -77,4 +72,16 @@ public class StampComment implements OchreExternalizable {
                 '}';
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        final StampComment other = (StampComment) obj;
+        return this.getComment().equals(other.getComment()) && this.getStampSequence() == other.getStampSequence();
+    }
 }

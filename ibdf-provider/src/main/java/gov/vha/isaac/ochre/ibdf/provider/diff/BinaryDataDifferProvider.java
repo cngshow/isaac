@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import javax.activation.UnsupportedDataTypeException;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
@@ -57,6 +58,8 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
+import gov.vha.isaac.ochre.api.externalizable.StampAlias;
+import gov.vha.isaac.ochre.api.externalizable.StampComment;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 
@@ -127,66 +130,107 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 		// Find existing
 		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
-			Set<UUID> matchedSet = new HashSet<UUID>();
-			if (type != OchreExternalizableObjectType.CONCEPT && type != OchreExternalizableObjectType.SEMEME) {
-				// Given using the OchreExternalizableObjectType.values()
-				// collection, ensure only handling the supported types
-				continue;
-			}
+			Set<UUID> matchedComponentSet = new HashSet<UUID>();
 
-			// Search for modified components
-			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
-				ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
-				for (OchreExternalizable newComp : newContentMap.get(type)) {
-					ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
+			if (type.equals(OchreExternalizableObjectType.CONCEPT)
+					|| type.equals(OchreExternalizableObjectType.SEMEME)) {
+				// Search for modified components
+				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+					ObjectChronology<?> oldCompChron = (ObjectChronology<?>) oldComp;
+					for (OchreExternalizable newComp : newContentMap.get(type)) {
+						ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
 
-					if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
-						matchedSet.add(oldCompChron.getPrimordialUuid());
+						if (oldCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
+							matchedComponentSet.add(oldCompChron.getPrimordialUuid());
 
-						try {
-							OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
-									activeStampSeq, type);
-							if (modifiedComponents != null) {
-								changedComponents.add(modifiedComponents);
+							try {
+								OchreExternalizable modifiedComponents = diffUtil.diff(oldCompChron, newCompChron,
+										activeStampSeq, type);
+								if (modifiedComponents != null) {
+									changedComponents.add(modifiedComponents);
+								}
+							} catch (Exception e) {
+								log.error("Failed On type: " + type + " on component: "
+										+ oldCompChron.getPrimordialUuid());
+								e.printStackTrace();
 							}
-						} catch (Exception e) {
-							log.error("Failed ON type: " + type + " on component: " + oldCompChron.getPrimordialUuid());
-							e.printStackTrace();
+
+							continue;
+						}
+					}
+				}
+
+				// Add oldComps not in matchedSet
+				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+					if (!matchedComponentSet.contains(((ObjectChronology<?>) oldComp).getPrimordialUuid())) {
+						OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(oldComp,
+								oldComp.getOchreObjectType(), inactiveStampSeq);
+
+						if (retiredComp != null) {
+							retiredComponents.add(retiredComp);
+						}
+					}
+				}
+
+				// Add newComps not in matchedSet
+				for (OchreExternalizable newComp : newContentMap.get(type)) {
+					if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+
+						OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp,
+								activeStampSeq, type);
+
+						if (addedComp != null) {
+							addedComponents.add(addedComp);
+							commitService.importNoChecks(addedComp);
+						}
+					}
+				}
+				commitService.postProcessImportNoChecks();
+
+			} else if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)
+					|| type.equals(OchreExternalizableObjectType.STAMP_COMMENT)) {
+				Set<Integer> matchedStampSequenceSet = new HashSet<Integer>();
+
+				// Search for modified components
+				for (OchreExternalizable oldComp : oldContentMap.get(type)) {
+					boolean matchFound = false;
+					for (OchreExternalizable newComp : newContentMap.get(type)) {
+						if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
+							if (((StampAlias) oldComp).equals((StampAlias) newComp)) {
+								matchedStampSequenceSet.add(((StampAlias) oldComp).getStampSequence());
+								matchFound = true;
+							}
+						} else {
+							if (((StampComment) oldComp).equals((StampComment) newComp)) {
+								matchedStampSequenceSet.add(((StampComment) oldComp).getStampSequence());
+								matchFound = true;
+							}
 						}
 
-						continue;
+						if (matchFound) {
+							continue;
+						}
 					}
 				}
-			}
 
-			// Add oldComps not in matchedSet
-			for (OchreExternalizable oldComp : oldContentMap.get(type)) {
-				if (!matchedSet.contains(((ObjectChronology<?>) oldComp).getPrimordialUuid())) {
-					OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(oldComp,
-							oldComp.getOchreObjectType(), inactiveStampSeq);
+				// Add newComps not in matchedSet
+				for (OchreExternalizable newComp : newContentMap.get(type)) {
+					int newSequence;
+					if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
+						newSequence = ((StampAlias) newComp).getStampSequence();
+					} else {
+						newSequence = ((StampComment) newComp).getStampSequence();
+					}
 
-					if (retiredComp != null) {
-						retiredComponents.add(retiredComp);
+					if (!matchedComponentSet.contains(newSequence)) {
+						addedComponents.add(newComp);
+						commitService.importNoChecks(newComp);
 					}
 				}
+
+				commitService.postProcessImportNoChecks();
 			}
-
-			// Add newComps not in matchedSet
-			for (OchreExternalizable newComp : newContentMap.get(type)) {
-				if (!matchedSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
-
-					OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp, activeStampSeq,
-							type);
-
-					if (addedComp != null) {
-						addedComponents.add(addedComp);
-						commitService.importNoChecks(addedComp);
-					}
-				}
-			}
-			commitService.postProcessImportNoChecks();
-
-		} // Close Type Loop
+		}
 
 		Map<ChangeType, List<OchreExternalizable>> retMap = new HashMap<>();
 		retMap.put(ChangeType.NEW_COMPONENTS, addedComponents);
@@ -262,12 +306,32 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						String componentType;
 						if (c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
 							componentType = "Concept";
-						} else {
+						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
 							componentType = "Sememe";
+						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+							componentType = "Stamp Alias";
+						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
+							componentType = "Stamp Comment";
+						} else {
+							throw new UnsupportedDataTypeException();
 						}
 
-						String componentToWrite = "---- " + key.toString() + " " + componentType + " #" + counter++
-								+ "   " + ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
+						String componentToWrite;
+						if ((c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT
+								|| c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME)) {
+							componentToWrite = "---- " + key.toString() + " component #" + counter++ + " of type "
+									+ componentType + " with Primordial UUID: "
+									+ ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
+						} else {
+							int sequence;
+							if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+								sequence = ((StampAlias) c).getStampSequence();
+							} else {
+								sequence = ((StampComment) c).getStampSequence();
+							}
+							componentToWrite = "---- " + key.toString() + " #" + counter++ + " of type '"
+									+ componentType + "' with Sequence# " + sequence + " ----\n";
+						}
 
 						// Print Header
 						allChangesJsonWriter.put(componentToWrite);
@@ -425,6 +489,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		int ic = 0;
 		int cc = 0;
 		int sc = 0;
+		int sta = 0;
+		int stc = 0;
 
 		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfPath).toPath());
 		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
@@ -446,11 +512,18 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
 							sc++;
 							verificationWriter.write(object);
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+							sta++;
+							verificationWriter.write(object);
+						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
+							stc++;
+							verificationWriter.write(object);
 						} else {
 							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
 						}
 					} catch (Exception e) {
-						log.error("Failure at " + ic + " items " + cc + " concepts, " + sc + " sememes, ", e);
+						log.error("Failure at " + ic + " items " + cc + " concepts, " + sc + " sememes, " + sta
+								+ " stamp aliases, " + sc + " stamp comments, ", e);
 						args = new HashMap<>();
 						args.put(JsonWriter.PRETTY_PRINT, true);
 						ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -471,17 +544,20 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					}
 
 					if (ic % 10000 == 0) {
-						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, ");
+						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, " + sta
+								+ " stamp aliases, " + sc + " stamp comments, ");
 					}
 				}
 			}
 
 		} catch (Exception ex) {
-			log.info("Loaded " + ic + " items, " + cc + " concepts, " + sc + " sememes, "
+			log.info("Loaded " + ic + " items, " + cc + " concepts, " + sc + " sememes, " + sta + " stamp aliases, "
+					+ sc + " stamp comments, "
 					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 		}
 
-		log.info("Finished with " + ic + " items, " + cc + " concepts, " + sc + " sememes, "
+		log.info("Finished with " + ic + " items, " + cc + " concepts, " + sc + " sememes, " + sta + " stamp aliases, "
+				+ sc + " stamp comments, "
 				+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 
 	}
@@ -490,7 +566,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			String version, String jsonInputFileName) throws IOException {
 
 		int i = 1;
-
 		try (FileWriter inputAnalysisTextWriter = new FileWriter(inputAnalysisDir + textInputFileName, true);
 				JsonDataWriterService inputAnalysisJsonWriter = new JsonDataWriterService(
 						new File(inputAnalysisDir + jsonInputFileName));) {
@@ -509,7 +584,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			}
 
 			i = 1;
-
 			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
 				SememeChronology<?> se = (SememeChronology<?>) component;
 				inputAnalysisJsonWriter
@@ -524,6 +598,42 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					inputAnalysisTextWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: "
 							+ i + " in writing *" + version + "* content to text file for analysis (UUID: "
 							+ se.getPrimordialUuid() + ".");
+				}
+				i++;
+			}
+
+			i = 1;
+			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_ALIAS)) {
+				StampAlias sa = (StampAlias) component;
+				inputAnalysisJsonWriter
+						.put("--- " + version + " Stamp Alias #" + i + "   " + sa.getStampSequence() + " ----");
+				inputAnalysisJsonWriter.put(sa);
+
+				try {
+					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Alias #" + i + "   "
+							+ sa.getStampSequence() + " ----\n");
+					inputAnalysisTextWriter.write(sa.toString());
+				} catch (Exception e) {
+					inputAnalysisTextWriter.write("Failure on TXT writing Stamp Alias: " + sa.getStampSequence()
+							+ " which is index: " + i + " in writing *" + version + ".");
+				}
+				i++;
+			}
+
+			i = 1;
+			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_COMMENT)) {
+				StampComment sc = (StampComment) component;
+				inputAnalysisJsonWriter
+						.put("--- " + version + " Stamp Comment #" + i + "   " + sc.getStampSequence() + " ----");
+				inputAnalysisJsonWriter.put(sc);
+
+				try {
+					inputAnalysisTextWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Comment #" + i + "   "
+							+ sc.getStampSequence() + " ----\n");
+					inputAnalysisTextWriter.write(sc.toString());
+				} catch (Exception e) {
+					inputAnalysisTextWriter.write("Failure on TXT writing Stamp Comment: " + sc.getStampSequence()
+							+ " which is index: " + i + " in writing *" + version + ".");
 				}
 				i++;
 			}
