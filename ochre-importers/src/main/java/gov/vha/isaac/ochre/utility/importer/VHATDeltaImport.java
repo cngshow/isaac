@@ -71,6 +71,7 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.Alert;
+import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -117,12 +118,10 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
+import gov.vha.isaac.ochre.modules.vhat.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
 
 /**
  * Goal which converts VHAT data into the workbench jbin format
- * 
- * Not yet handled:
- * 1) mapsets
  * 
  */
 public class VHATDeltaImport extends ConverterBaseMojo
@@ -222,10 +221,15 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			headerCheck(terminology);
 			vuidCheck(terminology);
 			populateNewProperties(terminology);
+			populateNewSubsets(terminology);
 			requiredChecks(terminology);
 			
 			try
 			{
+				// Disable VHATIsAHasParentSynchronizingChronologyChangeListener listener
+				// because the import generates all necessary components
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).disable();
+
 				importUtil_ = new IBDFCreationUtility(author, module, path, debugOutputFolder);
 				LOG.info("Import Util configured");
 				createNewProperties(terminology);
@@ -262,6 +266,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				LOG.warn("Unexpected error setting up", e);
 				throw new IOException("Unexpected error setting up", e);
+			} finally {
+				LookupService.getService(VHATIsAHasParentSynchronizingChronologyChangeListenerI.class).enable();
 			}
 		}
 		catch (RuntimeException | IOException e)
@@ -298,6 +304,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	private void vuidCheck(Terminology terminology)
 	{
 		LOG.info("Checking for in use VUIDs");
+		HashSet<Long> vuidsInXmlFile_ = new HashSet<>();
 		
 		if (terminology.getCodeSystem().getAction() == ActionType.ADD && terminology.getCodeSystem().getVUID() != null)
 		{
@@ -305,6 +312,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			{
 				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
 						+ terminology.getCodeSystem().getVUID() + "' is already in use");
+			}
+			else if (!vuidsInXmlFile_.add(terminology.getCodeSystem().getVUID()))
+			{
+				throw new RuntimeException("The VUID specified for the new code system '" + terminology.getCodeSystem().getName() + "' : '" 
+						+ terminology.getCodeSystem().getVUID() + "' is not unique to the import data");
 			}
 		}
 		
@@ -318,6 +330,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" + cc.getVUID() + "' is already in use");
 					}
+					else if (!vuidsInXmlFile_.add(cc.getVUID()))
+					{
+						throw new RuntimeException("The VUID specified for the new concept '" + cc.getName() + "' : '" 
+								+ cc.getVUID() + "' is not unique to the import data");
+					}
 				}
 				if (cc.getDesignations() != null && cc.getDesignations().getDesignation() != null)
 				{
@@ -328,6 +345,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							if (Frills.getNidForVUID(d.getVUID()).isPresent())
 							{
 								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+							}
+							else if (!vuidsInXmlFile_.add(d.getVUID()))
+							{
+								throw new RuntimeException("The VUID specified for the new designation '" + d.getValueNew() + "' : '" 
+										+ d.getVUID() + "' is not unique to the import data");
 							}
 						}
 					}
@@ -345,15 +367,64 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" + ms.getVUID() + "' is already in use");
 					}
-				}
-				for (MapEntry me : ms.getMapEntries().getMapEntry())
-				{
-	
-					if (me.getAction() == ActionType.ADD && me.getVUID() != null)
+					else if (!vuidsInXmlFile_.add(ms.getVUID()))
 					{
-						if (Frills.getNidForVUID(me.getVUID()).isPresent())
+						throw new RuntimeException("The VUID specified for the new mapset '" + ms.getName() + "' : '" 
+								+ ms.getVUID() + "' is not unique to the import data");
+					}
+					
+					if (ms.getDesignations() != null && ms.getDesignations().getDesignation() != null)
+					{
+						for (MapSet.Designations.Designation d : ms.getDesignations().getDesignation())
 						{
-							throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" + ms.getVUID() + "' is already in use");
+							if (d.getAction() == ActionType.ADD && d.getVUID() != null)
+							{
+								if (Frills.getNidForVUID(d.getVUID()).isPresent())
+								{
+									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+								}
+								else if (!vuidsInXmlFile_.add(d.getVUID()))
+								{
+									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" 
+											+ d.getVUID() + "' is not unique to the import data");
+								}
+							}
+						}
+					}
+				}
+				if (ms.getMapEntries() != null && ms.getMapEntries().getMapEntry() != null)
+				{
+					for (MapEntry me : ms.getMapEntries().getMapEntry())
+					{
+						if (me.getAction() == ActionType.ADD && me.getVUID() != null)
+						{
+							if (Frills.getNidForVUID(me.getVUID()).isPresent())
+							{
+								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" + ms.getVUID() + "' is already in use");
+							}
+							else if (!vuidsInXmlFile_.add(me.getVUID()))
+							{
+								throw new RuntimeException("The VUID specified for the new map entry '" + me.getSourceCode() + "' : '" 
+										+ me.getVUID() + "' is not unique to the import data");
+							}
+						}
+						if (me.getDesignations() != null && me.getDesignations().getDesignation() != null)
+						{
+							for (MapEntry.Designations.Designation d : me.getDesignations().getDesignation())
+							{
+								if (d.getAction() == ActionType.ADD && d.getVUID() != null)
+								{
+									if (Frills.getNidForVUID(d.getVUID()).isPresent())
+									{
+										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+									}
+									else if (!vuidsInXmlFile_.add(d.getVUID()))
+									{
+										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" 
+												+ d.getVUID() + "' is not unique to the import data");
+									}
+								}
+							}
 						}
 					}
 				}
@@ -369,6 +440,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					if (Frills.getNidForVUID(s.getVUID()).isPresent())
 					{
 						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" + s.getVUID() + "' is already in use");
+					}
+					else if (!vuidsInXmlFile_.add(s.getVUID()))
+					{
+						throw new RuntimeException("The VUID specified for the new subset '" + s.getName() + "' : '" 
+								+ s.getVUID() + "' is not unique to the import data");
 					}
 				}
 			}
@@ -399,6 +475,39 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					default :
 						throw new RuntimeException("Unexepected error");
 					
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Put any Subsets listed in the new section into our lists for UUID lookup.
+	 */
+	private void populateNewSubsets(Terminology terminology) throws IOException
+	{
+		LOG.info("Checking for subsets that need creation");
+		
+		if (terminology.getSubsets() != null)
+		{
+			for (Subset s : terminology.getSubsets().getSubset())
+			{
+				switch (s.getAction())
+				{
+					case ADD:
+						subsets_.addProperty(s.getName());
+						
+						if (s.getVUID() != null)
+						{
+							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+						}
+						break;
+					case REMOVE: case NONE:
+						// no-op
+						break;
+					case UPDATE:
+						throw new IOException("Update of subset is not supported: " + s.getName());
+					default :
+						throw new RuntimeException("Unexepected error");
 				}
 			}
 		}
@@ -443,26 +552,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private void createNewSubsets(Terminology terminology) throws IOException
 	{
-		LOG.info("Checking for properties that need creation");
+		LOG.info("Creating new Subsets");
+		
 		if (terminology.getSubsets() != null)
 		{
-			for (Subset s : terminology.getSubsets().getSubset())
-			{
-				switch (s.getAction())
-				{
-					case ADD:
-						subsets_.addProperty(s.getName());
-						break;
-					case REMOVE: case NONE:
-						//process these in a second pass
-						break;
-					case UPDATE:
-						throw new IOException("Update of subset is not supported: " + s.getName());
-					default :
-						throw new RuntimeException("Unexepected error");
-				}
-			}
-			
 			//create the new ones
 			try
 			{
@@ -479,23 +572,24 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				{
 					case ADD:
 						//add the vuid, now that the concept is there
-						
 						Long vuid = s.getVUID() == null ? 
-										(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
-										: s.getVUID();
-						
+								(vuidSupplier_ == null ? null : vuidSupplier_.getAsLong())
+								: s.getVUID();
+				
 						if (vuid != null)
 						{
-							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
-								MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
+									MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 						}
 						break;
-					case REMOVE: 
+					case REMOVE:
+						// add it into the subset map
+						subsets_.addProperty(s.getName());
 						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
-						//no break
+						break;
 					case NONE:
-						// add it into the subset map (for both none and remove)
+						// add it into the subset map
 						subsets_.addProperty(s.getName());
 						break;
 					default :
@@ -1070,7 +1164,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			throw new IOException("Active must be provided on every property.  Missing on " + parentConcept.getCode() + ":" 
 				+ p.getTypeName());
 		}
-		if (StringUtils.isBlank(p.getValueNew()))
+		if (p.getAction() == ActionType.ADD && StringUtils.isBlank(p.getValueNew()))
 		{
 			throw new IOException("The property '" + p.getTypeName() + "' doesn't have a ValueNew - from " + parentConcept.getCode());
 		}
@@ -1218,6 +1312,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				isActive = false;
 			case UPDATE:
 				//These cases are a bit tricky, because the UUID calculated for the sememe was based on the value.  If the value
 				//only changed once, you could use old value to find it, but, if it changes twice, you can no longer calculate back to the UUID.
@@ -1289,7 +1385,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
 							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
 					{
-						return propertyValue.equals(sv.get().value().getData()[0].toString());
+						return propertyValue.equals(sv.get().value().getData()[0].dataToString());
 					}
 				}
 				return false;
@@ -1309,7 +1405,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					@SuppressWarnings({ "unchecked", "rawtypes" })
 					Optional<LatestVersion<DynamicSememe<?>>> sv = ((SememeChronology)sememe).getLatestVersion(DynamicSememe.class, readCoordinate_);
 					if (sv.isPresent() && sv.get().value().getDynamicSememeUsageDescription().getColumnInfo().length == 1 && 
-							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.STRING)
+							sv.get().value().getDynamicSememeUsageDescription().getColumnInfo()[0].getColumnDataType() == DynamicSememeDataType.UUID)
 					{
 						return  targetConcept.equals(((DynamicSememeUUID) sv.get().value().getData()[0]).getDataUUID());
 					}
@@ -1380,6 +1476,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
+				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				d.setActive(false);
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
 				{
@@ -1409,7 +1507,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setText(StringUtils.isBlank(d.getValueNew()) ? 
 								(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
 								: d.getValueNew());
-						
+						mss.setCaseSignificanceConceptSequence(latest.get().value().getCaseSignificanceConceptSequence());
+						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
+						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
+
 						//No changing of type name, code, or vuid
 					}
 					else
@@ -1477,7 +1578,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 												Get.identifierService().getUuidPrimordialFromConceptId(nested.getAssemblageSequence()).get(), State.ACTIVE, null, null);
 									}
 									
-									@SuppressWarnings({ "unchecked", "unused" })
+									@SuppressWarnings({ "unchecked" })
 									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
 										State.INACTIVE, editCoordinate_);
 									mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
@@ -1674,6 +1775,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						sm.setActive(false);
 					case UPDATE:
 						Get.sememeService().getSememesForComponentFromAssemblage(description.getNid(), Get.identifierService()
 							//There really shouldn't be more than one of these, but if there is, no harm in changing state on all of them.
@@ -1738,6 +1841,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
+						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						r.setActive(false);
 					case UPDATE:
 						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
 						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
@@ -1751,7 +1856,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						if (ds.isPresent())
 						{
 							MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)sc).createMutableVersion(MutableDynamicSememe.class, 
-								r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
+									r.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
 							mds.setData(new DynamicSememeData[] {new DynamicSememeUUIDImpl(newTarget.isPresent() ? newTarget.get() : oldTarget.get())});
 							importUtil_.storeManualUpdate(sc);
 						}

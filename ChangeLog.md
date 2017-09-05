@@ -2,8 +2,44 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
-* 2017/08/?? - 4.19 - PENDING
+* 2017/09/?? - 5.03 - PENDING
     *
+
+* 2017/09/01 - 5.02
+    * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false (583063)
+    * Fix to VetsExporter to read and export RelationshipTypes
+    * Fix for adding Subsets in the same file as they are use in a SubsetMembership of a concept (i.e. super.xml) (583084)
+    * Fix to VetsExporter to export new/added PropertyTypes, RelationshipTypes and DesignationTypes (583108)
+
+* 2017/08/31 - 5.01
+    * Minor metadata naming change to be more consistent in the GUI (583064)
+    * Fix for Property sememe lookup to get the needed string value in the XML Delta import (575460)
+    * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import (570887)
+    * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import (583066)
+    * Added VHAT_ASSOCIATION_TYPES constant (583071)
+    * Changes to look for duplicate VUIDs in imported XML file prior to processing (583073)
+    * Changes to delta importer to handle Property activation/inactivation-only directives (583074)
+
+* 2017/08/25 - 5.00
+    * 537659 - Fixes for us extension processing
+    * Rework UUID generation for central consistency, to allow delta processing to work later
+    * Performance improvements on the Lucene indexer
+
+* 2017/08/24 - 4.22
+    * Fix yet more problems with the caching of users and roles.
+    * Debug and other logging improvements.
+    * VHATIsAHasParent updates.
+
+* 2017/08/23 - 4.21
+    * Fix a silly bug accidently introduced in the 4.20 build relating to identifer type sememes (code, vuid, etc)
+    * Changes to VHATIsAHasParent code
+
+* 2017/08/22 - 4.20
+    * Cleaning up prior to code complete, minor bug fixes found during development testing.
+
+* 2017/08/17 - 4.19
+    * Updates to Frills, improving documentation in VHATIsAHasParentSynchronizingChronologyChangeListener and changing VHATIsAHasParentSynchronizingChronologyChangeListener to reuse retired has_parent association sememes where possible
+
 
 * 2017/08/15 - 4.18
     * Updates for VHAT has parent bug fixes

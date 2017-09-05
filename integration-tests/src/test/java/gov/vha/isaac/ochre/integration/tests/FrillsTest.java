@@ -37,6 +37,15 @@ public class FrillsTest {
 		Assert.assertEquals(Frills.getAllChildrenOfConcept(MetaData.VERSION_PROPERTIES.getConceptSequence(), true, false).size(), 12);
 		Assert.assertEquals(Frills.getAllChildrenOfConcept(MetaData.VERSION_PROPERTIES.getConceptSequence(), false, true).size(), 7);
 		Assert.assertEquals(Frills.getAllChildrenOfConcept(MetaData.VERSION_PROPERTIES.getConceptSequence(), true, true).size(), 11);
+		
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.SCTID.getConceptSequence()));
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.SCTID.getNid()));
+		
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.VUID.getNid()));
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.CODE.getNid()));
+		Assert.assertTrue(Frills.definesIdentifierSememe(MetaData.UUID.getNid()));
+		
+		Assert.assertFalse(Frills.definesIdentifierSememe(MetaData.ACCEPTABLE.getNid()));
 	}
 
 }
