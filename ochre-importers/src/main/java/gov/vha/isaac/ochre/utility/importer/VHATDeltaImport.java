@@ -1869,7 +1869,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						{
 							if (r.isActive())
 							{
-								gatheredisA.add(newTarget.get());
+								UUID xTarget = newTarget.isPresent() ? newTarget.get() : oldTarget.get();
+								gatheredisA.add(xTarget);
 							}
 							else
 							{
