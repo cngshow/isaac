@@ -1476,8 +1476,13 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				//noop
 				break;
 			case REMOVE:
-				// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+				// Here, we will iterate through the nested sememes, setting all to have a status 
+				// of 'false' and then fall-through to the UPDATE clause to handle setting the status
+				// of the designation itself
+				// REMOVE directive takes precedence over Active element 
+				// Explicitely set active=false, and fall-through
 				d.setActive(false);
+				// No break, fall-through for update to the designation itself
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
 				{
@@ -1511,6 +1516,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
 						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
 
+						// If the designation is inactivated/removed, set all nested sememes to inactive
+						if (!d.isActive())
+						{
+							modifyNestedSememes(sc, State.INACTIVE);
+						}
+						
 						//No changing of type name, code, or vuid
 					}
 					else
@@ -1869,7 +1880,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						{
 							if (r.isActive())
 							{
-								gatheredisA.add(newTarget.get());
+								UUID xTarget = newTarget.isPresent() ? newTarget.get() : oldTarget.get();
+								gatheredisA.add(xTarget);
 							}
 							else
 							{
@@ -2190,6 +2202,59 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				}
 			}
 		}
-		
+	}
+	
+	/**
+	 * A method to walk through nested sememes and modify their state in response to a parent
+	 * component's state change.
+	 * 
+	 * @param sc The SememeChronology of the parent component
+	 * @param state The State to set for each of the nested sememes
+	 */
+	private void modifyNestedSememes(SememeChronology<?> sc, State state)
+	{
+		Get.sememeService().getSememesForComponent(sc.getNid()).forEach(nested ->
+		{
+			if (nested.getAssemblageSequence() == DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence() ||
+					nested.getAssemblageSequence() == MetaData.CODE.getConceptSequence() ||
+					nested.getAssemblageSequence() == MetaData.VUID.getConceptSequence() ||
+					nested.getAssemblageSequence() == MetaData.US_ENGLISH_DIALECT.getConceptSequence())
+			{
+				// Ignore
+			}
+			else
+			{
+				@SuppressWarnings({ "rawtypes", "unchecked" }) 
+				Optional<LatestVersion<SememeVersion<?>>> nestedLatest = ((SememeChronology)nested).getLatestVersion(SememeVersion.class, readCoordinate_);
+				
+				switch (nested.getSememeType())
+				{
+				case DYNAMIC:
+					@SuppressWarnings({ "unchecked" })
+					MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
+						state, editCoordinate_);
+					mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
+					importUtil_.storeManualUpdate(nested);
+					break;
+				
+				//None of these are expected in vhat data
+				case MEMBER:
+				case DESCRIPTION:
+				case LOGIC_GRAPH:
+				case LONG:
+				case COMPONENT_NID:
+				case RELATIONSHIP_ADAPTOR:
+				case STRING:
+				case UNKNOWN:
+				default:
+					// No-op
+				}
+			}
+			
+			if (!Get.sememeService().getSememeSequencesForComponent(nested.getNid()).isEmpty())
+			{
+				modifyNestedSememes(nested, state);
+			}
+		});
 	}
 }
