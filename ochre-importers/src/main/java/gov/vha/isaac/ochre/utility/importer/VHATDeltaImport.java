@@ -1518,7 +1518,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						// If the designation is inactivated/removed, set all nested sememes to inactive
 						if (!d.isActive())
 						{
-							modifyNestedSememes(sc, State.INACTIVE);
+							for (ObjectChronology<?> o : recursiveRetireNested(sc.getPrimordialUuid()))
+							{
+								importUtil_.storeManualUpdate(o);
+							}
 						}
 						
 						//No changing of type name, code, or vuid
@@ -2262,58 +2265,5 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			}
 		}
 	}
-	
-	/**
-	 * A method to walk through nested sememes and modify their state in response to a parent
-	 * component's state change.
-	 * 
-	 * @param sc The SememeChronology of the parent component
-	 * @param state The State to set for each of the nested sememes
-	 */
-	private void modifyNestedSememes(SememeChronology<?> sc, State state)
-	{
-		Get.sememeService().getSememesForComponent(sc.getNid()).forEach(nested ->
-		{
-			if (nested.getAssemblageSequence() == DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.CODE.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.VUID.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.US_ENGLISH_DIALECT.getConceptSequence())
-			{
-				// Ignore
-			}
-			else
-			{
-				@SuppressWarnings({ "rawtypes", "unchecked" }) 
-				Optional<LatestVersion<SememeVersion<?>>> nestedLatest = ((SememeChronology)nested).getLatestVersion(SememeVersion.class, readCoordinate_);
-				
-				switch (nested.getSememeType())
-				{
-				case DYNAMIC:
-					@SuppressWarnings({ "unchecked" })
-					MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
-						state, editCoordinate_);
-					mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
-					importUtil_.storeManualUpdate(nested);
-					break;
-				
-				//None of these are expected in vhat data
-				case MEMBER:
-				case DESCRIPTION:
-				case LOGIC_GRAPH:
-				case LONG:
-				case COMPONENT_NID:
-				case RELATIONSHIP_ADAPTOR:
-				case STRING:
-				case UNKNOWN:
-				default:
-					// No-op
-				}
-			}
-			
-			if (!Get.sememeService().getSememeSequencesForComponent(nested.getNid()).isEmpty())
-			{
-				modifyNestedSememes(nested, state);
-			}
-		});
-	}
 }
+
