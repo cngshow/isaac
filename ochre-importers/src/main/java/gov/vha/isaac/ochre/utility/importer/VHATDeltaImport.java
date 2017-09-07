@@ -1565,46 +1565,48 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					descRef = ComponentReference.fromChronology(newDescription);
 					
 					//copy all other nested components
-					Get.sememeService().getSememesForComponent(oldSc.getNid()).forEach(nested ->
+					Get.sememeService().getSememesForComponent(oldSc.getNid()).forEach(existingNestedSememe ->
 					{
-						if (nested.getAssemblageSequence() == DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence() ||
-								nested.getAssemblageSequence() == MetaData.CODE.getConceptSequence() ||
-								nested.getAssemblageSequence() == MetaData.VUID.getConceptSequence() ||
-								nested.getAssemblageSequence() == MetaData.US_ENGLISH_DIALECT.getConceptSequence())
+						if (existingNestedSememe.getAssemblageSequence() == DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence() ||
+								existingNestedSememe.getAssemblageSequence() == MetaData.CODE.getConceptSequence() ||
+								existingNestedSememe.getAssemblageSequence() == MetaData.VUID.getConceptSequence() ||
+								existingNestedSememe.getAssemblageSequence() == MetaData.US_ENGLISH_DIALECT.getConceptSequence())
 						{
 							//ignore - these are handled with special case code above and below....
 						}
 						else
 						{
 							@SuppressWarnings({ "rawtypes", "unchecked" }) 
-							Optional<LatestVersion<SememeVersion<?>>> nestedLatest = ((SememeChronology)nested).getLatestVersion(SememeVersion.class, readCoordinate_);
+							Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = ((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate_);
 							
-							if (nestedLatest.isPresent() && nestedLatest.get().value().getState() == State.ACTIVE)
+							if (latestVersionOfExistingNestedSememe.isPresent() && latestVersionOfExistingNestedSememe.get().value().getState() == State.ACTIVE)
 							{
-								SememeChronology<?> copyOfSememe = null;
+								SememeChronology<?> copyOfExistingNestedSememe = null;
 								
-								if (nestedLatest.get().contradictions().isPresent()) {
+								if (latestVersionOfExistingNestedSememe.get().contradictions().isPresent()) {
 									// TODO handle contradictions
 								}
 								//expect these to be, primarily, dynamic sememes, refset entries or strings...
-								switch (nested.getSememeType())
+								switch (existingNestedSememe.getSememeType())
 								{
 								case DYNAMIC:
-									if (((DynamicSememe<?>)nestedLatest.get().value()).getData() != null 
-										&& ((DynamicSememe<?>)nestedLatest.get().value()).getData().length > 0)
-									{
-										copyOfSememe = importUtil_.addAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), null, ((DynamicSememe<?>)nestedLatest.get().value()).getData(),
-												Get.identifierService().getUuidPrimordialFromConceptId(nested.getAssemblageSequence()).get(), State.ACTIVE, null, null);
-									}
+									copyOfExistingNestedSememe = importUtil_.addAnnotation(
+											ComponentReference.fromSememe(newDescription.getPrimordialUuid()),
+											null,
+											((DynamicSememe<?>)latestVersionOfExistingNestedSememe.get().value()).getData(),
+											Get.identifierService().getUuidPrimordialFromConceptId(existingNestedSememe.getAssemblageSequence()).get(),
+											State.ACTIVE,
+											null,
+											null);
 									break;
 								case MEMBER:
-									SememeVersion<?> memberSememe = nestedLatest.get().value();	
-									copyOfSememe = importUtil_.addRefsetMembership(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
+									SememeVersion<?> memberSememe = latestVersionOfExistingNestedSememe.get().value();	
+									copyOfExistingNestedSememe = importUtil_.addRefsetMembership(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
 									break;
 								case STRING:
-									StringSememe<?> stringSememe = (StringSememe<?>)nestedLatest.get().value();
+									StringSememe<?> stringSememe = (StringSememe<?>)latestVersionOfExistingNestedSememe.get().value();
 									// TODO is Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()) == refsetUuid?
-									copyOfSememe = importUtil_.addStringAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
+									copyOfExistingNestedSememe = importUtil_.addStringAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
 									break;
 
 									//None of these are expected in vhat data
@@ -1615,12 +1617,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								case RELATIONSHIP_ADAPTOR:
 								case UNKNOWN:
 								default:
-									throw new RuntimeException("MoveFromConceptCode doesn't supported nested sememes of type " + nested.getSememeType() + 
+									throw new RuntimeException("MoveFromConceptCode doesn't supported nested sememes of type " + existingNestedSememe.getSememeType() + 
 											" for designation " + d.getCode());
 								}
 
-								if (copyOfSememe != null) {
-									copy(importUtil_, copyOfSememe, nested, readCoordinate_, editCoordinate_);
+								if (copyOfExistingNestedSememe != null) {
+									copy(importUtil_, copyOfExistingNestedSememe, existingNestedSememe, readCoordinate_, editCoordinate_);
 								}
 							}
 						}
@@ -1720,11 +1722,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				{
 				case DYNAMIC:
 					DynamicSememe<?> dynamicSememe = (DynamicSememe<?>)latestVersionOfExistingNestedSememe.get().value();
-					if (dynamicSememe.getData() != null && dynamicSememe.getData().length > 0)
-					{
-						copyOfExistingNestedSememe = importUtil.addAnnotation(ComponentReference.fromChronology(copyOfParentComponent), null, dynamicSememe.getData(),
-								Get.identifierService().getUuidPrimordialFromConceptId(existingNestedSememe.getAssemblageSequence()).get(), State.ACTIVE, null, null);
-					}
+					copyOfExistingNestedSememe = importUtil.addAnnotation(
+							ComponentReference.fromChronology(copyOfParentComponent),
+							null,
+							dynamicSememe.getData(),
+							Get.identifierService().getUuidPrimordialFromConceptId(existingNestedSememe.getAssemblageSequence()).get(),
+							State.ACTIVE,
+							null,
+							null);
 					break;
 				case MEMBER:
 					SememeVersion<?> memberSememe = latestVersionOfExistingNestedSememe.get().value();
