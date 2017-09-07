@@ -74,12 +74,7 @@ public class BinaryDataDifferProviderUtility {
 	boolean diffOnPath;
 	private SememeBuilderService<?> sememeBuilderService_;
 
-	public BinaryDataDifferProviderUtility(Boolean diffOnTimestamp, Boolean diffOnAuthor, Boolean diffOnModule,
-			Boolean diffOnPath) {
-		this.diffOnTimestamp = diffOnTimestamp;
-		this.diffOnAuthor = diffOnAuthor;
-		this.diffOnModule = diffOnModule;
-		this.diffOnPath = diffOnPath;
+	public BinaryDataDifferProviderUtility() {
 		sememeBuilderService_ = Get.sememeBuilderService();
 	}
 
@@ -364,5 +359,13 @@ public class BinaryDataDifferProviderUtility {
 
 	public long getNewImportDate() {
 		return newImportDate;
+	}
+
+	public void setDiffOptions(boolean diffOnTimestamp, boolean diffOnAuthor, boolean diffOnModule,
+			boolean diffOnPath) {
+		this.diffOnTimestamp = diffOnTimestamp;
+		this.diffOnAuthor = diffOnAuthor;
+		this.diffOnModule = diffOnModule;
+		this.diffOnPath = diffOnPath;
 	}
 }

@@ -29,7 +29,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.activation.UnsupportedDataTypeException;
 import javax.annotation.PostConstruct;
@@ -83,27 +87,33 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	/** The log. */
-	private final Logger log = LogManager.getLogger();
+	private final Logger log = LogManager.getLogger(BinaryDataDifferProvider.class);
+
+	/** object to lock on */
+	private final static ReentrantLock diffProcessLock = new ReentrantLock();
 
 	/** The diff util. */
-	private BinaryDataDifferProviderUtility diffUtil;
+	private final BinaryDataDifferProviderUtility diffUtil = new BinaryDataDifferProviderUtility();
 
 	/** The comment count. */
-	// Stream hack
-	private int conceptCount, sememeCount, itemCount, aliasCount, commentCount;
-
+	private AtomicInteger conceptCount = new AtomicInteger();
+	private AtomicInteger sememeCount = new AtomicInteger();
+	private AtomicInteger aliasCount = new AtomicInteger();
+	private AtomicInteger commentCount = new AtomicInteger();
+	private AtomicInteger itemCount = new AtomicInteger();
+	
 	/** The input analysis dir. */
 	// Analysis File Readers/Writers
-	private String inputAnalysisDir;
+	private AtomicReference<String>  inputAnalysisDirStr = new AtomicReference<String>();
 
 	/** The comparison analysis dir. */
-	private String analysisArtifactsDir;
+	private AtomicReference<String>  analysisArtifactsDirStr = new AtomicReference<String>();
 
 	/** The delta ibdf file path. */
-	private String deltaIbdfFilePath;
+	private AtomicReference<String>  deltaIbdfFilePathStr = new AtomicReference<String>();
 
 	/** The module uuid. */
-	private UUID moduleUuid;
+	private AtomicReference<String> moduleUuidStr = new AtomicReference<String>();
 
 	/** The text input file name. */
 	private final String textBaseNewIbdfFileName = "bothVersions.txt";
@@ -114,12 +124,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	/** The text full comparison file name. */
 	private final String textFullComparisonFileName = "allChangedComponents.txt";
 
-	/** The component CS writer. */
-	// Changeset File Writer
-	private DataWriterService componentCSWriter = null;
-
 	/** The skipped items. */
-	HashSet<Integer> skippedItems = new HashSet<>();
+	ConcurrentSkipListSet<Integer> skippedItems = new ConcurrentSkipListSet<>();
 
 	/**
 	 * Instantiates a new binary data differ provider.
@@ -339,7 +345,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	@Override
 	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws IOException {
-		componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePath).toPath());
+		DataWriterService componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePathStr.get()).toPath());
 
 		for (ChangeType key : changedComponents.keySet()) {
 			for (OchreExternalizable c : changedComponents.get(key)) {
@@ -397,14 +403,14 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 */
 	private void generateComparisonAnalysisFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
 			throws IOException {
-		try (FileWriter allChangesTextWriter = new FileWriter(analysisArtifactsDir + textFullComparisonFileName);
+		try (FileWriter allChangesTextWriter = new FileWriter(analysisArtifactsDirStr.get() + textFullComparisonFileName);
 				JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
-						new File(analysisArtifactsDir + jsonFullComparisonFileName));) {
+						new File(analysisArtifactsDirStr.get() + jsonFullComparisonFileName));) {
 
 			for (ChangeType key : changedComponents.keySet()) {
 				int counter = 1;
 
-				FileWriter changeTypeWriter = new FileWriter(analysisArtifactsDir + key + "_File.txt");
+				FileWriter changeTypeWriter = new FileWriter(analysisArtifactsDirStr.get() + key + "_File.txt");
 
 				try {
 					List<OchreExternalizable> components = changedComponents.get(key);
@@ -488,29 +494,31 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private int createStamp(State state) {
 		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
 				TermAux.USER.getConceptSequence(), // Author
-				LookupService.getService(IdentifierService.class).getConceptSequenceForUuids(moduleUuid), // Module
+				LookupService.getService(IdentifierService.class).getConceptSequenceForUuids(UUID.fromString(moduleUuidStr.get())), // Module
 				TermAux.DEVELOPMENT_PATH.getConceptSequence()); // Path
 	}
 
 	@Override
-	public void initialize(String analysisArtifactsDir, String inputAnalysisDir, String deltaIbdfPathFile,
+	public void initialize(String analysisArtifactsDirStr, String inputAnalysisDirStr, String deltaIbdfPathFile,
 			Boolean generateAnalysisFiles, boolean diffOnTimestamp, boolean diffOnAuthor, boolean diffOnModule,
 			boolean diffOnPath, String importDate, String moduleToCreate) {
-		diffUtil = new BinaryDataDifferProviderUtility(diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
+
+		diffProcessLock.lock();
+
+		diffUtil.setDiffOptions(diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath);
 		diffUtil.setNewImportDate(importDate);
 
-		this.moduleUuid = UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate);
-
-		this.inputAnalysisDir = inputAnalysisDir;
-		this.analysisArtifactsDir = analysisArtifactsDir;
-		this.deltaIbdfFilePath = deltaIbdfPathFile;
+		moduleUuidStr.set(UuidT5Generator.get(UuidT5Generator.PATH_ID_FROM_FS_DESC, moduleToCreate).toString());
+		this.inputAnalysisDirStr.set(inputAnalysisDirStr);
+		this.analysisArtifactsDirStr.set(analysisArtifactsDirStr);
+		this.deltaIbdfFilePathStr.set(deltaIbdfPathFile);
 
 		if (generateAnalysisFiles) {
-			File f = new File(inputAnalysisDir);
+			File f = new File(inputAnalysisDirStr);
 			deleteDirectoryFiles(f);
 			f.mkdirs();
 
-			f = new File(analysisArtifactsDir);
+			f = new File(analysisArtifactsDirStr);
 			deleteDirectoryFiles(f);
 			f.mkdirs();
 		}
@@ -522,11 +530,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		log.info("Processing file: " + versionFile.getAbsolutePath());
 		BinaryDataReaderService reader = Get.binaryDataReader(versionFile.toPath());
 
-		itemCount = 0;
-		conceptCount = 0;
-		sememeCount = 0;
-		aliasCount = 0;
-		commentCount = 0;
+		itemCount.set(0);
+		conceptCount.set(0);
+		sememeCount.set(0);
+		aliasCount.set(0);
+		commentCount.set(0);
 
 		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new HashMap<>();
 		retMap.put(OchreExternalizableObjectType.CONCEPT, new HashSet<OchreExternalizable>());
@@ -536,20 +544,20 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		try {
 			reader.getStream().forEach((object) -> {
 				if (object != null) {
-					itemCount++;
+					itemCount.getAndIncrement();
 
 					try {
 						if (object.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
-							conceptCount++;
+							conceptCount.getAndIncrement();
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
-							sememeCount++;
+							sememeCount.getAndIncrement();
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
-							aliasCount++;
+							aliasCount.getAndIncrement();
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
-							commentCount++;
+							commentCount.getAndIncrement();
 							retMap.get(object.getOchreObjectType()).add(object);
 						} else {
 							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
@@ -575,33 +583,34 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (itemCount % 10000 == 0) {
-						log.info("Still processing ibdf file.  Status: " + itemCount + " entries, " + "Loaded "
-								+ conceptCount + " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, "
-								+ commentCount + " comments");
+					if (itemCount.get() % 10000 == 0) {
+						log.info("Still processing ibdf file.  Status: " + itemCount.get() + " entries, " + "Loaded "
+								+ conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, "
+								+ aliasCount.get() + " aliases, " + commentCount.get() + " comments");
 					}
 				}
 			});
 		} catch (Exception ex) {
-			log.info("Exception during load: Loaded " + conceptCount + " concepts, " + sememeCount + " sememes, "
-					+ aliasCount + " aliases, " + commentCount + " comments"
+			log.info("Exception during load: Loaded " + conceptCount.get() + " concepts, " + sememeCount.get()
+					+ " sememes, " + aliasCount.get() + " aliases, " + commentCount.get() + " comments"
 					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
 
-		log.info("Finished processing ibdf file.  Results: " + itemCount + " entries, " + "Loaded " + conceptCount
-				+ " concepts, " + sememeCount + " sememes, " + aliasCount + " aliases, " + commentCount + " comments");
+		log.info("Finished processing ibdf file.  Results: " + itemCount.get() + " entries, " + "Loaded "
+				+ conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, " + aliasCount.get()
+				+ " aliases, " + commentCount.get() + " comments");
 
 		return retMap;
 	}
 
 	/**
 	 * Generates human readable analysis json file containing the contents in
-	 * the ibdf delta file located at {@link #deltaIbdfFilePath}.
+	 * the ibdf delta file located at {@link #deltaIbdfFilePathStr}.
 	 *
 	 * @throws FileNotFoundException
 	 *             Thrown if the delta file is not found at location specified
-	 *             by {@link #deltaIbdfFilePath}
+	 *             by {@link #deltaIbdfFilePathStr}
 	 */
 	private void writeChangeSetForVerification() throws FileNotFoundException {
 		int ic = 0;
@@ -610,13 +619,13 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		int sta = 0;
 		int stc = 0;
 
-		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfFilePath).toPath());
+		BinaryDataReaderQueueService reader = Get.binaryDataQueueReader(new File(deltaIbdfFilePathStr.get()).toPath());
 		BlockingQueue<OchreExternalizable> queue = reader.getQueue();
 
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 
-		try (FileOutputStream fos = new FileOutputStream(new File(analysisArtifactsDir + "verificationChanges.json"));
+		try (FileOutputStream fos = new FileOutputStream(new File(analysisArtifactsDirStr.get() + "verificationChanges.json"));
 				JsonWriter verificationWriter = new JsonWriter(fos, args);) {
 
 			while (!queue.isEmpty() || !reader.isFinished()) {
@@ -701,9 +710,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			String version, String jsonOutputFile) throws IOException {
 
 		int i = 1;
-		try (FileWriter textWriter = new FileWriter(inputAnalysisDir + textBaseNewIbdfFileName, true);
+		try (FileWriter textWriter = new FileWriter(inputAnalysisDirStr.get() + textBaseNewIbdfFileName, true);
 				JsonDataWriterService jsonWriter = new JsonDataWriterService(
-						new File(inputAnalysisDir + jsonOutputFile));) {
+						new File(inputAnalysisDirStr.get() + jsonOutputFile));) {
 
 			textWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
 			jsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
@@ -775,7 +784,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	/**
-	 * Delete the {@link inputAnalysisDir} and the {@link analysisArtifactsDir}
+	 * Delete the {@link #inputAnalysisDirStr} and the {@link #analysisArtifactsDirStr}
 	 * directories. This is useful for when the databases are so large that
 	 * rerunning the process with the "clean" maven directive adds considerable
 	 * amount of time to unzip databases.
@@ -795,5 +804,10 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 		// now directory is empty, so we can delete it
 		dir.delete();
+	}
+
+	@Override
+	public void releaseLock() {
+		diffProcessLock.unlock();		
 	}
 }
