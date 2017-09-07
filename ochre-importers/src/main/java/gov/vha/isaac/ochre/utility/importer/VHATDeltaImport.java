@@ -71,7 +71,6 @@ import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronologyType;
 import gov.vha.isaac.ochre.api.collections.ConceptSequenceSet;
 import gov.vha.isaac.ochre.api.commit.Alert;
-import gov.vha.isaac.ochre.api.commit.ChronologyChangeListener;
 import gov.vha.isaac.ochre.api.commit.CommitTask;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeType;
@@ -657,20 +656,20 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						for (Relationship r : cc.getRelationships().getRelationship())
 						{
-							if (associations_.getProperty(r.getTypeName()) == null)
+							if (associations_.getProperty(StringUtils.trim(r.getTypeName())) == null)
 							{
-								associations_.addProperty(new PropertyAssociation(null, r.getTypeName(), null, null, "doesn't-matter", false));
+								associations_.addProperty(new PropertyAssociation(null, StringUtils.trim(r.getTypeName()), null, null, "doesn't-matter", false));
 								if (!Get.conceptService().hasConcept(Get.identifierService()
-										.getConceptSequenceForUuids(associations_.getProperty(r.getTypeName()).getUUID())))
+										.getConceptSequenceForUuids(associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID())))
 								{
-									throw new IOException("The association '" + r.getTypeName() + "' isn't in the system - from " + cc.getCode() 
-										+ " and it wasn't listed as a new association.  Expected to find " + associations_.getProperty(r.getTypeName()).getUUID());
+									throw new IOException("The association '" + StringUtils.trim(r.getTypeName()) + "' isn't in the system - from " + cc.getCode() 
+										+ " and it wasn't listed as a new association.  Expected to find " + associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID());
 								}
 							}
 							if (r.getAction() == null)
 							{
 								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
-									+ r.getTypeName());
+									+ StringUtils.trim(r.getTypeName()));
 							}
 							if (r.getAction() == ActionType.REMOVE && r.isActive() == null)
 							{
@@ -680,23 +679,23 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							if (r.isActive() == null)
 							{
 								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
-									+ r.getTypeName());
+									+ StringUtils.trim(r.getTypeName()));
 							}
 							
 							switch(r.getAction())
 							{
 								case ADD:
-									Optional<UUID> targetConcept = findConcept(r.getNewTargetCode());
+									Optional<UUID> targetConcept = findConcept(StringUtils.trim(r.getNewTargetCode()));
 									if (StringUtils.isBlank(r.getNewTargetCode()) || !targetConcept.isPresent())
 									{
-										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName());
+										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()));
 									}
-									if (conceptUUID != null && findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+									if (conceptUUID != null && findAssociationSememe(conceptUUID, associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 											targetConcept.get()).isPresent())
 									{
-										throw new IOException("Add was specified for the association." + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName() + ":" + r.getNewTargetCode() + " but is already seems to exist");
+										throw new IOException("Add was specified for the association." + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()) + ":" + r.getNewTargetCode() + " but is already seems to exist");
 									}
 									break;
 								case NONE:
@@ -707,14 +706,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
 									if (StringUtils.isBlank(r.getOldTargetCode()) || !oldTarget.isPresent())
 									{
-										throw new IOException("Old Target Code must be provided for existing relationships.  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName());
+										throw new IOException("Old Target Code must be provided for existing relationships.  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()));
 									}
-									if (!findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+									if (!findAssociationSememe(conceptUUID, associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 										oldTarget.get()).isPresent())
 									{
-										throw new IOException("Can't locate existing association to update for .  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName() + ":" + r.getOldTargetCode());
+										throw new IOException("Can't locate existing association to update for .  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()) + ":" + r.getOldTargetCode());
 									}
 									break;
 							}
@@ -1519,7 +1518,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						// If the designation is inactivated/removed, set all nested sememes to inactive
 						if (!d.isActive())
 						{
-							modifyNestedSememes(sc, State.INACTIVE);
+							for (ObjectChronology<?> o : recursiveRetireNested(sc.getPrimordialUuid()))
+							{
+								importUtil_.storeManualUpdate(o);
+							}
 						}
 						
 						//No changing of type name, code, or vuid
@@ -1549,7 +1551,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					}
 					
 					//Make a new description with the provided and/or old values
-					descRef = ComponentReference.fromChronology(importUtil_.addDescription(concept, createNewDescriptionUuid(concept.getPrimordialUuid(), d.getCode()), 
+					final SememeChronology<DescriptionSememe<?>> newDescription = 
+							importUtil_.addDescription(concept, createNewDescriptionUuid(concept.getPrimordialUuid(), d.getCode()), 
 							StringUtils.isBlank(d.getValueNew()) ? 
 									(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
 									: d.getValueNew(),
@@ -1558,7 +1561,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							StringUtils.isBlank(d.getTypeName()) ? 
 									Frills.getDescriptionExtendedTypeConcept(readCoordinate_, latest.get().value().getSememeSequence()).orElse(null)
 									: extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
-							d.isActive() == null ? latest.get().value().getState() : (d.isActive() ? State.ACTIVE : State.INACTIVE)));
+							d.isActive() == null ? latest.get().value().getState() : (d.isActive() ? State.ACTIVE : State.INACTIVE));
+					descRef = ComponentReference.fromChronology(newDescription);
 					
 					//copy all other nested components
 					Get.sememeService().getSememesForComponent(oldSc.getNid()).forEach(nested ->
@@ -1575,51 +1579,52 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							@SuppressWarnings({ "rawtypes", "unchecked" }) 
 							Optional<LatestVersion<SememeVersion<?>>> nestedLatest = ((SememeChronology)nested).getLatestVersion(SememeVersion.class, readCoordinate_);
 							
-							if (nestedLatest.get().value().getState() == State.ACTIVE)
+							if (nestedLatest.isPresent() && nestedLatest.get().value().getState() == State.ACTIVE)
 							{
-							
-								//expect these to be, primarily, refset entries...
+								SememeChronology<?> copyOfSememe = null;
+								
+								if (nestedLatest.get().contradictions().isPresent()) {
+									// TODO handle contradictions
+								}
+								//expect these to be, primarily, dynamic sememes, refset entries or strings...
 								switch (nested.getSememeType())
 								{
 								case DYNAMIC:
 									if (((DynamicSememe<?>)nestedLatest.get().value()).getData() != null 
 										&& ((DynamicSememe<?>)nestedLatest.get().value()).getData().length > 0)
 									{
-										importUtil_.addAnnotation(ComponentReference.fromChronology(nested), null, ((DynamicSememe<?>)nestedLatest.get().value()).getData(),
+										copyOfSememe = importUtil_.addAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), null, ((DynamicSememe<?>)nestedLatest.get().value()).getData(),
 												Get.identifierService().getUuidPrimordialFromConceptId(nested.getAssemblageSequence()).get(), State.ACTIVE, null, null);
 									}
-									
-									@SuppressWarnings({ "unchecked" })
-									MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
-										State.INACTIVE, editCoordinate_);
-									mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
-									importUtil_.storeManualUpdate(nested);
 									break;
-								
-								//None of these are expected in vhat data
 								case MEMBER:
+									SememeVersion<?> memberSememe = nestedLatest.get().value();	
+									copyOfSememe = importUtil_.addRefsetMembership(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
+									break;
+								case STRING:
+									StringSememe<?> stringSememe = (StringSememe<?>)nestedLatest.get().value();
+									// TODO is Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()) == refsetUuid?
+									copyOfSememe = importUtil_.addStringAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
+									break;
+
+									//None of these are expected in vhat data
 								case DESCRIPTION:
 								case LOGIC_GRAPH:
 								case LONG:
 								case COMPONENT_NID:
 								case RELATIONSHIP_ADAPTOR:
-								case STRING:
 								case UNKNOWN:
 								default:
 									throw new RuntimeException("MoveFromConceptCode doesn't supported nested sememes of type " + nested.getSememeType() + 
 											" for designation " + d.getCode());
 								}
+
+								if (copyOfSememe != null) {
+									copy(importUtil_, copyOfSememe, nested, readCoordinate_, editCoordinate_);
+								}
 							}
-							
-						}
-						
-						if (!Get.sememeService().getSememeSequencesForComponent(nested.getNid()).isEmpty())
-						{
-							//this is unexpected.
-							throw new RuntimeException("Nested sememes are not handled by MoveFromConceptCode!");
 						}
 					});
-					
 					
 					Long vuidToMigrate = d.getVUID() == null ? Frills.getVuId(latest.get().value().getNid(), readCoordinate_).orElse(null) : d.getVUID();
 					
@@ -1691,6 +1696,63 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			loadDesignationProperties(descRef, dd.getProperties());
 			loadSubsetMembership(descRef, dd.getSubsetMemberships());
 		}
+	}
+	
+	private static void copy(
+			IBDFCreationUtility importUtil,
+			SememeChronology<?> existingParentComponent,
+			SememeChronology<?> copyOfParentComponent,
+			StampCoordinate readCoordinate, EditCoordinate editCoordinate) {
+		Get.sememeService().getSememesForComponent(existingParentComponent.getNid()).forEach(existingNestedSememe -> {
+			@SuppressWarnings({ "rawtypes", "unchecked" }) 
+			Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = ((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate);
+
+			if (latestVersionOfExistingNestedSememe.isPresent() && latestVersionOfExistingNestedSememe.get().value().getState() == State.ACTIVE)
+			{
+				if (latestVersionOfExistingNestedSememe.get().contradictions().isPresent()) {
+					// TODO handle contradictions
+				}
+				
+				SememeChronology<?> copyOfExistingNestedSememe = null;
+
+				//expect these to be, primarily, dynamic sememes, refset entries or strings...
+				switch (latestVersionOfExistingNestedSememe.get().value().getChronology().getSememeType())
+				{
+				case DYNAMIC:
+					DynamicSememe<?> dynamicSememe = (DynamicSememe<?>)latestVersionOfExistingNestedSememe.get().value();
+					if (dynamicSememe.getData() != null && dynamicSememe.getData().length > 0)
+					{
+						copyOfExistingNestedSememe = importUtil.addAnnotation(ComponentReference.fromChronology(copyOfParentComponent), null, dynamicSememe.getData(),
+								Get.identifierService().getUuidPrimordialFromConceptId(existingNestedSememe.getAssemblageSequence()).get(), State.ACTIVE, null, null);
+					}
+					break;
+				case MEMBER:
+					SememeVersion<?> memberSememe = latestVersionOfExistingNestedSememe.get().value();
+					copyOfExistingNestedSememe = importUtil.addRefsetMembership(ComponentReference.fromChronology(copyOfParentComponent), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
+					
+					break;
+				case STRING:
+					StringSememe<?> stringSememe = (StringSememe<?>)latestVersionOfExistingNestedSememe.get().value();
+					// TODO is Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()) == refsetUuid?
+					copyOfExistingNestedSememe = importUtil.addStringAnnotation(ComponentReference.fromChronology(copyOfParentComponent), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
+					break;
+
+					//None of these are expected in vhat data
+				case DESCRIPTION:
+				case LOGIC_GRAPH:
+				case LONG:
+				case COMPONENT_NID:
+				case RELATIONSHIP_ADAPTOR:
+				case UNKNOWN:
+				default:
+					throw new RuntimeException("MoveFromConceptCode doesn't supported nested sememes of type " + existingParentComponent.getSememeType());
+				}
+
+				if (copyOfExistingNestedSememe != null) {
+					copy(importUtil, copyOfExistingNestedSememe, existingNestedSememe, readCoordinate, editCoordinate);
+				}
+			}
+		});
 	}
 	/**
 	 * Retire any sememes attached to this component.  Do not change the component.
@@ -1836,14 +1898,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
 			for (Relationship r : relationships.getRelationship())
 			{
-				Optional<UUID> newTarget = StringUtils.isBlank(r.getNewTargetCode()) ? Optional.empty() : findConcept(r.getNewTargetCode());
+				Optional<UUID> newTarget = StringUtils.isBlank(r.getNewTargetCode()) ? Optional.empty() : findConcept(StringUtils.trim(r.getNewTargetCode()));
 				
 				switch(r.getAction())
 				{
 					case ADD:
-						importUtil_.addAssociation(concept, null, newTarget.get(), associations_.getProperty(r.getTypeName()).getUUID(), 
+						importUtil_.addAssociation(concept, null, newTarget.get(), associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 							r.isActive() ? State.ACTIVE : State.INACTIVE, null, null);
-						if (r.getTypeName().equals("has_parent") && r.isActive())
+						if ("has_parent".equals(StringUtils.trim(r.getTypeName())) && r.isActive())
 						{
 							gatheredisA.add(newTarget.get());
 						}
@@ -1852,11 +1914,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
-						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						// REMOVE directive takes precedence. Explicitly set active=false, and fall-through
 						r.setActive(false);
 					case UPDATE:
 						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
-						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
+						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 							oldTarget.get()).get();
 						
 						@SuppressWarnings("rawtypes")
@@ -1873,10 +1935,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						}
 						else
 						{
-							throw new RuntimeException("Couldn't find existing association for " + r.getTypeName() + " " + r.getNewTargetCode());
+							throw new RuntimeException("Couldn't find existing association for " + StringUtils.trim(r.getTypeName()) + " " + r.getNewTargetCode());
 						}
 						
-						if (r.getTypeName().equals("has_parent"))
+						if ("has_parent".equals(StringUtils.trim(r.getTypeName())))
 						{
 							if (r.isActive())
 							{
@@ -2203,58 +2265,5 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			}
 		}
 	}
-	
-	/**
-	 * A method to walk through nested sememes and modify their state in response to a parent
-	 * component's state change.
-	 * 
-	 * @param sc The SememeChronology of the parent component
-	 * @param state The State to set for each of the nested sememes
-	 */
-	private void modifyNestedSememes(SememeChronology<?> sc, State state)
-	{
-		Get.sememeService().getSememesForComponent(sc.getNid()).forEach(nested ->
-		{
-			if (nested.getAssemblageSequence() == DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.CODE.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.VUID.getConceptSequence() ||
-					nested.getAssemblageSequence() == MetaData.US_ENGLISH_DIALECT.getConceptSequence())
-			{
-				// Ignore
-			}
-			else
-			{
-				@SuppressWarnings({ "rawtypes", "unchecked" }) 
-				Optional<LatestVersion<SememeVersion<?>>> nestedLatest = ((SememeChronology)nested).getLatestVersion(SememeVersion.class, readCoordinate_);
-				
-				switch (nested.getSememeType())
-				{
-				case DYNAMIC:
-					@SuppressWarnings({ "unchecked" })
-					MutableDynamicSememe<?> mds = ((SememeChronology<DynamicSememe<?>>)nested).createMutableVersion(MutableDynamicSememe.class, 
-						state, editCoordinate_);
-					mds.setData(((DynamicSememe<?>)nestedLatest.get().value()).getData());
-					importUtil_.storeManualUpdate(nested);
-					break;
-				
-				//None of these are expected in vhat data
-				case MEMBER:
-				case DESCRIPTION:
-				case LOGIC_GRAPH:
-				case LONG:
-				case COMPONENT_NID:
-				case RELATIONSHIP_ADAPTOR:
-				case STRING:
-				case UNKNOWN:
-				default:
-					// No-op
-				}
-			}
-			
-			if (!Get.sememeService().getSememeSequencesForComponent(nested.getNid()).isEmpty())
-			{
-				modifyNestedSememes(nested, state);
-			}
-		});
-	}
 }
+

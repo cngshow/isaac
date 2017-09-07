@@ -2,6 +2,10 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/09/07 - 5.04
+    * Fixes for trimming XML input data 
+    * Changes to support MoveFromConceptCode via XML import (583082)
+
 * 2017/09/06 - 5.03
     * Fix for UPDATEs to Relationships where NewTargetCode may not be present (Mike's has_parent test cases) (583864)
     * Changes to modify all nested sememes of a Designation to be inactivated when the parent Designation is 'removed' (583063)
