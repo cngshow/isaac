@@ -1301,6 +1301,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	
 	private void handleProperty(ComponentReference component, String propertyName, String oldValue, String newValue, boolean isActive, ActionType action)
 	{
+		newValue = StringUtils.trim(newValue);
+		
 		switch (action)
 		{
 			case ADD:
