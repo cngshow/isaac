@@ -517,7 +517,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFil(File versionFile)
+	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(File versionFile)
 			throws Exception {
 		log.info("Processing file: " + versionFile.getAbsolutePath());
 		BinaryDataReaderService reader = Get.binaryDataReader(versionFile.toPath());

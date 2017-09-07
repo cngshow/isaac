@@ -114,9 +114,9 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 		try {
 			// Import Input IBDF Files
 			log.info("\n\nProcessing Old version IBDF File");
-			oldContentMap = differService.processInputIbdfFil(oldVersionFile);
+			oldContentMap = differService.processInputIbdfFile(oldVersionFile);
 			log.info("\n\nProcessing New version IBDF File");
-			newContentMap = differService.processInputIbdfFil(newVersionFile);
+			newContentMap = differService.processInputIbdfFile(newVersionFile);
 
 			// Transform input old & new content into text & json files
 			log.info("\n\nCreating analysis files for input/output files");

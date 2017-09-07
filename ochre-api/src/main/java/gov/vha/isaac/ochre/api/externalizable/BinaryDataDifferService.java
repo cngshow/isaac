@@ -97,7 +97,7 @@ public interface BinaryDataDifferService {
 	 * @throws Exception
 	 *             Thrown when problem encountered reading the input file
 	 */
-	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFil(File versionFile)
+	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(File versionFile)
 			throws Exception;
 
 	/**
