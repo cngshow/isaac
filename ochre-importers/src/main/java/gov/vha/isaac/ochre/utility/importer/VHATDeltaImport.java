@@ -656,20 +656,20 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						for (Relationship r : cc.getRelationships().getRelationship())
 						{
-							if (associations_.getProperty(r.getTypeName()) == null)
+							if (associations_.getProperty(StringUtils.trim(r.getTypeName())) == null)
 							{
-								associations_.addProperty(new PropertyAssociation(null, r.getTypeName(), null, null, "doesn't-matter", false));
+								associations_.addProperty(new PropertyAssociation(null, StringUtils.trim(r.getTypeName()), null, null, "doesn't-matter", false));
 								if (!Get.conceptService().hasConcept(Get.identifierService()
-										.getConceptSequenceForUuids(associations_.getProperty(r.getTypeName()).getUUID())))
+										.getConceptSequenceForUuids(associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID())))
 								{
-									throw new IOException("The association '" + r.getTypeName() + "' isn't in the system - from " + cc.getCode() 
-										+ " and it wasn't listed as a new association.  Expected to find " + associations_.getProperty(r.getTypeName()).getUUID());
+									throw new IOException("The association '" + StringUtils.trim(r.getTypeName()) + "' isn't in the system - from " + cc.getCode() 
+										+ " and it wasn't listed as a new association.  Expected to find " + associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID());
 								}
 							}
 							if (r.getAction() == null)
 							{
 								throw new IOException("Action must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
-									+ r.getTypeName());
+									+ StringUtils.trim(r.getTypeName()));
 							}
 							if (r.getAction() == ActionType.REMOVE && r.isActive() == null)
 							{
@@ -679,23 +679,23 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							if (r.isActive() == null)
 							{
 								throw new IOException("Active must be provided on every relationship.  Missing on " + cc.getCode() + ":" 
-									+ r.getTypeName());
+									+ StringUtils.trim(r.getTypeName()));
 							}
 							
 							switch(r.getAction())
 							{
 								case ADD:
-									Optional<UUID> targetConcept = findConcept(r.getNewTargetCode());
+									Optional<UUID> targetConcept = findConcept(StringUtils.trim(r.getNewTargetCode()));
 									if (StringUtils.isBlank(r.getNewTargetCode()) || !targetConcept.isPresent())
 									{
-										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName());
+										throw new IOException("New Target Code must be provided for new relationships.  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()));
 									}
-									if (conceptUUID != null && findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+									if (conceptUUID != null && findAssociationSememe(conceptUUID, associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 											targetConcept.get()).isPresent())
 									{
-										throw new IOException("Add was specified for the association." + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName() + ":" + r.getNewTargetCode() + " but is already seems to exist");
+										throw new IOException("Add was specified for the association." + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()) + ":" + r.getNewTargetCode() + " but is already seems to exist");
 									}
 									break;
 								case NONE:
@@ -706,14 +706,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
 									if (StringUtils.isBlank(r.getOldTargetCode()) || !oldTarget.isPresent())
 									{
-										throw new IOException("Old Target Code must be provided for existing relationships.  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName());
+										throw new IOException("Old Target Code must be provided for existing relationships.  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()));
 									}
-									if (!findAssociationSememe(conceptUUID, associations_.getProperty(r.getTypeName()).getUUID(), 
+									if (!findAssociationSememe(conceptUUID, associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 										oldTarget.get()).isPresent())
 									{
-										throw new IOException("Can't locate existing association to update for .  Missing on " + cc.getCode() + 
-											cc.getCode() + ":" + r.getTypeName() + ":" + r.getOldTargetCode());
+										throw new IOException("Can't locate existing association to update for .  Missing on " + 
+											cc.getCode() + ":" + StringUtils.trim(r.getTypeName()) + ":" + r.getOldTargetCode());
 									}
 									break;
 							}
@@ -1903,14 +1903,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			LogicalExpressionBuilder leb = Get.logicalExpressionBuilderService().getLogicalExpressionBuilder();
 			for (Relationship r : relationships.getRelationship())
 			{
-				Optional<UUID> newTarget = StringUtils.isBlank(r.getNewTargetCode()) ? Optional.empty() : findConcept(r.getNewTargetCode());
+				Optional<UUID> newTarget = StringUtils.isBlank(r.getNewTargetCode()) ? Optional.empty() : findConcept(StringUtils.trim(r.getNewTargetCode()));
 				
 				switch(r.getAction())
 				{
 					case ADD:
-						importUtil_.addAssociation(concept, null, newTarget.get(), associations_.getProperty(r.getTypeName()).getUUID(), 
+						importUtil_.addAssociation(concept, null, newTarget.get(), associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 							r.isActive() ? State.ACTIVE : State.INACTIVE, null, null);
-						if (r.getTypeName().equals("has_parent") && r.isActive())
+						if ("has_parent".equals(StringUtils.trim(r.getTypeName())) && r.isActive())
 						{
 							gatheredisA.add(newTarget.get());
 						}
@@ -1919,11 +1919,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						//noop
 						break;
 					case REMOVE:
-						// REMOVE directive takes precedence. Explicitely set active=false, and fall-through
+						// REMOVE directive takes precedence. Explicitly set active=false, and fall-through
 						r.setActive(false);
 					case UPDATE:
 						Optional<UUID> oldTarget = findConcept(r.getOldTargetCode());
-						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(r.getTypeName()).getUUID(), 
+						UUID existingAssociation = findAssociationSememe(concept.getPrimordialUuid(), associations_.getProperty(StringUtils.trim(r.getTypeName())).getUUID(), 
 							oldTarget.get()).get();
 						
 						@SuppressWarnings("rawtypes")
@@ -1940,10 +1940,10 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						}
 						else
 						{
-							throw new RuntimeException("Couldn't find existing association for " + r.getTypeName() + " " + r.getNewTargetCode());
+							throw new RuntimeException("Couldn't find existing association for " + StringUtils.trim(r.getTypeName()) + " " + r.getNewTargetCode());
 						}
 						
-						if (r.getTypeName().equals("has_parent"))
+						if ("has_parent".equals(StringUtils.trim(r.getTypeName())))
 						{
 							if (r.isActive())
 							{
