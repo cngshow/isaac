@@ -2188,7 +2188,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						concept = ComponentReference.fromConcept(importUtil_.createConcept(findConcept(ms.getCode()).get(), null, State.INACTIVE, null));
 						for (ObjectChronology<?> o : recursiveRetireNested(concept.getPrimordialUuid()))
 						{
-							importUtil_.storeManualUpdate(o);
+							if (o != null) {
+								importUtil_.storeManualUpdate(o);
+							}
 						}
 						break;
 					case UPDATE:
