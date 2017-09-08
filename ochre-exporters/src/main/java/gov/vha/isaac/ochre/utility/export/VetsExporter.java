@@ -903,11 +903,11 @@ public class VetsExporter {
 					return null;
 				}
 				
-				long vuid = Frills.getVuId(Get.identifierService().getConceptNid(sememe.getAssemblageSequence()), 
-						STAMP_COORDINATES).orElse(0L).longValue();
-				if (vuid > 0)
+				Optional<Long> vuid = Frills.getVuId(Get.identifierService().getConceptNid(sememe.getAssemblageSequence()), 
+						STAMP_COORDINATES);
+				if (vuid.isPresent())
 				{
-					subsetMembership.setVUID(vuid);
+					subsetMembership.setVUID(vuid.get());
 				}
 				else
 				{
