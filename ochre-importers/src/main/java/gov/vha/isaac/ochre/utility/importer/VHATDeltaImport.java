@@ -461,15 +461,16 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			for (Type t : terminology.getTypes().getType())
 			{
+				String name = StringUtils.trim(t.getName());
 				switch (t.getKind())
 				{
 					case DESIGNATION_TYPE:
 						throw new RuntimeException("New extended designations types aren't supported yet");
 					case PROPERTY_TYPE:
-						annotations_.addProperty(t.getName());
+						annotations_.addProperty(name);
 						break;
 					case RELATIONSHIP_TYPE:
-						associations_.addProperty(new PropertyAssociation(associations_, t.getName(), t.getName(), null, t.getName(), false));	
+						associations_.addProperty(new PropertyAssociation(associations_, name, name, null, name, false));	
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
@@ -490,21 +491,22 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			for (Subset s : terminology.getSubsets().getSubset())
 			{
+				String name = StringUtils.trim(s.getName());
 				switch (s.getAction())
 				{
 					case ADD:
-						subsets_.addProperty(s.getName());
+						subsets_.addProperty(name);
 						
 						if (s.getVUID() != null)
 						{
-							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(s.getName()).getUUID());
+							vuidToSubsetMap_.put(s.getVUID(), subsets_.getProperty(name).getUUID());
 						}
 						break;
 					case REMOVE: case NONE:
 						// no-op
 						break;
 					case UPDATE:
-						throw new IOException("Update of subset is not supported: " + s.getName());
+						throw new IOException("Update of subset is not supported: " + name);
 					default :
 						throw new RuntimeException("Unexepected error");
 				}
@@ -527,15 +529,16 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			for (Type t : terminology.getTypes().getType())
 			{
+				String name = StringUtils.trim(t.getName());
 				switch (t.getKind())
 				{
 					case DESIGNATION_TYPE:
 						throw new RuntimeException("New extended designations types aren't supported yet");
 					case PROPERTY_TYPE:
-						annotations.addProperty(t.getName());
+						annotations.addProperty(name);
 						break;
 					case RELATIONSHIP_TYPE:
-						associations.addProperty(new PropertyAssociation(associations, t.getName(), t.getName(), null, t.getName(), false));	
+						associations.addProperty(new PropertyAssociation(associations, name, name, null, name, false));	
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
@@ -567,6 +570,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			
 			for (Subset s : terminology.getSubsets().getSubset())
 			{
+				String name = StringUtils.trim(s.getName());
 				switch (s.getAction())
 				{
 					case ADD:
@@ -577,19 +581,19 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				
 						if (vuid != null)
 						{
-							vuidToSubsetMap_.put(vuid, subsets_.getProperty(s.getName()).getUUID());
-							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(s.getName()).getUUID()), vuid.toString(), 
+							vuidToSubsetMap_.put(vuid, subsets_.getProperty(name).getUUID());
+							importUtil_.addStaticStringAnnotation(ComponentReference.fromConcept(subsets_.getProperty(name).getUUID()), vuid.toString(), 
 									MetaData.VUID.getPrimordialUuid(), State.ACTIVE);
 						}
 						break;
 					case REMOVE:
 						// add it into the subset map
-						subsets_.addProperty(s.getName());
-						importUtil_.createConcept(subsets_.getProperty(s.getName()).getUUID(), null, State.INACTIVE, null);
+						subsets_.addProperty(name);
+						importUtil_.createConcept(subsets_.getProperty(name).getUUID(), null, State.INACTIVE, null);
 						break;
 					case NONE:
 						// add it into the subset map
-						subsets_.addProperty(s.getName());
+						subsets_.addProperty(name);
 						break;
 					default :
 						throw new RuntimeException("Unexepected error");
@@ -1447,6 +1451,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 	{
 		ComponentReference descRef = null;
 		
+		String newValue = StringUtils.trim(d.getValueNew());
+		
 		switch (d.getAction())
 		{
 			case ADD:
@@ -1458,7 +1464,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				String code = StringUtils.isBlank(d.getCode()) ? vuid : d.getCode();
 				
 				descRef = ComponentReference.fromChronology(importUtil_.addDescription(concept, createNewDescriptionUuid(concept.getPrimordialUuid(), code), 
-					d.getValueNew(), DescriptionType.SYNONYM, false, extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
+						newValue, DescriptionType.SYNONYM, false, extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
 					d.isActive() ? State.ACTIVE : State.INACTIVE));
 				
 				
@@ -1510,9 +1516,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						@SuppressWarnings("unchecked")
 						MutableDescriptionSememe<?> mss = ((SememeChronology<DescriptionSememe<?>>)sc)
 							.createMutableVersion(MutableDescriptionSememe.class, d.isActive() ? State.ACTIVE : State.INACTIVE, editCoordinate_);
-						mss.setText(StringUtils.isBlank(d.getValueNew()) ? 
+						mss.setText(StringUtils.isBlank(newValue) ? 
 								(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
-								: d.getValueNew());
+								: newValue);
 						mss.setCaseSignificanceConceptSequence(latest.get().value().getCaseSignificanceConceptSequence());
 						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
 						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
@@ -1555,9 +1561,9 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					//Make a new description with the provided and/or old values
 					final SememeChronology<DescriptionSememe<?>> newDescription = 
 							importUtil_.addDescription(concept, createNewDescriptionUuid(concept.getPrimordialUuid(), d.getCode()), 
-							StringUtils.isBlank(d.getValueNew()) ? 
+							StringUtils.isBlank(newValue) ? 
 									(StringUtils.isBlank(d.getValueOld()) ? latest.get().value().getText() : d.getValueOld()) 
-									: d.getValueNew(),
+									: newValue,
 							DescriptionType.parse(latest.get().value().getDescriptionTypeConceptSequence()), 
 							Frills.isDescriptionPreferred(latest.get().value().getNid(), readCoordinate_),
 							StringUtils.isBlank(d.getTypeName()) ? 
