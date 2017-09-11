@@ -439,7 +439,7 @@ public class VetsExporter {
 							= new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
 					xmlCodedConcept.setAction(determineAction(concept, startDate, endDate));
 					xmlCodedConcept.setName(getPreferredNameDescriptionType(conceptNid));
-					xmlCodedConcept.setVUID(Frills.getVuId(conceptNid, null).orElse(null));
+					xmlCodedConcept.setVUID(Frills.getVuId(conceptNid, STAMP_COORDINATES).orElse(null));
 					xmlCodedConcept.setCode(getCodeFromNid(conceptNid));
 					xmlCodedConcept.setActive(Boolean.valueOf(concept.isLatestVersionActive(STAMP_COORDINATES)));
 
