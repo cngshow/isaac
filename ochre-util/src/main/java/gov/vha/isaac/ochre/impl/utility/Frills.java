@@ -1444,7 +1444,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
 	 * @return
 	 */
-	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId) 
+	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId, boolean repectStampState) 
 	{
 		Optional<SememeChronology<? extends SememeVersion<?>>> descriptionExtendedTypeAnnotationSememe =
 				getAnnotationSememe(Get.identifierService().getSememeNid(descriptionId), 
@@ -1454,6 +1454,8 @@ public class Frills implements DynamicSememeColumnUtility {
 		{
 			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
 					: stampCoordinate.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()]));
+			
+			
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
 				.getLatestVersion(DynamicSememeImpl.class, effectiveStampCoordinate);
@@ -1466,7 +1468,7 @@ public class Frills implements DynamicSememeColumnUtility {
 				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()
 					.contradictions().get().size() + " contradictions");
 			}
-			if (optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
+			if (!repectStampState && optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
 				log.warn("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();	
 			}

@@ -1567,7 +1567,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							DescriptionType.parse(latest.get().value().getDescriptionTypeConceptSequence()), 
 							Frills.isDescriptionPreferred(latest.get().value().getNid(), readCoordinate_),
 							StringUtils.isBlank(d.getTypeName()) ? 
-									Frills.getDescriptionExtendedTypeConcept(readCoordinate_, latest.get().value().getSememeSequence()).orElse(null)
+									Frills.getDescriptionExtendedTypeConcept(readCoordinate_, latest.get().value().getSememeSequence(), true).orElse(null)
 									: extendedDescriptionTypeNameMap.get(d.getTypeName().toLowerCase()), 
 							d.isActive() == null ? latest.get().value().getState() : (d.isActive() ? State.ACTIVE : State.INACTIVE));
 					descRef = ComponentReference.fromChronology(newDescription);
