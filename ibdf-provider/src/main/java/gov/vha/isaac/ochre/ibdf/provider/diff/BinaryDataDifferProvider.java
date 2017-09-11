@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +28,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -84,6 +85,7 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 @Service(name = "binary data differ")
 @Singleton
 // TODO there are some serious thread-safety issues in this class
+// Likely in: processInputIbdfFile() & computeDelta()
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	/** The log. */
@@ -95,28 +97,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	/** The diff util. */
 	private final BinaryDataDifferProviderUtility diffUtil = new BinaryDataDifferProviderUtility();
 
-	/** The comment count. */
-	private AtomicInteger conceptCount = new AtomicInteger();
-	private AtomicInteger sememeCount = new AtomicInteger();
-	private AtomicInteger aliasCount = new AtomicInteger();
-	private AtomicInteger commentCount = new AtomicInteger();
-	private AtomicInteger itemCount = new AtomicInteger();
-	
 	/** The input analysis dir. */
 	// Analysis File Readers/Writers
-	private AtomicReference<String>  inputAnalysisDirStr = new AtomicReference<String>();
+	private AtomicReference<String> inputAnalysisDirStr = new AtomicReference<String>();
 
 	/** The comparison analysis dir. */
-	private AtomicReference<String>  analysisArtifactsDirStr = new AtomicReference<String>();
+	private AtomicReference<String> analysisArtifactsDirStr = new AtomicReference<String>();
 
 	/** The delta ibdf file path. */
-	private AtomicReference<String>  deltaIbdfFilePathStr = new AtomicReference<String>();
+	private AtomicReference<String> deltaIbdfFilePathStr = new AtomicReference<String>();
 
 	/** The module uuid. */
 	private AtomicReference<String> moduleUuidStr = new AtomicReference<String>();
 
 	/** The text input file name. */
-	private final String textBaseNewIbdfFileName = "bothVersions.txt";
+	private final String textCombinedIbdfFileName = "bothVersions.txt";
 
 	/** The json full comparison file name. */
 	private final String jsonFullComparisonFileName = "allChangedComponents.json";
@@ -152,12 +147,12 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public Map<ChangeType, List<OchreExternalizable>> computeDelta(
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap) {
-		List<OchreExternalizable> addedComponents = new ArrayList<>();
-		List<OchreExternalizable> retiredComponents = new ArrayList<>();
-		List<OchreExternalizable> changedComponents = new ArrayList<>();
+	public ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> computeDelta(
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap) {
+		CopyOnWriteArrayList<OchreExternalizable> addedComponents = new CopyOnWriteArrayList<>();
+		CopyOnWriteArrayList<OchreExternalizable> retiredComponents = new CopyOnWriteArrayList<>();
+		CopyOnWriteArrayList<OchreExternalizable> changedComponents = new CopyOnWriteArrayList<>();
 
 		final int activeStampSeq = createStamp(State.ACTIVE);
 		final int inactiveStampSeq = createStamp(State.INACTIVE);
@@ -177,7 +172,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 		// Having identified the new, retired, and modified content of all
 		// OchreExternalizable types, add them to return map
-		Map<ChangeType, List<OchreExternalizable>> retMap = new HashMap<>();
+		ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> retMap = new ConcurrentHashMap<>();
 		retMap.put(ChangeType.NEW_COMPONENTS, addedComponents);
 		retMap.put(ChangeType.RETIRED_COMPONENTS, retiredComponents);
 		retMap.put(ChangeType.MODIFIED_COMPONENTS, changedComponents);
@@ -215,10 +210,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *            the inactive stamp sequence used to make new versions
 	 */
 	private void processVersionedContent(OchreExternalizableObjectType type,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			List<OchreExternalizable> addedComponents, List<OchreExternalizable> retiredComponents,
-			List<OchreExternalizable> changedComponents, int activeStampSeq, int inactiveStampSeq) {
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			CopyOnWriteArrayList<OchreExternalizable> addedComponents,
+			CopyOnWriteArrayList<OchreExternalizable> retiredComponents,
+			CopyOnWriteArrayList<OchreExternalizable> changedComponents, int activeStampSeq, int inactiveStampSeq) {
 		Set<UUID> matchedComponentSet = new HashSet<UUID>();
 		CommitService commitService = Get.commitService();
 
@@ -247,7 +243,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			}
 		}
 
-		// Add baseComps not in matchedSet
+		// Add baseComps not in matchedSet --> Blocking Thread 1
 		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
 			if (!matchedComponentSet.contains(((ObjectChronology<?>) baseComp).getPrimordialUuid())) {
 				OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(baseComp,
@@ -259,7 +255,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 			}
 		}
 
-		// Add newComps not in matchedSet
+		// Add newComps not in matchedSet --> Blocking Thread 2
 		for (OchreExternalizable newComp : newContentMap.get(type)) {
 			if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
 
@@ -297,9 +293,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *            new content map
 	 */
 	private void processStampedContent(OchreExternalizableObjectType type,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			List<OchreExternalizable> addedComponents) {
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			CopyOnWriteArrayList<OchreExternalizable> addedComponents) {
 		Set<Integer> matchedStampSequenceSet = new HashSet<Integer>();
 		CommitService commitService = Get.commitService();
 
@@ -344,47 +340,55 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws IOException {
-		DataWriterService componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePathStr.get()).toPath());
+	public Boolean generateDeltaIbdfFile(
+			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents) {
+		try {
+			DataWriterService componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePathStr.get()).toPath());
 
-		for (ChangeType key : changedComponents.keySet()) {
-			for (OchreExternalizable c : changedComponents.get(key)) {
-				componentCSWriter.put(c);
+			for (ChangeType key : changedComponents.keySet()) {
+				for (OchreExternalizable c : changedComponents.get(key)) {
+					componentCSWriter.put(c);
+				}
 			}
-		}
 
-		componentCSWriter.close();
+			componentCSWriter.close();
+			return true;
+		} catch (IOException e) {
+			return false;
+		} finally {
+
+		}
 	}
 
 	@Override
-	public void generateAnalysisFiles(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			Map<ChangeType, List<OchreExternalizable>> changedComponents) {
+	public Boolean analyzeInputMap(ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> inputMap,
+			String type, String name) {
 		try {
-			// Handle Input Files
-			if (baseContentMap != null) {
-				generateInputAnalysisFile(baseContentMap, "BASE", "baseVersion.json");
+			if (inputMap != null) {
+				generateInputAnalysisFile(inputMap, type, name);
 			} else {
-				log.info("baseContentMap empty so not writing json/text Input files for base content");
+				log.info(type + "ContentMap empty so not writing json/text Input files for " + type + " content");
 			}
+			return true;
+		} catch (IOException e) {
+			return false;
+		}
+	}
 
-			if (newContentMap != null) {
-				generateInputAnalysisFile(newContentMap, "NEW", "newVersion.json");
-			} else {
-				log.info("newContentMap empty so not writing json/text Input files for new content");
-			}
-
+	@Override
+	public Boolean analyzeDeltaMap(ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> deltaMap) {
+		try {
 			// Handle Comparison Files
-			if (changedComponents != null) {
-				generateComparisonAnalysisFile(changedComponents);
-				writeChangeSetForVerification();
+			if (deltaMap != null) {
+				generateComparisonAnalysisFile(deltaMap);
 			} else {
 				log.info("changedComponents empty so not writing json/text Output files");
 			}
-
+			return true;
 		} catch (IOException e) {
 			log.error(
 					"Failed in creating analysis files (not in processing the content written to the analysis files)");
+			return false;
 		}
 	}
 
@@ -401,9 +405,11 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *             Thrown if an exception occurred in writing the json or text
 	 *             files.
 	 */
-	private void generateComparisonAnalysisFile(Map<ChangeType, List<OchreExternalizable>> changedComponents)
+	private void generateComparisonAnalysisFile(
+			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents)
 			throws IOException {
-		try (FileWriter allChangesTextWriter = new FileWriter(analysisArtifactsDirStr.get() + textFullComparisonFileName);
+		try (FileWriter allChangesTextWriter = new FileWriter(
+				analysisArtifactsDirStr.get() + textFullComparisonFileName);
 				JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
 						new File(analysisArtifactsDirStr.get() + jsonFullComparisonFileName));) {
 
@@ -494,7 +500,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	private int createStamp(State state) {
 		return LookupService.getService(StampService.class).getStampSequence(state, diffUtil.getNewImportDate(),
 				TermAux.USER.getConceptSequence(), // Author
-				LookupService.getService(IdentifierService.class).getConceptSequenceForUuids(UUID.fromString(moduleUuidStr.get())), // Module
+				LookupService.getService(IdentifierService.class)
+						.getConceptSequenceForUuids(UUID.fromString(moduleUuidStr.get())), // Module
 				TermAux.DEVELOPMENT_PATH.getConceptSequence()); // Path
 	}
 
@@ -525,22 +532,26 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(File versionFile)
-			throws Exception {
-		log.info("Processing file: " + versionFile.getAbsolutePath());
+	public ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(
+			File versionFile, String type) throws Exception {
+		log.info("Processing " + type + " file: " + versionFile.getAbsolutePath());
 		BinaryDataReaderService reader = Get.binaryDataReader(versionFile.toPath());
+		/** The comment count. */
+		AtomicInteger conceptCount = new AtomicInteger(0);
+		AtomicInteger sememeCount = new AtomicInteger(0);
+		AtomicInteger aliasCount = new AtomicInteger(0);
+		AtomicInteger commentCount = new AtomicInteger(0);
+		AtomicInteger itemCount = new AtomicInteger(0);
 
-		itemCount.set(0);
-		conceptCount.set(0);
-		sememeCount.set(0);
-		aliasCount.set(0);
-		commentCount.set(0);
-
-		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new HashMap<>();
-		retMap.put(OchreExternalizableObjectType.CONCEPT, new HashSet<OchreExternalizable>());
-		retMap.put(OchreExternalizableObjectType.SEMEME, new HashSet<OchreExternalizable>());
-		retMap.put(OchreExternalizableObjectType.STAMP_ALIAS, new HashSet<OchreExternalizable>());
-		retMap.put(OchreExternalizableObjectType.STAMP_COMMENT, new HashSet<OchreExternalizable>());
+		ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new ConcurrentHashMap<>();
+		Set<OchreExternalizable> conceptSet = ConcurrentHashMap.newKeySet();
+		Set<OchreExternalizable> sememeSet = ConcurrentHashMap.newKeySet();
+		Set<OchreExternalizable> aliasSet = ConcurrentHashMap.newKeySet();
+		Set<OchreExternalizable> commentSet = ConcurrentHashMap.newKeySet();
+		retMap.put(OchreExternalizableObjectType.CONCEPT, conceptSet);
+		retMap.put(OchreExternalizableObjectType.SEMEME, sememeSet);
+		retMap.put(OchreExternalizableObjectType.STAMP_ALIAS, aliasSet);
+		retMap.put(OchreExternalizableObjectType.STAMP_COMMENT, commentSet);
 		try {
 			reader.getStream().forEach((object) -> {
 				if (object != null) {
@@ -563,7 +574,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
 						}
 					} catch (Exception e) {
-						log.error("Failure at " + conceptCount + " concepts, " + sememeCount + " sememes, ", e);
+						log.error("Failure on " + type + " at " + conceptCount + " concepts, " + sememeCount
+								+ " sememes, ", e);
 						Map<String, Object> args = new HashMap<>();
 						args.put(JsonWriter.PRETTY_PRINT, true);
 						ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -575,7 +587,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						}
 
 						json.write(object);
-						log.error("Failed on "
+						log.error("Failed " + type + " on "
 								+ (primordial == null ? ": "
 										: "object with primoridial UUID " + primordial.toString() + ": ")
 								+ baos.toString());
@@ -583,21 +595,21 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (itemCount.get() % 10000 == 0) {
-						log.info("Still processing ibdf file.  Status: " + itemCount.get() + " entries, " + "Loaded "
-								+ conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, "
+					if (itemCount.get() % 250000 == 0) {
+						log.info("Still processing " + type + " ibdf file.  Status: " + itemCount.get() + " entries, "
+								+ "Loaded " + conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, "
 								+ aliasCount.get() + " aliases, " + commentCount.get() + " comments");
 					}
 				}
 			});
 		} catch (Exception ex) {
-			log.info("Exception during load: Loaded " + conceptCount.get() + " concepts, " + sememeCount.get()
-					+ " sememes, " + aliasCount.get() + " aliases, " + commentCount.get() + " comments"
-					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
+			log.info("Exception during " + type + " load: Loaded " + conceptCount.get() + " concepts, "
+					+ sememeCount.get() + " sememes, " + aliasCount.get() + " aliases, " + commentCount.get()
+					+ " comments" + (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
 
-		log.info("Finished processing ibdf file.  Results: " + itemCount.get() + " entries, " + "Loaded "
+		log.info("Finished processing " + type + " ibdf file.  Results: " + itemCount.get() + " entries, " + "Loaded "
 				+ conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, " + aliasCount.get()
 				+ " aliases, " + commentCount.get() + " comments");
 
@@ -612,7 +624,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *             Thrown if the delta file is not found at location specified
 	 *             by {@link #deltaIbdfFilePathStr}
 	 */
-	private void writeChangeSetForVerification() throws FileNotFoundException {
+	@Override
+	public void writeChangeSetForVerification() throws FileNotFoundException {
 		int ic = 0;
 		int cc = 0;
 		int sc = 0;
@@ -625,7 +638,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		Map<String, Object> args = new HashMap<>();
 		args.put(JsonWriter.PRETTY_PRINT, true);
 
-		try (FileOutputStream fos = new FileOutputStream(new File(analysisArtifactsDirStr.get() + "verificationChanges.json"));
+		try (FileOutputStream fos = new FileOutputStream(
+				new File(analysisArtifactsDirStr.get() + "verificationChanges.json"));
 				JsonWriter verificationWriter = new JsonWriter(fos, args);) {
 
 			while (!queue.isEmpty() || !reader.isFinished()) {
@@ -670,7 +684,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					}
 
-					if (ic % 10000 == 0) {
+					if (ic % 250000 == 0) {
 						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, " + sta
 								+ " stamp aliases, " + sc + " stamp comments, ");
 					}
@@ -706,11 +720,12 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *             Thrown if an exception occurred in writing the json or text
 	 *             files.
 	 */
-	private void generateInputAnalysisFile(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap,
-			String version, String jsonOutputFile) throws IOException {
+	private void generateInputAnalysisFile(
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap, String version,
+			String jsonOutputFile) throws IOException {
 
 		int i = 1;
-		try (FileWriter textWriter = new FileWriter(inputAnalysisDirStr.get() + textBaseNewIbdfFileName, true);
+		try (FileWriter textWriter = new FileWriter(inputAnalysisDirStr.get() + textCombinedIbdfFileName, true);
 				JsonDataWriterService jsonWriter = new JsonDataWriterService(
 						new File(inputAnalysisDirStr.get() + jsonOutputFile));) {
 
@@ -777,6 +792,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				}
 				i++;
 			}
+			log.info("Completed analyzing " + jsonOutputFile + " input file");
 		} catch (Exception e) {
 			log.error("Failure on writing index: " + i + " in writing *" + version
 					+ "* content to text file for analysis.");
@@ -784,10 +800,10 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	/**
-	 * Delete the {@link #inputAnalysisDirStr} and the {@link #analysisArtifactsDirStr}
-	 * directories. This is useful for when the databases are so large that
-	 * rerunning the process with the "clean" maven directive adds considerable
-	 * amount of time to unzip databases.
+	 * Delete the {@link #inputAnalysisDirStr} and the
+	 * {@link #analysisArtifactsDirStr} directories. This is useful for when the
+	 * databases are so large that rerunning the process with the "clean" maven
+	 * directive adds considerable amount of time to unzip databases.
 	 *
 	 * @param dir
 	 *            the directory to delete
@@ -808,6 +824,6 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	@Override
 	public void releaseLock() {
-		diffProcessLock.unlock();		
+		diffProcessLock.unlock();
 	}
 }

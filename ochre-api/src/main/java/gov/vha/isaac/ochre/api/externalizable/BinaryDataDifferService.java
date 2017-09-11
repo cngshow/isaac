@@ -16,9 +16,11 @@
 package gov.vha.isaac.ochre.api.externalizable;
 
 import java.io.File;
-import java.util.List;
+import java.io.FileNotFoundException;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jvnet.hk2.annotations.Contract;
 
@@ -91,14 +93,15 @@ public interface BinaryDataDifferService {
 	 *            The ibdf file to be written out for analysis. It is either the
 	 *            input base ibdf file or the input new ibdf file that are to be
 	 *            diffed.
+	 * @param type
 	 * @return the map The base ibdf file's content in a map of
 	 *         {@link OchreExternalizableObjectType} to
 	 *         {@link OchreExternalizable}
 	 * @throws Exception
 	 *             Thrown when problem encountered reading the input file
 	 */
-	public Map<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(File versionFile)
-			throws Exception;
+	public ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(
+			File versionFile, String type) throws Exception;
 
 	/**
 	 * Top level process generating the identification of
@@ -115,9 +118,9 @@ public interface BinaryDataDifferService {
 	 * @return the map of {@link ChangeType} defined as (new, inactivated,
 	 *         modified) to the identified {@link OchreExternalizable} content
 	 */
-	public Map<ChangeType, List<OchreExternalizable>> computeDelta(
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap);
+	public ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> computeDelta(
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap);
 
 	/**
 	 * Generates human readable analysis files to help debug process. Contents
@@ -138,9 +141,10 @@ public interface BinaryDataDifferService {
 	 *            modified) to the identified {@link OchreExternalizable}
 	 *            content.
 	 */
-	public void generateAnalysisFiles(Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			Map<ChangeType, List<OchreExternalizable>> changedComponents);
+	public Boolean analyzeDeltaMap(ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> deltaMap);
+
+	public Boolean analyzeInputMap(ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> inputMap,
+			String type, String name);
 
 	/**
 	 * Generates the ibdf delta file, which is the desired artifact of this
@@ -156,5 +160,11 @@ public interface BinaryDataDifferService {
 	 *             Thrown when problem either reading the contents of the map or
 	 *             in writing to the ibdf file
 	 */
-	public void generateDeltaIbdfFile(Map<ChangeType, List<OchreExternalizable>> changedComponents) throws Exception;
+	public Boolean generateDeltaIbdfFile(
+			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents);
+
+	public void releaseLock();
+
+	public void writeChangeSetForVerification() throws FileNotFoundException;
+
 }
