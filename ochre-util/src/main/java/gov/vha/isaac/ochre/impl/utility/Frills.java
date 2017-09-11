@@ -1442,6 +1442,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * If this description is flagged as an extended description type, return the type concept of the extension.
 	 * @param sc - optional Stamp - pass null to use the default stamp.  In either case, this only looks for an active extended type - state is overridden.
 	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
+	 * @param repectStampState - true to enforce the check for State (ACTIVE), false to ignore the State (ACTIVE or INACTIVE).
 	 * @return
 	 */
 	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId, boolean repectStampState) 
@@ -1454,8 +1455,6 @@ public class Frills implements DynamicSememeColumnUtility {
 		{
 			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
 					: stampCoordinate.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()]));
-			
-			
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
 				.getLatestVersion(DynamicSememeImpl.class, effectiveStampCoordinate);
