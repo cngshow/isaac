@@ -115,6 +115,7 @@ import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLongImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeUUIDImpl;
+import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 import gov.vha.isaac.ochre.modules.vhat.VHATConstants;
 import gov.vha.isaac.ochre.modules.vhat.VHATIsAHasParentSynchronizingChronologyChangeListenerI;
@@ -1497,7 +1498,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					//we tested this lookup in an earlier error checking pass above, it shouldn't come back null.
 					if (!oldDescription.isPresent())
 					{
-						throw new RuntimeException("oops");
+						throw new RuntimeException("Unexected failure to chronology for description sememe " + oldDescription.get());
 					}
 					
 					SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(oldDescription.get()));
@@ -1506,12 +1507,65 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					Optional<LatestVersion<DescriptionSememe<?>>> latest = ((SememeChronology)sc).getLatestVersion(DescriptionSememe.class, readCoordinate_);
 					if (!latest.isPresent())
 					{
-						throw new RuntimeException("Unexected!");
+						throw new RuntimeException("Unexected failure to load latest version of description sememe " + oldDescription.get());
 					}
 					
 					descRef = ComponentReference.fromChronology(sc);
 					if (sc.getSememeType() == SememeType.DESCRIPTION)
 					{
+						// Get existing active description extended type
+						Optional<UUID> existingDescriptionActiveExtendedTypeUuidOptional = Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), false);
+						// Get existing inactive description extended type only if active description extended type not present
+						Optional<UUID> existingDescriptionInactiveExtendedTypeUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? Optional.empty() : Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), true); 
+						// Get existing description extended type, active if extant, otherwise inactive if extant
+						Optional<UUID> existingDescriptionExtendedTypeToUseUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionActiveExtendedTypeUuidOptional : (existingDescriptionInactiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionInactiveExtendedTypeUuidOptional : Optional.empty());
+						if (StringUtils.isBlank(d.getTypeName())) {
+							// No description extended type in imported data, so retire if active one exists in db
+							if (existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
+								@SuppressWarnings("unchecked")
+								SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(existingDescriptionExtendedTypeToUseUuidOptional.get()));
+								Optional<LatestVersion<DynamicSememeImpl>> existingDescriptionActiveExtendedTypeSememeLatestVersionOptional = existingDescriptionActiveExtendedTypeSememeChronology.getLatestVersion(DynamicSememeImpl.class, readCoordinate_);
+								// TODO handle contradictions
+								DynamicSememeData[] data = existingDescriptionActiveExtendedTypeSememeLatestVersionOptional.get().value().getData();
+								DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.INACTIVE, editCoordinate_);
+								existingDescriptionActiveExtendedTypeSememeVersion.setData(data);
+								importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
+							}
+						} else {
+							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
+							UUID extendedDescriptionTypeNameFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
+							if (extendedDescriptionTypeNameFromData != null) {
+								// Found valid description extended type in imported data, so compare to active one (if any) in db
+								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
+									// Check if description extended type from loaded data matches existing active description extended type in db
+									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeNameFromData)) {
+										// loaded data equals db so ignore
+									} else {
+										// description extended type from loaded data does not match existing active description extended type in db, so update existing sememe
+										@SuppressWarnings("unchecked")
+										SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(extendedDescriptionTypeNameFromData));
+										DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
+										existingDescriptionActiveExtendedTypeSememeVersion.setData(new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) });
+										importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
+									}
+								} else {
+									// There is no existing description extended type on the description in the db so add it
+									importUtil_.addAnnotation(
+											descRef,
+											/*uuidForCreatedAnnotation*/ null,
+											new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) },
+											DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getPrimordialUuid(),
+											State.ACTIVE,
+											/*time*/ null,
+											Get.identifierService().getUuidPrimordialFromConceptId(editCoordinate_.getModuleSequence()).get());
+								}
+							} else {
+								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " + extendedDescriptionTypeNameMap.keySet().toArray();
+								LOG.error(msg);
+								throw new RuntimeException(msg);
+							}
+						}
+
 						//not allowing them to set the value to empty, just assume they only meant to change status in the case where new value is missing
 						@SuppressWarnings("unchecked")
 						MutableDescriptionSememe<?> mss = ((SememeChronology<DescriptionSememe<?>>)sc)
