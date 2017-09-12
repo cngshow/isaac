@@ -1538,7 +1538,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
 									// Check if description extended type from loaded data matches existing active description extended type in db
-									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeNameFromData)) {
+									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeNameFromData)
+											&& existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
 										// loaded data equals db so ignore
 									} else {
 										// description extended type from loaded data does not match existing active description extended type in db, so update existing sememe
