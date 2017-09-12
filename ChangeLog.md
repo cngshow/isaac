@@ -2,6 +2,12 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/09/12 - 5.06
+    * Updates to VetsExporter from inconsistencies found during testing
+    * Updates to Frills.getDescriptionExtendedTypeConcept to allow returning inactive descriptions
+    * Documentation updates
+    * R5 release build 
+
 * 2017/09/08 - 5.05
     * Fixes to trim XML import data of Properties, Designations, and supported trimming new Subsets and Types (Property and Relationship) (585147)
     * Fixes to move SubsetMemberships during MoveFromConceptCode (583082)

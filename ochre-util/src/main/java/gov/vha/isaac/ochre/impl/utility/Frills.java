@@ -1442,9 +1442,11 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * If this description is flagged as an extended description type, return the type concept of the extension.
 	 * @param sc - optional Stamp - pass null to use the default stamp.  In either case, this only looks for an active extended type - state is overridden.
 	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
+	 * @param returnInactiveExtendedType - true to return an extended description type even if it is INACTVE .  
+	 * false to only return the extended description type if it is present and active (returns EMPTY if the extended type is missing or inactive)
 	 * @return
 	 */
-	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId) 
+	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId, boolean returnInactiveExtendedType) 
 	{
 		Optional<SememeChronology<? extends SememeVersion<?>>> descriptionExtendedTypeAnnotationSememe =
 				getAnnotationSememe(Get.identifierService().getSememeNid(descriptionId), 
@@ -1466,7 +1468,7 @@ public class Frills implements DynamicSememeColumnUtility {
 				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()
 					.contradictions().get().size() + " contradictions");
 			}
-			if (optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
+			if (!returnInactiveExtendedType && optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
 				log.warn("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();	
 			}
@@ -1513,8 +1515,9 @@ public class Frills implements DynamicSememeColumnUtility {
 			case 1:
 				return Optional.of(sememeSet.iterator().next());
 				default:
-					throw new RuntimeException("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
-							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1)");
+					log.fatal("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
+							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1) - returning arbitrary result!");
+					return Optional.of(sememeSet.iterator().next());
 		}
 	}
 	
