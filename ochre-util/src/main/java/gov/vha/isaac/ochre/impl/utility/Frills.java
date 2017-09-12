@@ -1515,8 +1515,9 @@ public class Frills implements DynamicSememeColumnUtility {
 			case 1:
 				return Optional.of(sememeSet.iterator().next());
 				default:
-					throw new RuntimeException("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
-							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1)");
+					log.fatal("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
+							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1) - returning arbitrary result!");
+					return Optional.of(sememeSet.iterator().next());
 		}
 	}
 	
