@@ -1490,6 +1490,31 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				// REMOVE directive takes precedence over Active element 
 				// Explicitely set active=false, and fall-through
 				d.setActive(false);
+				// If the designation is inactivated/removed, set all nested sememes to inactive
+				Optional<UUID> oldD = findDescription(concept.getPrimordialUuid(), d.getCode());
+				//we tested this lookup in an earlier error checking pass above, it shouldn't come back null.
+				if (!oldD.isPresent())
+				{
+					throw new RuntimeException("Unexected failure to chronology for description sememe " + oldD.get());
+				}
+				
+				SememeChronology<? extends SememeVersion<?>> sememeChronology = Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(oldD.get()));
+				
+				@SuppressWarnings({ "unchecked", "rawtypes" }) 
+				Optional<LatestVersion<DescriptionSememe<?>>> latestVersion = ((SememeChronology) sememeChronology).getLatestVersion(DescriptionSememe.class, readCoordinate_);
+				if (!latestVersion.isPresent())
+				{
+					throw new RuntimeException("Unexected failure to load latest version of description sememe " + oldD.get());
+				}
+				
+				descRef = ComponentReference.fromChronology(sememeChronology);
+				if (sememeChronology.getSememeType() == SememeType.DESCRIPTION)
+				{
+					for (ObjectChronology<?> o : recursiveRetireNested(sememeChronology.getPrimordialUuid()))
+					{
+						importUtil_.storeManualUpdate(o);
+					}
+				}
 				// No break, fall-through for update to the designation itself
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
@@ -1600,15 +1625,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
 						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
 
-						// If the designation is inactivated/removed, set all nested sememes to inactive
-						if (!d.isActive())
-						{
-							for (ObjectChronology<?> o : recursiveRetireNested(sc.getPrimordialUuid()))
-							{
-								importUtil_.storeManualUpdate(o);
-							}
-						}
-						
 						//No changing of type name, code, or vuid
 					}
 					else
