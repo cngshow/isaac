@@ -1519,42 +1519,45 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						Optional<UUID> existingDescriptionInactiveExtendedTypeUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? Optional.empty() : Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), true); 
 						// Get existing description extended type, active if extant, otherwise inactive if extant
 						Optional<UUID> existingDescriptionExtendedTypeToUseUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionActiveExtendedTypeUuidOptional : (existingDescriptionInactiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionInactiveExtendedTypeUuidOptional : Optional.empty());
+
+						// Each VHAT description should have an extended type
+						Optional<SememeChronology<? extends SememeVersion<?>>> existingDescriptionExtendedTypeAnnotationSememe =
+								Frills.getAnnotationSememe(
+										descRef.getNid(), 
+										DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence());
+						if (! existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
+							LOG.error("Existing description {} has no extended type", descRef.getPrimordialUuid());
+						}
+
+						boolean checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = false;
 						if (StringUtils.isBlank(d.getTypeName())) {
-							// No description extended type in imported data, so retire if active one exists in db
-							if (existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
-								@SuppressWarnings("unchecked")
-								SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(existingDescriptionExtendedTypeToUseUuidOptional.get()));
-								Optional<LatestVersion<DynamicSememeImpl>> existingDescriptionActiveExtendedTypeSememeLatestVersionOptional = existingDescriptionActiveExtendedTypeSememeChronology.getLatestVersion(DynamicSememeImpl.class, readCoordinate_);
-								// TODO handle contradictions
-								DynamicSememeData[] data = existingDescriptionActiveExtendedTypeSememeLatestVersionOptional.get().value().getData();
-								DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.INACTIVE, editCoordinate_);
-								existingDescriptionActiveExtendedTypeSememeVersion.setData(data);
-								importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
-							}
+							checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
 						} else {
 							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
-							UUID extendedDescriptionTypeNameFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
-							if (extendedDescriptionTypeNameFromData != null) {
+							UUID extendedDescriptionTypeFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
+							if (extendedDescriptionTypeFromData != null) {
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
 									// Check if description extended type from loaded data matches existing active description extended type in db
-									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeNameFromData)
+									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeFromData)
 											&& existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
 										// loaded data equals db so ignore
+										checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
 									} else {
 										// description extended type from loaded data does not match existing active description extended type in db, so update existing sememe
 										@SuppressWarnings("unchecked")
-										SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(extendedDescriptionTypeNameFromData));
-										DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
-										existingDescriptionActiveExtendedTypeSememeVersion.setData(new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) });
+										SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)existingDescriptionExtendedTypeAnnotationSememe.get();
+										DynamicSememeImpl newDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
+										newDescriptionActiveExtendedTypeSememeVersion.setData(new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeFromData) });
 										importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
 									}
 								} else {
 									// There is no existing description extended type on the description in the db so add it
+									// TODO this should never happen, as each VHAT description should be created with an extended type
 									importUtil_.addAnnotation(
 											descRef,
 											/*uuidForCreatedAnnotation*/ null,
-											new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) },
+											new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeFromData) },
 											DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getPrimordialUuid(),
 											State.ACTIVE,
 											/*time*/ null,
@@ -1564,6 +1567,25 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " + extendedDescriptionTypeNameMap.keySet().toArray();
 								LOG.error(msg);
 								throw new RuntimeException(msg);
+							}
+						}
+						
+						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe) {
+							// Just in case the description extended type has been inappropriately retired, unretire it
+							if (existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
+								@SuppressWarnings("unchecked")
+								SememeChronology<DynamicSememeImpl> existingDescriptionExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)existingDescriptionExtendedTypeAnnotationSememe.get();
+								// IF latest version of this annotation sememe is inactive then reactivate it
+								if (! existingDescriptionExtendedTypeSememeChronology.isLatestVersionActive(readCoordinate_)) {
+									Optional<LatestVersion<DynamicSememeImpl>> latestInactiveVersionOptional = existingDescriptionExtendedTypeSememeChronology.getLatestVersion(DynamicSememeImpl.class, readCoordinate_.makeAnalog(State.ANY_STATE_SET));
+									// TODO handle contradictions
+									DynamicSememeImpl latestInactiveVersion = latestInactiveVersionOptional.get().value();
+									DynamicSememeImpl newDescriptionActiveExtendedTypeSememeVersion = existingDescriptionExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
+									newDescriptionActiveExtendedTypeSememeVersion.setData(latestInactiveVersion.getData());
+									importUtil_.storeManualUpdate(existingDescriptionExtendedTypeSememeChronology);
+								}
+							} else {
+								// Shouldn't happen
 							}
 						}
 
