@@ -381,7 +381,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							{
 								if (Frills.getNidForVUID(d.getVUID()).isPresent())
 								{
-									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+									throw new RuntimeException("The VUID specified for the new mapset designation '" + d.getValueNew() + "' : '" + d.getVUID() 
+										+ "' is already in use");
 								}
 								else if (!vuidsInXmlFile_.add(d.getVUID()))
 								{
@@ -416,7 +417,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								{
 									if (Frills.getNidForVUID(d.getVUID()).isPresent())
 									{
-										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" + d.getVUID() + "' is already in use");
+										throw new RuntimeException("The VUID specified for the new mapentry designation '" + d.getValueNew() + "' : '" + d.getVUID() 
+											+ "' is already in use");
 									}
 									else if (!vuidsInXmlFile_.add(d.getVUID()))
 									{
@@ -1490,6 +1492,33 @@ public class VHATDeltaImport extends ConverterBaseMojo
 				// REMOVE directive takes precedence over Active element 
 				// Explicitely set active=false, and fall-through
 				d.setActive(false);
+				// If the designation is inactivated/removed, set all nested sememes to inactive
+				Optional<UUID> oldD = findDescription(concept.getPrimordialUuid(), d.getCode());
+				//we tested this lookup in an earlier error checking pass above, it shouldn't come back null.
+				if (!oldD.isPresent())
+				{
+					throw new RuntimeException("Unexected failure to chronology for description sememe " + oldD.get());
+				}
+				
+				SememeChronology<? extends SememeVersion<?>> sememeChronology = Get.sememeService().getSememe(Get.identifierService()
+						.getSememeSequenceForUuids(oldD.get()));
+				
+				@SuppressWarnings({ "unchecked", "rawtypes" }) 
+				Optional<LatestVersion<DescriptionSememe<?>>> latestVersion = ((SememeChronology) sememeChronology)
+					.getLatestVersion(DescriptionSememe.class, readCoordinate_);
+				if (!latestVersion.isPresent())
+				{
+					throw new RuntimeException("Unexected failure to load latest version of description sememe " + oldD.get());
+				}
+				
+				descRef = ComponentReference.fromChronology(sememeChronology);
+				if (sememeChronology.getSememeType() == SememeType.DESCRIPTION)  //TODO dan asks, how could is possibly be anything else?  Why is this check here?
+				{
+					for (ObjectChronology<?> o : recursiveRetireNested(sememeChronology.getPrimordialUuid()))
+					{
+						importUtil_.storeManualUpdate(o);
+					}
+				}
 				// No break, fall-through for update to the designation itself
 			case UPDATE:
 				if (StringUtils.isBlank(d.getMoveFromConceptCode()))
@@ -1516,54 +1545,87 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						// Get existing active description extended type
 						Optional<UUID> existingDescriptionActiveExtendedTypeUuidOptional = Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), false);
 						// Get existing inactive description extended type only if active description extended type not present
-						Optional<UUID> existingDescriptionInactiveExtendedTypeUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? Optional.empty() : Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), true); 
+						Optional<UUID> existingDescriptionInactiveExtendedTypeUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? Optional.empty() 
+								: Frills.getDescriptionExtendedTypeConcept(readCoordinate_, descRef.getNid(), true); 
 						// Get existing description extended type, active if extant, otherwise inactive if extant
-						Optional<UUID> existingDescriptionExtendedTypeToUseUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionActiveExtendedTypeUuidOptional : (existingDescriptionInactiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionInactiveExtendedTypeUuidOptional : Optional.empty());
+						Optional<UUID> existingDescriptionExtendedTypeToUseUuidOptional = existingDescriptionActiveExtendedTypeUuidOptional.isPresent() ? 
+								existingDescriptionActiveExtendedTypeUuidOptional 
+								: (existingDescriptionInactiveExtendedTypeUuidOptional.isPresent() ? existingDescriptionInactiveExtendedTypeUuidOptional 
+										: Optional.empty());
+
+						// Each VHAT description should have an extended type
+						Optional<SememeChronology<? extends SememeVersion<?>>> existingDescriptionExtendedTypeAnnotationSememe =
+								Frills.getAnnotationSememe(
+										descRef.getNid(), 
+										DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getConceptSequence());
+						if (! existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
+							LOG.error("Existing description {} has no extended type", descRef.getPrimordialUuid());
+						}
+
+						boolean checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = false;
 						if (StringUtils.isBlank(d.getTypeName())) {
-							// No description extended type in imported data, so retire if active one exists in db
-							if (existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
-								@SuppressWarnings("unchecked")
-								SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(existingDescriptionExtendedTypeToUseUuidOptional.get()));
-								Optional<LatestVersion<DynamicSememeImpl>> existingDescriptionActiveExtendedTypeSememeLatestVersionOptional = existingDescriptionActiveExtendedTypeSememeChronology.getLatestVersion(DynamicSememeImpl.class, readCoordinate_);
-								// TODO handle contradictions
-								DynamicSememeData[] data = existingDescriptionActiveExtendedTypeSememeLatestVersionOptional.get().value().getData();
-								DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.INACTIVE, editCoordinate_);
-								existingDescriptionActiveExtendedTypeSememeVersion.setData(data);
-								importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
-							}
+							checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
 						} else {
 							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
-							UUID extendedDescriptionTypeNameFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
-							if (extendedDescriptionTypeNameFromData != null) {
+							UUID extendedDescriptionTypeFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
+							if (extendedDescriptionTypeFromData != null) {
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
 									// Check if description extended type from loaded data matches existing active description extended type in db
-									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeNameFromData)
+									if (existingDescriptionExtendedTypeToUseUuidOptional.get().equals(extendedDescriptionTypeFromData)
 											&& existingDescriptionActiveExtendedTypeUuidOptional.isPresent()) {
 										// loaded data equals db so ignore
+										checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
 									} else {
 										// description extended type from loaded data does not match existing active description extended type in db, so update existing sememe
 										@SuppressWarnings("unchecked")
-										SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = (SememeChronology<DynamicSememeImpl>)Get.sememeService().getSememe(Get.identifierService().getSememeSequenceForUuids(extendedDescriptionTypeNameFromData));
-										DynamicSememeImpl existingDescriptionActiveExtendedTypeSememeVersion = existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
-										existingDescriptionActiveExtendedTypeSememeVersion.setData(new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) });
+										SememeChronology<DynamicSememeImpl> existingDescriptionActiveExtendedTypeSememeChronology = 
+											(SememeChronology<DynamicSememeImpl>)existingDescriptionExtendedTypeAnnotationSememe.get();
+										DynamicSememeImpl newDescriptionActiveExtendedTypeSememeVersion = 
+												existingDescriptionActiveExtendedTypeSememeChronology.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
+										newDescriptionActiveExtendedTypeSememeVersion.setData(new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeFromData) });
 										importUtil_.storeManualUpdate(existingDescriptionActiveExtendedTypeSememeChronology);
 									}
 								} else {
 									// There is no existing description extended type on the description in the db so add it
+									// TODO this should never happen, as each VHAT description should be created with an extended type
 									importUtil_.addAnnotation(
 											descRef,
 											/*uuidForCreatedAnnotation*/ null,
-											new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeNameFromData) },
+											new DynamicSememeData[] { new DynamicSememeUUIDImpl(extendedDescriptionTypeFromData) },
 											DynamicSememeConstants.get().DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE.getPrimordialUuid(),
 											State.ACTIVE,
 											/*time*/ null,
 											Get.identifierService().getUuidPrimordialFromConceptId(editCoordinate_.getModuleSequence()).get());
 								}
 							} else {
-								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " + extendedDescriptionTypeNameMap.keySet().toArray();
+								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " 
+										+ extendedDescriptionTypeNameMap.keySet().toArray();
 								LOG.error(msg);
 								throw new RuntimeException(msg);
+							}
+						}
+						
+						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe) {
+							// Just in case the description extended type has been inappropriately retired, unretire it
+							if (existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
+								@SuppressWarnings("unchecked")
+								SememeChronology<DynamicSememeImpl> existingDescriptionExtendedTypeSememeChronology = 
+									(SememeChronology<DynamicSememeImpl>)existingDescriptionExtendedTypeAnnotationSememe.get();
+								// IF latest version of this annotation sememe is inactive then reactivate it
+								if (! existingDescriptionExtendedTypeSememeChronology.isLatestVersionActive(readCoordinate_)) {
+									Optional<LatestVersion<DynamicSememeImpl>> latestInactiveVersionOptional = 
+											existingDescriptionExtendedTypeSememeChronology.getLatestVersion(DynamicSememeImpl.class, 
+													readCoordinate_.makeAnalog(State.ANY_STATE_SET));
+									// TODO handle contradictions
+									DynamicSememeImpl latestInactiveVersion = latestInactiveVersionOptional.get().value();
+									DynamicSememeImpl newDescriptionActiveExtendedTypeSememeVersion = existingDescriptionExtendedTypeSememeChronology
+											.createMutableVersion(DynamicSememeImpl.class, State.ACTIVE, editCoordinate_);
+									newDescriptionActiveExtendedTypeSememeVersion.setData(latestInactiveVersion.getData());
+									importUtil_.storeManualUpdate(existingDescriptionExtendedTypeSememeChronology);
+								}
+							} else {
+								// Shouldn't happen
 							}
 						}
 
@@ -1578,15 +1640,6 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						mss.setDescriptionTypeConceptSequence(latest.get().value().getDescriptionTypeConceptSequence());
 						mss.setLanguageConceptSequence(latest.get().value().getLanguageConceptSequence());
 
-						// If the designation is inactivated/removed, set all nested sememes to inactive
-						if (!d.isActive())
-						{
-							for (ObjectChronology<?> o : recursiveRetireNested(sc.getPrimordialUuid()))
-							{
-								importUtil_.storeManualUpdate(o);
-							}
-						}
-						
 						//No changing of type name, code, or vuid
 					}
 					else
@@ -1640,7 +1693,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						else
 						{
 							@SuppressWarnings({ "rawtypes", "unchecked" }) 
-							Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = ((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate_);
+							Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = 
+								((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate_);
 							
 							if (latestVersionOfExistingNestedSememe.isPresent() && latestVersionOfExistingNestedSememe.get().value().getState() == State.ACTIVE)
 							{
@@ -1664,12 +1718,15 @@ public class VHATDeltaImport extends ConverterBaseMojo
 									break;
 								case MEMBER:
 									SememeVersion<?> memberSememe = latestVersionOfExistingNestedSememe.get().value();	
-									copyOfExistingNestedSememe = importUtil_.addRefsetMembership(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
+									copyOfExistingNestedSememe = importUtil_.addRefsetMembership(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), 
+											Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
 									break;
 								case STRING:
 									StringSememe<?> stringSememe = (StringSememe<?>)latestVersionOfExistingNestedSememe.get().value();
 									// TODO is Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()) == refsetUuid?
-									copyOfExistingNestedSememe = importUtil_.addStringAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
+									copyOfExistingNestedSememe = importUtil_.addStringAnnotation(ComponentReference.fromSememe(newDescription.getPrimordialUuid()), 
+											stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), 
+											State.ACTIVE);
 									break;
 
 									//None of these are expected in vhat data
@@ -1770,7 +1827,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 			StampCoordinate readCoordinate, EditCoordinate editCoordinate) {
 		Get.sememeService().getSememesForComponent(existingParentComponent.getNid()).forEach(existingNestedSememe -> {
 			@SuppressWarnings({ "rawtypes", "unchecked" }) 
-			Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = ((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate);
+			Optional<LatestVersion<SememeVersion<?>>> latestVersionOfExistingNestedSememe = 
+				((SememeChronology)existingNestedSememe).getLatestVersion(SememeVersion.class, readCoordinate);
 
 			if (latestVersionOfExistingNestedSememe.isPresent() && latestVersionOfExistingNestedSememe.get().value().getState() == State.ACTIVE)
 			{
@@ -1796,13 +1854,15 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					break;
 				case MEMBER:
 					SememeVersion<?> memberSememe = latestVersionOfExistingNestedSememe.get().value();
-					copyOfExistingNestedSememe = importUtil.addRefsetMembership(ComponentReference.fromChronology(copyOfParentComponent), Get.identifierService().getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
+					copyOfExistingNestedSememe = importUtil.addRefsetMembership(ComponentReference.fromChronology(copyOfParentComponent), Get.identifierService()
+							.getUuidPrimordialFromConceptId(memberSememe.getAssemblageSequence()).get(), State.ACTIVE, null);
 					
 					break;
 				case STRING:
 					StringSememe<?> stringSememe = (StringSememe<?>)latestVersionOfExistingNestedSememe.get().value();
 					// TODO is Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()) == refsetUuid?
-					copyOfExistingNestedSememe = importUtil.addStringAnnotation(ComponentReference.fromChronology(copyOfParentComponent), stringSememe.getString(), Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
+					copyOfExistingNestedSememe = importUtil.addStringAnnotation(ComponentReference.fromChronology(copyOfParentComponent), stringSememe.getString(), 
+							Get.identifierService().getUuidPrimordialFromConceptId(stringSememe.getAssemblageSequence()).get(), State.ACTIVE);
 					break;
 
 					//None of these are expected in vhat data
@@ -2288,7 +2348,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						columnData[col++] = null;  //qualifier column
 						columnData[col++] = new DynamicSememeIntegerImpl(me.getSequence()); //sequence column
 						columnData[col++] = me.getGrouping() != null ? new DynamicSememeLongImpl(me.getGrouping()) : null; //grouping column
-						columnData[col++] = me.getEffectiveDate() != null ? new DynamicSememeLongImpl(me.getEffectiveDate().toGregorianCalendar().getTimeInMillis()) : null; //effectiveDate
+						columnData[col++] = me.getEffectiveDate() != null ? new DynamicSememeLongImpl(me.getEffectiveDate().toGregorianCalendar()
+								.getTimeInMillis()) : null; //effectiveDate
 						if (mapSetDefinitionHasGemFlag )
 						{
 							columnData[col++] = gemFlag == null ? null : new DynamicSememeStringImpl(gemFlag);
