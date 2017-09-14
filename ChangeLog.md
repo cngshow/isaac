@@ -4,6 +4,9 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 
 * 2017/09/?? - 6.00 - PENDING
     *
+    
+* 2017/09/13 - 5.07 - R5 build v2
+    * Fix some critical errors in the XML Delta import dealing with designations.
 
 * 2017/09/12 - 5.06
     * Updates to VetsExporter from inconsistencies found during testing
