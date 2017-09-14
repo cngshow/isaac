@@ -2022,18 +2022,19 @@ public class Frills implements DynamicSememeColumnUtility {
 	/**
 	 * Reset the state of an object to the new state, copying by creating a new version of the object with the same mutable values as the existing object.
 	 * 
-	 * This returns null (and does a NOOP) if the existing state is already the same as the desired state.
+	 * This returns an empty optional (and does a NOOP) if the existing state is already the same as the desired state.
 	 * 
 	 * @param state - The desired new state
 	 * @param nid - the id of the object to change the state of
 	 * @param editCoordinate - where to write the new state.
 	 * @param readCoordinates - (optional) the read coordinates to read the current state from.  Defaults to the system default if not provided.  When more than
 	 * one is provided, it tries each in order, until is finds the first one that is present.
-	 * @return - null, if no change, or the uncommitted chronology of the object that was changed.
+	 * @return - empty optional, if no change, or the uncommitted chronology of the object that was changed.
 	 * @throws Exception
 	 */
 	@SuppressWarnings("rawtypes")
-	public static ObjectChronology resetStateWithNoCommit(State state, int nid, EditCoordinate editCoordinate, StampCoordinate ... readCoordinates ) throws Exception {
+	public static Optional<ObjectChronology> resetStateWithNoCommit(State state, int nid, EditCoordinate editCoordinate, StampCoordinate ... readCoordinates ) 
+			throws Exception {
 		
 		final ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(nid);
 
@@ -2176,7 +2177,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			log.debug("No need to commit update of " + type + " " + nid + "<" + sequence + ">" + " with unchanged state (" + state + ")");
 		}
 
-		return objectToCommit;
+		return Optional.ofNullable(objectToCommit);
 	}
 	
 	private static class VersionUpdatePair<T extends StampedVersion> {
@@ -2190,7 +2191,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
-	 * calls {@link Frills#resetStateWithNoCommit(State, int, EditCoordinate, StampCoordinate...)} with a null Class
+	 * calls {@link Frills#resetState(State, ObjectChronology, Class, EditCoordinate, StampCoordinate...) with a null Class
 	 */
 	private static <T extends ConceptVersion<T>> VersionUpdatePair<T> resetConceptState(State state, ConceptChronology<T> chronology, 
 			EditCoordinate editCoordinate, StampCoordinate ... readCoordinates) throws Exception {	

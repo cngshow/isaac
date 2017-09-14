@@ -1786,7 +1786,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					//retire the old sememe:
 					try
 					{
-						importUtil_.storeManualUpdate(Frills.resetStateWithNoCommit(State.INACTIVE, oldSc.getNid(), editCoordinate_, readCoordinate_));
+						Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, oldSc.getNid(), editCoordinate_, readCoordinate_);
+						if (oc.isPresent())
+						{
+							importUtil_.storeManualUpdate(oc.get());
+						}
 					}
 					catch (Exception e)
 					{
@@ -1893,7 +1897,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			try 
 			{
-				updated.add(Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_));
+				Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_);
+				if (oc.isPresent())
+				{
+					updated.add(oc.get());
+				}
 				updated.addAll(recursiveRetireNested(sememe.getPrimordialUuid()));
 			} catch (Exception e) 
 			{
@@ -2383,9 +2391,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						try
 						{
-							ObjectChronology<?> oc = Frills.resetStateWithNoCommit(State.INACTIVE, Get.identifierService().getNidForUuids(
+							Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, Get.identifierService().getNidForUuids(
 									createNewMapItemUUID(concept.getPrimordialUuid(), me.getVUID().toString())), editCoordinate_, readCoordinate_);
-							importUtil_.storeManualUpdate(oc);
+							if (oc.isPresent())
+							{
+								importUtil_.storeManualUpdate(oc.get());
+							}
 						}
 						catch (Exception e)
 						{
