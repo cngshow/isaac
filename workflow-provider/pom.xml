@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>gov.vha.isaac.ochre</groupId>
 		<artifactId>isaac-parent</artifactId>
-		<version>5.07</version>
+		<version>6.00-SNAPSHOT</version>
 	</parent>
 	<groupId>gov.vha.isaac.ochre.modules</groupId>
 	<artifactId>workflow-provider</artifactId>
