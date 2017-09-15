@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1565,11 +1566,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						boolean checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = false;
 						if (StringUtils.isBlank(d.getTypeName())) {
 							checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
-						} else {
+						} else if (d.getAction() != ActionType.REMOVE) { 
+							//No point in processing extended type info if they did a REMOVE, and may cause a duplicate edit with the recursive retire, above.
 							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
 							UUID extendedDescriptionTypeFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
-							//No point in processing extended type info if they did a REMOVE, and may cause a duplicate edit with the recursive retire, above.
-							if (extendedDescriptionTypeFromData != null && d.getAction() != ActionType.REMOVE) {
+							
+							if (extendedDescriptionTypeFromData != null) {
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
 									// Check if description extended type from loaded data matches existing active description extended type in db
@@ -1601,7 +1603,7 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								}
 							} else {
 								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " 
-										+ extendedDescriptionTypeNameMap.keySet().toArray();
+										+ Arrays.toString(extendedDescriptionTypeNameMap.keySet().toArray());
 								LOG.error(msg);
 								throw new RuntimeException(msg);
 							}
