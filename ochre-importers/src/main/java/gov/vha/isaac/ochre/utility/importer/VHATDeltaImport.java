@@ -1568,7 +1568,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						} else {
 							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
 							UUID extendedDescriptionTypeFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
-							if (extendedDescriptionTypeFromData != null) {
+							//No point in processing extended type info if they did a REMOVE, and may cause a duplicate edit with the recursive retire, above.
+							if (extendedDescriptionTypeFromData != null && d.getAction() != ActionType.REMOVE) {
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
 									// Check if description extended type from loaded data matches existing active description extended type in db
@@ -1606,7 +1607,8 @@ public class VHATDeltaImport extends ConverterBaseMojo
 							}
 						}
 						
-						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe) {
+						//Don't do this if we fell through from REMOVE, because that will have put in a retire edit.
+						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe && d.getAction() != ActionType.REMOVE) {
 							// Just in case the description extended type has been inappropriately retired, unretire it
 							if (existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
 								@SuppressWarnings("unchecked")

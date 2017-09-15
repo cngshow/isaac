@@ -4,6 +4,7 @@ This changelog summarizes changes and fixes which are a part of each revision.  
 
 * 2017/09/?? - 5.08 - R5 build v3 - PENDING
     * Fix a commit lock bug that hangs the server to any write request when it gets triggered.
+    * Fix a bug on description remove in vhat delta import that did a double edit on the extended description types, leading to db model warnings.
     
 * 2017/09/13 - 5.07 - R5 build v2
     * Fix some critical errors in the XML Delta import dealing with designations.
