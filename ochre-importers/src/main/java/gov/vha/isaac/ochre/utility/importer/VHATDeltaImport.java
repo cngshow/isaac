@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1565,9 +1566,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 						boolean checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = false;
 						if (StringUtils.isBlank(d.getTypeName())) {
 							checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe = true;
-						} else {
+						} else if (d.getAction() != ActionType.REMOVE) { 
+							//No point in processing extended type info if they did a REMOVE, and may cause a duplicate edit with the recursive retire, above.
 							// Get extendedDescriptionTypeNameFromData from extendedDescriptionTypeNameMap
 							UUID extendedDescriptionTypeFromData = extendedDescriptionTypeNameMap.get(d.getTypeName().trim().toLowerCase());
+							
 							if (extendedDescriptionTypeFromData != null) {
 								// Found valid description extended type in imported data, so compare to active one (if any) in db
 								if (existingDescriptionExtendedTypeToUseUuidOptional.isPresent()) {
@@ -1600,13 +1603,14 @@ public class VHATDeltaImport extends ConverterBaseMojo
 								}
 							} else {
 								String msg = "Encountered unexpected description extended type name " + d.getTypeName() + ". Expected one of " 
-										+ extendedDescriptionTypeNameMap.keySet().toArray();
+										+ Arrays.toString(extendedDescriptionTypeNameMap.keySet().toArray());
 								LOG.error(msg);
 								throw new RuntimeException(msg);
 							}
 						}
 						
-						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe) {
+						//Don't do this if we fell through from REMOVE, because that will have put in a retire edit.
+						if (checkForAndActivateRetiredDescriptionExtendedTypeAnnotationSememe && d.getAction() != ActionType.REMOVE) {
 							// Just in case the description extended type has been inappropriately retired, unretire it
 							if (existingDescriptionExtendedTypeAnnotationSememe.isPresent()) {
 								@SuppressWarnings("unchecked")
@@ -1786,7 +1790,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					//retire the old sememe:
 					try
 					{
-						importUtil_.storeManualUpdate(Frills.resetStateWithNoCommit(State.INACTIVE, oldSc.getNid(), editCoordinate_, readCoordinate_));
+						Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, oldSc.getNid(), editCoordinate_, readCoordinate_);
+						if (oc.isPresent())
+						{
+							importUtil_.storeManualUpdate(oc.get());
+						}
 					}
 					catch (Exception e)
 					{
@@ -1893,7 +1901,11 @@ public class VHATDeltaImport extends ConverterBaseMojo
 		{
 			try 
 			{
-				updated.add(Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_));
+				Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, sememe.getNid(), editCoordinate_, readCoordinate_);
+				if (oc.isPresent())
+				{
+					updated.add(oc.get());
+				}
 				updated.addAll(recursiveRetireNested(sememe.getPrimordialUuid()));
 			} catch (Exception e) 
 			{
@@ -2383,9 +2395,12 @@ public class VHATDeltaImport extends ConverterBaseMojo
 					{
 						try
 						{
-							ObjectChronology<?> oc = Frills.resetStateWithNoCommit(State.INACTIVE, Get.identifierService().getNidForUuids(
+							Optional<ObjectChronology> oc = Frills.resetStateWithNoCommit(State.INACTIVE, Get.identifierService().getNidForUuids(
 									createNewMapItemUUID(concept.getPrimordialUuid(), me.getVUID().toString())), editCoordinate_, readCoordinate_);
-							importUtil_.storeManualUpdate(oc);
+							if (oc.isPresent())
+							{
+								importUtil_.storeManualUpdate(oc.get());
+							}
 						}
 						catch (Exception e)
 						{
