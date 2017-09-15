@@ -564,7 +564,8 @@ public class Frills implements DynamicSememeColumnUtility {
 							});
 			if (vuids.size() > 1)
 			{
-				log.warn("Found multiple VUIDs on component " + Get.identifierService().getUuidPrimordialForNid(componentNid));
+				log.warn("Found multiple VUIDs on component " + Get.identifierService().getUuidPrimordialForNid(componentNid) 
+						+ " only the first value of '" + vuids.get(0) + "' will be returned");
 			}
 			if (vuids.size() > 0)
 			{
@@ -1454,13 +1455,16 @@ public class Frills implements DynamicSememeColumnUtility {
 		
 		if (descriptionExtendedTypeAnnotationSememe.isPresent()) 
 		{
-			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
+			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate()
+					.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
 					: stampCoordinate.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()]));
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
 				.getLatestVersion(DynamicSememeImpl.class, effectiveStampCoordinate);
 			if (! optionalLatestSememeVersion.isPresent()) {
-				log.warn("No latest version present for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+				log.info("No latest version present for descriptionExtendedTypeAnnotationSememe chronology " 
+						+ descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") 
+						+ " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();
 			}
 			if (optionalLatestSememeVersion.get().contradictions().isPresent() && optionalLatestSememeVersion.get().contradictions().get().size() > 0) {
@@ -1469,7 +1473,9 @@ public class Frills implements DynamicSememeColumnUtility {
 					.contradictions().get().size() + " contradictions");
 			}
 			if (!returnInactiveExtendedType && optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
-				log.warn("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+				log.info("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " 
+						+ descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") 
+						+ " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();	
 			}
 			
