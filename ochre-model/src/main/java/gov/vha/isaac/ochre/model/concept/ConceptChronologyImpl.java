@@ -44,6 +44,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  *
  * @author kec
@@ -51,6 +54,7 @@ import java.util.stream.Collectors;
 public class ConceptChronologyImpl
         extends ObjectChronologyImpl<ConceptVersionImpl>
         implements ConceptChronology<ConceptVersionImpl>, OchreExternalizable {
+	private static Logger log = LogManager.getLogger(ConceptChronologyImpl.class);
 
     public ConceptChronologyImpl(UUID primordialUuid, int nid, int containerSequence) {
         super(primordialUuid, nid, containerSequence);
@@ -102,6 +106,15 @@ public class ConceptChronologyImpl
     public ConceptVersionImpl createMutableVersion(State state, EditCoordinate ec) {
         int stampSequence = Get.stampService().getStampSequence(state, Long.MAX_VALUE,
                 ec.getAuthorSequence(), ec.getModuleSequence(), ec.getPathSequence());
+        final List<ConceptVersionImpl> uncommittedVersions = new ArrayList<>();
+        for (ConceptVersionImpl version : this.getVersionList()) {
+            if (version.isUncommitted()) {
+                uncommittedVersions.add(version);
+            }
+        }
+        if (uncommittedVersions.size() > 0) {
+            log.warn(new RuntimeException("Creating new mutable version for concept " + this.getPrimordialUuid() + " with " + uncommittedVersions.size() + " existing uncommitted version(s). CHRONOLOGY: " + this));
+        }
         ConceptVersionImpl newVersion = new ConceptVersionImpl(this, stampSequence, nextVersionSequence());
         addVersion(newVersion);
         return newVersion;
