@@ -1188,7 +1188,6 @@ public class VhatXmlTests {
 			Assert.assertTrue((Boolean) validateSubsetMembershipCount(0).evaluate(doc, XPathConstants.BOOLEAN));
 			
 			Assert.assertTrue((Boolean) validateRelationshipCount(1).evaluate(doc, XPathConstants.BOOLEAN));
-			// TODO - Look at relationship NewTargetCode
 			Assert.assertTrue((Boolean) validateRelationship("update", "aaa_vista_has_newflag", null, "4712477", "true").evaluate(doc, XPathConstants.BOOLEAN));
 			
 			// Test concepts imported
@@ -3308,7 +3307,7 @@ public class VhatXmlTests {
 			Assert.assertTrue(validateXPath(doc, "count(" + RELATIONSHIP + "["
 					+ "./Action/text() = 'update'"
 					+ " and ./TypeName/text() = 'A1_Bad_Relationships'"
-					// TODO - need to address this, not sure if a test setup issue
+					// This is expected output from the exporter when UPDATE is done
 					//+ " and ./OldTargetCode/text() = '4711495'"
 					//+ " and ./NewTargetCode/text() = '5100558'"
 					+ " and ./OldTargetCode/text() = '5100558'"
