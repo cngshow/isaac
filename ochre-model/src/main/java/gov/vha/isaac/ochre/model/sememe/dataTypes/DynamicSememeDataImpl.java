@@ -122,7 +122,7 @@ public abstract class DynamicSememeDataImpl implements DynamicSememeData
 	{
 		switch (this.getDynamicSememeDataType())
 		{
-			case BOOLEAN: case DOUBLE: case FLOAT: case INTEGER: case LONG: case NID: case SEQUENCE: case STRING: case UUID:
+			case BOOLEAN: case DOUBLE: case FLOAT: case INTEGER: case LONG: case NID: case STRING: case UUID:
 				return getDataObject().toString();
 			case ARRAY:
 				String temp = "[";

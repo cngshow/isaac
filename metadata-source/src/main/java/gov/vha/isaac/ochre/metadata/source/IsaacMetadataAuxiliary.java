@@ -112,16 +112,19 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      *          Added more descriptions to all of the module constants.
      *          Added a VHAT_EDIT module to serve as the new default module for edits.
      *          Fixed a bug in the definition of DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_TYPE
+     * 1.1.1    Removed a constant for dynamic sememe data types (which are no longer supported)
+     * 1.1.2    Renamed 'generated UUID' to 'UUID'
      * 
     **/  
-    public static final String AUXILIARY_METADATA_VERSION = "1.1.0";
+    public static final String AUXILIARY_METADATA_VERSION = "1.1.1";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
     * To override this class with a different taxonomy, provide another implementation with a higher rank.
     */
     public IsaacMetadataAuxiliary() throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG, AUXILIARY_METADATA_VERSION);
+        super(TermAux.DEVELOPMENT_PATH, TermAux.USER, TermAux.ISAAC_MODULE, TermAux.IS_A, METADATA_SEMANTIC_TAG, AUXILIARY_METADATA_VERSION, 
+                TermAux.ISAAC_MODULE.getPrimordialUuid());
 
         try {
             createConcept(TermAux.ISAAC_ROOT);
@@ -183,7 +186,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                     createConcept(TermAux.IDENTIFIER_SOURCE).addDescription("A parent concept and membership sememe used to group identifiers", TermAux.DEFINITION_DESCRIPTION_TYPE);
                     pushParent(current());
                         createConcept("SCTID").mergeFromSpec(TermAux.SNOMED_IDENTIFIER).addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
-                        createConcept("generated UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
+                        createConcept("UUID").setPrimordialUuid("2faa9262-8fb2-11db-b606-0800200c9a66").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
                         createConcept("VUID", "Vets Unique Identifier").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);
                         createConcept("Code").setPrimordialUuid("803af596-aea8-5184-b8e1-45f801585d17").addAssemblageMembership(TermAux.IDENTIFIER_SOURCE);// UUID comes from the algorithm in the VHAT econ loader
                     popParent();

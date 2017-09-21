@@ -15,6 +15,8 @@
  */
 package gov.vha.isaac.ochre.api.component.concept;
 
+import java.util.List;
+
 import gov.vha.isaac.ochre.api.IdentifiedComponentBuilder;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.component.concept.description.DescriptionBuilder;
@@ -82,4 +84,10 @@ public interface ConceptBuilder extends IdentifiedComponentBuilder<ConceptChrono
 	 */
 	ConceptBuilder addLogicalExpression(LogicalExpression logicalExpression);
 
+	/**
+	 * Gets the stored description builders.  This should include the FullySpecified Description Builder if set, and the SynonymPreferredDescriptionBuilder, 
+	 * if set
+	 * @return the description builders
+	 */
+	List<DescriptionBuilder<?, ?>> getDescriptionBuilders();
 }

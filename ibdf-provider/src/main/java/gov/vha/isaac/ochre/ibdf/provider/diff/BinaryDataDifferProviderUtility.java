@@ -43,17 +43,12 @@ import gov.vha.isaac.ochre.api.component.sememe.version.MutableLongSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.MutableStringSememe;
 import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.DynamicSememeData;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
-import gov.vha.isaac.ochre.api.relationship.RelationshipVersionAdaptor;
 import gov.vha.isaac.ochre.model.configuration.StampCoordinates;
 import gov.vha.isaac.ochre.model.relationship.RelationshipAdaptorChronicleKeyImpl;
 import gov.vha.isaac.ochre.model.relationship.RelationshipVersionAdaptorImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeLongImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeNidImpl;
-import gov.vha.isaac.ochre.model.sememe.dataTypes.DynamicSememeStringImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
@@ -114,8 +109,7 @@ public class BinaryDataDifferProviderUtility {
 
 			if (!equivalenceFound) {
 				// versionsToAdd.add(ov);
-				addNewActiveVersion(oldChron, nv, type, stampSeq);
-				newVersionAdded = true;
+				newVersionAdded = addNewActiveVersion(oldChron, nv, type, stampSeq);
 			}
 		}
 
@@ -138,64 +132,35 @@ public class BinaryDataDifferProviderUtility {
 			return true;
 		} else {
 			// Analyze Sememe
-			DynamicSememeData[] oldData = getSememeData((SememeVersion<?>) ov);
-			DynamicSememeData[] newData = getSememeData((SememeVersion<?>) nv);
+			SememeVersion<?> os = (SememeVersion<?>) ov;
+			SememeVersion<?> ns = (SememeVersion<?>) nv;
 
-			return isSememeDataEquivalent(oldData, newData);
-		}
-	}
-
-	private boolean isSememeDataEquivalent(DynamicSememeData[] oldData, DynamicSememeData[] newData) {
-		// Verify same values
-		if (oldData.length != newData.length) {
-			return false;
-		} else {
-			for (int i = 0; i < oldData.length; i++) {
-				boolean matchFound = false;
-
-				if ((oldData[i] == null && newData[i] == null)
-						|| Arrays.equals(oldData[i].getData(), newData[i].getData())) {
-					matchFound = true;
-					continue;
-				}
-
-				if (!matchFound) {
+			if ((os.getAssemblageSequence() != ns.getAssemblageSequence())
+					|| os.getReferencedComponentNid() != ns.getReferencedComponentNid()) {
 					return false;
 				}
-			}
 
-			return true;
-		}
-	}
-
-	private DynamicSememeData[] getSememeData(SememeVersion<?> sememe) {
-		{
-			switch (sememe.getChronology().getSememeType()) {
+			switch (os.getChronology().getSememeType()) {
 			case COMPONENT_NID:
-				return new DynamicSememeData[] {
-						new DynamicSememeNidImpl(((ComponentNidSememe<?>) sememe).getComponentNid()) };
+				return ((ComponentNidSememe<?>) os).getComponentNid() == ((ComponentNidSememe<?>) ns).getComponentNid();
 			case DESCRIPTION:
-				return new DynamicSememeData[] {
-						new DynamicSememeStringImpl(((DescriptionSememe<?>) sememe).getText()) };
-			case DYNAMIC:
-				return ((DynamicSememe<?>) sememe).getData();
+				return ((DescriptionSememe<?>) os).getText().equals(((DescriptionSememe<?>) ns).getText());
 			case LONG:
-				return new DynamicSememeData[] { new DynamicSememeLongImpl(((LongSememe<?>) sememe).getLongValue()) };
-			case MEMBER:
-				return new DynamicSememeData[] {};
+				return ((LongSememe<?>) os).getLongValue() == ((LongSememe<?>) ns).getLongValue();
 			case STRING:
-				return new DynamicSememeData[] { new DynamicSememeStringImpl(((StringSememe<?>) sememe).getString()) };
-			case RELATIONSHIP_ADAPTOR:
-				return new DynamicSememeData[] {
-						new DynamicSememeStringImpl(((RelationshipVersionAdaptor<?>) sememe).toString()) };
+				return ((StringSememe<?>) os).getString().equals(((StringSememe<?>) ns).getString());
+			case DYNAMIC:
+				return ((DynamicSememe<?>) os).dataToString().equals(((DynamicSememe<?>) ns).dataToString());
 			case LOGIC_GRAPH:
-				return new DynamicSememeData[] {
-						new DynamicSememeStringImpl(((LogicGraphSememe<?>) sememe).toString()) };
+				return Arrays.deepEquals(((LogicGraphSememe<?>) os).getGraphData(),
+						((LogicGraphSememe<?>) ns).getGraphData());
+			case MEMBER:
+				return true;
+			case RELATIONSHIP_ADAPTOR:
 			case UNKNOWN:
 			default:
 				throw new UnsupportedOperationException();
 			}
-
 		}
 	}
 
@@ -335,7 +300,9 @@ public class BinaryDataDifferProviderUtility {
 			builder = sememeBuilderService_.getLogicalExpressionSememeBuilder(logicGraphSememe.getLogicalExpression(),
 					logicGraphSememe.getReferencedComponentNid(), logicGraphSememe.getAssemblageSequence());
 			break;
-		case UNKNOWN: case RELATIONSHIP_ADAPTOR:  //Dan doesn't believe rel adapaters are ever created / written to ibdf
+		case UNKNOWN:
+		case RELATIONSHIP_ADAPTOR: // Dan doesn't believe rel adapaters are ever
+									// created / written to ibdf
 		default:
 			throw new UnsupportedOperationException();
 		}
@@ -365,22 +332,25 @@ public class BinaryDataDifferProviderUtility {
 		return oldChron;
 	}
 
-	private void addNewActiveVersion(ObjectChronology<?> oldChron, StampedVersion newVersion,
+	private boolean addNewActiveVersion(ObjectChronology<?> oldChron, StampedVersion newVersion,
 			OchreExternalizableObjectType type, int activeStampSeq) {
 		try {
 			if (type == OchreExternalizableObjectType.CONCEPT) {
 				((ConceptChronology<?>) oldChron)
 						.createMutableVersion(((ConceptVersion<?>) newVersion).getStampSequence());
+				return true;
 			} else if (type == OchreExternalizableObjectType.SEMEME) {
 				SememeVersion createdVersion = ((SememeChronology) oldChron).createMutableVersion(
-						((SememeChronology<?>) oldChron).getClass(),
-						((SememeVersion<?>) newVersion).getStampSequence());
+							newVersion.getClass(), ((SememeVersion<?>) newVersion).getStampSequence());
 
 				createdVersion = populateData(createdVersion, (SememeVersion<?>) newVersion, activeStampSeq);
+				return true;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		return false;
 	}
 
 	public void setNewImportDate(String importDate) {

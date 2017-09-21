@@ -190,7 +190,7 @@ public class CommitProvider implements CommitService {
 							for (SememeVersion<?> sv : sc.getUnwrittenVersionList())
 							{
 								if (((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
-										((DescriptionSememe<?>)sv).getCaseSignificanceConceptSequence() == 0 ||
+										((DescriptionSememe<?>)sv).getLanguageConceptSequence() == 0 ||
 										((DescriptionSememe<?>)sv).getDescriptionTypeConceptSequence() == 0 ||
 										((DescriptionSememe<?>)sv).getText() == null)
 								{
@@ -591,19 +591,37 @@ public class CommitProvider implements CommitService {
 			ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
 			ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
 		writeSemaphore.acquireUninterruptibly();
-		WriteAndCheckSememeChronicle task = new WriteAndCheckSememeChronicle(sc, checkers, alertCollection, writeSemaphore, changeListeners,
-				(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
-		writeCompletionService.submit(task);
-		return task;
+		try
+		{
+			WriteAndCheckSememeChronicle task = new WriteAndCheckSememeChronicle(sc, checkers, alertCollection, writeSemaphore, changeListeners,
+					(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
+			writeCompletionService.submit(task);
+			return task;
+		}
+		catch (Exception e)
+		{
+			//release semaphore, if we didn't successfully submit the task
+			writeSemaphore.release();
+			throw e;
+		}
 	}
 
 	private Task<Void> write(SememeChronology sc, Semaphore writeSemaphore,
 			ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
 		writeSemaphore.acquireUninterruptibly();
-		WriteSememeChronicle task = new WriteSememeChronicle(sc, writeSemaphore, changeListeners,
-				(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
-		writeCompletionService.submit(task);
-		return task;
+		try
+		{
+			WriteSememeChronicle task = new WriteSememeChronicle(sc, writeSemaphore, changeListeners,
+					(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
+			writeCompletionService.submit(task);
+			return task;
+		}
+		catch (Exception e)
+		{
+			//release semaphore, if we didn't successfully submit the task
+			writeSemaphore.release();
+			throw e;
+		}
 	}
 
 	private Task<Void> checkAndWrite(ConceptChronology cc,
@@ -611,19 +629,37 @@ public class CommitProvider implements CommitService {
 			ConcurrentSkipListSet<Alert> alertCollection, Semaphore writeSemaphore,
 			ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
 		writeSemaphore.acquireUninterruptibly();
-		WriteAndCheckConceptChronicle task = new WriteAndCheckConceptChronicle(cc, checkers, alertCollection, writeSemaphore, changeListeners,
-				(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
-		writeCompletionService.submit(task);
-		return task;
+		try
+		{
+			WriteAndCheckConceptChronicle task = new WriteAndCheckConceptChronicle(cc, checkers, alertCollection, writeSemaphore, changeListeners,
+					(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
+			writeCompletionService.submit(task);
+			return task;
+		}
+		catch (Exception e)
+		{
+			//release semaphore, if we didn't successfully submit the task
+			writeSemaphore.release();
+			throw e;
+		}
 	}
 
 	private Task<Void> write(ConceptChronology cc, Semaphore writeSemaphore,
 			ConcurrentSkipListSet<WeakReference<ChronologyChangeListener>> changeListeners) {
 		writeSemaphore.acquireUninterruptibly();
-		WriteConceptChronicle task = new WriteConceptChronicle(cc, writeSemaphore, changeListeners,
-				(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
-		writeCompletionService.submit(task);
-		return task;
+		try
+		{
+			WriteConceptChronicle task = new WriteConceptChronicle(cc, writeSemaphore, changeListeners,
+					(sememeOrConceptChronicle, changeCheckerActive) -> handleUncommittedSequenceSet(sememeOrConceptChronicle, changeCheckerActive));
+			writeCompletionService.submit(task);
+			return task;
+		}
+		catch (Exception e)
+		{
+			//release semaphore, if we didn't successfully submit the task
+			writeSemaphore.release();
+			throw e;
+		}
 	}
 
 	private void handleUncommittedSequenceSet(ObjectChronology sememeOrConceptChronicle, boolean changeCheckerActive) {

@@ -124,7 +124,7 @@ public class WorkExecutors
 		
 		//The IO non-blocking executor - set core threads equal to max - otherwise, it will never increase the thread count
 		//with an unbounded queue.
-		ioThreadPoolExecutor_ = new ThreadPoolExecutor(4, 4, keepAliveTime, timeUnit, new LinkedBlockingQueue<Runnable>(),
+		ioThreadPoolExecutor_ = new ThreadPoolExecutor(6, 6, keepAliveTime, timeUnit, new LinkedBlockingQueue<Runnable>(),
 				new NamedThreadFactory("ISAAC-IO-work-thread", true));
 		ioThreadPoolExecutor_.allowCoreThreadTimeOut(true);
 		//Execute this once, early on, in a background thread - as randomUUID uses secure random - and the initial 

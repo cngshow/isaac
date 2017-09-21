@@ -69,7 +69,6 @@ import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeLong;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeNid;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememePolymorphic;
-import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeSequence;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeString;
 import gov.vha.isaac.ochre.api.component.sememe.version.dynamicSememe.dataTypes.DynamicSememeUUID;
 import gov.vha.isaac.ochre.api.coordinate.StampCoordinate;
@@ -267,15 +266,6 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 			}
 			incrementIndexedItemCount("Dynamic Sememe Integer");
 		}
-		else if (dataCol instanceof DynamicSememeSequence)
-		{
-			doc.add(new LegacyIntField(COLUMN_FIELD_DATA, ((DynamicSememeSequence) dataCol).getDataSequence(), Store.NO));
-			if (colNumber >= 0)
-			{
-				doc.add(new LegacyIntField(COLUMN_FIELD_DATA + "_" + colNumber, ((DynamicSememeSequence) dataCol).getDataSequence(), Store.NO));
-			}
-			incrementIndexedItemCount("Dynamic Sememe Sequence");
-		}
 		else if (dataCol instanceof DynamicSememeLong)
 		{
 			doc.add(new LegacyLongField(COLUMN_FIELD_DATA, ((DynamicSememeLong) dataCol).getDataLong(), Store.NO));
@@ -436,7 +426,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 			}
 			else if (queryData instanceof DynamicSememeDouble || queryData instanceof DynamicSememeFloat || queryData instanceof DynamicSememeInteger
-					|| queryData instanceof DynamicSememeLong || queryData instanceof DynamicSememeSequence)
+					|| queryData instanceof DynamicSememeLong)
 			{
 				q = new QueryWrapperForColumnHandling()
 				{
@@ -555,19 +545,16 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				}
 			}
 
-			if (fitsInInt || queryDataLower instanceof DynamicSememeInteger || queryDataUpper instanceof DynamicSememeInteger
-					|| queryDataLower instanceof DynamicSememeSequence || queryDataUpper instanceof DynamicSememeSequence)
+			if (fitsInInt || queryDataLower instanceof DynamicSememeInteger || queryDataUpper instanceof DynamicSememeInteger)
 			{
 				Integer upperVal = (queryDataUpper == null ? null
 						: (queryDataUpper instanceof DynamicSememeInteger ? ((DynamicSememeInteger) queryDataUpper).getDataInteger()
-								: (queryDataUpper instanceof DynamicSememeSequence ? ((DynamicSememeSequence) queryDataUpper).getDataSequence()
-										: (fitsInInt && ((Number) queryDataUpper.getDataObject()).longValue() > Integer.MAX_VALUE ? Integer.MAX_VALUE
-												: ((Number) queryDataUpper.getDataObject()).intValue()))));
+									: (fitsInInt && ((Number) queryDataUpper.getDataObject()).longValue() > Integer.MAX_VALUE ? Integer.MAX_VALUE
+											: ((Number) queryDataUpper.getDataObject()).intValue())));
 				Integer lowerVal = (queryDataLower == null ? null
 						: (queryDataLower instanceof DynamicSememeInteger ? ((DynamicSememeInteger) queryDataLower).getDataInteger()
-								: (queryDataLower instanceof DynamicSememeSequence ? ((DynamicSememeSequence) queryDataLower).getDataSequence()
-										: (fitsInInt && ((Number) queryDataLower.getDataObject()).longValue() < Integer.MIN_VALUE ? Integer.MIN_VALUE
-												: ((Number) queryDataLower.getDataObject()).intValue()))));
+									: (fitsInInt && ((Number) queryDataLower.getDataObject()).longValue() < Integer.MIN_VALUE ? Integer.MIN_VALUE
+											: ((Number) queryDataLower.getDataObject()).intValue())));
 				bq.add(LegacyNumericRangeQuery.newIntRange(columnName, lowerVal, upperVal, queryDataLowerInclusive, queryDataUpperInclusive), Occur.SHOULD);
 			}
 			

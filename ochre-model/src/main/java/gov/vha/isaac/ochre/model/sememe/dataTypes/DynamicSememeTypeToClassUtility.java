@@ -42,7 +42,6 @@ public class DynamicSememeTypeToClassUtility
 			case NID: return new DynamicSememeNidImpl(data, assemblageSequence, columnNumber);
 			case STRING: return new DynamicSememeStringImpl(data, assemblageSequence, columnNumber);
 			case UUID: return new DynamicSememeUUIDImpl(data, assemblageSequence, columnNumber);
-			case SEQUENCE: return new DynamicSememeSequenceImpl(data, assemblageSequence, columnNumber);
 			case POLYMORPHIC: case UNKNOWN: throw new RuntimeException("No implementation exists for type unknown");
 			default: throw new RuntimeException("Implementation error");
 		}
@@ -62,7 +61,6 @@ public class DynamicSememeTypeToClassUtility
 			case NID: return new DynamicSememeNidImpl(data);
 			case STRING: return new DynamicSememeStringImpl(data);
 			case UUID: return new DynamicSememeUUIDImpl(data);
-			case SEQUENCE: return new DynamicSememeSequenceImpl(data);
 			case UNKNOWN: case POLYMORPHIC: throw new RuntimeException("Should be impossible");
 			default:
 				throw new RuntimeException("Design failure");
@@ -83,7 +81,6 @@ public class DynamicSememeTypeToClassUtility
 			case NID: return DynamicSememeNidImpl.class;
 			case STRING: return DynamicSememeStringImpl.class;
 			case UUID: return DynamicSememeUUIDImpl.class;
-			case SEQUENCE: return DynamicSememeSequenceImpl.class;
 			case UNKNOWN: case POLYMORPHIC: throw new RuntimeException("Should be impossible");
 			default:
 				throw new RuntimeException("Design failure");

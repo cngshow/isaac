@@ -2,8 +2,57 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
-* 2017/08/ - 4.22 - PENDING
-    * 
+* 2017/09/?? - 6.00 - PENDING
+
+* 2017/09/15 - 5.08 - R5 build v3
+    * Fix a commit lock bug that hangs the server to any write request when it gets triggered.
+    * Fix a bug on description remove in vhat delta import that did a double edit on the extended description types, leading to db model warnings.
+    
+* 2017/09/13 - 5.07 - R5 build v2
+    * Fix some critical errors in the XML Delta import dealing with designations.
+
+* 2017/09/12 - 5.06
+    * Updates to VetsExporter from inconsistencies found during testing
+    * Updates to Frills.getDescriptionExtendedTypeConcept to allow returning inactive descriptions
+    * Documentation updates
+    * R5 release build 
+
+* 2017/09/08 - 5.05
+    * Fixes to trim XML import data of Properties, Designations, and supported trimming new Subsets and Types (Property and Relationship) (585147)
+    * Fixes to move SubsetMemberships during MoveFromConceptCode (583082)
+
+* 2017/09/07 - 5.04
+    * Fixes for trimming XML input data 
+    * Changes to support MoveFromConceptCode via XML import (583082)
+
+* 2017/09/06 - 5.03
+    * Fix for UPDATEs to Relationships where NewTargetCode may not be present (Mike's has_parent test cases) (583864)
+    * Changes to modify all nested sememes of a Designation to be inactivated when the parent Designation is 'removed' (583063)
+
+* 2017/09/01 - 5.02
+    * Changes to delta importer to explicitely cause REMOVE directives in data elements to set active=false (583063)
+    * Fix to VetsExporter to read and export RelationshipTypes
+    * Fix for adding Subsets in the same file as they are use in a SubsetMembership of a concept (i.e. super.xml) (583084)
+    * Fix to VetsExporter to export new/added PropertyTypes, RelationshipTypes and DesignationTypes (583108)
+
+* 2017/08/31 - 5.01
+    * Minor metadata naming change to be more consistent in the GUI (583064)
+    * Fix for Property sememe lookup to get the needed string value in the XML Delta import (575460)
+    * Fix for association sememe lookups to match the expected DynamicSememeDataType of UUID in the XML Delta Import (570887)
+    * Fix for RuntimeExceptions thrown during Designation 'update' import directives in the XML Delta Import (583066)
+    * Added VHAT_ASSOCIATION_TYPES constant (583071)
+    * Changes to look for duplicate VUIDs in imported XML file prior to processing (583073)
+    * Changes to delta importer to handle Property activation/inactivation-only directives (583074)
+
+* 2017/08/25 - 5.00
+    * 537659 - Fixes for us extension processing
+    * Rework UUID generation for central consistency, to allow delta processing to work later
+    * Performance improvements on the Lucene indexer
+
+* 2017/08/24 - 4.22
+    * Fix yet more problems with the caching of users and roles.
+    * Debug and other logging improvements.
+    * VHATIsAHasParent updates.
 
 * 2017/08/23 - 4.21
     * Fix a silly bug accidently introduced in the 4.20 build relating to identifer type sememes (code, vuid, etc)

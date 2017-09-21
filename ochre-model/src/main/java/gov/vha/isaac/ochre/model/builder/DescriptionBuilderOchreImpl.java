@@ -17,7 +17,11 @@ package gov.vha.isaac.ochre.model.builder;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
@@ -33,9 +37,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.DescriptionSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.identity.StampedVersion;
 import gov.vha.isaac.ochre.api.task.OptionalWaitTask;
+import gov.vha.isaac.ochre.api.util.UuidFactory;
 import gov.vha.isaac.ochre.model.sememe.SememeChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
-import javafx.concurrent.Task;
 
 /**
  *
@@ -47,8 +51,8 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
             ComponentBuilder<T> 
     implements DescriptionBuilder<T,V> {
 
-    private final ArrayList<ConceptSpecification> preferredInDialectAssemblages = new ArrayList<>();
-    private final ArrayList<ConceptSpecification> acceptableInDialectAssemblages = new ArrayList<>();
+    private final HashMap<ConceptSpecification, SememeBuilder<?>> preferredInDialectAssemblages = new HashMap<>();
+    private final HashMap<ConceptSpecification, SememeBuilder<?>> acceptableInDialectAssemblages = new HashMap<>();
     
     private final String descriptionText;
     private final ConceptSpecification descriptionType;
@@ -78,13 +82,13 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
 
     @Override
     public DescriptionBuilder addPreferredInDialectAssemblage(ConceptSpecification dialectAssemblage) {
-        preferredInDialectAssemblages.add(dialectAssemblage);
+        preferredInDialectAssemblages.put(dialectAssemblage, null);
         return this; 
    }
 
     @Override
     public DescriptionBuilder addAcceptableInDialectAssemblage(ConceptSpecification dialectAssemblage) {
-        acceptableInDialectAssemblages.add(dialectAssemblage);
+        acceptableInDialectAssemblages.put(dialectAssemblage, null);
         return this;
     }
 
@@ -107,22 +111,8 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
         OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>> newDescription = (OptionalWaitTask<SememeChronologyImpl<DescriptionSememeImpl>>)
                 descBuilder.setState(state).build(editCoordinate, changeCheckerMode, builtObjects);
         nestedBuilders.add(newDescription);
-        SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
-        preferredInDialectAssemblages.forEach(( assemblageProxy) -> {
-            nestedBuilders.add(sememeBuilderService.getComponentSememeBuilder(
-                    TermAux.PREFERRED.getNid(), newDescription.getNoWait().getNid(),
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(editCoordinate, changeCheckerMode, builtObjects));
-        });
-        acceptableInDialectAssemblages.forEach(( assemblageProxy) -> {
-            nestedBuilders.add(sememeBuilderService.getComponentSememeBuilder(
-                    TermAux.ACCEPTABLE.getNid(), 
-                    newDescription.getNoWait().getNid(),
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(editCoordinate, changeCheckerMode, builtObjects));
-        });
         
-        sememeBuilders.forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
+        getSememeBuilders().forEach((builder) -> nestedBuilders.add(builder.build(editCoordinate, changeCheckerMode, builtObjects)));
         
         return new OptionalWaitTask<T>(null, (T)newDescription.getNoWait(), nestedBuilders);
     }
@@ -144,21 +134,60 @@ public class DescriptionBuilderOchreImpl<T extends SememeChronology<V>, V extend
         descBuilder.setPrimordialUuid(this.getPrimordialUuid());
         SememeChronologyImpl<DescriptionSememeImpl> newDescription = (SememeChronologyImpl<DescriptionSememeImpl>)
                 descBuilder.build(stampSequence, builtObjects);
-        SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
-        preferredInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
-                    TermAux.PREFERRED.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(stampSequence, builtObjects);
-        });
-        acceptableInDialectAssemblages.forEach(( assemblageProxy) -> {
-            sememeBuilderService.getComponentSememeBuilder(
-                    TermAux.ACCEPTABLE.getNid(), this,
-                    Get.identifierService().getConceptSequenceForProxy(assemblageProxy)).
-                    build(stampSequence, builtObjects);
-        });
-        sememeBuilders.forEach((builder) -> builder.build(stampSequence, builtObjects));
+         getSememeBuilders().forEach((builder) -> builder.build(stampSequence, builtObjects));
         return (T) newDescription;
     }
+    
+    @Override
+    public DescriptionBuilder setT5Uuid(UUID namespace, BiConsumer<String, UUID> consumer) {
+        if (isPrimordialUuidSet() && getPrimordialUuid().version() == 4) {
+            throw new RuntimeException("Attempting to set Type 5 UUID where the UUID was previously set to random");
+        }
+        
+        if (!isPrimordialUuidSet()) {
+            int assemblageSeq = TermAux.getDescriptionAssemblageConceptSequence(languageForDescription.getConceptSequence());
+            int caseSigNid = Get.identifierService().getConceptNid(Get.languageCoordinateService().caseSignificanceToConceptSequence(false));
+            
+            setPrimordialUuid(
+                    UuidFactory.getUuidForDescriptionSememe(namespace,
+                            Get.identifierService().getUuidPrimordialFromConceptId(assemblageSeq).get(),
+                            conceptBuilder.getPrimordialUuid(), 
+                            Get.identifierService().getUuidPrimordialForNid(caseSigNid).get(),
+                            descriptionType.getPrimordialUuid(),
+                            languageForDescription.getPrimordialUuid(), 
+                            descriptionText,
+                            consumer));
+        }
+        
+        return this;
+    }
+    @Override
+    public List<SememeBuilder<?>> getSememeBuilders() {
+        ArrayList<SememeBuilder<?>> temp = new ArrayList<>(super.getSememeBuilders().size() + preferredInDialectAssemblages.size() 
+            + acceptableInDialectAssemblages.size());
+        
+        temp.addAll(super.getSememeBuilders());
+        
+        SememeBuilderService sememeBuilderService = LookupService.getService(SememeBuilderService.class);
+        
+        for (Entry<ConceptSpecification, SememeBuilder<?>> p : preferredInDialectAssemblages.entrySet()) {
+            if (p.getValue() == null) {
+                p.setValue(sememeBuilderService.getComponentSememeBuilder(TermAux.PREFERRED.getNid(), this,
+                    Get.identifierService().getConceptSequenceForProxy(p.getKey())));
+            }
+            temp.add(p.getValue());
+        }
+        
+        for (Entry<ConceptSpecification, SememeBuilder<?>> a : acceptableInDialectAssemblages.entrySet()) {
+            if (a.getValue() == null) {
+                a.setValue(sememeBuilderService.getComponentSememeBuilder(TermAux.ACCEPTABLE.getNid(), this,
+                    Get.identifierService().getConceptSequenceForProxy(a.getKey())));
+            }
+            temp.add(a.getValue());
+        }
+        
+        return temp;
+    }
+    
     
 }

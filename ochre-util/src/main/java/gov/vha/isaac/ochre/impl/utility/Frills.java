@@ -565,7 +565,8 @@ public class Frills implements DynamicSememeColumnUtility {
 							});
 			if (vuids.size() > 1)
 			{
-				log.warn("Found multiple VUIDs on component " + Get.identifierService().getUuidPrimordialForNid(componentNid));
+				log.warn("Found multiple VUIDs on component " + Get.identifierService().getUuidPrimordialForNid(componentNid) 
+						+ " only the first value of '" + vuids.get(0) + "' will be returned");
 			}
 			if (vuids.size() > 0)
 			{
@@ -1443,9 +1444,11 @@ public class Frills implements DynamicSememeColumnUtility {
 	 * If this description is flagged as an extended description type, return the type concept of the extension.
 	 * @param sc - optional Stamp - pass null to use the default stamp.  In either case, this only looks for an active extended type - state is overridden.
 	 * @param descriptionId - the nid or sequence of the description sememe to check for an extended type. 
+	 * @param returnInactiveExtendedType - true to return an extended description type even if it is INACTVE .  
+	 * false to only return the extended description type if it is present and active (returns EMPTY if the extended type is missing or inactive)
 	 * @return
 	 */
-	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId) 
+	public static Optional<UUID> getDescriptionExtendedTypeConcept(StampCoordinate stampCoordinate, int descriptionId, boolean returnInactiveExtendedType) 
 	{
 		Optional<SememeChronology<? extends SememeVersion<?>>> descriptionExtendedTypeAnnotationSememe =
 				getAnnotationSememe(Get.identifierService().getSememeNid(descriptionId), 
@@ -1453,13 +1456,16 @@ public class Frills implements DynamicSememeColumnUtility {
 		
 		if (descriptionExtendedTypeAnnotationSememe.isPresent()) 
 		{
-			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate().makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
+			final StampCoordinate effectiveStampCoordinate = (stampCoordinate == null) ? Get.configurationService().getDefaultStampCoordinate()
+					.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()])) 
 					: stampCoordinate.makeAnalog(State.ANY_STATE_SET.toArray(new State[State.ANY_STATE_SET.size()]));
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			Optional<LatestVersion<DynamicSememeImpl>> optionalLatestSememeVersion = ((SememeChronology)(descriptionExtendedTypeAnnotationSememe.get()))
 				.getLatestVersion(DynamicSememeImpl.class, effectiveStampCoordinate);
 			if (! optionalLatestSememeVersion.isPresent()) {
-				log.warn("No latest version present for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+				log.info("No latest version present for descriptionExtendedTypeAnnotationSememe chronology " 
+						+ descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") 
+						+ " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();
 			}
 			if (optionalLatestSememeVersion.get().contradictions().isPresent() && optionalLatestSememeVersion.get().contradictions().get().size() > 0) {
@@ -1467,8 +1473,10 @@ public class Frills implements DynamicSememeColumnUtility {
 				log.warn("Component " + descriptionId + " " + " has DYNAMIC_SEMEME_EXTENDED_DESCRIPTION_TYPE annotation with " + optionalLatestSememeVersion.get()
 					.contradictions().get().size() + " contradictions");
 			}
-			if (optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
-				log.warn("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " + descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") + " stamp coordinate analog " + effectiveStampCoordinate);
+			if (!returnInactiveExtendedType && optionalLatestSememeVersion.get().value().getState() != State.ACTIVE) {
+				log.info("Latest version present is NOT ACTIVE for descriptionExtendedTypeAnnotationSememe chronology " 
+						+ descriptionExtendedTypeAnnotationSememe.get().getPrimordialUuid() + " using " + (stampCoordinate != null ? "passed" : "default") 
+						+ " stamp coordinate analog " + effectiveStampCoordinate);
 				return Optional.empty();	
 			}
 			
@@ -1514,8 +1522,9 @@ public class Frills implements DynamicSememeColumnUtility {
 			case 1:
 				return Optional.of(sememeSet.iterator().next());
 				default:
-					throw new RuntimeException("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
-							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1)");
+					log.fatal("Component " + componentNid + " has " + sememeSet.size() + " annotations of type " + 
+							Get.conceptDescriptionText(assemblageConceptId) + " (should only have zero or 1) - returning arbitrary result!");
+					return Optional.of(sememeSet.iterator().next());
 		}
 	}
 	
@@ -2020,18 +2029,19 @@ public class Frills implements DynamicSememeColumnUtility {
 	/**
 	 * Reset the state of an object to the new state, copying by creating a new version of the object with the same mutable values as the existing object.
 	 * 
-	 * This returns null (and does a NOOP) if the existing state is already the same as the desired state.
+	 * This returns an empty optional (and does a NOOP) if the existing state is already the same as the desired state.
 	 * 
 	 * @param state - The desired new state
 	 * @param nid - the id of the object to change the state of
 	 * @param editCoordinate - where to write the new state.
 	 * @param readCoordinates - (optional) the read coordinates to read the current state from.  Defaults to the system default if not provided.  When more than
 	 * one is provided, it tries each in order, until is finds the first one that is present.
-	 * @return - null, if no change, or the uncommitted chronology of the object that was changed.
+	 * @return - empty optional, if no change, or the uncommitted chronology of the object that was changed.
 	 * @throws Exception
 	 */
 	@SuppressWarnings("rawtypes")
-	public static ObjectChronology resetStateWithNoCommit(State state, int nid, EditCoordinate editCoordinate, StampCoordinate ... readCoordinates ) throws Exception {
+	public static Optional<ObjectChronology> resetStateWithNoCommit(State state, int nid, EditCoordinate editCoordinate, StampCoordinate ... readCoordinates ) 
+			throws Exception {
 		
 		final ObjectChronologyType type = Get.identifierService().getChronologyTypeForNid(nid);
 
@@ -2174,7 +2184,7 @@ public class Frills implements DynamicSememeColumnUtility {
 			log.debug("No need to commit update of " + type + " " + nid + "<" + sequence + ">" + " with unchanged state (" + state + ")");
 		}
 
-		return objectToCommit;
+		return Optional.ofNullable(objectToCommit);
 	}
 	
 	private static class VersionUpdatePair<T extends StampedVersion> {
@@ -2188,7 +2198,7 @@ public class Frills implements DynamicSememeColumnUtility {
 	}
 	
 	/**
-	 * calls {@link Frills#resetStateWithNoCommit(State, int, EditCoordinate, StampCoordinate...)} with a null Class
+	 * calls {@link Frills#resetState(State, ObjectChronology, Class, EditCoordinate, StampCoordinate...) with a null Class
 	 */
 	private static <T extends ConceptVersion<T>> VersionUpdatePair<T> resetConceptState(State state, ConceptChronology<T> chronology, 
 			EditCoordinate editCoordinate, StampCoordinate ... readCoordinates) throws Exception {	

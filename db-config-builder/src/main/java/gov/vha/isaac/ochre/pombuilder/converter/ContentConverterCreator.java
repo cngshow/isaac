@@ -318,13 +318,14 @@ public class ContentConverterCreator
 					assemblySnippits.append(assemblyRef);
 				}
 				assemblyInfo = assemblyInfo.replace("#ASSEMBLY_FILES#", assemblySnippits.toString());
+				assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
 				if (classifier.length() == 0)
 				{
-					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier);
+					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER_WILD#", classifier);
 				}
 				else
 				{
-					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER#", classifier + "*");
+					assemblyInfo = assemblyInfo.replaceAll("#CLASSIFIER_WILD#", classifier + "*");
 				}
 				File assemblyFile = new File(f, "src/assembly/assembly-" + classifier + ".xml");
 				assemblyFile.getParentFile().mkdirs();

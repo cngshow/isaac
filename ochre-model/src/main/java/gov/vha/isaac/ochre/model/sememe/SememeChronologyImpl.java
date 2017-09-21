@@ -29,6 +29,7 @@ import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
 import gov.vha.isaac.ochre.model.ObjectChronologyImpl;
+import gov.vha.isaac.ochre.model.concept.ConceptVersionImpl;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
@@ -39,7 +40,12 @@ import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.SememeVersionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -48,7 +54,8 @@ import java.util.UUID;
  */
 public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends ObjectChronologyImpl<V> 
         implements SememeChronology<V>, OchreExternalizable {
-
+	private static Logger log = LogManager.getLogger(SememeChronologyImpl.class);
+	
     byte sememeTypeToken = -1;
     int assemblageSequence = -1;
     int referencedComponentNid = Integer.MAX_VALUE;
@@ -130,6 +137,15 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
 
     @Override
     public <M extends V> M createMutableVersion(Class<M> type, int stampSequence) {
+        final List<SememeVersion<?>> uncommittedVersions = new ArrayList<>();
+        for (SememeVersion<?> version : this.getVersionList()) {
+            if (version.isUncommitted()) {
+                uncommittedVersions.add(version);
+            }
+        }
+        if (uncommittedVersions.size() > 0) {
+            log.warn(new RuntimeException("Creating new mutable version for sememe " + this.getPrimordialUuid() + " with " + uncommittedVersions.size() + " existing uncommitted version(s). CHRONOLOGY: " + this));
+        }
         M version = createMutableVersionInternal(type, stampSequence,
                 nextVersionSequence());
         addVersion(version);
