@@ -15,8 +15,8 @@
  */
 package gov.vha.isaac.ochre.api.collections.uuidnidmap;
 
+import java.util.Arrays;
 import java.util.Comparator;
-import org.apache.mahout.math.Arrays;
 import org.apache.mahout.math.Sorting;
 import org.apache.mahout.math.list.AbstractList;
 
@@ -378,7 +378,7 @@ public abstract class AbstractUuidList extends AbstractList {
         AbstractList.checkRangeFromTo(from, to, size());
 
         for (int i = to; i >= from; i--) {
-            if (element.equals(getQuick(i))) {
+            if (Arrays.equals(element, getQuick(i))) {
                 return i; // found
             }
         }
