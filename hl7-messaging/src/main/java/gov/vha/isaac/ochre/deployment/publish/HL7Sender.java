@@ -295,7 +295,6 @@ public class HL7Sender
 		// default to not use Interface Engine
 		boolean ieUsage = false;
 		if ("true".equalsIgnoreCase(useIE) || "false".equalsIgnoreCase(useIE)) {
-			useIE.toLowerCase();
 			ieUsage = Boolean.valueOf(useIE).booleanValue();
 		} else {
 			throw new STSException("useInterfaceEngine parameter must be 'true' or 'false'.");
