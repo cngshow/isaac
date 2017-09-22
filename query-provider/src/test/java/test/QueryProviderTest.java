@@ -163,7 +163,7 @@ public class QueryProviderTest
 	public void test_search() throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
 	{
 		Method search = LuceneIndexer.class
-				.getDeclaredMethod("search", Query.class, int.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
+				.getDeclaredMethod("search", Query.class, Integer.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
 		search.setAccessible(true);
 		
 		// No stamp (null)
@@ -196,7 +196,7 @@ public class QueryProviderTest
 	public void test_clearQueryCache() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException, SecurityException
 	{
 		Method search = LuceneIndexer.class
-				.getDeclaredMethod("search", Query.class, int.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
+				.getDeclaredMethod("search", Query.class, Integer.class, int.class, Long.class, Predicate.class, StampCoordinate.class);
 		search.setAccessible(true);
 		
 		Method clearQueryCache = LuceneIndexer.class.getDeclaredMethod("clearQueryCache");
