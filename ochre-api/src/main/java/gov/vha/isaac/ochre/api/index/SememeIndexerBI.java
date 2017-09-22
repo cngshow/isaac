@@ -46,13 +46,17 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * @param sememeConceptSequence (optional) limit the search to the specified assemblage
 	 * @param searchColumns (optional) limit the search to the specified columns of attached data.  May ONLY be provided if 
 	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit
 	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
-	 * @return
+	 * @param stamp (optional) - The StampCoordinate to constrain the search.
+	 *
+	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
+	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
 	List<SearchResult> queryNumericRange(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive,
 			DynamicSememeData queryDataUpper, boolean queryDataUpperInclusive, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * A convenience method.
@@ -64,13 +68,17 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * the searchColumns, and wraps the queryString into a DynamicSememeString.
 	 * 
 	 * @param queryString
-	 * @param assemblageNid
 	 * @param prefixSearch
+	 * @param sememeConceptSequence
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit
 	 * @param targetGeneration
-	 * @return
+	 * @param stamp (optional) - The StampCoordinate to constrain the search.
+	 *
+	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
+	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
+	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp);
 
 	/**
@@ -81,13 +89,17 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
 	 * @param prefixSearch see {@link LuceneIndexer#query(String, boolean, ComponentProperty, int, Long)} for a description.  Only applicable
 	 * when the queryData type is string.  Ignored for all other data types.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit
 	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
-	 * @return
+	 * @param stamp (optional) - The StampCoordinate to constrain the search.
+	 *
+	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
+	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * @param queryData - The query data object (string, int, etc)
@@ -96,15 +108,19 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
 	 * @param prefixSearch see {@link LuceneIndexer#query(String, boolean, ComponentProperty, int, Long)} for a description.  Only applicable
 	 * when the queryData type is string.  Ignored for all other data types.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit
 	 * @param targetGeneration (optional) wait for an index to build, or null to not wait
 	 * @param filter - allows application of exclusionary criteria to the returned result
+	 * @param stamp (optional) - The StampCoordinate to constrain the search.
 	 * 
-	 * @return
+	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
+	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
 	//TODO fix this limitation on the column restriction...
 	List<SearchResult> query(DynamicSememeData queryData, boolean prefixSearch, Integer[] sememeConceptSequence,
-			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration,
+			Predicate<Integer> filter, StampCoordinate stamp);
 
 	/**
 	 * Search for matches to the specified nid. Note that in the current implementation, you will only find matches to sememes
@@ -118,18 +134,21 @@ public interface SememeIndexerBI extends IndexServiceBI {
 	 * root concept.
 	 * 
 	 * @param nid the id reference to search for
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within. If null,
+	 * @param semeneConceptSequence (optional) - The concept seqeuence of the sememe that you wish to search within. If null,
 	 * searches all indexed content. This would be set to the concept sequence like {@link MetaData#EL_PLUS_PLUS_STATED_FORM_ASSEMBLAGE}
 	 * @param searchColumns (optional) limit the search to the specified columns of attached data.  May ONLY be provided if 
 	 * ONE and only one sememeConceptSequence is provided.  May not be provided if 0 or more than 1 sememeConceptSequence values are provided.
+	 * @param pageNumber (optional) - The desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need
 	 * to wait for a target generation. Long.MAX_VALUE can be passed in to force this query to wait until any in-progress
 	 * indexing operations are completed - and then use the latest index.
+	 * @param stamp (optional) - The StampCoordinate to constrain the search.
+	 *
 	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of that
 	 * match relative to other matches. Note that scores are pointless for exact id matches - they will all be the same.
 	 */
-	List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int pageNum, int sizeLimit,
-			Long targetGeneration, StampCoordinate stamp);
+	List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, Integer pageNumber,
+			int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 }

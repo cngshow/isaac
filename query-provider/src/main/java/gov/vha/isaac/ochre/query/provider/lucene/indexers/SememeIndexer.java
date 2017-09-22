@@ -335,8 +335,8 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	 */
 	@Override
 	public final List<SearchResult> queryNumericRange(final DynamicSememeData queryDataLower, final boolean queryDataLowerInclusive,
-			final DynamicSememeData queryDataUpper, final boolean queryDataUpperInclusive, Integer[] sememeConceptSequence, Integer[] searchColumns, int sizeLimit,
-			int pageNum, Long targetGeneration, StampCoordinate stamp)
+			final DynamicSememeData queryDataUpper, final boolean queryDataUpperInclusive, Integer[] sememeConceptSequence,
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
 		Query q = new QueryWrapperForColumnHandling()
 		{
@@ -348,25 +348,27 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
 		
-		return search(restrictToSememe(q, sememeConceptSequence), pageNum, sizeLimit, targetGeneration, null, stamp);
+		return search(restrictToSememe(q, sememeConceptSequence), pageNumber, sizeLimit, targetGeneration, null, stamp);
 	}
 	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long)
 	 */
 	@Override
-	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
+	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence,
+			Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, pageNum, sizeLimit, targetGeneration, null, stamp);
+		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, pageNumber, sizeLimit, targetGeneration, null, stamp);
 	}
 	
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.api.index.SememeIndexerBI#query(java.lang.String, boolean, java.lang.Integer[], int, java.lang.Long, java.util.function.Predicate)
 	 */
 	@Override
-	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+	public final List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence,
+			Integer pageNumber, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
-		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, pageNum, sizeLimit, targetGeneration, filter, stamp);
+		return query(new DynamicSememeStringImpl(queryString), prefixSearch, sememeConceptSequence, null, pageNumber, sizeLimit, targetGeneration, filter, stamp);
 	}
 
 	/* (non-Javadoc)
@@ -375,9 +377,9 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	//TODO fix this limitation on the column restriction...
 	@Override
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
-			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, pageNum, sizeLimit, targetGeneration, (Predicate<Integer>)null, stamp);
+		return query(queryData, prefixSearch, sememeConceptSequence, searchColumns, pageNumber, sizeLimit, targetGeneration, (Predicate<Integer>)null, stamp);
 	}
 	
 	/* (non-Javadoc)
@@ -385,7 +387,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 	 */
 	@Override
 	public final List<SearchResult> query(final DynamicSememeData queryData, final boolean prefixSearch, Integer[] sememeConceptSequence, 
-			Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+			Integer[] searchColumns, Integer pageNumber, int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
 		Query q = null;
 
@@ -466,14 +468,15 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 				throw new RuntimeException("unexpected error, see logs");
 			}
 		}
-		return search(restrictToSememe(q, sememeConceptSequence), pageNum, sizeLimit, targetGeneration, filter, stamp);
+		return search(restrictToSememe(q, sememeConceptSequence), pageNumber, sizeLimit, targetGeneration, filter, stamp);
 	}
 
 	/* (non-Javadoc)
 	 * @see gov.vha.isaac.ochre.query.provider.lucene.indexers.SememeIndexerItf#query(int, java.lang.Integer[], java.lang.Integer[], int, java.lang.Long)
 	 */
 	@Override
-	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns, int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
+	public List<SearchResult> query(int nid, Integer[] sememeConceptSequence, Integer[] searchColumns,
+			Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp)
 	{
 		Query q = new QueryWrapperForColumnHandling()
 		{
@@ -484,7 +487,7 @@ public class SememeIndexer extends LuceneIndexer implements SememeIndexerBI
 			}
 		}.buildColumnHandlingQuery(sememeConceptSequence, searchColumns);
 		
-		return search(restrictToSememe(q, sememeConceptSequence), pageNum, sizeLimit, targetGeneration, null, stamp);
+		return search(restrictToSememe(q, sememeConceptSequence), pageNumber, sizeLimit, targetGeneration, null, stamp);
 	}
 	
 	private Query buildNumericQuery(DynamicSememeData queryDataLower, boolean queryDataLowerInclusive, DynamicSememeData queryDataUpper,

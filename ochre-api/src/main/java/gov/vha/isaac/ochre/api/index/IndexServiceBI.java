@@ -158,11 +158,14 @@ public interface IndexServiceBI extends DatabaseServices {
 	 * @param query
 	 *            The query to apply
 	 * @param semeneConceptSequence
-	 *            optional - The concept seqeuence of the sememe that you wish
+	 *            (optional) - The concept seqeuence of the sememe that you wish
 	 *            to search within. If null, searches all indexed content. This
 	 *            would be set to the concept sequence of
 	 *            {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE} or the concept
 	 *            sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber
+	 *            (optional) - the desired page of results, 1-based (may be null 
+	 *            which will default to the first page)
 	 * @param sizeLimit
 	 *            The maximum size of the result list. Pass Integer.MAX_VALUE
 	 *            for unlimited results.
@@ -180,8 +183,8 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         {@code SearchResult</codes> that contains the nid of the
 	 * component that matched, and the score of that match relative to other matches.
 	 */
-	List<SearchResult> query(String query, Integer[] sememeConceptSequence, int pageNum, int sizeLimit, Long targetGeneration, 
-			StampCoordinate stamp);
+	List<SearchResult> query(String query, Integer[] sememeConceptSequence, Integer pageNumber,
+			int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * @param query
@@ -205,11 +208,14 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *            not match on 'Testudinidae', so that will be excluded.
 	 * 
 	 * @param semeneConceptSequence
-	 *            optional - The concept seqeuence of the sememes that you wish
+	 *            (optional) - The concept seqeuence of the sememes that you wish
 	 *            to search within. If null, searches all indexed content. This
 	 *            would be set to the concept sequence of
 	 *            {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE} or the concept
 	 *            sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber
+	 *            (optional) - the desired page of results, 1-based (may be null 
+	 *            which will default to the first page)
 	 * @param sizeLimit
 	 *            The maximum size of the result list. Pass Integer.MAX_VALUE
 	 *            for unlimited results.
@@ -226,8 +232,8 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         component that matched, and the score of that match relative to
 	 *         other matches.
 	 */
-	List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
-			Long targetGeneration, StampCoordinate stamp);
+	List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber,
+			int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	/**
 	 * @param query
@@ -251,11 +257,14 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *            not match on 'Testudinidae', so that will be excluded.
 	 * 
 	 * @param semeneConceptSequence
-	 *            optional - The concept seqeuence of the sememes that you wish
+	 *            (optional) - The concept seqeuence of the sememes that you wish
 	 *            to search within. If null, searches all indexed content. This
 	 *            would be set to the concept sequence of
 	 *            {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE} or the concept
 	 *            sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber
+	 *            (optional) - the desired page of results, 1-based (may be null 
+	 *            which will default to the first page)
 	 * @param sizeLimit
 	 *            The maximum size of the result list. Pass Integer.MAX_VALUE
 	 *            for unlimited results.
@@ -275,8 +284,8 @@ public interface IndexServiceBI extends DatabaseServices {
 	 *         component that matched, and the score of that match relative to
 	 *         other matches.
 	 */
-	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
-			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
+	List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber, 
+			int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp);
 
 	/**
 	 * Locate the concept most closely tied to a search result, and merge them

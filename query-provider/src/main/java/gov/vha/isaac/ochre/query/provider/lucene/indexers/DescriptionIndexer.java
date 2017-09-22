@@ -134,9 +134,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * The query "family test" will return results that contain 'Family Testudinidae'
 	 * The query "family test " will not match on  'Testudinidae', so that will be excluded.
 	 * 
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+	 * @param semeneConceptSequence (optional) - The concept seqeuence of the sememes that you wish to search within.  If null or empty
 	 * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
 	 * or the concept sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
 	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
@@ -147,10 +148,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * to other matches.
 	 */
 	@Override
-	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
+	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(query, prefixSearch, sememeConceptSequence, pageNum, sizeLimit, targetGeneration, null, stamp);
+		return query(query, prefixSearch, sememeConceptSequence, pageNumber, sizeLimit, targetGeneration, null, stamp);
 	}
 	
 	/**
@@ -174,9 +175,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * The query "family test" will return results that contain 'Family Testudinidae'
 	 * The query "family test " will not match on  'Testudinidae', so that will be excluded.
 	 * 
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+	 * @param semeneConceptSequence (optional) - The concept seqeuence of the sememes that you wish to search within.  If null or empty
 	 * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
 	 * or the concept sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
 	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
@@ -188,13 +190,12 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * to other matches.
 	 */
 	@Override
-	public List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
-			Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
+	public List<SearchResult> query(String queryString, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber,
+			int sizeLimit, Long targetGeneration, Predicate<Integer> filter, StampCoordinate stamp)
 	{
 		return search(
 				restrictToSememe(buildTokenizedStringQuery(queryString, FIELD_INDEXED_STRING_VALUE, prefixSearch, false),
-						sememeConceptSequence),
-				pageNum, sizeLimit, targetGeneration, filter, stamp);
+						sememeConceptSequence), pageNumber, sizeLimit, targetGeneration, filter, stamp);
 	}
 
 
@@ -219,9 +220,10 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * The query "family test" will return results that contain 'Family Testudinidae'
 	 * The query "family test " will not match on  'Testudinidae', so that will be excluded.
 	 * 
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+	 * @param semeneConceptSequence (optional) - The concept seqeuence of the sememes that you wish to search within.  If null or empty
 	 * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
 	 * or the concept sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
 	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
@@ -236,12 +238,12 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * @return a List of {@link SearchResult} that contains the nid of the component that matched, and the score of that match relative 
 	 * to other matches.
 	 */
-	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, int pageNum, int sizeLimit,
+	public List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, Predicate<Integer> filter, boolean metadataOnly, StampCoordinate stamp)
 	{
 		return search(restrictToSememe(
 				buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE, prefixSearch, metadataOnly),
-				sememeConceptSequence), pageNum, sizeLimit, targetGeneration, filter, null);
+				sememeConceptSequence), pageNumber, sizeLimit, targetGeneration, filter, null);
 	}
 
 	/**
@@ -253,6 +255,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * terminology (ISAAC)" If this is passed in as null,
 	 * this falls back to a standard description search that searches all
 	 * description types
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the
 	 * search or Long.MIN_VALUE if there is no need to wait for a target
@@ -265,18 +268,18 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * component that matched, and the score of that match relative to other
 	 * matches.
 	*/
-	public final List<SearchResult> query(String query, UUID extendedDescriptionType, int pageNum, int sizeLimit,
+	public final List<SearchResult> query(String query, UUID extendedDescriptionType, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
 		if (extendedDescriptionType == null)
 		{
-			return super.query(query, (Integer[]) null, pageNum, sizeLimit, targetGeneration, stamp);
+			return super.query(query, (Integer[]) null, pageNumber, sizeLimit, targetGeneration, stamp);
 		} else
 		{
 			return search(
 					buildTokenizedStringQuery(query,
 							FIELD_INDEXED_STRING_VALUE + "_" + extendedDescriptionType.toString(), false, false),
-					pageNum, sizeLimit, targetGeneration, null, stamp);
+					pageNumber, sizeLimit, targetGeneration, null, stamp);
 		}
 	}
 
@@ -287,6 +290,7 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * @param descriptionType - The type of description to search. If this is
 	 * passed in as null, this falls back to a standard description search that
 	 * searches all description types
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the
 	 * search or Long.MIN_VALUE if there is no need to wait for a target
@@ -299,16 +303,16 @@ public class DescriptionIndexer extends LuceneIndexer implements IndexServiceBI
 	 * component that matched, and the score of that match relative to other
 	 * matches.
 	 */
-	public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, int pageNum, int sizeLimit,
+	public final List<SearchResult> query(String query, LuceneDescriptionType descriptionType, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
 		if (descriptionType == null)
 		{
-			return super.query(query, (Integer[]) null, pageNum, sizeLimit, targetGeneration, stamp);
+			return super.query(query, (Integer[]) null, pageNumber, sizeLimit, targetGeneration, stamp);
 		} else
 		{
 			return search(buildTokenizedStringQuery(query, FIELD_INDEXED_STRING_VALUE + "_" + descriptionType.name(),
-					false, false), pageNum, sizeLimit, targetGeneration, null, stamp);
+					false, false), pageNumber, sizeLimit, targetGeneration, null, stamp);
 		}
 	}
 
