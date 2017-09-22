@@ -338,7 +338,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	@Override
 	public final List<SearchResult> query(String query, int sizeLimit)
 	{
-		return query(query, null, 1, sizeLimit, Long.MIN_VALUE, null);
+		return query(query, null, null, sizeLimit, Long.MIN_VALUE, null);
 	}
 
 	/**
@@ -346,9 +346,10 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	* Calls {@link #query(String, boolean, Integer, int, long)} with the prefixSearch field set to false.
 	*
 	* @param query The query to apply.
-	* @param semeneConceptSequence optional - The concept seqeuence of the sememe that you wish to search within.  If null, 
+	* @param semeneConceptSequence (optional) - The concept seqeuence of the sememe that you wish to search within.  If null, 
 	* searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
 	* or the concept sequence {@link MetaData#SCTID} for example.
+	* @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	* @param sizeLimit The maximum size of the result list.
 	* @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no 
 	* need to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any 
@@ -358,10 +359,10 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	* @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of 
 	* that match relative to other matches.
 	*/
-	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, int pageNum, int sizeLimit,
+	public final List<SearchResult> query(String query, Integer[] semeneConceptSequence, Integer pageNumber, int sizeLimit,
 			Long targetGeneration, StampCoordinate stamp)
 	{
-		return query(query, false, semeneConceptSequence, pageNum, sizeLimit, targetGeneration, stamp);
+		return query(query, false, semeneConceptSequence, pageNumber, sizeLimit, targetGeneration, stamp);
 	}
 
 	/**
@@ -385,9 +386,10 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 * The query "family test" will return results that contain 'Family Testudinidae'
 	 * The query "family test " will not match on  'Testudinidae', so that will be excluded.
 	 * 
-	 * @param semeneConceptSequence optional - The concept seqeuence of the sememes that you wish to search within.  If null or empty
+	 * @param semeneConceptSequence (optional) - The concept seqeuence of the sememes that you wish to search within.  If null or empty
 	 * searches all indexed content.  This would be set to the concept sequence of {@link MetaData#ENGLISH_DESCRIPTION_ASSEMBLAGE}
 	 * or the concept sequence {@link MetaData#SCTID} for example.
+	 * @param pageNumber (optional) - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit The maximum size of the result list.
 	 * @param targetGeneration target generation that must be included in the search or Long.MIN_VALUE if there is no need 
 	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
@@ -399,7 +401,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 */
 	@Override
 	public abstract List<SearchResult> query(String query, boolean prefixSearch, Integer[] sememeConceptSequence,
-			int pageNum, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
+			Integer pageNumber, int sizeLimit, Long targetGeneration, StampCoordinate stamp);
 
 	@Override
 	public final void clearIndex()
@@ -460,6 +462,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	/**
 	 * Subclasses may call this method with much more specific queries than this generic class is capable of constructing.
 	 * @param q - the query
+	 * @param pageNumber - the desired page of results, 1-based (may be null which will default to the first page)
 	 * @param sizeLimit - how many results to return (at most)
 	 * @param targetGeneration - target generation that must be included in the search or Long.MIN_VALUE if there is no need 
 	 * to wait for a target generation.  Long.MAX_VALUE can be passed in to force this query to wait until any in progress 
@@ -470,49 +473,53 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 * @return a List of {@code SearchResult} that contains the nid of the component that matched, and the score of
 	 * that match relative to other matches.
 	 */
-	protected final List<SearchResult> search(Query q, int pageNum, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
+	protected final List<SearchResult> search(Query q, Integer pageNumber, int sizeLimit, Long targetGeneration, Predicate<Integer> filter,
 			StampCoordinate stamp)
 	{
-		// Include the module and path selelctions
-		q = this.buildStampQuery(q, stamp);
-
-		// Pages are 1-based
-		if (pageNum < 1)
-		{
-			pageNum = 1;
-		}
-		int prevPageNum = pageNum - 1;
+		// Arbitrary number to limit the search range 
+		final int maxSearchLimit = 100000;
 		
-		// An upper bound to restrict searches to
-		// Note: this is in the results array initializer - too large a value can result in OOM errors
-		int maxSearchLimit = 100000;
-		// The max number of documents to return during a single query
-		int maxResultLimit = Math.min(pageNum * sizeLimit, maxSearchLimit);
-		// The last document of the previous page of results
+		// The number or search results to return
+		final int maxResultLimit = Math.min(maxSearchLimit, sizeLimit);
+		
+		// Document representing the last result of the previous page, if any
 		ScoreDoc prevPageLastDoc = null;
 		
-		// Triples as keys into the cache, for both the current page and previous page, in
-		// order to collect the last page doc
-		Triple<Query, Integer, Integer> prevPageCacheKey 
-						= new ImmutableTriple<>(q, new Integer(prevPageNum), new Integer(sizeLimit));
-		Triple<Query, Integer, Integer> pageCacheKey 
-						= new ImmutableTriple<>(q, new Integer(pageNum), new Integer(sizeLimit));
+		// Include the module and path selelctions
+		final Query query = this.buildStampQuery(q, stamp);
+
+		// Pages are 1-based
+		final int pageNum = (pageNumber == null || pageNumber.intValue() < 1) ? 1 : pageNumber.intValue();
+		int prevPageNum = pageNum - 1;
+		
+		// Page caching elements
+		final Triple<Query, Integer, Integer> prevPageCacheKey 
+				= new ImmutableTriple<>(query, new Integer(prevPageNum), new Integer(sizeLimit));
+		final Triple<Query, Integer, Integer> pageCacheKey 
+				= new ImmutableTriple<>(query, new Integer(pageNum), new Integer(sizeLimit));
 		
 		synchronized (queryCache)
 		{
-			// If the current query+page+limit are cached, return the cached results
+			// Return previous results if found in the cache
 			if (queryCache.containsKey(pageCacheKey))
 			{
 				log.debug("Returning results from cache.");
 				return queryCache.get(pageCacheKey).getRight();
 			}
-			// If the previous query+page+limit is cached, fetch the previous page's last doc
+			// If a previous page of results is found for the query, matching the query parameters,
+			// use the previous page's last result to continue searching for more documents
 			if (queryCache.containsKey(prevPageCacheKey))
 			{
 				prevPageLastDoc = queryCache.get(prevPageCacheKey).getLeft();
 				log.debug("Found doc {} from previous page results for searching after.", prevPageLastDoc.doc);
+				// If we start with a previous page result, the index needs to be reset to 0
+				// (i.e. no offset into the results)
+				prevPageNum = 0;
 			}
 		}
+		
+		// A marker to stop searching, if enough results are found
+		final int maxResultsToSatisfySearch = (prevPageNum * maxResultLimit) + maxResultLimit;
 
 		try
 		{
@@ -537,11 +544,11 @@ public abstract class LuceneIndexer implements IndexServiceBI
 
 			try
 			{
-				log.debug("Running query: {}", q.toString());
+				log.debug("Running query: {}", query.toString());
 
 				// We're only going to return up to what was requested
-				List<SearchResult> results = new ArrayList<>(maxResultLimit);
-				HashSet<Integer> includedComponentNids = new HashSet<>();
+				final List<SearchResult> results = new ArrayList<>(maxResultLimit);
+				final HashSet<Integer> includedComponentNids = new HashSet<>();
 				ScoreDoc lastDoc = prevPageLastDoc;
 				boolean complete = false; //i.e., results.size() < sizeLimit
 
@@ -559,14 +566,14 @@ public abstract class LuceneIndexer implements IndexServiceBI
 						{
 							tdf = new TopDocsFilteredCollector(maxSearchLimit, searcher, filter);
 						}
-						searcher.search(q, tdf);
+						searcher.search(query, tdf);
 						topDocs = tdf.topDocs();
 					} else if (lastDoc != null)
 					{
-						topDocs = searcher.searchAfter(lastDoc, q, maxSearchLimit);
+						topDocs = searcher.searchAfter(lastDoc, query, maxSearchLimit);
 					} else
 					{
-						topDocs = searcher.search(q, maxSearchLimit);
+						topDocs = searcher.search(query, maxSearchLimit);
 					}
 
 					// If no scoreDocs exist, we're done 
@@ -592,7 +599,7 @@ public abstract class LuceneIndexer implements IndexServiceBI
 							{
 								includedComponentNids.add(componentNid);
 								results.add(new ComponentSearchResult(componentNid, hit.score));
-								if (results.size() == maxResultLimit)
+								if (results.size() == maxResultsToSatisfySearch)
 								{
 									complete = true;
 									break;
@@ -603,26 +610,25 @@ public abstract class LuceneIndexer implements IndexServiceBI
 				}
 				log.debug("Returning {} results from query", results.size());
 				
-				// Work out the start (inclusive) and end (exclusive) indexes
-				// to return the correct subset (if any) from the results list
-				int startIndexInclusive = (pageNum - 1) * sizeLimit;
-				int endIndexExclusive = startIndexInclusive + sizeLimit - 1;
-				endIndexExclusive = (endIndexExclusive > results.size()) ? results.size() - 1 : endIndexExclusive;
-				endIndexExclusive += 1; // Because it is exclusive
-				List<SearchResult> slicedResults = (endIndexExclusive <= startIndexInclusive)
-						? new ArrayList<>()
-						: results.subList(startIndexInclusive, Math.min(endIndexExclusive, results.size()));
-				
-				// Add the last doc found and the results sub-list to the query cache
-				Pair<ScoreDoc, List<SearchResult>> pair = new ImmutablePair<>(lastDoc, slicedResults);
+				// Add results to the query cache
 				synchronized (queryCache)
 				{
+					Pair<ScoreDoc, List<SearchResult>> pair = new ImmutablePair<>(lastDoc, results);
 					queryCache.put(pageCacheKey, pair);
 				}
 				
-				return slicedResults;
-			} 
-			finally
+				// Determine indices to return results array slice
+				int startIndexInclusive = prevPageNum * maxResultLimit;
+				int endIndexExclusive = startIndexInclusive + maxResultLimit;
+				
+				// A guard in case the start/from index exceeds the results list size, which shouldn't happen
+				if (startIndexInclusive > results.size())
+				{
+					return new ArrayList<SearchResult>();
+				}
+				endIndexExclusive = Math.min(results.size(), endIndexExclusive);
+				return results.subList(startIndexInclusive, endIndexExclusive);
+			} finally
 			{
 				referenceManager.release(searcher);
 			}
@@ -1111,6 +1117,6 @@ public abstract class LuceneIndexer implements IndexServiceBI
 	 */
 	private void clearQueryCache()
 	{
-		this.queryCache.clear();
+		queryCache.clear();
 	}
 }
