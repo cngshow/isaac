@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jvnet.testing.hk2testng.HK2;
-import org.testng.annotations.AfterGroups;
+import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeGroups;
 
 /**
@@ -36,7 +36,7 @@ import org.testng.annotations.BeforeGroups;
 public class IntegrationSuiteManagement {
         private static final Logger LOG = LogManager.getLogger();
 
-    @BeforeGroups(groups = {"db", "load", "frills", "wf"})
+    @BeforeGroups(groups = {"db", "load", "frills", "wf", "vhat-xml"})
     public void setUpSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement setup");
 
@@ -50,7 +50,7 @@ public class IntegrationSuiteManagement {
         HeapUseTicker.start(10);
     }
 
-    @AfterGroups(groups = {"db", "load", "frills", "wf"})
+    @AfterSuite
     public void tearDownSuite() throws Exception {
         LOG.info("IntegrationSuiteManagement teardown");
         LookupService.shutdownSystem();

@@ -94,8 +94,9 @@ public enum SupportedConverterTypes
 			new String[] {"shared/licenses/sct.xml"},
 			new String[] {"shared/noticeAdditions/rf2-sct-NOTICE-addition.txt"}),
 	
-	VHAT("vhat-src-data", ".*$", 
-			"A typical VHAT version number is '2017.05.04' - which by convention, is the date that the content was exported from VETs.  There are no enforced restrictions"
+	VHAT("vhat-src-data", "\\d{4}\\.\\d{2}\\.\\d{2}.*$", 
+			"A typical VHAT version number is '2017.05.04' - which by convention, is the date that the content was exported from VETs."
+			+ "  The first 10 characters of this string must follow the date format YYYY.MM.DD.  After the first 10 characters, there are no enforced restrictions"
 			+ " on the format of this value.", 
 			new String[] {}, new String[] {}, new UploadFileInfo[] {
 			new UploadFileInfo("VHAT content is typically exported from a VETs system.  ", "",

@@ -2,6 +2,10 @@ ISAAC Changelog
 
 This changelog summarizes changes and fixes which are a part of each revision.  For more details on the fixes, refer tracking numbers where provided, and the git commit history.
 
+* 2017/09/?? - 6.00 - PENDING
+    * Fix a documentation bug on the required format for a VHAT XML source file version number, add missing regular expression to enforce the rule.
+        Jazz 591052
+
 * 2017/09/15 - 5.08 - R5 build v3
     * Fix a commit lock bug that hangs the server to any write request when it gets triggered.
     * Fix a bug on description remove in vhat delta import that did a double edit on the extended description types, leading to db model warnings.
