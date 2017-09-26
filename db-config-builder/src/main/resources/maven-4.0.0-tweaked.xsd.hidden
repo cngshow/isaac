@@ -339,6 +339,24 @@
              <!-- Dan Hack - add the property types we need -->
              <xs:element name="resultArtifactClassifier" minOccurs="0" type="xs:string"/>
              <xs:element name="inParent" minOccurs="0" type="xs:string"/>
+             <xs:element name="sourceData.version" minOccurs="0" type="xs:string"/>
+             <xs:element name="isaac.version" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.groupId" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.artifactId.base" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.artifactId.new" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.version.base" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.version.new" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.loader.version.base" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.loader.version.new" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.base" minOccurs="0" type="xs:string"/>
+             <xs:element name="terminology.new" minOccurs="0" type="xs:string"/>
+             <xs:element name="database.groupId" minOccurs="0" type="xs:string"/>
+             <xs:element name="database.artifactId" minOccurs="0" type="xs:string"/>
+             <xs:element name="database.version" minOccurs="0" type="xs:string"/>
+             <xs:element name="database.classifier" minOccurs="0" type="xs:string"/>
+             <xs:element name="database.type" minOccurs="0" type="xs:string"/>
+             <xs:element name="index.type" minOccurs="0" type="xs:string"/>
+             <xs:element name="project.build.sourceEncoding" minOccurs="0" type="xs:string"/>
              <!--xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/-->
              <!-- End of Dan Hack -->
           </xs:sequence>
@@ -1220,6 +1238,7 @@
           <xs:sequence>
             <!-- Dan Hack - xs:any isn't well handled by JAXB - just write out the actual types I need... -->
             <!--xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/-->
+            <xs:element name="skip" minOccurs="0" type="xs:string"/>
             <xs:element name="includeArtifactIds" minOccurs="0" type="xs:string"/>
             <xs:element name="outputDirectory" minOccurs="0" type="xs:string"/>
             <xs:element name="dataStoreLocation" minOccurs="0" type="xs:string"/>
@@ -1255,6 +1274,51 @@
                   </xs:element>
                 </xs:sequence>
               </xs:complexType>
+            </xs:element>
+            <xs:element name="artifactItems" minOccurs="0">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="artifact" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="groupId" minOccurs="1" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="artifactId" minOccurs="1" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="version" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="classifier" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="type" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+            <xs:element name="target" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="echoProperties">
+                            <xs:complexType>
+                                <xs:attribute name="destfile" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="parameters" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="inputAnalysisDir" minOccurs="1" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="analysisArtifactsDir" minOccurs="1" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="deltaIbdfFilePath" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="baseVersionFile" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="newVersionFile" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="diffOnAuthor" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+                        <xs:element name="diffOnModule" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+                        <xs:element name="diffOnPath" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+                        <xs:element name="converterSourceArtifactVersion" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                        <xs:element name="generateAnalysisFiles" minOccurs="0" maxOccurs="1" type="xs:boolean"/>
+                        <xs:element name="importDate" minOccurs="0" maxOccurs="1" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
             </xs:element>
             <!-- End of Dan Hack -->
           </xs:sequence>
