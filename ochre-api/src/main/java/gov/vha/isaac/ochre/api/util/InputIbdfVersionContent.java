@@ -1,8 +1,11 @@
-package gov.vha.isaac.ochre.api.externalizable;
+package gov.vha.isaac.ochre.api.util;
 
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 
 /**
  * Class representing content imported from an IBDF file. Content includes all

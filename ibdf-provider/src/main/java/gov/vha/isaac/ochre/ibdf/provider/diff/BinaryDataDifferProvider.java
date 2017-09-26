@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,12 +66,12 @@ import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderQueueService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataReaderService;
 import gov.vha.isaac.ochre.api.externalizable.DataWriterService;
-import gov.vha.isaac.ochre.api.externalizable.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.externalizable.StampAlias;
 import gov.vha.isaac.ochre.api.externalizable.StampComment;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
+import gov.vha.isaac.ochre.api.util.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 
@@ -233,7 +234,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		log.info("Starting process to identify matches on " + type.toString());
 		List<UUID> baseKeys = new ArrayList<UUID>(baseContent.getTypeToUuidMap().get(type));
 		List<UUID> newKeys = new ArrayList<UUID>(newContent.getTypeToUuidMap().get(type));
-
+		Collections.sort(baseKeys);
+		Collections.sort(newKeys);
 		int i = 0;
 		int j = 0;
 		int numberOfBaseConcepts = baseKeys.size();

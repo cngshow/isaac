@@ -33,8 +33,8 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService.ChangeType;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService.IbdfInputVersion;
-import gov.vha.isaac.ochre.api.externalizable.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
+import gov.vha.isaac.ochre.api.util.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
 

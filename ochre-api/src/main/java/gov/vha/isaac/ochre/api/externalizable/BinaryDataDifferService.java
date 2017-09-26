@@ -24,6 +24,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jvnet.hk2.annotations.Contract;
 
+import gov.vha.isaac.ochre.api.util.InputIbdfVersionContent;
+
 /**
  * HK2 Service Contract for BinaryDataDifferProvider
  * 
