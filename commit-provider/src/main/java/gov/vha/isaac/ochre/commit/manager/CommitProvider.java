@@ -184,7 +184,58 @@ public class CommitProvider implements CommitService {
 				{
 					if (checkPhase == CheckPhase.ADD_UNCOMMITTED)
 					{
-						//TODO add more sanity checks like this to save us heartache...
+						// Accumulate uncommitted versions in passed chronology
+						final List<SememeVersion<?>> uncommittedVersions = new ArrayList<>();
+						for (SememeVersion<?> version : sc.getVersionList()) {
+							if (version.isUncommitted()) {
+								uncommittedVersions.add(version);
+							}
+						}
+						// Warn or fail if multiple uncommitted versions in passed chronology
+						if (uncommittedVersions.size() > 0) {
+							//LOG.warn(new RuntimeException("Found " +  uncommittedVersions.size() + " uncommitted versions for sememe " + sc.getPrimordialUuid() + ". CHRONOLOGY: " + sc));
+							alertCollection.add(Alerts.warning("Found " +  uncommittedVersions.size() + " uncommitted versions in sememe chronology " + sc.getPrimordialUuid(), sc.getNid()));
+						}
+						// Warn or fail if chronology sequence in uncommitted sets
+						if (uncommittedSememesWithChecksSequenceSet.contains(sc.getSememeSequence()) || uncommittedSememesNoChecksSequenceSet.contains(sc.getSememeSequence())) {
+							//LOG.warn(new RuntimeException("Found " +  uncommittedVersions.size() + " uncommitted versions for sememe " + sc.getPrimordialUuid() + ". CHRONOLOGY: " + sc));
+							alertCollection.add(Alerts.warning("Found " +  uncommittedVersions.size() + " uncommitted versions for sememe " + sc.getPrimordialUuid(), sc.getNid()));
+						}
+					}
+				}
+				
+				@Override
+				public void check(ConceptChronology<? extends ConceptVersion<?>> cc, Collection<Alert> alertCollection, CheckPhase checkPhase)
+				{
+					if (checkPhase == CheckPhase.ADD_UNCOMMITTED)
+					{
+						// Accumulate multiple uncommitted versions in passed chronology
+						final List<ConceptVersion<?>> uncommittedVersions = new ArrayList<>();
+						for (ConceptVersion<?> version : cc.getVersionList()) {
+							if (version.isUncommitted()) {
+								uncommittedVersions.add(version);
+							}
+						}
+						// Warn or fail if multiple uncommitted versions in passed chronology
+						if (uncommittedVersions.size() > 0) {
+							//LOG.warn(new RuntimeException("Found " +  uncommittedVersions.size() + " uncommitted versions for concept " + cc.getPrimordialUuid() + ". CHRONOLOGY: " + cc));
+							alertCollection.add(Alerts.warning("Found " +  uncommittedVersions.size() + " uncommitted versions in concept chronology " + cc.getPrimordialUuid(), cc.getNid()));
+						}
+						// Warn or fail if chronology sequence in uncommitted sets
+						if (uncommittedConceptsWithChecksSequenceSet.contains(cc.getConceptSequence()) || uncommittedConceptsNoChecksSequenceSet.contains(cc.getConceptSequence())) {
+							//LOG.warn(new RuntimeException("Found " +  uncommittedVersions.size() + " uncommitted versions for concept " + cc.getPrimordialUuid() + ". CHRONOLOGY: " + cc));
+							alertCollection.add(Alerts.warning("Found " +  uncommittedVersions.size() + " uncommitted versions for concept " + cc.getPrimordialUuid(), cc.getNid()));
+						}
+					}
+				}
+			});
+			checkers.add(new ChangeChecker()
+			{
+				@Override
+				public void check(SememeChronology<? extends SememeVersion<?>> sc, Collection<Alert> alertCollection, CheckPhase checkPhase)
+				{
+					if (checkPhase == CheckPhase.ADD_UNCOMMITTED)
+					{
 						if (sc.getSememeType() == SememeType.DESCRIPTION)
 						{
 							for (SememeVersion<?> sv : sc.getUnwrittenVersionList())

@@ -9,7 +9,7 @@ package gov.vha.isaac.ochre.api.commit;
  *
  * @author kec
  */
-public interface Alert {
+public interface Alert extends Comparable<Alert> {
     
     AlertType getAlertType();
     
@@ -18,5 +18,12 @@ public interface Alert {
     int getComponentNidForAlert();
     
     Object[] getFixups();
-    
+
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	@Override
+	default int compareTo(Alert o) {	
+		return getAlertType().ordinal() - o.getAlertType().ordinal();
+	}
 }
