@@ -19,11 +19,11 @@ public interface Alert extends Comparable<Alert> {
     
     Object[] getFixups();
 
-	/* (non-Javadoc)
-	 * @see java.lang.Comparable#compareTo(java.lang.Object)
-	 */
-	@Override
-	default int compareTo(Alert o) {	
-		return getAlertType().ordinal() - o.getAlertType().ordinal();
-	}
+    /* (non-Javadoc)
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     */
+    @Override
+    default int compareTo(Alert o) {	
+        return getAlertType().ordinal() - o.getAlertType().ordinal();
+    }
 }

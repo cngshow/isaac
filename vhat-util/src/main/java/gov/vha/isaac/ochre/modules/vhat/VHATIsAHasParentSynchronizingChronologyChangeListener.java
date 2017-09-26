@@ -306,7 +306,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 								try {
 									Get.commitService().addUncommitted(mutableVersion.getChronology()).get();
 									retireCount++;
-								} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								} catch (Exception e) {
 									// New version of this sememe failed to be added to commit list, so remove sememe from list so listener won't ignore it
 									nidsOfGeneratedSememesToIgnore.remove(hasParentSememe.getNid());
 									LOG.error("FAILED calling addUncommitted() to retire VHAT has_parent association sememe " + hasParentSememe, e);
@@ -370,7 +370,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 
 								try {
 									Get.commitService().addUncommittedNoChecks(retiredHasParentSememeVersion.get().getChronology()).get();
-								} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								} catch (Exception e) {
 									// New version of this sememe failed to be added to commit list, so remove sememe from list so listener won't ignore it
 									nidsOfGeneratedSememesToIgnore.remove(retiredHasParentSememeVersion.get().getNid());
 									LOG.error("FAILED calling addUncommitted() to unretire has_parent association sememe (target UUID=" + uuidOfParentAccordingToNewLogicGraphVersion + ") of VHAT concept " + referencedConcept, e);
@@ -378,7 +378,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 								}
 								try {
 									Get.commitService().commit("Unretiring VHAT has_parent association sememe (target UUID=" + uuidOfParentAccordingToNewLogicGraphVersion + ") for concept (UUID=" + referencedConcept.getPrimordialUuid() + ")").get();
-								} catch (RuntimeException | InterruptedException | ExecutionException e) {
+								} catch (Exception e) {
 									// New version of this sememe may have failed to be committed, so remove sememe from list so listener won't ignore it
 									nidsOfGeneratedSememesToIgnore.remove(retiredHasParentSememeVersion.get().getNid());
 									LOG.error("FAILED calling commit() to unretire has_parent association sememe (target UUID=" + uuidOfParentAccordingToNewLogicGraphVersion + ") of VHAT concept " + referencedConcept, e);
