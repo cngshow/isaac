@@ -241,13 +241,17 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 	@Override
 	public void handleCommit(CommitRecord commitRecord) {
 		// For new and updated VHAT logic graphs, create or retire has_parent associations, as appropriate
-		LOG.info("HandleCommit looking for - logic graphs: " + sememeSequencesForUnhandledLogicGraphChanges + " associations: " 
+		LOG.info("HandleCommit looking for - " + sememeSequencesForUnhandledLogicGraphChanges.size() + " logic graphs: " + sememeSequencesForUnhandledLogicGraphChanges + " and " + sememeSequencesForUnhandledHasParentAssociationChanges.size() + " associations: " 
 				+ sememeSequencesForUnhandledHasParentAssociationChanges + " the commit contains " + commitRecord.getSememesInCommit());
-		for (int logicGraphSequence : sememeSequencesForUnhandledLogicGraphChanges) {
+		for (int logicGraphSequence : sememeSequencesForUnhandledLogicGraphChanges.toArray(new Integer[sememeSequencesForUnhandledLogicGraphChanges.size()])) {
 			if (! commitRecord.getSememesInCommit().contains(logicGraphSequence)) {
+				LOG.trace("HandleCommit NOT handling logic graph " + logicGraphSequence + " which is not contained in the commit record list: " + commitRecord.getSememesInCommit().toString());
+				sememeSequencesForUnhandledLogicGraphChanges.remove(logicGraphSequence);
 				continue;
 			}
 			sememeSequencesForUnhandledLogicGraphChanges.remove(logicGraphSequence);
+			LOG.debug("HandleCommit handling logic graph " + logicGraphSequence + ". " + sememeSequencesForUnhandledLogicGraphChanges.size() + " logic graphs remaining");
+
 			SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(logicGraphSequence);
 			@SuppressWarnings("unchecked")
 			Optional<LogicGraphSememeImpl> logicGraph = Frills.getLatestVersion((SememeChronology<LogicGraphSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
@@ -425,9 +429,13 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 		// For new, updated or retired VHAT has_parent association sememes, update existing logic graph
 		for (int hasParentSememeSequence : sememeSequencesForUnhandledHasParentAssociationChanges) {
 			if (! commitRecord.getSememesInCommit().contains(hasParentSememeSequence)) {
+				LOG.trace("HandleCommit NOT handling hasParent association " + hasParentSememeSequence + " which is not contained in the commit record list: " + commitRecord.getSememesInCommit().toString());
+				sememeSequencesForUnhandledHasParentAssociationChanges.remove(hasParentSememeSequence);
 				continue;
 			}
 			sememeSequencesForUnhandledHasParentAssociationChanges.remove(hasParentSememeSequence);
+			LOG.debug("HandleCommit handling hasParent association " + hasParentSememeSequence + ". " + sememeSequencesForUnhandledHasParentAssociationChanges.size() + " hasParent associations remaining");
+
 			SememeChronology<? extends SememeVersion<?>> sc = Get.sememeService().getSememe(hasParentSememeSequence);
 			@SuppressWarnings("unchecked")
 			Optional<DynamicSememeImpl> hasParentSememe = Frills.getLatestVersion((SememeChronology<DynamicSememeImpl>)sc, getVHATDevelopmentLatestStampCoordinate());
@@ -493,7 +501,7 @@ public class VHATIsAHasParentSynchronizingChronologyChangeListener implements VH
 						LOG.debug("Created the logic graph " + newLogicGraphSememeVersion + " due to an association change ");
 						try {
 							Get.commitService().addUncommittedNoChecks(conceptLogicGraphSememeChronology.get()).get();
-						} catch (RuntimeException | InterruptedException | ExecutionException e) {
+						} catch (Exception e) {
 							// New version of this sememe failed to be added to commit list, so remove sememe from list so listener won't ignore it
 							nidsOfGeneratedSememesToIgnore.remove(conceptLogicGraphSememeChronology.get().getNid());
 							LOG.error("FAILED calling addUncommitted() on logic graph of VHAT concept " + referencedConcept, e);

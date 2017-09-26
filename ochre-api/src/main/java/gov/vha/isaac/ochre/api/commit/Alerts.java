@@ -51,4 +51,12 @@ public class Alerts
 	{
 		return new AlertImpl(AlertType.WARNING, text, componentNid);
 	}
+	public static Alert confirmation(String text, int componentNid)
+	{
+		return new AlertImpl(AlertType.CONFIRMATION, text, componentNid);
+	}
+	public static Alert information(String text, int componentNid)
+	{
+		return new AlertImpl(AlertType.INFORMATION, text, componentNid);
+	}
 }
