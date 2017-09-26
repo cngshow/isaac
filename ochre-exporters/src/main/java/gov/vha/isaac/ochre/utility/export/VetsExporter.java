@@ -439,7 +439,7 @@ public class VetsExporter {
 							= new Terminology.CodeSystem.Version.CodedConcepts.CodedConcept();
 					xmlCodedConcept.setAction(determineAction(concept, startDate, endDate));
 					xmlCodedConcept.setName(getPreferredNameDescriptionType(conceptNid));
-					xmlCodedConcept.setVUID(Frills.getVuId(conceptNid, null).orElse(null));
+					xmlCodedConcept.setVUID(Frills.getVuId(conceptNid, STAMP_COORDINATES).orElse(null));
 					xmlCodedConcept.setCode(getCodeFromNid(conceptNid));
 					xmlCodedConcept.setActive(Boolean.valueOf(concept.isLatestVersionActive(STAMP_COORDINATES)));
 
@@ -813,7 +813,7 @@ public class VetsExporter {
 					d.setActive(descriptionVersion.get().value().getState() == State.ACTIVE);
 
 					//Get the extended type
-					Optional<UUID> descType = Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememe.getNid());
+					Optional<UUID> descType = Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememe.getNid(), true);
 					if (descType.isPresent())
 					{
 						d.setTypeName(designationTypes.get(descType.get()));
@@ -903,11 +903,11 @@ public class VetsExporter {
 					return null;
 				}
 				
-				long vuid = Frills.getVuId(Get.identifierService().getConceptNid(sememe.getAssemblageSequence()), 
-						STAMP_COORDINATES).orElse(0L).longValue();
-				if (vuid > 0)
+				Optional<Long> vuid = Frills.getVuId(Get.identifierService().getConceptNid(sememe.getAssemblageSequence()), 
+						STAMP_COORDINATES);
+				if (vuid.isPresent())
 				{
-					subsetMembership.setVUID(vuid);
+					subsetMembership.setVUID(vuid.get());
 				}
 				else
 				{
@@ -1028,7 +1028,7 @@ public class VetsExporter {
 			Optional<LatestVersion<DescriptionSememe<?>>> latestVersion = ((SememeChronology)sememeChronology).getLatestVersion(DescriptionSememe.class, STAMP_COORDINATES);
 			if (latestVersion.isPresent()
 					&& VHATConstants.VHAT_PREFERRED_NAME.getPrimordialUuid()
-						.equals(Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememeChronology.getNid()).orElse(null)))
+						.equals(Frills.getDescriptionExtendedTypeConcept(STAMP_COORDINATES, sememeChronology.getNid(), true).orElse(null)))
 			{
 				if (latestVersion.get().value().getState() == State.ACTIVE)
 				{

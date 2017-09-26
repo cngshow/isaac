@@ -63,7 +63,7 @@ public class UMLSFileReader implements TerminologyFileReader
 			nextLine_ = new ArrayList<>(cols.length - 1);
 			for (String s : cols)
 			{
-				if ((nextLine_.size() == cols.length - 1) && (s.length() == 0 || s == null))
+				if ((nextLine_.size() == cols.length - 1) && (s == null || s.length() == 0))
 				{
 					break;
 				}

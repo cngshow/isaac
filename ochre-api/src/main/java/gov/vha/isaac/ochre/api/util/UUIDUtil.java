@@ -33,11 +33,11 @@ public class UUIDUtil
 	{
 		if (string == null)
 		{
-			Optional.empty();
+			return Optional.empty();
 		}
 		if (string.length() != 36)
 		{
-			Optional.empty();
+			return Optional.empty();
 		}
 		try
 		{
