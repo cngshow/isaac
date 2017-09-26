@@ -114,9 +114,10 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
      *          Fixed a bug in the definition of DYNAMIC_SEMEME_COLUMN_REFERENCED_COMPONENT_TYPE
      * 1.1.1    Removed a constant for dynamic sememe data types (which are no longer supported)
      * 1.1.2    Renamed 'generated UUID' to 'UUID'
+     * 1.1.3    Changed the definition value for VHAT_MODULES from "VETS Terminology" to "VHA Terminology"
      * 
     **/  
-    public static final String AUXILIARY_METADATA_VERSION = "1.1.1";
+    public static final String AUXILIARY_METADATA_VERSION = "1.1.3";
 
      /**
     * If you are looking for the code that creates / uses this, see the class {@link ExportTaxonomy}
@@ -129,6 +130,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
         try {
             createConcept(TermAux.ISAAC_ROOT);
             pushParent(current());
+                //TODO maybe move the RF2 specific things into the RF2 loader
                 createConcept("health concept").setPrimordialUuid("ee9ac5d2-a07c-3981-a57a-f7f26baf38d8");
                 createConcept("ISAAC metadata").addDescription("version:" + AUXILIARY_METADATA_VERSION, TermAux.DEFINITION_DESCRIPTION_TYPE);
                 pushParent(current());
@@ -146,7 +148,7 @@ public class IsaacMetadataAuxiliary extends IsaacTaxonomy {
                         //The second UUID here was the old value from the TermAux - but this was an orphan.  to best fix the bug that resulted, 
                         //the type5 UUID from here was moved to TermAux, and the old UUID was added here as an additional.
                         createConcept(TermAux.VHAT_MODULES).addDescription("VHAT", TermAux.SYNONYM_DESCRIPTION_TYPE)
-                            .addDescription("VETS Terminology", TermAux.DEFINITION_DESCRIPTION_TYPE)
+                            .addDescription("VHA Terminology", TermAux.DEFINITION_DESCRIPTION_TYPE)
                             .addUuids(UUID.fromString("1f201520-960e-11e5-8994-feff819cdc9f"));
                             
                         pushParent(current());
