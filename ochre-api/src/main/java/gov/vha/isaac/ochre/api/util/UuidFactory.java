@@ -33,19 +33,25 @@ public class UuidFactory {
 	private static final String MEMBER_SEED_STRING = "MEMBER_SEED_STRING";
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param refComp
-	 * @param le
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID
+	 * @param assemblage UUID used in string for text seed.
+	 * @param refComp UUID used in string for text seed.
+	 * @param le {@link LogicalExpression} used in string for text seed.
+	 * @param consumer BiConsumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
+	 * @return  UUID
 	 */
 	public static UUID getUuidForLogicGraphSememe(UUID namespace, UUID assemblage, UUID refComp, LogicalExpression le, BiConsumer<String, UUID> consumer) {
 		byte[][] leBytes = le.getData(DataTarget.EXTERNAL);
 		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), toString(leBytes)), consumer);
 	}
 	
+	
+	/**
+	 * @param b
+	 * @return
+	 */
 	private static String toString(byte[][] b)
 	{
 		StringBuilder temp = new StringBuilder();
@@ -59,12 +65,13 @@ public class UuidFactory {
 	}
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param refComp
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID
+	 * @param assemblage UUID used in string for text seed.
+	 * @param refComp UUID used in string for text seed.
+	 * @param consumer BiConsumer An optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation.
+	 * @return UUID
 	 */
 	public static UUID getUuidForMemberSememe(UUID namespace, UUID assemblage, UUID refComp, BiConsumer<String, UUID> consumer) {
 
@@ -72,13 +79,14 @@ public class UuidFactory {
 	}
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param refComp
-	 * @param data
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID used in string for text seed.
+	 * @param assemblage UUID used in string for text seed.
+	 * @param refComp UUID used in string for text seed.
+	 * @param data {@link DynamicSememeData}  used in string for text seed.
+	 * @param consumer BiConsumer An optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation.
+	 * @return UUID
 	 */
 	public static UUID getUuidForDynamicSememe(UUID namespace, UUID assemblage, UUID refComp, DynamicSememeData[] data, BiConsumer<String, UUID> consumer) {
 		StringBuilder temp = new StringBuilder();
@@ -111,42 +119,45 @@ public class UuidFactory {
 	}
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param refComp
-	 * @param component
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID
+	 * @param assemblage UUID used in string for text seed.
+	 * @param refComp UUID used in string for text seed.
+	 * @param component UUID used in string for text seed.
+	 * @param consumer BiConsumer An optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation.
+	 * @return UUID
 	 */
 	public static UUID getUuidForComponentNidSememe(UUID namespace, UUID assemblage, UUID refComp, UUID component, BiConsumer<String, UUID> consumer) {
 		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), component.toString()), consumer);
 	}
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param refComp
-	 * @param value
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID
+	 * @param assemblage UUID used in string for text seed.
+	 * @param refComp UUID used in string for text seed.
+	 * @param value String used in string for text seed.
+	 * @param consumer BiConsumer An optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation.
+	 * @return UUID
 	 */
 	public static UUID getUuidForStringSememe(UUID namespace, UUID assemblage, UUID refComp, String value, BiConsumer<String, UUID> consumer) {
 		return UuidT5Generator.get(namespace, createUuidTextSeed(assemblage.toString(), refComp.toString(), value), consumer);
 	}
 
 	/**
+	 * Create a new Type5 UUID using the provided name as the seed in the configured namespace.
 	 * 
-	 * @param namespace
-	 * @param assemblage
-	 * @param concept
-	 * @param caseSignificance
-	 * @param descriptionType
-	 * @param language
-	 * @param descriptionText
-	 * @param consumer an optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation
-	 * @return
+	 * @param namespace UUID
+	 * @param assemblage UUID used in string for text seed.
+	 * @param concept UUID used in string for text seed.
+	 * @param caseSignificance UUID used in string for text seed.
+	 * @param descriptionType UUID used in string for text seed.
+	 * @param language UUID used in string for text seed.
+	 * @param descriptionText String used in string for text seed.
+	 * @param consumer BiConsumer An optional parameter that will get a callback with the string used to calculate the UUID - no impact on generation.
+	 * @return UUID
 	 */
 	public static UUID getUuidForDescriptionSememe(UUID namespace, UUID assemblage, UUID concept, UUID caseSignificance,
 			UUID descriptionType, UUID language, String descriptionText, BiConsumer<String, UUID> consumer) {

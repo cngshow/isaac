@@ -17,12 +17,14 @@ package gov.vha.isaac.ochre.api.externalizable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jvnet.hk2.annotations.Contract;
+
+import gov.vha.isaac.ochre.api.util.InputIbdfVersionContent;
 
 /**
  * HK2 Service Contract for BinaryDataDifferProvider
@@ -35,7 +37,7 @@ import org.jvnet.hk2.annotations.Contract;
 public interface BinaryDataDifferService {
 
 	/**
-	 * The Enum ChangeType.
+	 * An Enum used to represent the types of changes encountered.
 	 */
 	public enum ChangeType {
 
@@ -48,6 +50,18 @@ public interface BinaryDataDifferService {
 	}
 
 	/**
+	 * An Enum used to represent either the original ibdf or the new ibdf to be
+	 * diffed.
+	 */
+	public enum IbdfInputVersion {
+
+		/** The base IBDF version. */
+		BASE,
+		/** The new IBDF version. */
+		NEW;
+	}
+
+	/**
 	 * Initialize the process prior to execution specifying directories, the
 	 * metadata should be included when diffing contents, and stamp definition.
 	 *
@@ -55,10 +69,10 @@ public interface BinaryDataDifferService {
 	 *            Directory used to store analysis files generated during call
 	 *            to {@link #generateAnalysisFiles(Map, Map, Map)}
 	 * @param inputFilesDir
-	 *            Directory containing base and new ibdf files to diff
+	 *            Directory containing BASE and NEW ibdf files to diff
 	 * @param deltaIbdfFilePath
 	 *            The location of the output ibdf file containing the diff
-	 *            between the base and new ibdf files.
+	 *            between the BASE and NEW ibdf files.
 	 * @param generateAnalysisFiles
 	 *            True if {@link #generateAnalysisFiles(Map, Map, Map)} should
 	 *            be executed
@@ -86,85 +100,114 @@ public interface BinaryDataDifferService {
 			boolean diffOnPath, String importDate, String moduleName);
 
 	/**
-	 * Process that iterates over the input ibdf files and returns their
-	 * contents to be evaluated.
+	 * Process that iterates over an input ibdf file and transforms its contents
+	 * into a {@link InputIbdfVersionContent} for further evaluation.
 	 *
 	 * @param versionFile
 	 *            The ibdf file to be written out for analysis. It is either the
-	 *            input base ibdf file or the input new ibdf file that are to be
+	 *            input BASE ibdf file or the input NEW ibdf file that are to be
 	 *            diffed.
-	 * @param type
-	 * @return the map The base ibdf file's content in a map of
-	 *         {@link OchreExternalizableObjectType} to
-	 *         {@link OchreExternalizable}
+	 * @param verion
+	 *            the {@link IbdfInputVersion} (either BASE or NEW)
+	 * @return the {@link InputIbdfVersionContent} object containing the content
+	 *         found in the versionFile (concepts, sememes, stamp aliases, and
+	 *         stamp comments)
 	 * @throws Exception
 	 *             Thrown when problem encountered reading the input file
 	 */
-	public ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(
-			File versionFile, String type) throws Exception;
+	public InputIbdfVersionContent transformInputIbdfFile(File versionFile, IbdfInputVersion verion) throws Exception;
 
 	/**
-	 * Top level process generating the identification of
-	 * new/inactivated/modified {@link OchreExternalizable} types.
+	 * Process generating the differences between the BASE and NEW content in
+	 * multi-threaded fashion
 	 *
-	 * @param baseContentMap
-	 *            the base ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param newContentMap
-	 *            the new ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @return the map of {@link ChangeType} defined as (new, inactivated,
-	 *         modified) to the identified {@link OchreExternalizable} content
+	 * @param baseContent
+	 *            the BASE content in {@link InputIbdfVersionContent} form
+	 * @param newContent
+	 *            the NEW content in {@link InputIbdfVersionContent} form
+	 * @return the differences expressed as a map of {@link ChangeType} to the
+	 *         diffed {@link OchreExternalizable} content of that type
+	 * @throws Exception
+	 *             to handle multi-threaded exceptions
 	 */
 	public ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> computeDelta(
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap);
+			InputIbdfVersionContent baseContent, InputIbdfVersionContent newContent) throws Exception;
 
 	/**
-	 * Generates human readable analysis files to help debug process. Contents
-	 * generated represent a) both inputed ibdf files, b) mapped
-	 * {@link ChangeType) to {@link OchreExternalizable} content, and c) delta
-	 * ibdf file.
-	 *
-	 * @param baseContentMap
-	 *            the base ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param newContentMap
-	 *            the new ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param changedComponents
-	 *            map of {@link ChangeType} defined as (new, inactivated,
-	 *            modified) to the identified {@link OchreExternalizable}
-	 *            content.
-	 */
-	public Boolean analyzeDeltaMap(ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> deltaMap);
-
-	public Boolean analyzeInputMap(ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> inputMap,
-			String type, String name);
-
-	/**
-	 * Generates the ibdf delta file, which is the desired artifact of this
-	 * operation, containing the identified differences between the base and new
-	 * ibdf files as calculated during the method
-	 * {@link #computeDelta(Map, Map)}.
+	 * Generates the actual ibdf delta file that can then be used to directly
+	 * import onto a database containing only BASE content. It contains the
+	 * identified differences between the BASE and NEW ibdf files as calculated
+	 * during the method {@link #computeDelta(Map, Map)}.
 	 *
 	 * @param changedComponents
-	 *            Map of {@link ChangeType} defined as (new, inactivated,
-	 *            modified) to the identified changed
-	 *            {@link OchreExternalizable} content
-	 * @throws Exception
-	 *             Thrown when problem either reading the contents of the map or
-	 *             in writing to the ibdf file
+	 *            Map of {@link ChangeType} to the diffed changed
+	 *            {@link OchreExternalizable} content of that type
+	 * @return a boolean indicating success/failure of operation
 	 */
-	public Boolean generateDeltaIbdfFile(
+	public Boolean createDeltaIbdfFile(
 			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents);
 
-	public void releaseLock();
+	/**
+	 * Generates two files. 1) A json representation of just the content found
+	 * in the content passed in and 2) a text representation containing the
+	 * content of both {@link IbdfInputVersion}.
+	 * 
+	 * For each file, the file's contents are grouped by {@link ChangeType}, and
+	 * within each {@link ChangeType}, by {@link OchreExternalizable}. The text
+	 * file has a top-level grouping by {@link IbdfInputVersion}.
+	 * 
+	 * File location defined by the {@link BinaryDataDifferService#initialize}
+	 * method.
+	 *
+	 * @param content
+	 *            the content represented in {@link InputIbdfVersionContent}
+	 *            form
+	 * @param version
+	 *            the {@link IbdfInputVersion} (either BASE or NEW)
+	 * @return a boolean indicating success/failure of operation
+	 * @throws IOException
+	 */
+	public Boolean generateInputAnalysisFile(InputIbdfVersionContent content, IbdfInputVersion verion)
+			throws IOException;
 
+	/**
+	 * Generates a json and a text file containing the changed components based
+	 * on the contents of the Diff object. The printed out contents are grouped
+	 * by {@link ChangeType}, and within each {@link ChangeType}, by
+	 * {@link OchreExternalizable}.
+	 *
+	 * File location defined by the {@link BinaryDataDifferService#initialize}
+	 * method.
+	 * 
+	 * @param changedComponents
+	 *            the differences between the BASE and NEW content expressed as
+	 *            a map of {@link ChangeType} to the diffed
+	 *            {@link OchreExternalizable} content of that type
+	 * @throws IOException
+	 *             Thrown if an exception occurred in writing the json or text
+	 *             files.
+	 * @return a boolean indicating success/failure of operation
+	 */
+	public Boolean generateAnalysisFileFromDiffObject(
+			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents)
+			throws IOException;
+
+	/**
+	 * Generates a json containing the changed components based on the ibdf
+	 * delta file. The printed out contents are grouped by {@link ChangeType},
+	 * and within each {@link ChangeType}, by {@link OchreExternalizable}.
+	 *
+	 * The location of both the delta file (used as input) and the generated
+	 * output file is defined by the {@link BinaryDataDifferService#initialize}
+	 * method.
+	 * 
+	 * @throws FileNotFoundException
+	 *             Thrown if the delta file is not found as expected
+	 */
 	public void writeChangeSetForVerification() throws FileNotFoundException;
 
+	/**
+	 * Releases the mutli-threading lock.
+	 */
+	public void releaseLock();
 }

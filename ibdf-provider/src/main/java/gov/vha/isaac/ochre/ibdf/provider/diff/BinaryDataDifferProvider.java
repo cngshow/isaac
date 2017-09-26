@@ -21,6 +21,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,9 +31,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,7 +59,6 @@ import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.bootstrap.TermAux;
 import gov.vha.isaac.ochre.api.chronicle.ObjectChronology;
-import gov.vha.isaac.ochre.api.commit.CommitService;
 import gov.vha.isaac.ochre.api.commit.StampService;
 import gov.vha.isaac.ochre.api.component.concept.ConceptChronology;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -66,7 +71,9 @@ import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.externalizable.StampAlias;
 import gov.vha.isaac.ochre.api.externalizable.StampComment;
 import gov.vha.isaac.ochre.api.externalizable.json.JsonDataWriterService;
+import gov.vha.isaac.ochre.api.util.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.util.UuidT5Generator;
+import gov.vha.isaac.ochre.api.util.WorkExecutors;
 
 /**
  * Routines enabling the examination of two ibdf files containing two distinct
@@ -84,8 +91,6 @@ import gov.vha.isaac.ochre.api.util.UuidT5Generator;
  */
 @Service(name = "binary data differ")
 @Singleton
-// TODO there are some serious thread-safety issues in this class
-// Likely in: processInputIbdfFile() & computeDelta()
 public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	/** The log. */
@@ -148,25 +153,46 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 	@Override
 	public ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> computeDelta(
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap) {
+			InputIbdfVersionContent baseContent, InputIbdfVersionContent newContent) throws Exception {
 		CopyOnWriteArrayList<OchreExternalizable> addedComponents = new CopyOnWriteArrayList<>();
 		CopyOnWriteArrayList<OchreExternalizable> retiredComponents = new CopyOnWriteArrayList<>();
 		CopyOnWriteArrayList<OchreExternalizable> changedComponents = new CopyOnWriteArrayList<>();
 
 		final int activeStampSeq = createStamp(State.ACTIVE);
 		final int inactiveStampSeq = createStamp(State.INACTIVE);
+		Future<CopyOnWriteArrayList<OchreExternalizable>> futureRetiredComponents = null;
 
 		// Find existing
 		for (OchreExternalizableObjectType type : OchreExternalizableObjectType.values()) {
 
 			if (type.equals(OchreExternalizableObjectType.CONCEPT)
 					|| type.equals(OchreExternalizableObjectType.SEMEME)) {
-				processVersionedContent(type, baseContentMap, newContentMap, addedComponents, retiredComponents,
-						changedComponents, activeStampSeq, inactiveStampSeq);
+				Set<UUID> matchedVersionedComponentSet = identifyCommonVersionedContent(type, baseContent, newContent,
+						changedComponents, activeStampSeq);
+
+				// Run Retired Check on background thread
+				ExecutorService processRetiredComponentsService = LookupService.getService(WorkExecutors.class)
+						.getIOExecutor();
+				futureRetiredComponents = processRetiredComponentsService.submit(new ProcessRetiredComponents(type,
+						baseContent, matchedVersionedComponentSet, inactiveStampSeq));
+
+				// Run New check on current thread
+				addedComponents
+						.addAll(processNewComponents(type, newContent, matchedVersionedComponentSet, activeStampSeq));
+
+				// Block until completed background thread
+				retiredComponents.addAll(futureRetiredComponents.get());
+				Get.commitService().postProcessImportNoChecks();
+				log.info("Completed postProcessImportNoChecks for adds & inactivations");
+				// Commit
 			} else if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)
 					|| type.equals(OchreExternalizableObjectType.STAMP_COMMENT)) {
-				processStampedContent(type, baseContentMap, newContentMap, addedComponents);
+				log.info("Starting processing of " + type);
+
+				processStampedContent(type, baseContent.getStampMap(), newContent.getStampMap(), addedComponents);
+				Get.commitService().postProcessImportNoChecks();
+
+				log.info("Completed postProcessImportNoChecks for type: " + type);
 			}
 		}
 
@@ -176,116 +202,230 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		retMap.put(ChangeType.NEW_COMPONENTS, addedComponents);
 		retMap.put(ChangeType.RETIRED_COMPONENTS, retiredComponents);
 		retMap.put(ChangeType.MODIFIED_COMPONENTS, changedComponents);
+		log.info("Completed computeDelta()");
 
 		return retMap;
 	}
 
 	/**
-	 * Identify changes between the base ibdf file and the new ibdf file for the
+	 * Identify changes between the BASE ibdf file and the NEW ibdf file for the
 	 * types {@link #OchreExternalizableObjectType.CONCEPT} and
 	 * {@link #OchreExternalizableObjectType.SEMEME}.
 	 *
 	 * @param type
 	 *            the {@link OchreExternalizableObjectType} type
-	 * @param baseContentMap
-	 *            the base ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param newContentMap
-	 *            the new ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param addedComponents
-	 *            all {@link OchreExternalizable} determined to be new in the
-	 *            new content map
-	 * @param retiredComponents
-	 *            all {@link OchreExternalizable} determined to be inactivated
-	 *            in the new content map
+	 * @param baseContent
+	 *            the BASE content in {@link InputIbdfVersionContent} form
+	 * @param newContent
+	 *            the NEW content in {@link InputIbdfVersionContent} form
 	 * @param changedComponents
-	 *            all {@link OchreExternalizable} determined to be modified in
-	 *            the new content map
+	 *            the differences between the BASE and NEW content of
+	 *            {@link OchreExternalizableObjectType} type expressed as a list
+	 *            of {@link OchreExternalizable} content
 	 * @param activeStampSeq
 	 *            the active stamp sequence used to make new versions
+	 * @return a set of UUIDs that represent the content that existed in both
+	 *         the baseContent and newContent.
+	 */
+	private Set<UUID> identifyCommonVersionedContent(OchreExternalizableObjectType type,
+			InputIbdfVersionContent baseContent, InputIbdfVersionContent newContent,
+			CopyOnWriteArrayList<OchreExternalizable> changedComponents, int activeStampSeq) {
+		Set<UUID> matchedComponentSet = new HashSet<UUID>();
+		log.info("Starting process to identify matches on " + type.toString());
+		List<UUID> baseKeys = new ArrayList<UUID>(baseContent.getTypeToUuidMap().get(type));
+		List<UUID> newKeys = new ArrayList<UUID>(newContent.getTypeToUuidMap().get(type));
+		Collections.sort(baseKeys);
+		Collections.sort(newKeys);
+		int i = 0;
+		int j = 0;
+		int numberOfBaseConcepts = baseKeys.size();
+		log.info("Will be finding matches on " + numberOfBaseConcepts + " " + type.toString());
+		int matches = 0;
+		int diffs = 0;
+		double percentage = .1;
+		do {
+			if (baseKeys.get(i).equals(newKeys.get(j))) {
+				// Handle equals
+				ObjectChronology<?> baseCompChron = (ObjectChronology<?>) baseContent.getUuidToComponentMap()
+						.get(baseKeys.get(i));
+				;
+				ObjectChronology<?> newCompChron = (ObjectChronology<?>) newContent.getUuidToComponentMap()
+						.get(newKeys.get(j));
+				matchedComponentSet.add(baseCompChron.getPrimordialUuid());
+				if (++matches % 10000 == 0) {
+					log.info("Found " + matches + " matches");
+				}
+
+				try {
+					OchreExternalizable modifiedComponent = diffUtil.diff(baseCompChron, newCompChron, activeStampSeq,
+							type);
+
+					if (modifiedComponent != null) {
+						changedComponents.add(modifiedComponent);
+						Get.commitService().importNoChecks(modifiedComponent);
+						if (++diffs == 1 || diffs % 25 == 0) {
+							log.info("Found " + diffs + " diffs");
+						}
+					}
+				} catch (Exception e) {
+					log.error("Failed On type: " + type + " on component: " + baseCompChron.getPrimordialUuid());
+					e.printStackTrace();
+				}
+
+				i++;
+				j++;
+			} else if (baseKeys.get(i).compareTo(newKeys.get(j)) < 0) {
+				i++;
+			} else {
+				j++;
+			}
+
+			// Log Status
+			if (i == Math.round(numberOfBaseConcepts * percentage)) {
+				log.info("Completed matching " + new DecimalFormat("#00").format(percentage * 100) + "% of "
+						+ type.toString());
+				percentage += .1;
+			}
+		} while (i < baseKeys.size() && j < newKeys.size());
+
+		log.info("Completed 100% of processing finding " + matches + " matches and " + diffs + " diffs");
+		Get.commitService().postProcessImportNoChecks();
+		log.info("Completed postProcessImportNoChecks for matches");
+
+		return matchedComponentSet;
+	}
+
+	/**
+	 * Compares the BASE content and matchedComponentSet of type
+	 * {@link OchreExternalizableObjectType}. The operation will retire those
+	 * {@link OchreExternalizable} components found in the BASE but not the
+	 * matchedComponentSet.
+	 * 
+	 * To retire the components, a new inactive version is made. Those retired
+	 * versions are then returned.
+	 *
+	 * @param type
+	 *            the type the {@link OchreExternalizableObjectType} type
+	 * @param baseContent
+	 *            the BASE content in {@link InputIbdfVersionContent} form
+	 * @param matchedComponentSet
+	 *            a set of UUIDs that represent the content that existed in both
+	 *            the baseContent and newContent
 	 * @param inactiveStampSeq
 	 *            the inactive stamp sequence used to make new versions
+	 * @return the {@link OchreExternalizableObjectType} content retired between
+	 *         the BASE and NEW versions expressed as a list of
+	 *         {@link OchreExternalizable}
 	 */
-	private void processVersionedContent(OchreExternalizableObjectType type,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
-			CopyOnWriteArrayList<OchreExternalizable> addedComponents,
-			CopyOnWriteArrayList<OchreExternalizable> retiredComponents,
-			CopyOnWriteArrayList<OchreExternalizable> changedComponents, int activeStampSeq, int inactiveStampSeq) {
-		Set<UUID> matchedComponentSet = new HashSet<UUID>();
-		CommitService commitService = Get.commitService();
+	private CopyOnWriteArrayList<OchreExternalizable> processRetiredComponents(OchreExternalizableObjectType type,
+			InputIbdfVersionContent baseContent, Set<UUID> matchedComponentSet, int inactiveStampSeq) {
+		int counter = 0;
+		int retires = 0;
+		double percentage = .1;
+		CopyOnWriteArrayList<OchreExternalizable> retiredComponents = new CopyOnWriteArrayList<>();
+		int numberOfComponents = baseContent.getTypeToUuidMap().get(type).size();
 
-		// Search for modified components
-		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
-			ObjectChronology<?> baseCompChron = (ObjectChronology<?>) baseComp;
-			for (OchreExternalizable newComp : newContentMap.get(type)) {
-				ObjectChronology<?> newCompChron = (ObjectChronology<?>) newComp;
-
-				if (baseCompChron.getPrimordialUuid().equals(newCompChron.getPrimordialUuid())) {
-					matchedComponentSet.add(baseCompChron.getPrimordialUuid());
-
-					try {
-						OchreExternalizable modifiedComponents = diffUtil.diff(baseCompChron, newCompChron,
-								activeStampSeq, type);
-						if (modifiedComponents != null) {
-							changedComponents.add(modifiedComponents);
-						}
-					} catch (Exception e) {
-						log.error("Failed On type: " + type + " on component: " + baseCompChron.getPrimordialUuid());
-						e.printStackTrace();
-					}
-
-					continue;
-				}
-			}
-		}
+		log.info("Will be finding retired on " + numberOfComponents + " " + type.toString());
 
 		// Add baseComps not in matchedSet --> Blocking Thread 1
-		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
+		for (UUID uuidKey : baseContent.getTypeToUuidMap().get(type)) {
+			OchreExternalizable baseComp = baseContent.getUuidToComponentMap().get(uuidKey);
+			if (counter++ == Math.round(numberOfComponents * percentage)) {
+				log.info("Completed inactivating " + new DecimalFormat("#00").format(percentage * 100) + "% of "
+						+ type.toString());
+				percentage += .1;
+			}
+
 			if (!matchedComponentSet.contains(((ObjectChronology<?>) baseComp).getPrimordialUuid())) {
 				OchreExternalizable retiredComp = diffUtil.addNewInactiveVersion(baseComp,
 						baseComp.getOchreObjectType(), inactiveStampSeq);
 
 				if (retiredComp != null) {
 					retiredComponents.add(retiredComp);
+					Get.commitService().importNoChecks(retiredComp);
+					if (++retires % 1000 == 0) {
+						log.info("Found " + retires + " retires");
+					}
 				}
 			}
 		}
 
-		// Add newComps not in matchedSet --> Blocking Thread 2
-		for (OchreExternalizable newComp : newContentMap.get(type)) {
-			if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
+		log.info("Completed 100% inactivations with " + retires + " retires");
 
+		return retiredComponents;
+	}
+
+	/**
+	 * Compares the NEW content and matchedComponentSet of type
+	 * {@link OchreExternalizableObjectType}. The operation will add a new
+	 * Chronicle for those {@link OchreExternalizable} components found in the
+	 * NEW but not the matchedComponentSet.
+	 * 
+	 * Those new versions are then returned.
+	 *
+	 * @param type
+	 *            the type the {@link OchreExternalizableObjectType} type
+	 * @param newContent
+	 *            the NEW content in {@link InputIbdfVersionContent} form
+	 * @param matchedComponentSet
+	 *            a set of UUIDs that represent the content that existed in both
+	 *            the baseContent and newContent
+	 * @param activeStampSeq
+	 *            the active stamp sequence used to make new versions
+	 * @return the {@link OchreExternalizableObjectType} content added between
+	 *         the BASE and NEW versions expressed as a list of
+	 *         {@link OchreExternalizable}
+	 */
+	private CopyOnWriteArrayList<OchreExternalizable> processNewComponents(OchreExternalizableObjectType type,
+			InputIbdfVersionContent newContent, Set<UUID> matchedComponentSet, int activeStampSeq) {
+		int counter = 0;
+		int adds = 0;
+		double percentage = .1;
+		CopyOnWriteArrayList<OchreExternalizable> addedComponents = new CopyOnWriteArrayList<>();
+		int numberOfComponents = newContent.getTypeToUuidMap().get(type).size();
+		log.info("Will be finding new on " + numberOfComponents + " " + type.toString());
+
+		for (UUID uuidKey : newContent.getTypeToUuidMap().get(type)) {
+			OchreExternalizable newComp = newContent.getUuidToComponentMap().get(uuidKey);
+			if (counter++ == Math.round(numberOfComponents * percentage)) {
+				log.info("Completed adding " + new DecimalFormat("#00").format(percentage * 100) + "% of "
+						+ type.toString());
+				percentage += .1;
+			}
+			if (!matchedComponentSet.contains(((ObjectChronology<?>) newComp).getPrimordialUuid())) {
 				OchreExternalizable addedComp = diffUtil.diff(null, (ObjectChronology<?>) newComp, activeStampSeq,
 						type);
 
 				if (addedComp != null) {
 					addedComponents.add(addedComp);
-					commitService.importNoChecks(addedComp);
+					Get.commitService().importNoChecks(addedComp);
+
+					if (++adds % 20000 == 0) {
+						log.info("Found " + adds + " adds");
+					}
 				}
 			}
 		}
 
-		commitService.postProcessImportNoChecks();
+		log.info("Completed 100% of adds finding " + adds + " additions");
+
+		return addedComponents;
 	}
 
 	/**
-	 * Identify new stamp-=based content added between the base ibdf file and
-	 * the new ibdf file for the types
+	 * Identify new stamp-=based content added between the BASE ibdf file and
+	 * the NEW ibdf file for the types
 	 * {@link #OchreExternalizableObjectType.STAMP_ALIAS} and
 	 * {@link #OchreExternalizableObjectType.STAMP_COMMENT}.
 	 *
 	 * @param type
 	 *            the {@link OchreExternalizableObjectType} type
-	 * @param baseContentMap
-	 *            the base ibdf file's content in a map of
+	 * @param baseContent
+	 *            the BASE ibdf file's content in a map of
 	 *            {@link OchreExternalizableObjectType} to
 	 *            {@link OchreExternalizable}
-	 * @param newContentMap
-	 *            the new ibdf file's content in a map of
+	 * @param newContent
+	 *            the NEW ibdf file's content in a map of
 	 *            {@link OchreExternalizableObjectType} to
 	 *            {@link OchreExternalizable}
 	 * @param addedComponents
@@ -293,16 +433,15 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	 *            new content map
 	 */
 	private void processStampedContent(OchreExternalizableObjectType type,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap,
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContent,
+			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContent,
 			CopyOnWriteArrayList<OchreExternalizable> addedComponents) {
 		Set<Integer> matchedStampSequenceSet = new HashSet<Integer>();
-		CommitService commitService = Get.commitService();
 
 		// Search for modified stamp content
-		for (OchreExternalizable baseComp : baseContentMap.get(type)) {
+		for (OchreExternalizable baseComp : baseContent.get(type)) {
 			boolean matchFound = false;
-			for (OchreExternalizable newComp : newContentMap.get(type)) {
+			for (OchreExternalizable newComp : newContent.get(type)) {
 				if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
 					if (((StampAlias) baseComp).equals((StampAlias) newComp)) {
 						matchedStampSequenceSet.add(((StampAlias) baseComp).getStampSequence());
@@ -322,7 +461,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		}
 
 		// Add new stamp content not in matchedSet
-		for (OchreExternalizable newComp : newContentMap.get(type)) {
+		for (OchreExternalizable newComp : newContent.get(type)) {
 			int newSequence;
 			if (type.equals(OchreExternalizableObjectType.STAMP_ALIAS)) {
 				newSequence = ((StampAlias) newComp).getStampSequence();
@@ -332,43 +471,39 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 			if (!matchedStampSequenceSet.contains(newSequence)) {
 				addedComponents.add(newComp);
-				commitService.importNoChecks(newComp);
+				Get.commitService().importNoChecks(newComp);
 			}
 		}
-
-		commitService.postProcessImportNoChecks();
 	}
 
 	@Override
-	public Boolean generateDeltaIbdfFile(
+	public Boolean createDeltaIbdfFile(
 			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents) {
+		Map<String, Object> args = new HashMap<>();
+		args.put(JsonWriter.PRETTY_PRINT, true);
+
 		try {
+			// the IBDF file being generated
 			DataWriterService componentCSWriter = Get.binaryDataWriter(new File(deltaIbdfFilePathStr.get()).toPath());
 
 			for (ChangeType key : changedComponents.keySet()) {
+				int i = 1;
+				log.info("About to write " + changedComponents.get(key).size() + " number of changes for "
+						+ key.toString());
+
 				for (OchreExternalizable c : changedComponents.get(key)) {
 					componentCSWriter.put(c);
+					if (i % 5000 == 0) {
+						log.info("Completed " + i + " writes");
+						componentCSWriter.flush();
+					}
 				}
+				log.info("Completed writing all changes for " + key.toString());
 			}
+			log.info("Completed writing all changes for all types");
 
 			componentCSWriter.close();
-			return true;
-		} catch (IOException e) {
-			return false;
-		} finally {
-
-		}
-	}
-
-	@Override
-	public Boolean analyzeInputMap(ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> inputMap,
-			String type, String name) {
-		try {
-			if (inputMap != null) {
-				generateInputAnalysisFile(inputMap, type, name);
-			} else {
-				log.info(type + "ContentMap empty so not writing json/text Input files for " + type + " content");
-			}
+			log.info("Closed writer");
 			return true;
 		} catch (IOException e) {
 			return false;
@@ -376,116 +511,107 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public Boolean analyzeDeltaMap(ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> deltaMap) {
-		try {
-			// Handle Comparison Files
-			if (deltaMap != null) {
-				generateComparisonAnalysisFile(deltaMap);
-			} else {
-				log.info("changedComponents empty so not writing json/text Output files");
-			}
-			return true;
-		} catch (IOException e) {
-			log.error(
-					"Failed in creating analysis files (not in processing the content written to the analysis files)");
-			return false;
-		}
-	}
-
-	/**
-	 * Generate a json and txt file containing the changed components. The
-	 * printed out contents are grouped by {@link ChangeType}, and within each
-	 * {@link ChangeType}, by {@link OchreExternalizable}.
-	 *
-	 * @param changedComponents
-	 *            map of {@link ChangeType} defined as (new, inactivated,
-	 *            modified) to the identified {@link OchreExternalizable}
-	 *            content
-	 * @throws IOException
-	 *             Thrown if an exception occurred in writing the json or text
-	 *             files.
-	 */
-	private void generateComparisonAnalysisFile(
+	public Boolean generateAnalysisFileFromDiffObject(
 			ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents)
 			throws IOException {
-		try (FileWriter allChangesTextWriter = new FileWriter(
-				analysisArtifactsDirStr.get() + textFullComparisonFileName);
-				JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
-						new File(analysisArtifactsDirStr.get() + jsonFullComparisonFileName));) {
+		if (changedComponents != null) {
+			try (FileWriter allChangesTextWriter = new FileWriter(
+					analysisArtifactsDirStr.get() + textFullComparisonFileName);
+					JsonDataWriterService allChangesJsonWriter = new JsonDataWriterService(
+							new File(analysisArtifactsDirStr.get() + jsonFullComparisonFileName));) {
+				for (ChangeType key : changedComponents.keySet()) {
+					log.info("About to write " + changedComponents.size()
+							+ " number of changes for comparison analysis files (txt & json) on type "
+							+ key.toString());
+					int counter = 1;
 
-			for (ChangeType key : changedComponents.keySet()) {
-				int counter = 1;
+					FileWriter changeTypeWriter = new FileWriter(analysisArtifactsDirStr.get() + key + "_File.txt");
 
-				FileWriter changeTypeWriter = new FileWriter(analysisArtifactsDirStr.get() + key + "_File.txt");
+					try {
+						List<OchreExternalizable> components = changedComponents.get(key);
 
-				try {
-					List<OchreExternalizable> components = changedComponents.get(key);
+						allChangesJsonWriter.put("\n\n\n\t\t\t**** " + key.toString() + " ****");
+						allChangesTextWriter.write("\n\n\n\t\t\t**** " + key.toString() + " ****");
 
-					allChangesJsonWriter.put("\n\n\n\t\t\t**** " + key.toString() + " ****");
-					allChangesTextWriter.write("\n\n\n\t\t\t**** " + key.toString() + " ****");
-
-					for (OchreExternalizable c : components) {
-						String componentType;
-						if (c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
-							componentType = "Concept";
-						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
-							componentType = "Sememe";
-						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
-							componentType = "Stamp Alias";
-						} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
-							componentType = "Stamp Comment";
-						} else {
-							throw new UnsupportedDataTypeException();
-						}
-
-						String componentToWrite;
-						if ((c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT
-								|| c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME)) {
-							componentToWrite = "---- " + key.toString() + " component #" + counter++ + " of type "
-									+ componentType + " with Primordial UUID: "
-									+ ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
-						} else {
-							int sequence;
-							if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
-								sequence = ((StampAlias) c).getStampSequence();
+						for (OchreExternalizable c : components) {
+							String componentType;
+							if (c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
+								componentType = "Concept";
+							} else if (c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
+								componentType = "Sememe";
+							} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+								componentType = "Stamp Alias";
+							} else if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
+								componentType = "Stamp Comment";
 							} else {
-								sequence = ((StampComment) c).getStampSequence();
+								throw new UnsupportedDataTypeException();
 							}
-							componentToWrite = "---- " + key.toString() + " #" + counter++ + " of type '"
-									+ componentType + "' with Sequence# " + sequence + " ----\n";
+
+							String componentToWrite;
+							if ((c.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT
+									|| c.getOchreObjectType() == OchreExternalizableObjectType.SEMEME)) {
+								componentToWrite = "---- " + key.toString() + " component #" + counter++ + " of type "
+										+ componentType + " with Primordial UUID: "
+										+ ((ObjectChronology<?>) c).getPrimordialUuid() + " ----\n";
+							} else {
+								int sequence;
+								if (c.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
+									sequence = ((StampAlias) c).getStampSequence();
+								} else {
+									sequence = ((StampComment) c).getStampSequence();
+								}
+								componentToWrite = "---- " + key.toString() + " #" + counter++ + " of type '"
+										+ componentType + "' with Sequence# " + sequence + " ----\n";
+							}
+
+							// Print Header
+							allChangesJsonWriter.put(componentToWrite);
+							allChangesTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
+							changeTypeWriter.write("\n\n\n\t\t\t" + componentToWrite);
+							// Print Value (JSON Working TXT has issues)
+							allChangesJsonWriter.put(c);
+
+							if (counter % 5000 == 0) {
+								log.info("Completed " + counter + " writes for json/txt");
+								allChangesJsonWriter.flush();
+								allChangesTextWriter.flush();
+								changeTypeWriter.flush();
+							}
+
+							try {
+								changeTypeWriter.write(c.toString() + "\n\n\n");
+							} catch (Exception e) {
+								// This process will be trying to read content
+								// not yet imported into database. So not
+								// actually an error.
+							}
+
+							try {
+								allChangesTextWriter.write(c.toString());
+							} catch (Exception e) {
+								// This process will be trying to read content
+								// not yet imported into database. So not
+								// actually an error.
+							}
 						}
 
-						// Print Header
-						allChangesJsonWriter.put(componentToWrite);
-						allChangesTextWriter.write("\n\n\n\t\t\t" + componentToWrite);
-						changeTypeWriter.write("\n\n\n\t\t\t" + componentToWrite);
-						// Print Value (JSON Working TXT has issues)
-						allChangesJsonWriter.put(c);
+						log.info("Completed writing json/txt changes for " + key.toString());
 
-						try {
-							changeTypeWriter.write(c.toString() + "\n\n\n");
-						} catch (Exception e) {
-							// This process will be trying to read content not
-							// yet imported into database. So not actual error
-							// Exception thrown.
-						}
-
-						try {
-							allChangesTextWriter.write(c.toString());
-						} catch (Exception e) {
-							// This process will be trying to read content not
-							// yet imported into database. So not actual error
-							// Exception thrown.
-						}
+					} catch (IOException e) {
+						log.error(
+								"Failed in creating analysis files (not in processing the content written to the analysis files)");
+						return false;
+					} finally {
+						changeTypeWriter.close();
+						log.info("Closed writers");
 					}
-				} catch (IOException e) {
-					log.error("Failure processing changes of type " + key.toString());
-				} finally {
-					changeTypeWriter.close();
 				}
 			}
+		} else {
+			log.info("changedComponents empty so not writing json/text Output files");
 		}
 
+		return true;
 	}
 
 	/**
@@ -532,9 +658,9 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	}
 
 	@Override
-	public ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> processInputIbdfFile(
-			File versionFile, String type) throws Exception {
-		log.info("Processing " + type + " file: " + versionFile.getAbsolutePath());
+	public InputIbdfVersionContent transformInputIbdfFile(File versionFile, IbdfInputVersion verion) throws Exception {
+
+		log.info("Processing " + verion + " file: " + versionFile.getAbsolutePath());
 		BinaryDataReaderService reader = Get.binaryDataReader(versionFile.toPath());
 		/** The comment count. */
 		AtomicInteger conceptCount = new AtomicInteger(0);
@@ -543,15 +669,8 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 		AtomicInteger commentCount = new AtomicInteger(0);
 		AtomicInteger itemCount = new AtomicInteger(0);
 
-		ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> retMap = new ConcurrentHashMap<>();
-		Set<OchreExternalizable> conceptSet = ConcurrentHashMap.newKeySet();
-		Set<OchreExternalizable> sememeSet = ConcurrentHashMap.newKeySet();
-		Set<OchreExternalizable> aliasSet = ConcurrentHashMap.newKeySet();
-		Set<OchreExternalizable> commentSet = ConcurrentHashMap.newKeySet();
-		retMap.put(OchreExternalizableObjectType.CONCEPT, conceptSet);
-		retMap.put(OchreExternalizableObjectType.SEMEME, sememeSet);
-		retMap.put(OchreExternalizableObjectType.STAMP_ALIAS, aliasSet);
-		retMap.put(OchreExternalizableObjectType.STAMP_COMMENT, commentSet);
+		InputIbdfVersionContent content = new InputIbdfVersionContent();
+
 		try {
 			reader.getStream().forEach((object) -> {
 				if (object != null) {
@@ -560,21 +679,27 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					try {
 						if (object.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
 							conceptCount.getAndIncrement();
-							retMap.get(object.getOchreObjectType()).add(object);
+							content.getTypeToUuidMap().get(OchreExternalizableObjectType.CONCEPT)
+									.add(((ConceptChronology<?>) object).getPrimordialUuid());
+							content.getUuidToComponentMap().put(((ConceptChronology<?>) object).getPrimordialUuid(),
+									object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.SEMEME) {
 							sememeCount.getAndIncrement();
-							retMap.get(object.getOchreObjectType()).add(object);
+							content.getTypeToUuidMap().get(OchreExternalizableObjectType.SEMEME)
+									.add(((SememeChronology<?>) object).getPrimordialUuid());
+							content.getUuidToComponentMap().put(((SememeChronology<?>) object).getPrimordialUuid(),
+									object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_ALIAS) {
 							aliasCount.getAndIncrement();
-							retMap.get(object.getOchreObjectType()).add(object);
+							content.getStampMap().get(OchreExternalizableObjectType.STAMP_ALIAS).add(object);
 						} else if (object.getOchreObjectType() == OchreExternalizableObjectType.STAMP_COMMENT) {
 							commentCount.getAndIncrement();
-							retMap.get(object.getOchreObjectType()).add(object);
+							content.getStampMap().get(OchreExternalizableObjectType.STAMP_COMMENT).add(object);
 						} else {
 							throw new UnsupportedOperationException("Unknown ochre object type: " + object);
 						}
 					} catch (Exception e) {
-						log.error("Failure on " + type + " at " + conceptCount + " concepts, " + sememeCount
+						log.error("Failure on " + verion + " at " + conceptCount + " concepts, " + sememeCount
 								+ " sememes, ", e);
 						Map<String, Object> args = new HashMap<>();
 						args.put(JsonWriter.PRETTY_PRINT, true);
@@ -587,7 +712,7 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 						}
 
 						json.write(object);
-						log.error("Failed " + type + " on "
+						log.error("Failed " + verion + " on "
 								+ (primordial == null ? ": "
 										: "object with primoridial UUID " + primordial.toString() + ": ")
 								+ baos.toString());
@@ -596,24 +721,24 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 					}
 
 					if (itemCount.get() % 250000 == 0) {
-						log.info("Still processing " + type + " ibdf file.  Status: " + itemCount.get() + " entries, "
+						log.info("Still processing " + verion + " ibdf file.  Status: " + itemCount.get() + " entries, "
 								+ "Loaded " + conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, "
 								+ aliasCount.get() + " aliases, " + commentCount.get() + " comments");
 					}
 				}
 			});
 		} catch (Exception ex) {
-			log.info("Exception during " + type + " load: Loaded " + conceptCount.get() + " concepts, "
+			log.info("Exception during " + verion + " load: Loaded " + conceptCount.get() + " concepts, "
 					+ sememeCount.get() + " sememes, " + aliasCount.get() + " aliases, " + commentCount.get()
 					+ " comments" + (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 			throw new Exception(ex.getLocalizedMessage(), ex);
 		}
 
-		log.info("Finished processing " + type + " ibdf file.  Results: " + itemCount.get() + " entries, " + "Loaded "
+		log.info("Finished processing " + verion + " ibdf file.  Results: " + itemCount.get() + " entries, " + "Loaded "
 				+ conceptCount.get() + " concepts, " + sememeCount.get() + " sememes, " + aliasCount.get()
 				+ " aliases, " + commentCount.get() + " comments");
 
-		return retMap;
+		return content;
 	}
 
 	/**
@@ -646,6 +771,10 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 				OchreExternalizable object = queue.poll(500, TimeUnit.MILLISECONDS);
 				if (object != null) {
 					ic++;
+					if (ic % 10000 == 0) {
+						log.info("Completed writing " + ic + " components FROM diff ibdf");
+						verificationWriter.flush();
+					}
 					try {
 						if (object.getOchreObjectType() == OchreExternalizableObjectType.CONCEPT) {
 							cc++;
@@ -686,117 +815,131 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 
 					if (ic % 250000 == 0) {
 						log.info("Read " + ic + " entries, " + "Loaded " + cc + " concepts, " + sc + " sememes, " + sta
-								+ " stamp aliases, " + sc + " stamp comments, ");
+								+ " stamp aliases, " + stc + " stamp comments, ");
 					}
 				}
+				log.info("Completed writing all components FROM diff ibdf successfully");
+
 			}
 
 		} catch (Exception ex) {
 			log.info("Loaded " + ic + " items, " + cc + " concepts, " + sc + " sememes, " + sta + " stamp aliases, "
-					+ sc + " stamp comments, "
+					+ stc + " stamp comments, "
 					+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
 		}
 
 		log.info("Finished with " + ic + " items, " + cc + " concepts, " + sc + " sememes, " + sta + " stamp aliases, "
-				+ sc + " stamp comments, "
+				+ stc + " stamp comments, "
 				+ (skippedItems.size() > 0 ? ", skipped for inactive " + skippedItems.size() : ""));
+
+		log.info("Closed analysis file written FROM diff ibdf successfully");
 
 	}
 
-	/**
-	 * Generates human readable analysis files out of the contents found in the
-	 * base and new inputed ibdf files to help debug process.
-	 *
-	 * @param contentMap
-	 *            The ibdf file's content in a map of
-	 *            {@link OchreExternalizableObjectType} to
-	 *            {@link OchreExternalizable}
-	 * @param version
-	 *            String representing the version of contents (either BASE or
-	 *            NEW)
-	 * @param jsonOutputFile
-	 *            the output file, in json, representing the contentMap
-	 * @throws IOException
-	 *             Thrown if an exception occurred in writing the json or text
-	 *             files.
-	 */
-	private void generateInputAnalysisFile(
-			ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap, String version,
-			String jsonOutputFile) throws IOException {
+	@Override
+	public Boolean generateInputAnalysisFile(InputIbdfVersionContent content, IbdfInputVersion version)
+			throws IOException {
+		String fileName = version.toString().toLowerCase() + "Version.json";
+		if (content != null) {
+			int i = 1;
+			try (FileWriter textWriter = new FileWriter(inputAnalysisDirStr.get() + textCombinedIbdfFileName, true);
+					JsonDataWriterService jsonWriter = new JsonDataWriterService(
+							new File(inputAnalysisDirStr.get() + fileName));) {
 
-		int i = 1;
-		try (FileWriter textWriter = new FileWriter(inputAnalysisDirStr.get() + textCombinedIbdfFileName, true);
-				JsonDataWriterService jsonWriter = new JsonDataWriterService(
-						new File(inputAnalysisDirStr.get() + jsonOutputFile));) {
+				textWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+				jsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
+				Set<UUID> conceptUuids = content.getTypeToUuidMap().get(OchreExternalizableObjectType.CONCEPT);
+				int numberOfConcepts = content.getTypeToUuidMap().get(OchreExternalizableObjectType.CONCEPT).size();
 
-			textWriter.write("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
-			jsonWriter.put("\n\n\n\n\n\n\t\t\t**** " + version + " LIST ****");
-			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.CONCEPT)) {
-				ConceptChronology<?> cc = (ConceptChronology<?>) component;
-				jsonWriter.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
-				jsonWriter.put(cc);
-				textWriter.write(
-						"\n\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----\n");
-				textWriter.write(cc.toString());
-				i++;
-			}
-
-			i = 1;
-			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.SEMEME)) {
-				SememeChronology<?> se = (SememeChronology<?>) component;
-				jsonWriter.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
-				jsonWriter.put(se);
-
-				try {
-					textWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid()
+				for (UUID uuidKey : conceptUuids) {
+					ConceptChronology<?> cc = (ConceptChronology<?>) content.getUuidToComponentMap().get(uuidKey);
+					jsonWriter.put("#---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid() + " ----");
+					jsonWriter.put(cc);
+					textWriter.write("\n\n\n\t\t\t---- " + version + " Concept #" + i + "   " + cc.getPrimordialUuid()
 							+ " ----\n");
-					textWriter.write(se.toString());
-				} catch (Exception e) {
-					textWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: " + i
-							+ " in writing *" + version + "* content to text file for analysis (UUID: "
-							+ se.getPrimordialUuid() + ".");
+					textWriter.write(cc.toString());
+					if (i++ % 25000 == 0) {
+						log.info("Just completed writing " + i + " concept writes (out of " + (numberOfConcepts - 1)
+								+ " total concepts)");
+						textWriter.flush();
+						jsonWriter.flush();
+					}
 				}
-				i++;
-			}
 
-			i = 1;
-			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_ALIAS)) {
-				StampAlias sa = (StampAlias) component;
-				jsonWriter.put("--- " + version + " Stamp Alias #" + i + "   " + sa.getStampSequence() + " ----");
-				jsonWriter.put(sa);
+				i = 1;
+				Set<UUID> sememeUuids = content.getTypeToUuidMap().get(OchreExternalizableObjectType.SEMEME);
+				int numberOfSememes = content.getTypeToUuidMap().get(OchreExternalizableObjectType.SEMEME).size();
+				for (UUID uuidKey : sememeUuids) {
+					SememeChronology<?> se = (SememeChronology<?>) content.getUuidToComponentMap().get(uuidKey);
+					jsonWriter.put("--- " + version + " Sememe #" + i + "   " + se.getPrimordialUuid() + " ----");
+					jsonWriter.put(se);
 
-				try {
-					textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Alias #" + i + "   "
-							+ sa.getStampSequence() + " ----\n");
-					textWriter.write(sa.toString());
-				} catch (Exception e) {
-					textWriter.write("Failure on TXT writing Stamp Alias: " + sa.getStampSequence()
-							+ " which is index: " + i + " in writing *" + version + ".");
+					try {
+						textWriter.write("\n\n\n\t\t\t---- " + version + " Sememe #" + i + "   "
+								+ se.getPrimordialUuid() + " ----\n");
+						textWriter.write(se.toString());
+					} catch (Exception e) {
+						textWriter.write("Failure on TXT writing " + se.getSememeType() + " which is index: " + i
+								+ " in writing *" + version + "* content to text file for analysis (UUID: "
+								+ se.getPrimordialUuid() + ".");
+					}
+
+					if (i++ % 250000 == 0) {
+						log.info("Just completed writing " + i + " sememe writes (out of " + (numberOfSememes - 1)
+								+ " total sememes)");
+						textWriter.flush();
+						jsonWriter.flush();
+					}
 				}
-				i++;
-			}
 
-			i = 1;
-			for (OchreExternalizable component : contentMap.get(OchreExternalizableObjectType.STAMP_COMMENT)) {
-				StampComment sc = (StampComment) component;
-				jsonWriter.put("--- " + version + " Stamp Comment #" + i + "   " + sc.getStampSequence() + " ----");
-				jsonWriter.put(sc);
+				i = 1;
+				Set<OchreExternalizable> aliasMap = content.getStampMap()
+						.get(OchreExternalizableObjectType.STAMP_ALIAS);
+				for (OchreExternalizable component : aliasMap) {
+					StampAlias sa = (StampAlias) component;
+					jsonWriter.put("--- " + version + " Stamp Alias #" + i + "   " + sa.getStampSequence() + " ----");
+					jsonWriter.put(sa);
 
-				try {
-					textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Comment #" + i + "   "
-							+ sc.getStampSequence() + " ----\n");
-					textWriter.write(sc.toString());
-				} catch (Exception e) {
-					textWriter.write("Failure on TXT writing Stamp Comment: " + sc.getStampSequence()
-							+ " which is index: " + i + " in writing *" + version + ".");
+					try {
+						textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Alias #" + i + "   "
+								+ sa.getStampSequence() + " ----\n");
+						textWriter.write(sa.toString());
+					} catch (Exception e) {
+						textWriter.write("Failure on TXT writing Stamp Alias: " + sa.getStampSequence()
+								+ " which is index: " + i + " in writing *" + version + ".");
+					}
+					i++;
 				}
-				i++;
+
+				i = 1;
+				Set<OchreExternalizable> commentMap = content.getStampMap()
+						.get(OchreExternalizableObjectType.STAMP_COMMENT);
+				for (OchreExternalizable component : commentMap) {
+					StampComment sc = (StampComment) component;
+					jsonWriter.put("--- " + version + " Stamp Comment #" + i + "   " + sc.getStampSequence() + " ----");
+					jsonWriter.put(sc);
+
+					try {
+						textWriter.write("\n\n\n\t\t\t---- " + version + " Stamp Comment #" + i + "   "
+								+ sc.getStampSequence() + " ----\n");
+						textWriter.write(sc.toString());
+					} catch (Exception e) {
+						textWriter.write("Failure on TXT writing Stamp Comment: " + sc.getStampSequence()
+								+ " which is index: " + i + " in writing *" + version + ".");
+					}
+					i++;
+				}
+				log.info("Completed analyzing " + fileName + " input file");
+			} catch (Exception e) {
+				log.error("Failure on writing index: " + i + " in writing *" + version
+						+ "* content to text file for analysis.");
+				return false;
 			}
-			log.info("Completed analyzing " + jsonOutputFile + " input file");
-		} catch (Exception e) {
-			log.error("Failure on writing index: " + i + " in writing *" + version
-					+ "* content to text file for analysis.");
+		} else {
+			log.info(version + "ContentMap empty so not writing json/text Input files for " + version + " content");
 		}
+
+		return true;
 	}
 
 	/**
@@ -825,5 +968,27 @@ public class BinaryDataDifferProvider implements BinaryDataDifferService {
 	@Override
 	public void releaseLock() {
 		diffProcessLock.unlock();
+	}
+
+	private class ProcessRetiredComponents implements Callable<CopyOnWriteArrayList<OchreExternalizable>> {
+
+		private OchreExternalizableObjectType type_;
+		private InputIbdfVersionContent baseContent_;
+		private Set<UUID> matchedComponentSet_;
+		private int inactiveStampSeq_;
+
+		public ProcessRetiredComponents(OchreExternalizableObjectType type, InputIbdfVersionContent baseContent,
+				Set<UUID> matchedComponentSet, int inactiveStampSeq) {
+			type_ = type;
+			baseContent_ = baseContent;
+			matchedComponentSet_ = matchedComponentSet;
+			inactiveStampSeq_ = inactiveStampSeq;
+		}
+
+		@Override
+		public CopyOnWriteArrayList<OchreExternalizable> call() {
+			return processRetiredComponents(type_, baseContent_, matchedComponentSet_, inactiveStampSeq_);
+		}
+
 	}
 }
