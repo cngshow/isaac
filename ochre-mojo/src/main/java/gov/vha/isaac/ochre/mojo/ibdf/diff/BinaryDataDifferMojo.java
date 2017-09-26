@@ -16,14 +16,12 @@
 package gov.vha.isaac.ochre.mojo.ibdf.diff;
 
 import java.io.File;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,8 +32,9 @@ import org.jvnet.hk2.annotations.Service;
 import gov.vha.isaac.ochre.api.LookupService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService;
 import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService.ChangeType;
+import gov.vha.isaac.ochre.api.externalizable.BinaryDataDifferService.IbdfInputVersion;
+import gov.vha.isaac.ochre.api.externalizable.InputIbdfVersionContent;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
-import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
 import gov.vha.isaac.ochre.api.util.WorkExecutors;
 import gov.vha.isaac.ochre.mojo.external.QuasiMojo;
 
@@ -102,161 +101,106 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 	@Parameter(required = true)
 	protected String converterSourceArtifactVersion;
 
-	private static BinaryDataDifferService differService;
-
 	private static final Logger log = LogManager.getLogger(BinaryDataDifferMojo.class);
 
 	public void execute() throws MojoExecutionException {
-
-		ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMap = null;
-		ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMap = null;
 		ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents = null;
 
-		differService = LookupService.getService(BinaryDataDifferService.class);
+		final BinaryDataDifferService differService = LookupService.getService(BinaryDataDifferService.class);
 		differService.initialize(analysisArtifactsDir, inputAnalysisDir, deltaIbdfFilePath, generateAnalysisFiles,
 				diffOnTimestamp, diffOnAuthor, diffOnModule, diffOnPath, importDate,
 				"VHAT " + converterSourceArtifactVersion);
 
-		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> baseContentMapOrig = null;
-		Map<OchreExternalizableObjectType, Set<OchreExternalizable>> newContentMapOrig = null;
-		Map<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponentsOrig = null;
-
-		boolean ranInputAnalysis = false;
-		boolean ranOutputAnalysis = false;
-
-		int threadCount = Runtime.getRuntime().availableProcessors();
-
 		try {
 			log.info("Processing Base version IBDF File in background thread");
 			ExecutorService processBaseInputIbdfService = LookupService.getService(WorkExecutors.class).getIOExecutor();
-			Future<ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>>> futureBaseContentMap = processBaseInputIbdfService
-					.submit(new ProcessIbdfFile(differService, baseVersionFile, "BASE"));
+			Future<InputIbdfVersionContent> futureBaseContentMap = processBaseInputIbdfService
+					.submit(new ProcessIbdfFile(differService, baseVersionFile, IbdfInputVersion.BASE));
 
 			log.info("Processing New version IBDF File");
-			newContentMap = differService.processInputIbdfFile(newVersionFile, "NEW");
-			baseContentMap = futureBaseContentMap.get();
 
-			/*
-			 * //We don't shutdown the writer service we are using, because it
-			 * is the core isaac thread pool. //waiting for the future checker
-			 * service is sufficient to ensure that all write operations are
-			 * complete. baseVersionProcesserService.shutdown();
-			 * baseVersionProcesserService.awaitTermination(15,
-			 * TimeUnit.MINUTES); newVersionProcesserService.shutdown();
-			 * newVersionProcesserService.awaitTermination(15,
-			 * TimeUnit.MINUTES);
-			 * 
-			 */
+			final AtomicReference<InputIbdfVersionContent> newContent = new AtomicReference<>(
+					differService.transformInputIbdfFile(newVersionFile, IbdfInputVersion.NEW));
+			final AtomicReference<InputIbdfVersionContent> baseContent = new AtomicReference<>(
+					futureBaseContentMap.get());
 
 			// Transform input base & new content into text & json files
-			Future<Boolean> futureBaseAnalysisGenerated = null;
 			Future<Boolean> futureNewAnalysisGenerated = null;
 			Future<Boolean> futureDeltaAnalysisGenerated = null;
 			if (generateAnalysisFiles) {
 				log.info("Creating analysis files for input/output files");
-				ranInputAnalysis = true;
 
-				ExecutorService analyzeBaseInputIbdfService = LookupService.getService(WorkExecutors.class)
-						.getIOExecutor();
-				futureBaseAnalysisGenerated = analyzeBaseInputIbdfService.submit(
-						new GenerateInputAnalysisFile(differService, baseContentMap, "BASE", "baseVersion.json"));
+				differService.generateInputAnalysisFile(newContent.get(), IbdfInputVersion.BASE);
 
 				ExecutorService analyzeNewInputIbdfService = LookupService.getService(WorkExecutors.class)
 						.getIOExecutor();
 				futureNewAnalysisGenerated = analyzeNewInputIbdfService
-						.submit(new GenerateInputAnalysisFile(differService, baseContentMap, "NEW", "newVersion.json"));
+						.submit(new GenerateInputAnalysisFile(differService, newContent, IbdfInputVersion.NEW));
 			}
 
 			// Execute diff process
 			log.info("Running Compute Delta");
-			changedComponents = differService.computeDelta(baseContentMap, newContentMap);
+			changedComponents = differService.computeDelta(baseContent.get(), newContent.get());
 
 			// Create diff IBDF file
-			log.info("\n\nCreating the delta ibdf file");
-			differService.generateDeltaIbdfFile(changedComponents);
+			log.info("Creating the delta ibdf file");
+			differService.createDeltaIbdfFile(changedComponents);
 
 			// Transform diff IBDF file into text & json files
-			log.info("\n\nCreating analysis files for diff file");
 			if (generateAnalysisFiles) {
-				ranOutputAnalysis = true;
+				log.info("\n\nCreating analysis files for diff file");
 				ExecutorService analyzeDeltaService = LookupService.getService(WorkExecutors.class).getIOExecutor();
 				futureDeltaAnalysisGenerated = analyzeDeltaService
 						.submit(new GenerateDeltaAnalysisFile(differService, changedComponents));
 
+				log.info("\n\nCreating analysis files of diff ibdf file");
 				differService.writeChangeSetForVerification();
 			}
-			futureBaseAnalysisGenerated.get();
 			futureNewAnalysisGenerated.get();
 			futureDeltaAnalysisGenerated.get();
 		} catch (Exception e) {
 			throw new MojoExecutionException(e.getMessage(), e);
 		} finally {
+			// TODO: Still need?
 			differService.releaseLock();
 		}
 
 	}
 
-	/**
-	 * Class to ensure that any exceptions associated with indexingFutures are
-	 * properly logged.
-	 */
-	private static class FutureChecker implements Runnable {
-
-		Future<Map<OchreExternalizableObjectType, Set<OchreExternalizable>>> future_;
-
-		public FutureChecker(Future<Map<OchreExternalizableObjectType, Set<OchreExternalizable>>> future) {
-			future_ = future;
-		}
-
-		@Override
-		public void run() {
-			try {
-				future_.get();
-			} catch (InterruptedException | ExecutionException ex) {
-				log.fatal("Unexpected error in future checker!", ex);
-			}
-		}
-	}
-
-	private class ProcessIbdfFile
-			implements Callable<ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>>> {
+	private class ProcessIbdfFile implements Callable<InputIbdfVersionContent> {
 
 		BinaryDataDifferService differService_ = null;
 		File baseVersionFile_ = null;
-		private String type_;
+		IbdfInputVersion verion_;
 
-		public ProcessIbdfFile(BinaryDataDifferService differService, File baseVersionFile, String type) {
+		public ProcessIbdfFile(BinaryDataDifferService differService, File baseVersionFile, IbdfInputVersion verion) {
 			differService_ = differService;
 			baseVersionFile_ = baseVersionFile;
-			type_ = type;
+			verion_ = verion;
 		}
 
 		@Override
-		public ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> call() throws Exception {
-			return differService_.processInputIbdfFile(baseVersionFile_, type_);
+		public InputIbdfVersionContent call() throws Exception {
+			return differService_.transformInputIbdfFile(baseVersionFile_, verion_);
 		}
-
 	}
 
 	private class GenerateInputAnalysisFile implements Callable<Boolean> {
 
 		private BinaryDataDifferService differService_ = null;
-		private ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> mapToProcess_ = null;
-		private String type_;
-		private String name_;
+		private AtomicReference<InputIbdfVersionContent> content_ = null;
+		private IbdfInputVersion verion_;
 
 		public GenerateInputAnalysisFile(BinaryDataDifferService differService,
-				ConcurrentHashMap<OchreExternalizableObjectType, Set<OchreExternalizable>> contentMap, String type,
-				String name) {
+				AtomicReference<InputIbdfVersionContent> content, IbdfInputVersion verion) {
 			differService_ = differService;
-			mapToProcess_ = contentMap;
-			type_ = type;
-			name_ = name;
+			content_ = content;
+			verion_ = verion;
 		}
 
 		@Override
 		public Boolean call() throws Exception {
-			return differService_.analyzeInputMap(mapToProcess_, type_, name_);
+			return differService_.generateInputAnalysisFile(content_.get(), verion_);
 		}
 
 	}
@@ -274,25 +218,7 @@ public class BinaryDataDifferMojo extends QuasiMojo {
 
 		@Override
 		public Boolean call() throws Exception {
-			return differService_.analyzeDeltaMap(mapToProcess_);
-		}
-
-	}
-
-	private class GenerateDeltaIbdfFile implements Callable<Boolean> {
-
-		private BinaryDataDifferService differService_ = null;
-		private ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> mapToProcess_ = null;
-
-		public GenerateDeltaIbdfFile(BinaryDataDifferService differService,
-				ConcurrentHashMap<ChangeType, CopyOnWriteArrayList<OchreExternalizable>> changedComponents) {
-			differService_ = differService;
-			mapToProcess_ = changedComponents;
-		}
-
-		@Override
-		public Boolean call() throws Exception {
-			return differService.generateDeltaIbdfFile(mapToProcess_);
+			return differService_.generateAnalysisFileFromDiffObject(mapToProcess_);
 		}
 
 	}
