@@ -44,9 +44,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  *
  * @author kec
@@ -54,8 +51,6 @@ import org.apache.logging.log4j.Logger;
 public class ConceptChronologyImpl
         extends ObjectChronologyImpl<ConceptVersionImpl>
         implements ConceptChronology<ConceptVersionImpl>, OchreExternalizable {
-	private static Logger log = LogManager.getLogger(ConceptChronologyImpl.class);
-
     public ConceptChronologyImpl(UUID primordialUuid, int nid, int containerSequence) {
         super(primordialUuid, nid, containerSequence);
     }
@@ -106,15 +101,6 @@ public class ConceptChronologyImpl
     public ConceptVersionImpl createMutableVersion(State state, EditCoordinate ec) {
         int stampSequence = Get.stampService().getStampSequence(state, Long.MAX_VALUE,
                 ec.getAuthorSequence(), ec.getModuleSequence(), ec.getPathSequence());
-        final List<ConceptVersionImpl> uncommittedVersions = new ArrayList<>();
-        for (ConceptVersionImpl version : this.getVersionList()) {
-            if (version.isUncommitted()) {
-                uncommittedVersions.add(version);
-            }
-        }
-        if (uncommittedVersions.size() > 0) {
-            log.warn(new RuntimeException("Creating new mutable version for concept " + this.getPrimordialUuid() + " with " + uncommittedVersions.size() + " existing uncommitted version(s). CHRONOLOGY: " + this));
-        }
         ConceptVersionImpl newVersion = new ConceptVersionImpl(this, stampSequence, nextVersionSequence());
         addVersion(newVersion);
         return newVersion;
@@ -207,7 +193,9 @@ public class ConceptChronologyImpl
             assemblageSequence = logicCoordinate.getStatedAssemblageSequence();
         }
         Optional<?> optional = Get.sememeService().getSnapshot(LogicGraphSememe.class, stampCoordinate).getLatestSememeVersionsForComponentFromAssemblage(getNid(), assemblageSequence).findFirst();
-        return (Optional<LatestVersion<LogicGraphSememe<?>>>)optional;
+        @SuppressWarnings("unchecked")
+		Optional<LatestVersion<LogicGraphSememe<?>>> optionalToReturn = (Optional<LatestVersion<LogicGraphSememe<?>>>)optional;
+        return optionalToReturn;
     }
     List<RelationshipAdaptorChronologyImpl> conceptOriginRelationshipList;
     List<RelationshipAdaptorChronologyImpl> conceptOriginRelationshipListDefaltCoordinate;
@@ -279,14 +267,9 @@ public class ConceptChronologyImpl
                 Get.sememeService().getSememesForComponentFromAssemblage(getNid(), assemblageSequence).findFirst();
                 
         if (definitionChronologyOptional.isPresent()) {
-
-            Collection<LogicGraphSememeImpl> versions = (Collection<LogicGraphSememeImpl>) 
+            @SuppressWarnings("unchecked")
+			Collection<LogicGraphSememeImpl> versions = (Collection<LogicGraphSememeImpl>) 
                     definitionChronologyOptional.get().getVisibleOrderedVersionList(stampCoordinate);
-            
-//            Collection<LogicGraphSememeImpl> versionsList = new ArrayList<>();
-//            for (LogicGraphSememeImpl lgs : definitionChronologyOptional.get().getVisibleOrderedVersionList(stampCoordinate)) {
-//                
-//            }
             StringBuilder builder = new StringBuilder();
             builder.append("_______________________________________________________________________\n");
             builder.append("  Encountered concept '")

@@ -15,6 +15,8 @@
  */
 package gov.vha.isaac.ochre.model.sememe;
 
+import java.util.UUID;
+
 import gov.vha.isaac.ochre.api.Get;
 import gov.vha.isaac.ochre.api.State;
 import gov.vha.isaac.ochre.api.component.sememe.SememeChronology;
@@ -28,10 +30,9 @@ import gov.vha.isaac.ochre.api.component.sememe.version.SememeVersion;
 import gov.vha.isaac.ochre.api.component.sememe.version.StringSememe;
 import gov.vha.isaac.ochre.api.coordinate.EditCoordinate;
 import gov.vha.isaac.ochre.api.externalizable.ByteArrayDataBuffer;
-import gov.vha.isaac.ochre.model.ObjectChronologyImpl;
-import gov.vha.isaac.ochre.model.concept.ConceptVersionImpl;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizable;
 import gov.vha.isaac.ochre.api.externalizable.OchreExternalizableObjectType;
+import gov.vha.isaac.ochre.model.ObjectChronologyImpl;
 import gov.vha.isaac.ochre.model.sememe.version.ComponentNidSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DescriptionSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.DynamicSememeImpl;
@@ -40,22 +41,13 @@ import gov.vha.isaac.ochre.model.sememe.version.LongSememeImpl;
 import gov.vha.isaac.ochre.model.sememe.version.SememeVersionImpl;
 import gov.vha.isaac.ochre.model.sememe.version.StringSememeImpl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  *
  * @author kec
  * @param <V>
  */
 public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends ObjectChronologyImpl<V> 
-        implements SememeChronology<V>, OchreExternalizable {
-	private static Logger log = LogManager.getLogger(SememeChronologyImpl.class);
-	
+        implements SememeChronology<V>, OchreExternalizable {	
     byte sememeTypeToken = -1;
     int assemblageSequence = -1;
     int referencedComponentNid = Integer.MAX_VALUE;
@@ -73,8 +65,9 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
     }
     private SememeChronologyImpl() {}
     
-    public static SememeChronologyImpl make(ByteArrayDataBuffer data) {
-        SememeChronologyImpl sememeChronology = new SememeChronologyImpl();
+    public static SememeChronologyImpl<?> make(ByteArrayDataBuffer data) {
+        @SuppressWarnings("rawtypes")
+		SememeChronologyImpl sememeChronology = new SememeChronologyImpl();
         sememeChronology.readData(data);
         return sememeChronology;
     }
@@ -121,8 +114,10 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
 
     @Override
     protected V makeVersion(int stampSequence, ByteArrayDataBuffer db) {
-        return (V) createSememe(sememeTypeToken, this, stampSequence,
+        @SuppressWarnings({ "unchecked" })
+        V version = (V) createSememe(sememeTypeToken, this, stampSequence,
                 db.getShort(), db);
+        return version;
     }
 
     @Override
@@ -137,15 +132,6 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
 
     @Override
     public <M extends V> M createMutableVersion(Class<M> type, int stampSequence) {
-        final List<SememeVersion<?>> uncommittedVersions = new ArrayList<>();
-        for (SememeVersion<?> version : this.getVersionList()) {
-            if (version.isUncommitted()) {
-                uncommittedVersions.add(version);
-            }
-        }
-        if (uncommittedVersions.size() > 0) {
-            log.warn(new RuntimeException("Creating new mutable version for sememe " + this.getPrimordialUuid() + " with " + uncommittedVersions.size() + " existing uncommitted version(s). CHRONOLOGY: " + this));
-        }
         M version = createMutableVersionInternal(type, stampSequence,
                 nextVersionSequence());
         addVersion(version);
@@ -166,46 +152,60 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
         switch (getSememeType()) {
             case COMPONENT_NID:
                 if (MutableComponentNidSememe.class.isAssignableFrom(type)) {
-                    return (M) new ComponentNidSememeImpl((SememeChronologyImpl<ComponentNidSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new ComponentNidSememeImpl((SememeChronologyImpl<ComponentNidSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
             case LONG:
                 if (LongSememe.class.isAssignableFrom(type)) {
-                    return (M) new LongSememeImpl((SememeChronologyImpl<LongSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new LongSememeImpl((SememeChronologyImpl<LongSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
             case DYNAMIC:
                 if (MutableDynamicSememe.class.isAssignableFrom(type)) {
-                    return (M) new DynamicSememeImpl((SememeChronologyImpl<DynamicSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new DynamicSememeImpl((SememeChronologyImpl<DynamicSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
             case LOGIC_GRAPH:
                 if (MutableLogicGraphSememe.class.isAssignableFrom(type)) {
-                    return (M) new LogicGraphSememeImpl((SememeChronologyImpl<LogicGraphSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new LogicGraphSememeImpl((SememeChronologyImpl<LogicGraphSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
 
             case STRING:
                 if (StringSememe.class.isAssignableFrom(type)) {
-                    return (M) new StringSememeImpl((SememeChronologyImpl<StringSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new StringSememeImpl((SememeChronologyImpl<StringSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
 
             case MEMBER:
                 if (SememeVersion.class.isAssignableFrom(type)) {
-                    return (M) new SememeVersionImpl(this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new SememeVersionImpl<>(this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
             case DESCRIPTION:
                 if (DescriptionSememe.class.isAssignableFrom(type)) {
-                    return (M) new DescriptionSememeImpl((SememeChronologyImpl<DescriptionSememeImpl>) this,
+                    @SuppressWarnings("unchecked")
+                    M mutableVersion = (M) new DescriptionSememeImpl((SememeChronologyImpl<DescriptionSememeImpl>) this,
                             stampSequence, versionSequence);
+                    return mutableVersion;
                 }
                 break;
             default:
@@ -228,17 +228,23 @@ public class SememeChronologyImpl<V extends SememeVersionImpl<V>> extends Object
             case MEMBER:
                 return (SememeVersionImpl<?>)new SememeVersionImpl<>(container, stampSequence, versionSequence);
             case COMPONENT_NID:
-                return (SememeVersionImpl<?>)new ComponentNidSememeImpl((SememeChronologyImpl<ComponentNidSememeImpl>)container, stampSequence, versionSequence, bb);
+                @SuppressWarnings("unchecked") SememeChronologyImpl<ComponentNidSememeImpl> nidSememeChronology = (SememeChronologyImpl<ComponentNidSememeImpl>)container;
+                return (SememeVersionImpl<?>)new ComponentNidSememeImpl(nidSememeChronology, stampSequence, versionSequence, bb);
             case LONG:
-                return (SememeVersionImpl<?>)new LongSememeImpl((SememeChronologyImpl<LongSememeImpl>)container, stampSequence, versionSequence, bb);
+                @SuppressWarnings("unchecked") SememeChronologyImpl<LongSememeImpl> longSememeChronology = (SememeChronologyImpl<LongSememeImpl>)container;
+                return (SememeVersionImpl<?>)new LongSememeImpl(longSememeChronology, stampSequence, versionSequence, bb);
             case LOGIC_GRAPH:
-                return (SememeVersionImpl<?>)new LogicGraphSememeImpl((SememeChronologyImpl<LogicGraphSememeImpl>)container, stampSequence, versionSequence, bb);
+                @SuppressWarnings("unchecked") SememeChronologyImpl<LogicGraphSememeImpl> logicGraphSememeChronology = (SememeChronologyImpl<LogicGraphSememeImpl>)container;
+                return (SememeVersionImpl<?>)new LogicGraphSememeImpl(logicGraphSememeChronology, stampSequence, versionSequence, bb);
             case DYNAMIC:
-                return (SememeVersionImpl<?>)new DynamicSememeImpl((SememeChronologyImpl<DynamicSememeImpl>)container, stampSequence, versionSequence, bb);
+                @SuppressWarnings("unchecked") SememeChronologyImpl<DynamicSememeImpl> dynamicSememeChronology = (SememeChronologyImpl<DynamicSememeImpl>)container;
+                return (SememeVersionImpl<?>)new DynamicSememeImpl(dynamicSememeChronology, stampSequence, versionSequence, bb);
             case STRING:
-                return (SememeVersionImpl<?>)new StringSememeImpl((SememeChronologyImpl<StringSememeImpl>)container, stampSequence, versionSequence, bb);
+                @SuppressWarnings("unchecked") SememeChronologyImpl<StringSememeImpl> stringSememeChronology = (SememeChronologyImpl<StringSememeImpl>)container;
+                return (SememeVersionImpl<?>)new StringSememeImpl(stringSememeChronology, stampSequence, versionSequence, bb);
             case DESCRIPTION:
-                return (SememeVersionImpl<?>)(new DescriptionSememeImpl((SememeChronologyImpl<DescriptionSememeImpl>)container, stampSequence, versionSequence, bb));
+                @SuppressWarnings("unchecked") SememeChronologyImpl<DescriptionSememeImpl> descriptionSememeChronology = (SememeChronologyImpl<DescriptionSememeImpl>)container;
+                return (SememeVersionImpl<?>)(new DescriptionSememeImpl(descriptionSememeChronology, stampSequence, versionSequence, bb));
             default:
                 throw new UnsupportedOperationException("Can't handle: " + token);
         }
